@@ -184,25 +184,22 @@ jobs:
 
       - name: Build .env file on runner
         run: |
-          cat > /tmp/shulepay.env <<'ENVEOF'
-          APP_ENV=production
-          APP_DEBUG=false
-          ENVEOF
-          printf 'APP_KEY=%s\n' "$APP_KEY"             >> /tmp/shulepay.env
-          printf 'APP_URL=https://magrethschools.sc.tz\n' >> /tmp/shulepay.env
-          printf 'DB_DATABASE=shulepay\n'               >> /tmp/shulepay.env
-          printf 'DB_USERNAME=shulepay\n'               >> /tmp/shulepay.env
-          printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"      >> /tmp/shulepay.env
-          printf 'DB_ROOT_PASSWORD=%s\n' "$DB_ROOT_PASSWORD" >> /tmp/shulepay.env
-          printf 'SMS_DRIVER=kilakona\n'                >> /tmp/shulepay.env
-          printf 'SMS_API_KEY=%s\n' "$SMS_API_KEY"      >> /tmp/shulepay.env
-          printf 'SMS_SECRET_KEY=%s\n' "$SMS_SECRET_KEY" >> /tmp/shulepay.env
-          printf 'SMS_SENDER_ID=%s\n' "$SMS_SENDER_ID"  >> /tmp/shulepay.env
-          printf 'DOCKERHUB_USERNAME=%s\n' "$DOCKERHUB_USERNAME" >> /tmp/shulepay.env
-          printf 'IMAGE_TAG=%s\n' "$IMAGE_TAG"          >> /tmp/shulepay.env
+          printf 'APP_ENV=production\n'                  > shulepay.env
+          printf 'APP_DEBUG=false\n'                    >> shulepay.env
+          printf 'APP_KEY=%s\n' "$APP_KEY"              >> shulepay.env
+          printf 'APP_URL=https://magrethschools.sc.tz\n' >> shulepay.env
+          printf 'DB_DATABASE=shulepay\n'               >> shulepay.env
+          printf 'DB_USERNAME=shulepay\n'               >> shulepay.env
+          printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"      >> shulepay.env
+          printf 'DB_ROOT_PASSWORD=%s\n' "$DB_ROOT_PASSWORD" >> shulepay.env
+          printf 'SMS_DRIVER=kilakona\n'                >> shulepay.env
+          printf 'SMS_API_KEY=%s\n' "$SMS_API_KEY"      >> shulepay.env
+          printf 'SMS_SECRET_KEY=%s\n' "$SMS_SECRET_KEY" >> shulepay.env
+          printf 'SMS_SENDER_ID=%s\n' "$SMS_SENDER_ID"  >> shulepay.env
+          printf 'DOCKERHUB_USERNAME=%s\n' "$DOCKERHUB_USERNAME" >> shulepay.env
+          printf 'IMAGE_TAG=%s\n' "$IMAGE_TAG"          >> shulepay.env
         env:
           APP_KEY: ${{ secrets.APP_KEY }}
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
           SMS_API_KEY: ${{ secrets.SMS_API_KEY }}
@@ -225,18 +222,8 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "docker-compose.prod.yml,deploy.sh"
+          source: "docker-compose.prod.yml,deploy.sh,shulepay.env"
           target: "/www/shulepay"
-
-      - name: Copy env file to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "/tmp/shulepay.env"
-          target: "/www/shulepay"
-          strip_components: 2
 
       - name: Run deploy script on server
         uses: appleboy/ssh-action@v1.0.3
