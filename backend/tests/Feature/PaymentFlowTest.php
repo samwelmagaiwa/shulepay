@@ -99,7 +99,7 @@ class PaymentFlowTest extends TestCase
         ]);
 
         $response->assertStatus(201);
-        $data = $response->json();
+        $data = $response->json('data');
         $this->assertNotEmpty($data['receipt']['receipt_number']);
         $this->assertStringStartsWith('RCP-', $data['receipt']['receipt_number']);
     }

@@ -8,7 +8,7 @@ class UpdateStudentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $user = auth()->user();
+        $user = $this->user();
         if (! $user) {
             return false;
         }
