@@ -54,10 +54,7 @@ services:
       FRONTEND_SERVER_NAME: magrethschools.sc.tz
       BACKEND_UPSTREAM: http://backend:9000
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - "127.0.0.1:8080:80"
 
 volumes:
   db_data:

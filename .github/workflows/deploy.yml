@@ -182,22 +182,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build .env file on runner
-        run: |
-          printf 'APP_ENV=production\n'                  > shulepay.env
-          printf 'APP_DEBUG=false\n'                    >> shulepay.env
-          printf 'APP_KEY=%s\n' "$APP_KEY"              >> shulepay.env
-          printf 'APP_URL=https://magrethschools.sc.tz\n' >> shulepay.env
-          printf 'DB_DATABASE=shulepay\n'               >> shulepay.env
-          printf 'DB_USERNAME=shulepay\n'               >> shulepay.env
-          printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"      >> shulepay.env
-          printf 'DB_ROOT_PASSWORD=%s\n' "$DB_ROOT_PASSWORD" >> shulepay.env
-          printf 'SMS_DRIVER=kilakona\n'                >> shulepay.env
-          printf 'SMS_API_KEY=%s\n' "$SMS_API_KEY"      >> shulepay.env
-          printf 'SMS_SECRET_KEY=%s\n' "$SMS_SECRET_KEY" >> shulepay.env
-          printf 'SMS_SENDER_ID=%s\n' "$SMS_SENDER_ID"  >> shulepay.env
-          printf 'DOCKERHUB_USERNAME=%s\n' "$DOCKERHUB_USERNAME" >> shulepay.env
-          printf 'IMAGE_TAG=%s\n' "$IMAGE_TAG"          >> shulepay.env
+      - name: Prepare server and write .env
+        uses: appleboy/ssh-action@v1.0.3
         env:
           APP_KEY: ${{ secrets.APP_KEY }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -207,14 +193,28 @@ jobs:
           SMS_SENDER_ID: ${{ secrets.SMS_SENDER_ID }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
-
-      - name: Prepare server directory
-        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: mkdir -p /www/shulepay
+          envs: APP_KEY,DB_PASSWORD,DB_ROOT_PASSWORD,SMS_API_KEY,SMS_SECRET_KEY,SMS_SENDER_ID,DOCKERHUB_USERNAME,IMAGE_TAG
+          script: |
+            mkdir -p /www/shulepay
+            printf 'APP_ENV=production\n'                  > /www/shulepay/.env
+            printf 'APP_DEBUG=false\n'                    >> /www/shulepay/.env
+            printf 'APP_KEY=%s\n' "$APP_KEY"              >> /www/shulepay/.env
+            printf 'APP_URL=https://magrethschools.sc.tz\n' >> /www/shulepay/.env
+            printf 'DB_DATABASE=shulepay\n'               >> /www/shulepay/.env
+            printf 'DB_USERNAME=shulepay\n'               >> /www/shulepay/.env
+            printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"      >> /www/shulepay/.env
+            printf 'DB_ROOT_PASSWORD=%s\n' "$DB_ROOT_PASSWORD" >> /www/shulepay/.env
+            printf 'SMS_DRIVER=kilakona\n'                >> /www/shulepay/.env
+            printf 'SMS_API_KEY=%s\n' "$SMS_API_KEY"      >> /www/shulepay/.env
+            printf 'SMS_SECRET_KEY=%s\n' "$SMS_SECRET_KEY" >> /www/shulepay/.env
+            printf 'SMS_SENDER_ID="%s"\n' "$SMS_SENDER_ID"  >> /www/shulepay/.env
+            printf 'DOCKERHUB_USERNAME=%s\n' "$DOCKERHUB_USERNAME" >> /www/shulepay/.env
+            printf 'IMAGE_TAG=%s\n' "$IMAGE_TAG"          >> /www/shulepay/.env
+            chmod 600 /www/shulepay/.env
 
       - name: Copy deploy files to server
         uses: appleboy/scp-action@v0.1.7
@@ -222,7 +222,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "docker-compose.prod.yml,deploy.sh,shulepay.env"
+          source: "docker-compose.prod.yml,deploy.sh"
           target: "/www/shulepay"
 
       - name: Run deploy script on server
@@ -233,7 +233,5 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             cd /www/shulepay
-            mv shulepay.env .env
-            chmod 600 .env
             chmod +x deploy.sh
             ./deploy.sh deploy
