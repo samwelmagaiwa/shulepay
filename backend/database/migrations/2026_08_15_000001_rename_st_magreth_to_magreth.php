@@ -9,14 +9,18 @@ return new class extends Migration {
         // Strip the "St. " / "ST. " prefix from the school name as requested by admin.
         // The authoritative value going forward is the DB record managed by superadmin.
         // Handle all variants: "St. Magreth", "ST.MAGRETH", "ST. MAGRETH", etc.
-        DB::table('schools')
+        $schools = DB::table('schools')
             ->where('code', 'SMP')
-            ->where('name', 'LIKE', 'St.%')
-            ->orWhere(fn($q) => $q->where('code', 'SMP')->where('name', 'LIKE', 'ST.%'))
-            ->update([
-                'name' => DB::raw("REGEXP_REPLACE(name, '^[Ss][Tt]\\.\\\\s*', '')"),
+            ->where(fn($q) => $q->where('name', 'LIKE', 'St.%')->orWhere('name', 'LIKE', 'ST.%'))
+            ->get();
+
+        foreach ($schools as $school) {
+            $newName = ltrim(preg_replace('/^[Ss][Tt]\.\s*/u', '', $school->name));
+            DB::table('schools')->where('id', $school->id)->update([
+                'name' => $newName,
                 'slug' => 'magreth-primary',
             ]);
+        }
     }
 
     public function down(): void
