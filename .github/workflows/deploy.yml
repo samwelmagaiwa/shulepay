@@ -217,7 +217,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: mkdir -p /opt/shulepay
+          script: mkdir -p /www/shulepay
 
       - name: Copy deploy files to server
         uses: appleboy/scp-action@v0.1.7
@@ -226,7 +226,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           source: "docker-compose.prod.yml,deploy.sh"
-          target: "/opt/shulepay"
+          target: "/www/shulepay"
 
       - name: Copy env file to server
         uses: appleboy/scp-action@v0.1.7
@@ -235,7 +235,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           source: "/tmp/shulepay.env"
-          target: "/opt/shulepay"
+          target: "/www/shulepay"
           strip_components: 2
 
       - name: Run deploy script on server
@@ -245,7 +245,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
-            cd /opt/shulepay
+            cd /www/shulepay
             mv shulepay.env .env
             chmod 600 .env
             chmod +x deploy.sh

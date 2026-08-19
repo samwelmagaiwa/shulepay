@@ -16,8 +16,8 @@ set -euo pipefail
 # ── Config ────────────────────────────────────────────────────────────────────
 # Detect if running locally (Windows/Git Bash) or on the server
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -d "/opt/shulepay" ]]; then
-  APP_DIR="/opt/shulepay"
+if [[ -d "/www/shulepay" ]]; then
+  APP_DIR="/www/shulepay"
 else
   APP_DIR="$SCRIPT_DIR"
 fi
