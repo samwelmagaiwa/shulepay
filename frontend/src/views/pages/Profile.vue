@@ -1,0 +1,168 @@
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useDashboardStore } from '@/stores/dashboard'
+
+const { t } = useI18n()
+import {
+  CButton,
+  CFormInput,
+  CFormLabel,
+  CCard,
+  CCardBody,
+  CCardHeader,
+  CAvatar,
+} from '@coreui/vue'
+import axios from 'axios'
+
+const dashboard = useDashboardStore()
+const user = ref({
+  name: '',
+  email: '',
+  avatar: null,
+})
+const password = ref('')
+const confirmPassword = ref('')
+const selectedFile = ref(null)
+const message = ref('')
+const error = ref('')
+const isLoading = ref(false)
+
+// Init
+onMounted(() => {
+  if (dashboard.user) {
+    user.value = { ...dashboard.user }
+  }
+  fetchProfile()
+})
+
+const fetchProfile = async () => {
+  try {
+    const res = await dashboard.api.get('/profile', {
+      headers: { Authorization: `Bearer ${dashboard.token}` },
+    })
+    if (res.data.status === 'success') {
+      user.value = res.data.data.user
+      // Check if avatar is relative path, prepend backend URL if needed
+      // Assuming backend returns "storage/avatars/..."
+    }
+  } catch (e) {
+    console.error('Fetch profile error', e)
+  }
+}
+
+const handleFileChange = (event) => {
+  selectedFile.value = event.target.files[0]
+}
+
+const updateProfile = async () => {
+  message.value = ''
+  error.value = ''
+  isLoading.value = true
+
+  const formData = new FormData()
+  formData.append('name', user.value.name)
+  formData.append('email', user.value.email)
+  if (password.value) {
+    formData.append('password', password.value)
+    formData.append('password_confirmation', confirmPassword.value)
+  }
+  if (selectedFile.value) {
+    formData.append('avatar', selectedFile.value)
+  }
+  formData.append('_method', 'PUT') // Handle PUT
+
+  try {
+    const res = await dashboard.api.post('/profile', formData, {
+      headers: {
+        Authorization: `Bearer ${dashboard.token}`,
+      },
+    })
+
+    if (res.data.status === 'success') {
+      message.value = 'Profile updated successfully!'
+      user.value = res.data.data.user
+      // Update store
+      dashboard.user = res.data.data.user
+      localStorage.setItem('mnh_user', JSON.stringify(res.data.data.user))
+    }
+  } catch (e) {
+    error.value = e.response?.data?.message || 'Failed to update profile'
+    console.error(e)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const getAvatarUrl = (path) => {
+  if (!path) return 'src/assets/images/avatars/8.jpg' // Default or handle asset
+  if (path.startsWith('http')) return path
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1'
+  const baseUrl = apiBaseUrl.startsWith('http')
+    ? apiBaseUrl.replace(/\/api\/v1\/?$/, '')
+    : window.location.origin
+  return `${baseUrl}/${path.replace(/^\/+/, '')}`
+}
+</script>
+
+<template>
+  <CCard class="mb-4 shadow-sm">
+    <CCardHeader class="bg-light fw-bold">{{ t('profile.title') }}</CCardHeader>
+    <CCardBody>
+      <div v-if="message" class="alert alert-success">{{ message }}</div>
+      <div v-if="error" class="alert alert-danger">{{ error }}</div>
+
+      <div class="row">
+        <div class="col-md-4 text-center mb-4">
+          <div class="mb-3">
+            <img
+              :src="getAvatarUrl(user.avatar)"
+              alt="Avatar"
+              class="rounded-circle img-thumbnail"
+              style="width: 150px; height: 150px; object-fit: cover"
+            />
+          </div>
+          <div class="mb-3">
+            <input
+              type="file"
+              @change="handleFileChange"
+              class="form-control form-control-sm"
+              accept="image/*"
+            />
+          </div>
+        </div>
+
+        <div class="col-md-8">
+          <form @submit.prevent="updateProfile">
+            <div class="mb-3">
+              <CFormLabel>{{ t('profile.name') }}</CFormLabel>
+              <CFormInput v-model="user.name" required />
+            </div>
+            <div class="mb-3">
+              <CFormLabel>{{ t('profile.email') }}</CFormLabel>
+              <CFormInput type="email" v-model="user.email" required />
+            </div>
+
+            <hr class="my-4" />
+            <h6 class="mb-3 text-muted">{{ t('profile.changePassword') }}</h6>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <CFormLabel>{{ t('profile.newPassword') }}</CFormLabel>
+                <CFormInput type="password" v-model="password" minlength="8" />
+              </div>
+              <div class="col-md-6 mb-3">
+                <CFormLabel>{{ t('profile.confirmPassword') }}</CFormLabel>
+                <CFormInput type="password" v-model="confirmPassword" minlength="8" />
+              </div>
+            </div>
+
+            <CButton type="submit" color="primary" :disabled="isLoading">
+              {{ isLoading ? t('common.loading') : t('profile.save') }}
+            </CButton>
+          </form>
+        </div>
+      </div>
+    </CCardBody>
+  </CCard>
+</template>

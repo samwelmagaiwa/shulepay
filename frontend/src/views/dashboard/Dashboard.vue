@@ -1,0 +1,840 @@
+<script setup>
+import { defineAsyncComponent, computed, ref, onMounted, watch, onUnmounted } from 'vue'
+import { useDashboardStore } from '@/stores/dashboard'
+import { useAuthStore } from '@/stores/auth'
+import { getAutoScrollState } from '@/composables/useAutoScroll'
+import LoadingBanner from '@/components/LoadingBanner.vue'
+import { CIcon } from '@coreui/icons-vue'
+import {
+  cilPeople,
+  cilMoney,
+  cilCreditCard,
+  cilGlobeAlt,
+  cilBriefcase,
+  cilInstitution,
+  cilChevronBottom,
+  cilChevronTop,
+  cilSearch,
+} from '@coreui/icons'
+
+const dashboard = useDashboardStore()
+const authStore = useAuthStore()
+const autoScroll = getAutoScrollState()
+
+import { ChartLine, ChartBar } from '../charts/index.js'
+import { CChart, CChartPie } from '@coreui/vue-chartjs'
+import VueDatePicker from '@vuepic/vue-datepicker'
+import '@vuepic/vue-datepicker/dist/main.css'
+
+import DashboardPieCharts from './DashboardPieCharts.vue'
+import WidgetsStatsD from '../widgets/SocialStatsWidgets.vue'
+import DashboardRadarChart from './DashboardRadarChart.vue'
+import DashboardClinicBarChart from './DashboardClinicBarChart.vue'
+import ServiceTrendChart from './ServiceTrendChart.vue'
+
+const MainChart = defineAsyncComponent(() => import('./MainChart.vue'))
+
+const isAutoScrollEnabled = computed(() => autoScroll.isEnabled.value)
+const hiddenPieCategories = ref([]) // Track hidden categories for pie chart
+// Show outage slideshow ONLY when API is unreachable AND grace period has completely expired
+const showOutageSlideshow = computed(
+  () => {
+    // If API is available, definitely NO slideshow
+    if (dashboard.remoteApiAvailable !== false) return false
+
+    // If we are in the 5-minute silent window, do NOT show slideshow
+    if (dashboard.remoteApiAvailable === false && !dashboard.isOfflineUIReported) return false
+    
+    // If we are currently using cached fallback data, do NOT show slideshow
+    if (dashboard.isUsingCachedData) return false
+    
+    // If there is any active countdown at all, stay on the dashboard
+    if (dashboard.offlineTimerCountdown !== null) return false
+    
+    // Final check: Only show slideshow if we are truly offline, 5m delay has passed, and 15m grace has expired
+    return dashboard.remoteApiAvailable === false && !dashboard.isUsingCachedData && dashboard.offlineTimerCountdown === null
+  }
+)
+const showOfflineIndicator = computed(
+  () => dashboard.remoteApiAvailable === false && dashboard.isUsingCachedData && dashboard.isOfflineUIReported
+)
+const formatOfflineCountdown = computed(() => {
+  const seconds = dashboard.offlineTimerCountdown || 0
+  if (seconds <= 0) return ''
+  const minutes = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${minutes}:${String(secs).padStart(2, '0')}`
+})
+const outageSlides = ['/outage-slides/slide-1.jpg', '/outage-slides/slide-2.jpg', '/outage-slides/slide-3.jpg']
+const activeOutageSlide = ref(0)
+
+let syncInterval = null
+let outageSlideInterval = null
+
+const startOutageSlideshow = () => {
+  if (outageSlideInterval) return
+
+  outageSlideInterval = setInterval(() => {
+    activeOutageSlide.value = (activeOutageSlide.value + 1) % outageSlides.length
+  }, 5000)
+}
+
+const stopOutageSlideshow = () => {
+  if (outageSlideInterval) {
+    clearInterval(outageSlideInterval)
+    outageSlideInterval = null
+  }
+
+  activeOutageSlide.value = 0
+}
+
+onMounted(() => {
+  dashboard.fetchStats()
+
+  // Auto-refresh / background sync disabled per user request
+  // syncInterval = setInterval(async () => {
+  //   if (dashboard.isAuthenticated) {
+  //     await dashboard.triggerSync()
+  //   }
+  // }, 300000) // 5 minutes
+})
+
+watch(
+  showOutageSlideshow,
+  (isActive) => {
+    if (isActive) {
+      startOutageSlideshow()
+      return
+    }
+
+    stopOutageSlideshow()
+  },
+  { immediate: true },
+)
+
+onUnmounted(() => {
+  if (typeof dashboard.stopPulse === 'function') dashboard.stopPulse() // Cleanup polling
+  if (syncInterval) clearInterval(syncInterval)
+  stopOutageSlideshow()
+})
+
+const getCategoryColor = (title) => {
+  const map = {
+    'CHEKECHEA': 'info',
+    'DARASA 1-3': 'success',
+    'DARASA 4-7': 'primary',
+    'KIDATO 1-2': 'warning',
+    'KIDATO 3-4': 'danger',
+    'KIDATO 5-6': 'dark',
+    'NYINGINE': 'indigo',
+  }
+  return map[title] || 'primary'
+}
+
+const getCategoryIcon = (title) => {
+  return cilPeople
+}
+
+// Maps display title → backend class_breakdown key(s) from DashboardService
+// Keys are: strtolower(str_replace(' ', '_', class_name))
+// e.g. "Darasa la 1" → "darasa_la_1", "PP 1" → "pp_1", "Kidato la 1" → "kidato_la_1"
+const CLASS_KEY_MAP = {
+  'PP1':    ['pp_1', 'pp1'],
+  'PP2':    ['pp_2', 'pp2'],
+  'STD 1':  ['darasa_la_1', 'std_1', 'std1'],
+  'STD 2':  ['darasa_la_2', 'std_2', 'std2'],
+  'STD 3':  ['darasa_la_3', 'std_3', 'std3'],
+  'STD 4':  ['darasa_la_4', 'std_4', 'std4'],
+  'STD 5':  ['darasa_la_5', 'std_5', 'std5'],
+  'STD 6':  ['darasa_la_6', 'std_6', 'std6'],
+  'STD 7':  ['darasa_la_7', 'std_7', 'std7'],
+  'FORM 1': ['kidato_la_1', 'form_1', 'form1'],
+  'FORM 2': ['kidato_la_2', 'form_2', 'form2'],
+  'FORM 3': ['kidato_la_3', 'form_3', 'form3'],
+  'FORM 4': ['kidato_la_4', 'form_4', 'form4'],
+}
+
+const classOverrides = ref(JSON.parse(localStorage.getItem('shulepay_class_overrides') || '{}'))
+
+const patientCategories = computed(() => {
+  const colors = {
+    'PP1':    '#007bff',
+    'PP2':    '#17a2b8',
+    'STD 1':  '#28a745',
+    'STD 2':  '#20c997',
+    'STD 3':  '#ffc107',
+    'STD 4':  '#fd7e14',
+    'STD 5':  '#dc3545',
+    'STD 6':  '#e83e8c',
+    'STD 7':  '#6f42c1',
+    'FORM 1': '#6610f2',
+    'FORM 2': '#003082',
+    'FORM 3': '#007f3e',
+    'FORM 4': '#fcd116',
+  }
+
+  const cb = dashboard.stats?.class_breakdown || {}
+
+  const cats = Object.keys(CLASS_KEY_MAP).map((title) => {
+    // Custom override takes priority
+    if (classOverrides.value[title] !== undefined && classOverrides.value[title] !== '') {
+      const val = parseInt(classOverrides.value[title]) || 0
+      return { title, value: val.toLocaleString(), color: colors[title] || '#6c757d', numericValue: val }
+    }
+
+    // Look up real data from class_breakdown using all possible key variants
+    const keys = CLASS_KEY_MAP[title]
+    const count = keys.reduce((sum, k) => sum + (cb[k] || 0), 0)
+
+    return {
+      title,
+      value: count.toLocaleString(),
+      color: colors[title] || '#6c757d',
+      numericValue: count,
+    }
+  })
+
+  const totalSum = cats.reduce((acc, c) => acc + c.numericValue, 0)
+
+  return [
+    ...cats,
+    { title: 'Total', value: totalSum.toLocaleString(), color: 'grey' },
+  ]
+})
+// Configuration Modal State & Methods (Superadmin / Accountant / Owner)
+const showClassConfigModal = ref(false)
+const tempOverrides = ref({})
+
+const canConfigure = computed(() => {
+  return authStore.isSuperAdmin || authStore.isOwner || authStore.isAccountant
+})
+
+function openClassConfigModal() {
+  tempOverrides.value = { ...classOverrides.value }
+  showClassConfigModal.value = true
+}
+
+function saveClassConfig() {
+  classOverrides.value = { ...tempOverrides.value }
+  localStorage.setItem('shulepay_class_overrides', JSON.stringify(classOverrides.value))
+  showClassConfigModal.value = false
+}
+
+function resetClassConfig() {
+  classOverrides.value = {}
+  tempOverrides.value = {}
+  localStorage.removeItem('shulepay_class_overrides')
+  showClassConfigModal.value = false
+}
+
+// Patient Category Chart Data (Bar + Line combination)
+const categoryChartData = computed(() => {
+  const categories = patientCategories.value.filter((c) => c.title !== 'Total')
+  const values = categories.map((c) => parseInt(c.value.replace(/,/g, '')) || 0)
+  const colors = categories.map((c) => c.color)
+
+  return {
+    labels: categories.map((c) => c.title),
+    datasets: [
+      {
+        type: 'bar',
+        label: 'Idadi ya Wanafunzi',
+        backgroundColor: colors,
+        borderColor: colors.map((c) => c),
+        borderWidth: 1,
+        data: values,
+        order: 2,
+        barPercentage: 0.7,
+        categoryPercentage: 0.8,
+        borderRadius: 4,
+      },
+      {
+        type: 'line',
+        label: 'Mstari wa Mwelekeo',
+        borderColor: '#003082',
+        backgroundColor: 'rgba(0, 48, 130, 0.1)',
+        borderWidth: 2,
+        fill: false,
+        tension: 0.4,
+        data: values,
+        order: 1,
+        pointBackgroundColor: '#003082',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+      },
+    ],
+  }
+})
+
+const categoryChartOptions = computed(() => {
+  const categories = patientCategories.value.filter((c) => c.title !== 'Total')
+  const values = categories.map((c) => parseInt(c.value.replace(/,/g, '')) || 0)
+  const maxValue = Math.max(...values, 1)
+  const yMax =
+    maxValue > 1000
+      ? Math.ceil(maxValue / 1000) * 1000 * 1.5
+      : maxValue > 100
+        ? Math.ceil(maxValue / 100) * 100 * 1.5
+        : Math.ceil(maxValue / 10) * 10 * 1.5
+
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: { top: 5 },
+    },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 15,
+          font: { size: 11, weight: '600' },
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const value = context.raw || 0
+            return `${context.dataset.label}: ${value.toLocaleString()}`
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: {
+          font: { size: 10, weight: 'bold' },
+          color: '#333',
+          maxRotation: 45,
+          minRotation: 45,
+        },
+      },
+      y: {
+        type: 'logarithmic',
+        min: 1,
+        max: yMax,
+        title: {
+          display: true,
+          text: 'Jumla ya Makusanyo (Kiwango cha Log)',
+          font: { size: 12, weight: 'bold' },
+          color: '#333',
+        },
+        grid: {
+          borderDash: [2, 2],
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+        ticks: {
+          callback: (value) => {
+            const remain = value / Math.pow(10, Math.floor(Math.log10(value)))
+            if (remain === 1 || remain === 2 || remain === 5) {
+              return value.toLocaleString()
+            }
+            return ''
+          },
+        },
+      },
+    },
+  }
+})
+
+// Plugin to display values on bars
+const categoryBarLabelsPlugin = {
+  id: 'categoryBarLabels',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart
+    const meta = chart.getDatasetMeta(0)
+    if (meta.type !== 'bar') return
+
+    meta.data.forEach((bar, index) => {
+      const value = chart.data.datasets[0].data[index]
+      if (value === 0) return
+
+      const { x, y } = bar.tooltipPosition()
+      const displayValue = new Intl.NumberFormat('en-US').format(value)
+      const barColor = chart.data.datasets[0].backgroundColor[index]
+
+      ctx.save()
+      ctx.font = "bold 26px 'Outfit', Arial, sans-serif"
+      ctx.fillStyle = barColor
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'bottom'
+      ctx.shadowColor = 'rgba(255, 255, 255, 0.8)'
+      ctx.shadowBlur = 4
+      ctx.fillText(displayValue, x, y - 6)
+      ctx.restore()
+    })
+  },
+}
+
+// Patient Category Pie Chart Data
+const categoryPieChartData = computed(() => {
+  const categories = patientCategories.value.filter((c) => c.title !== 'Total')
+  const values = categories.map((c) => {
+    if (hiddenPieCategories.value.includes(c.title)) return 0
+    return parseInt(c.value.replace(/,/g, '')) || 0
+  })
+  const colors = categories.map((c) => c.color)
+
+  return {
+    labels: categories.map((c) => c.title),
+    datasets: [
+      {
+        backgroundColor: colors,
+        data: values,
+        borderWidth: 2,
+        borderColor: '#fff',
+        radius: '95%',
+        cutout: 0,
+      },
+    ],
+  }
+})
+
+// Toggle category visibility in pie chart
+const togglePieCategory = (categoryTitle) => {
+  if (hiddenPieCategories.value.includes(categoryTitle)) {
+    hiddenPieCategories.value = hiddenPieCategories.value.filter((c) => c !== categoryTitle)
+  } else {
+    hiddenPieCategories.value.push(categoryTitle)
+  }
+}
+
+// Check if category is hidden
+const isCategoryHidden = (categoryTitle) => {
+  return hiddenPieCategories.value.includes(categoryTitle)
+}
+
+const categoryPieChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  layout: {
+    padding: 10,
+  },
+  plugins: {
+    legend: {
+      display: false,
+    },
+    tooltip: {
+      callbacks: {
+        label: (context) => {
+          const label = context.label || ''
+          const value = context.raw || 0
+          const total = context.dataset.data.reduce((a, b) => a + b, 0)
+          const percentage = total > 0 ? Math.round((value / total) * 100) : 0
+          return `${label}: ${value.toLocaleString()} (${percentage}%)`
+        },
+      },
+    },
+  },
+}
+
+// Plugin to draw labels
+const categoryPieLabelsPlugin = {
+  id: 'categoryPieLabels',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart
+    const meta = chart.getDatasetMeta(0)
+
+    ctx.save()
+    meta.data.forEach((element, index) => {
+      if (element.hidden) return
+      const value = chart.data.datasets[0].data[index]
+      if (!value || value === 0) return
+
+      const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0)
+      const percentageVal = total > 0 ? (value / total) * 100 : 0
+      const percentage = percentageVal.toFixed(1) + '%'
+      const midAngle = element.startAngle + (element.endAngle - element.startAngle) / 2
+      const angleSpan = ((element.endAngle - element.startAngle) * 180) / Math.PI
+      const sliceColor = chart.data.datasets[0].backgroundColor[index]
+
+      if (angleSpan >= 15) {
+        const midRadius = element.outerRadius * 0.6 + element.innerRadius * 0.1
+        const x = Math.cos(midAngle) * midRadius + element.x
+        const y = Math.sin(midAngle) * midRadius + element.y
+        ctx.fillStyle = '#fff'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.shadowColor = 'rgba(0,0,0,0.9)'
+        ctx.shadowBlur = 5
+        ctx.font = "bold 22px 'Outfit', sans-serif"
+        ctx.fillText(value.toLocaleString(), x, y - 10)
+        ctx.font = "normal 14px 'Outfit', sans-serif"
+        ctx.fillText(percentage, x, y + 14)
+      } else {
+        const r = element.outerRadius
+        const cx = element.x
+        const cy = element.y
+        const x1 = Math.cos(midAngle) * (r * 0.99) + cx
+        const y1 = Math.sin(midAngle) * (r * 0.99) + cy
+        const x2 = Math.cos(midAngle) * (r * 1.03) + cx
+        const y2 = Math.sin(midAngle) * (r * 1.03) + cy
+        const isRight = x2 > cx
+        const x3 = x2 + (isRight ? 8 : -8)
+        const y3 = y2
+        ctx.shadowBlur = 0
+        ctx.strokeStyle = sliceColor
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.moveTo(x1, y1)
+        ctx.lineTo(x2, y2)
+        ctx.lineTo(x3, y3)
+        ctx.stroke()
+        ctx.fillStyle = sliceColor
+        ctx.textAlign = isRight ? 'left' : 'right'
+        ctx.textBaseline = 'middle'
+        ctx.font = "bold 13px 'Outfit', sans-serif"
+        const labelX = x3 + (isRight ? 3 : -3)
+        ctx.fillText(`${value.toLocaleString()} (${percentage})`, labelX, y3)
+      }
+    })
+    ctx.restore()
+  },
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return 'Date is empty'
+  if (typeof dateStr === 'string' && dateStr.includes('T')) {
+    return dateStr.split('T')[0]
+  }
+  return dateStr
+}
+</script>
+
+<template>
+  <div
+    class="dashboard-grid px-0 pt-0 pb-3"
+    style="position: relative; min-height: 400px; overflow-x: hidden"
+  >
+    <div v-if="showOutageSlideshow" class="outage-slideshow-shell">
+      <div
+        class="outage-slideshow-track"
+        :style="{ transform: `translateX(-${activeOutageSlide * 100}%)` }"
+      >
+        <div v-for="slide in outageSlides" :key="slide" class="outage-slide">
+          <img :src="slide" alt="Hospital view" class="outage-slide-image" />
+        </div>
+      </div>
+    </div>
+
+    <template v-else>
+      <LoadingBanner v-if="dashboard.isLoading" />
+
+      <!-- Future Date Warning Alert -->
+      <div
+        v-if="dashboard.futureDateWarning"
+        class="alert alert-warning alert-dismissible fade show mb-4 shadow-sm"
+        role="alert"
+      >
+        <div class="d-flex align-items-center">
+          <div class="me-3">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="32"
+              height="32"
+              fill="currentColor"
+              class="text-warning"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h5 class="alert-heading mb-1 fw-bold">{{ dashboard.futureDateWarning.title }}</h5>
+            <p class="mb-0">{{ dashboard.futureDateWarning.message }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div :style="{ opacity: dashboard.isLoading ? 0.6 : 1, transition: 'opacity 0.3s' }">
+        <WidgetsStatsD class="mb-2" />
+
+      <ServiceTrendChart />
+
+      <DashboardPieCharts />
+
+      <!-- Patient Categories Ribbon (Original) -->
+      <div class="card premium-shadow mb-4 overflow-hidden border-0">
+        <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <h4 class="mb-0 fw-bold text-primary" style="font-size: 20px">
+              Muhtasari wa Makusanyo ya Ada Kwa Madarasa
+            </h4>
+            <button
+              v-if="canConfigure"
+              class="btn btn-outline-primary btn-sm px-2 py-0 ms-2"
+              title="Sanidi Takwimu za Madarasa"
+              @click="openClassConfigModal"
+            >
+              ⚙️ Badili Data
+            </button>
+          </div>
+          <span class="badge bg-light text-dark border fw-normal">Primary and Secondary</span>
+        </div>
+        <div class="card-body p-3">
+          <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-xl-7 g-3">
+            <div
+              v-for="(item, index) in patientCategories.filter((c) => c.title !== 'Total')"
+              :key="index"
+              class="col"
+            >
+              <div class="p-3 border rounded h-100 d-flex flex-column align-items-center justify-content-between text-center bg-white shadow-sm hover-lift">
+                <span
+                  class="text-uppercase fw-bold mb-1"
+                  :style="{ color: item.color, fontSize: '0.8rem', letterSpacing: '0.5px' }"
+                  >{{ item.title }}</span
+                >
+                <h3 class="mb-1 fw-bold text-dark fs-4">{{ item.value }}</h3>
+                <div
+                  class="progress-line mt-1"
+                  :style="{
+                    backgroundColor: item.color,
+                    width: '30px',
+                    height: '3px',
+                    borderRadius: '2px',
+                  }"
+                ></div>
+              </div>
+            </div>
+
+            <!-- Total Section -->
+            <div class="col">
+              <div class="p-3 border border-primary rounded h-100 d-flex flex-column align-items-center justify-content-between text-center bg-primary-subtle shadow-sm">
+                <span class="text-uppercase fw-bold text-dark mb-1" style="font-size: 0.85rem"
+                  >TOTAL</span
+                >
+                <h3 class="mb-1 fw-extrabold text-primary fs-4">
+                  {{ patientCategories.find((c) => c.title === 'Total')?.value || '0' }}
+                </h3>
+                <div
+                  class="progress-line mt-1 bg-primary"
+                  :style="{
+                    width: '40px',
+                    height: '3px',
+                    borderRadius: '2px',
+                  }"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Class Configuration Modal (Superadmin / Accountant / Owner) -->
+      <CModal :visible="showClassConfigModal" @close="showClassConfigModal = false">
+        <CModalHeader>
+          <CModalTitle class="fw-bold">Sanidi Takwimu za Madarasa</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          <p class="text-muted small mb-3">
+            Weka makusanyo ya ada kwa kila darasa. Takwimu hizi zitaonyeshwa kwenye dashboard mara moja.
+          </p>
+          <div class="row g-2">
+            <div
+              v-for="cls in ['PP1', 'PP2', 'STD 1', 'STD 2', 'STD 3', 'STD 4', 'STD 5', 'STD 6', 'STD 7', 'FORM 1', 'FORM 2', 'FORM 3', 'FORM 4']"
+              :key="cls"
+              class="col-6"
+            >
+              <label class="form-label small fw-bold mb-1">{{ cls }}</label>
+              <input
+                type="number"
+                class="form-control form-control-sm"
+                v-model="tempOverrides[cls]"
+                placeholder="0"
+              />
+            </div>
+          </div>
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" variant="outline" size="sm" @click="resetClassConfig">
+            Rudisha Asili
+          </CButton>
+          <CButton color="primary" size="sm" @click="saveClassConfig">
+            Hifadhi Mabadiliko
+          </CButton>
+        </CModalFooter>
+      </CModal>
+
+      <!-- Patient Category Analytics - Two Cards Side by Side -->
+      <CRow class="mb-4">
+        <CCol :lg="6">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-white border-0 p-3">
+              <h5 class="mb-0 fw-bold text-primary" style="font-size: 20px">
+                Chati ya Makusanyo ya Ada
+              </h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="chart-container" style="height: 420px">
+                <CChart
+                  type="bar"
+                  :data="categoryChartData"
+                  :options="categoryChartOptions"
+                  :plugins="[categoryBarLabelsPlugin]"
+                  style="height: 100%"
+                />
+              </div>
+            </div>
+          </div>
+        </CCol>
+
+        <CCol :lg="6">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+              <h5 class="mb-0 fw-bold text-primary" style="font-size: 20px">
+                Usambazaji wa Makusanyo ya Ada
+              </h5>
+              <div class="d-flex flex-wrap justify-content-start mt-2 gap-2">
+                <span
+                  v-for="(item, index) in patientCategories.filter((c) => c.title !== 'Total')"
+                  :key="index"
+                  class="category-pill clickable-pill"
+                  :class="{ 'pill-hidden': isCategoryHidden(item.title) }"
+                  :style="{
+                    border: `2px solid ${isCategoryHidden(item.title) ? '#ccc' : item.color}`,
+                    color: isCategoryHidden(item.title) ? '#999' : item.color,
+                    backgroundColor: isCategoryHidden(item.title)
+                      ? 'transparent'
+                      : `${item.color}15`,
+                  }"
+                  @click="togglePieCategory(item.title)"
+                  :title="isCategoryHidden(item.title) ? 'Click to show' : 'Click to hide'"
+                >
+                  {{ item.title }}
+                </span>
+              </div>
+            </div>
+            <div class="card-body p-0">
+              <div class="chart-container" style="height: 420px; margin-top: -10px">
+                <CChartPie
+                  :data="categoryPieChartData"
+                  :options="categoryPieChartOptions"
+                  :plugins="[categoryPieLabelsPlugin]"
+                  style="height: 100%"
+                />
+              </div>
+            </div>
+          </div>
+        </CCol>
+      </CRow>
+
+      <!-- All Classes Histogram (Diverging Fee & Debt Comparison) -->
+      <CRow class="mb-4 pb-4">
+        <CCol :md="12">
+          <DashboardClinicBarChart />
+        </CCol>
+      </CRow>
+      
+        <!-- Auto-scroll boundary marker - last section -->
+        <div data-auto-scroll-boundary style="height: 1px;"></div>
+      </div>
+    </template>
+  </div>
+</template>
+
+<style scoped>
+.outage-slideshow-shell {
+  position: relative;
+  width: 100%;
+  min-height: calc(100vh - 120px);
+  overflow: hidden;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.outage-slideshow-track {
+  display: flex;
+  width: 100%;
+  min-height: calc(100vh - 120px);
+  transition: transform 0.9s ease-in-out;
+}
+
+.outage-slide {
+  flex: 0 0 100%;
+  min-height: calc(100vh - 120px);
+  background: #fff;
+}
+
+.outage-slide-image {
+  width: 100%;
+  height: 100%;
+  min-height: calc(100vh - 120px);
+  object-fit: cover;
+  display: block;
+}
+
+/* Scrollbar Styling */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Ribbon Item Styles */
+.category-ribbon-item {
+  min-width: 140px;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.category-ribbon-item:hover {
+  transform: translateY(-2px);
+}
+
+.bg-danger-soft {
+  background-color: #fff1f2;
+}
+
+.bg-info-soft {
+  background-color: #f0f9ff;
+}
+
+.category-pill {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.category-pill:hover {
+  transform: scale(1.05);
+}
+
+.pill-hidden {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.chart-container {
+  padding: 15px;
+}
+
+@media (max-width: 991.98px) {
+  .outage-slideshow-shell,
+  .outage-slideshow-track,
+  .outage-slide,
+  .outage-slide-image {
+    min-height: 60vh;
+  }
+}
+
+
+</style>

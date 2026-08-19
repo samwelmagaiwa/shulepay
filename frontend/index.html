@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="sw">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,shrink-to-fit=no" />
+    <meta name="description" content="ShulePay — Mfumo wa Fedha za Shule na nexoryaTECH" />
+    <meta name="author" content="nexoryaTECH" />
+    <title>ShulePay</title>
+    <script>
+      const userMode = localStorage.getItem('coreui-free-vue-admin-template-theme');
+      const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (userMode === 'dark' || (userMode !== 'light' && systemDark)) {
+        document.documentElement.dataset.coreuiTheme = 'dark';
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

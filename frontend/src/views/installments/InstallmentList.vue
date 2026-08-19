@@ -1,0 +1,375 @@
+<template>
+  <CContainer fluid class="p-2 p-md-3">
+    <!-- Header with actions -->
+    <CRow class="align-items-center mb-3 g-2">
+      <CCol>
+        <h4 class="fw-bold mb-0">{{ t('installments.title', 'Installment Plans') }}</h4>
+      </CCol>
+      <CCol xs="auto">
+        <CButton color="primary" @click="showBulkModal = true" style="min-height:40px;">
+          📋 {{ t('installments.bulkByClass') }}
+        </CButton>
+      </CCol>
+    </CRow>
+
+    <!-- Filters -->
+    <CCard class="mb-3">
+      <CCardBody class="p-2 p-md-3">
+        <CRow class="g-2 align-items-center">
+          <CCol xs="12" sm="6" md="4">
+            <CFormSelect v-model="filters.status" @update:modelValue="page = 1; load()" style="min-height:40px;">
+              <option value="">{{ t('common.allStatuses') }}</option>
+              <option value="active">{{ t('installments.ongoing') }}</option>
+              <option value="completed">{{ t('installments.completed') }}</option>
+            </CFormSelect>
+          </CCol>
+          <CCol xs="12" sm="6" md="4">
+            <CFormInput v-model="filters.search" :placeholder="t('installments.searchPlaceholder')" @input="debouncedLoad" style="min-height:40px;" />
+          </CCol>
+        </CRow>
+      </CCardBody>
+    </CCard>
+
+    <div v-if="loading" class="text-center py-5"><CSpinner color="primary" /></div>
+
+    <div v-else>
+      <!-- Mobile cards -->
+      <div class="d-md-none">
+        <div v-if="!installments.length" class="text-center text-muted py-5">{{ t('installments.noPlans') }}</div>
+        <div v-for="plan in installments" :key="plan.id" class="mb-2 border rounded p-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fw-bold">{{ plan.student?.full_name }}</div>
+              <div class="small text-muted">{{ t('installments.invoice') }}: {{ plan.invoice?.invoice_number }}</div>
+              <div class="small text-muted">{{ plan.installments_paid || 0 }}/{{ plan.total_installments }} (Invoice paid)</div>
+              <div class="small text-muted">{{ t('installments.nextDue') }}: {{ plan.next_due_date || '—' }}</div>
+            </div>
+            <CBadge :color="plan.status === 'completed' || plan.status === 'paid' ? 'success' : 'warning'">
+              {{ plan.status === 'completed' || plan.status === 'paid' ? t('installments.completed', 'Paid') : (plan.status === 'partial' ? 'Partial' : t('installments.ongoing', 'Ongoing')) }}
+            </CBadge>
+          </div>
+          <CProgress :value="progressPct(plan)" color="success" class="mt-2" style="height:6px;" />
+          <div class="small text-muted mt-1 text-center">{{ formatAmount(plan.paid_amount_cents) }} / {{ formatAmount(plan.installment_amount_cents) }}</div>
+          <div class="mt-2 d-flex justify-content-between align-items-center">
+            <span class="small fw-semibold text-danger">Due: {{ formatAmount(plan.installment_amount_cents - (plan.paid_amount_cents || 0)) }}</span>
+            <CButton v-if="plan.status !== 'completed' && plan.status !== 'paid'" size="sm" color="primary"
+                     @click="recordPayment(plan)" style="min-height:44px;">
+              {{ t('installments.recordPayment') }}
+            </CButton>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagination (mobile) -->
+      <div v-if="meta.last_page > 1" class="d-md-none d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <small class="text-medium-emphasis">
+          {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
+        </small>
+        <CPagination aria-label="Page" size="sm">
+          <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; load()">{{ t('common.first') }}</CPaginationItem>
+          <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; load()">{{ p }}</CPaginationItem>
+          <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; load()">{{ t('common.last') }}</CPaginationItem>
+        </CPagination>
+      </div>
+
+      <!-- Desktop table -->
+      <CCard class="d-none d-md-block">
+        <CCardBody class="p-0">
+          <CTable responsive hover class="mb-0">
+            <CTableHead class="table-light">
+              <CTableRow>
+                <CTableHeaderCell>{{ t('installments.student') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('installments.invoice') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('installments.totalInst') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('installments.paid', 'Paid Amount') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('installments.amountPerInst', 'Balance Due') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('installments.nextDue') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('installments.progress') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('common.status') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('common.actions') }}</CTableHeaderCell>
+              </CTableRow>
+            </CTableHead>
+            <CTableBody>
+              <CTableRow v-for="plan in installments" :key="plan.id">
+                <CTableDataCell>
+                  <div class="fw-semibold">{{ plan.student?.full_name }}</div>
+                  <div class="small text-muted">{{ plan.student?.admission_number }}</div>
+                </CTableDataCell>
+                <CTableDataCell>{{ plan.invoice?.invoice_number }}</CTableDataCell>
+                <CTableDataCell>{{ plan.installments_paid || 0 }} / {{ plan.total_installments }}</CTableDataCell>
+                <CTableDataCell>{{ formatAmount(plan.paid_amount_cents || 0) }}</CTableDataCell>
+                <CTableDataCell class="text-danger fw-semibold">{{ formatAmount(plan.installment_amount_cents - (plan.paid_amount_cents || 0)) }}</CTableDataCell>
+                <CTableDataCell>{{ plan.next_due_date || '—' }}</CTableDataCell>
+                <CTableDataCell style="min-width:120px;">
+                  <CProgress :value="progressPct(plan)" color="success" style="height:8px;" />
+                  <span class="small text-muted">{{ progressPct(plan) }}%</span>
+                </CTableDataCell>
+                <CTableDataCell>
+                  <CBadge :color="plan.status === 'completed' || plan.status === 'paid' ? 'success' : 'warning'">
+                    {{ plan.status === 'completed' || plan.status === 'paid' ? t('installments.completed', 'Paid') : (plan.status === 'partial' ? 'Partial' : t('installments.ongoing', 'Ongoing')) }}
+                  </CBadge>
+                </CTableDataCell>
+                <CTableDataCell>
+                  <CButton v-if="plan.status !== 'completed' && plan.status !== 'paid'" size="sm" color="primary"
+                           @click="recordPayment(plan)" style="min-height:36px;">
+                    {{ t('installments.recordPayment') }}
+                  </CButton>
+                </CTableDataCell>
+              </CTableRow>
+              <CTableRow v-if="!installments.length">
+                <CTableDataCell colspan="9" class="text-center text-muted py-4">{{ t('installments.noPlans') }}</CTableDataCell>
+              </CTableRow>
+            </CTableBody>
+          </CTable>
+        </CCardBody>
+      </CCard>
+
+      <!-- Pagination (desktop) -->
+      <div v-if="meta.last_page > 1" class="d-none d-md-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+        <small class="text-medium-emphasis">
+          {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
+        </small>
+        <CPagination aria-label="Page" size="sm">
+          <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; load()">{{ t('common.first') }}</CPaginationItem>
+          <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; load()">{{ p }}</CPaginationItem>
+          <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; load()">{{ t('common.last') }}</CPaginationItem>
+        </CPagination>
+      </div>
+    </div>
+
+    <!-- Bulk installment modal — self-contained, fetches its own schools/classes/terms -->
+    <BulkInstallmentModal
+      :visible="showBulkModal"
+      @close="showBulkModal = false"
+      @done="onBulkDone"
+    />
+
+    <!-- Payment confirm modal -->
+    <CModal :visible="showPayModal" @close="closePayModal" class="modal-fullscreen-sm-down">
+      <CModalHeader><CModalTitle>{{ t('installments.confirmPayment') }}</CModalTitle></CModalHeader>
+      <CModalBody v-if="selectedPlan">
+        <CAlert v-if="payError" color="danger" class="py-2">{{ payError }}</CAlert>
+
+        <!-- Student & installment info -->
+        <div class="mb-3">
+          <div class="fw-bold fs-6">{{ selectedPlan.student?.full_name }}</div>
+          <div class="text-muted small">
+            {{ t('installments.installmentN', { paid: (selectedPlan.paid_installments || 0) + 1, total: selectedPlan.total_installments }) }}
+          </div>
+        </div>
+
+        <!-- Expected amount display (shows remaining balance) -->
+        <div class="rounded p-3 mb-3" style="background:#f0f4ff; border-left:4px solid #6366f1">
+          <div class="small text-muted mb-1">Balance to Pay for this Installment</div>
+          <div class="fs-4 fw-bold text-primary">{{ formatAmount(selectedPlan.installment_amount_cents - (selectedPlan.paid_amount_cents || 0)) }}</div>
+        </div>
+
+        <!-- Customize Amount Toggle -->
+        <div class="mb-2 d-flex align-items-center justify-content-between">
+          <label class="form-label fw-semibold mb-0 small">Customize Amount</label>
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" role="switch"
+                   id="customAmountToggle" v-model="customizeAmount"
+                   @change="onToggleCustomize"
+                   style="width:2em; height:1.2em; cursor:pointer;" />
+          </div>
+        </div>
+
+        <!-- Custom amount input (visible when toggled) -->
+        <Transition name="slide-fade">
+          <div v-if="customizeAmount" class="mb-1">
+            <div class="d-flex align-items-center gap-2">
+              <div class="flex-grow-1">
+                <CFormInput
+                  id="customAmountInput"
+                  type="number"
+                  v-model.number="customAmountTzs"
+                  :min="1"
+                  :max="maxCustomAmountTzs"
+                  :placeholder="`Max: ${formatAmount(selectedPlan.installment_amount_cents - (selectedPlan.paid_amount_cents||0))}`"
+                  @input="validateCustomAmount"
+                  style="min-height:44px; font-size:1rem;"
+                />
+              </div>
+              <span class="text-muted small" style="white-space:nowrap;">TZS</span>
+            </div>
+            <!-- Real-time validation feedback -->
+            <div v-if="customAmountError" class="text-danger small mt-1">
+              <CIcon icon="cilWarning" class="me-1" size="sm" />{{ customAmountError }}
+            </div>
+            <div v-else-if="customAmountTzs > 0" class="text-success small mt-1">
+              ✔ Recording TZS {{ customAmountTzs.toLocaleString() }} ({{ pctOfExpected }}% of expected)
+            </div>
+            <div class="text-muted" style="font-size:.72rem; margin-top:3px;">
+              Max allowed (Remaining Balance): {{ formatAmount(selectedPlan.installment_amount_cents - (selectedPlan.paid_amount_cents || 0)) }}
+            </div>
+          </div>
+        </Transition>
+      </CModalBody>
+      <CModalFooter>
+        <CButton color="secondary" variant="outline" @click="closePayModal" style="min-height:44px;">
+          {{ t('common.close') }}
+        </CButton>
+        <CButton color="primary" :disabled="paying || (customizeAmount && !!customAmountError) || (customizeAmount && !customAmountTzs)"
+                 @click="confirmPayment" style="min-height:44px; min-width:110px;">
+          <CSpinner v-if="paying" size="sm" class="me-1" />
+          {{ customizeAmount ? `Pay TZS ${(customAmountTzs||0).toLocaleString()}` : t('common.confirm') }}
+        </CButton>
+      </CModalFooter>
+    </CModal>
+  </CContainer>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { CPagination, CPaginationItem } from '@coreui/vue'
+import { useInstallmentsStore } from '@/stores/installments'
+import BulkInstallmentModal from '@/components/BulkInstallmentModal.vue'
+
+const { t } = useI18n()
+const store = useInstallmentsStore()
+const installments = ref([])
+const loading = ref(false)
+const filters = ref({ status: '', search: '' })
+const page = ref(1)
+const meta = ref({ total: 0, last_page: 1, per_page: 20, current_page: 1 })
+const showBulkModal = ref(false)
+
+const visiblePages = computed(() => {
+  const total = meta.value.last_page
+  const cur   = meta.value.current_page
+  const delta = 2
+  const start = Math.max(1, cur - delta)
+  const end   = Math.min(total, cur + delta)
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+})
+const showPayModal = ref(false)
+const selectedPlan = ref(null)
+const paying = ref(false)
+const payError = ref('')
+const customizeAmount = ref(false)
+const customAmountTzs = ref('')
+const customAmountError = ref('')
+let debounceTimer = null
+
+// Computed helpers for the custom amount input
+const maxCustomAmountTzs = computed(() => {
+  if (!selectedPlan.value) return 0
+  const cents = (selectedPlan.value.installment_amount_cents || 0) - (selectedPlan.value.paid_amount_cents || 0)
+  return Math.max(0, Math.round(cents / 100))
+})
+const pctOfExpected = computed(() => {
+  if (!maxCustomAmountTzs.value || !customAmountTzs.value) return 0
+  return Math.round((customAmountTzs.value / maxCustomAmountTzs.value) * 100)
+})
+
+function formatAmount(cents) {
+  return 'TZS ' + Number((cents || 0) / 100).toLocaleString('sw-TZ', { minimumFractionDigits: 0 })
+}
+function progressPct(plan) {
+  if (!plan.installment_amount_cents) return 0
+  return Math.min(100, Math.round(((plan.paid_amount_cents || 0) / plan.installment_amount_cents) * 100))
+}
+
+async function load() {
+  loading.value = true
+  try {
+    const params = { page: page.value }
+    if (filters.value.status) params.status = filters.value.status
+    if (filters.value.search) params.search = filters.value.search
+    await store.fetchInstallments(params)
+    installments.value = store.installments
+    meta.value = store.pagination || meta.value
+  } catch (e) { console.error(e) } finally { loading.value = false }
+}
+
+function debouncedLoad() {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => { page.value = 1; load() }, 350)
+}
+
+function recordPayment(plan) {
+  selectedPlan.value = plan
+  payError.value = ''
+  customizeAmount.value = false
+  customAmountTzs.value = ''
+  customAmountError.value = ''
+  showPayModal.value = true
+}
+
+function closePayModal() {
+  showPayModal.value = false
+  customizeAmount.value = false
+  customAmountTzs.value = ''
+  customAmountError.value = ''
+  payError.value = ''
+}
+
+function onToggleCustomize() {
+  customAmountTzs.value = ''
+  customAmountError.value = ''
+}
+
+function validateCustomAmount() {
+  const max = maxCustomAmountTzs.value
+  const val = customAmountTzs.value
+  if (!val && val !== 0) {
+    customAmountError.value = 'Please enter an amount.'
+  } else if (val <= 0) {
+    customAmountError.value = 'Amount must be greater than 0.'
+  } else if (val > max) {
+    customAmountError.value = `Amount cannot exceed the expected ${formatAmount(selectedPlan.value?.installment_amount_cents)}.`
+  } else {
+    customAmountError.value = ''
+  }
+}
+
+async function confirmPayment() {
+  if (!selectedPlan.value) return
+
+  // Validate custom amount if toggle is on
+  if (customizeAmount.value) {
+    validateCustomAmount()
+    if (customAmountError.value || !customAmountTzs.value) return
+  }
+
+  paying.value = true
+  payError.value = ''
+  try {
+    const installNum = (selectedPlan.value.paid_installments || 0) + 1
+    const customCents = customizeAmount.value ? Math.round(customAmountTzs.value * 100) : null
+    await store.markPaid(selectedPlan.value.id, installNum, customCents)
+    closePayModal()
+    await load()
+  } catch (e) {
+    payError.value = e?.response?.data?.message || 'Imeshindwa'
+  } finally {
+    paying.value = false
+  }
+}
+
+function onBulkDone() {
+  showBulkModal.value = false
+  load()
+}
+
+onMounted(() => {
+  load()
+})
+</script>
+
+<style scoped>
+/* Smooth reveal animation for the custom amount input */
+.slide-fade-enter-active {
+  transition: all 0.2s ease-out;
+}
+.slide-fade-leave-active {
+  transition: all 0.15s ease-in;
+}
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+</style>

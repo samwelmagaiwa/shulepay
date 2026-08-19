@@ -1,0 +1,50 @@
+import { ref } from 'vue'
+import { defineStore } from 'pinia'
+import api from '@/services/api'
+
+export const useExpensesStore = defineStore('expenses', () => {
+  const expenses = ref([])
+  const categories = ref([])
+  const loading = ref(false)
+  const error = ref('')
+  const pagination = ref({})
+
+  async function fetchExpenses(params = {}) {
+    loading.value = true
+    error.value = ''
+    try {
+      const { data } = await api.get('/expenses', { params })
+      expenses.value = data.data || data
+      pagination.value = data.meta || {}
+    } catch (e) {
+      error.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia data'
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchCategories() {
+    try {
+      const { data } = await api.get('/expense-categories')
+      categories.value = data.data || data
+    } catch (e) {
+      categories.value = []
+    }
+  }
+
+  async function createExpense(payload) {
+    const { data } = await api.post('/expenses', payload)
+    return data
+  }
+
+  async function approveExpense(id) {
+    const { data } = await api.post(`/expenses/${id}/approve`)
+    return data
+  }
+
+  async function deleteExpense(id) {
+    await api.delete(`/expenses/${id}`)
+  }
+
+  return { expenses, categories, loading, error, pagination, fetchExpenses, fetchCategories, createExpense, approveExpense, deleteExpense }
+})
