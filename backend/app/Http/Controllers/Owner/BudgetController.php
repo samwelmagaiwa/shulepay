@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BudgetResource;
+use App\Models\AcademicYear;
 use App\Models\AuditLog;
 use App\Models\Budget;
 use App\Models\BudgetItem;
@@ -29,8 +30,12 @@ class BudgetController extends Controller {
         ]);
 
         return DB::transaction(function () use ($data) {
+            $schoolId = AcademicYear::findOrFail($data['academic_year_id'])->school_id
+                ?? auth()->user()->school_id;
+
             $budget = Budget::create([
                 'academic_year_id' => $data['academic_year_id'],
+                'school_id'        => $schoolId,
                 'name'             => $data['name'],
                 'status'           => 'draft',
             ]);

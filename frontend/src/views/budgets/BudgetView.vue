@@ -1,17 +1,6 @@
 <template>
   <CContainer fluid class="px-3 py-3">
-    <CRow class="mb-3 align-items-center">
-      <CCol>
-        <h4 class="fw-bold mb-0">{{ t('budgets.title') }}</h4>
-        <p class="text-muted mb-0 small">{{ t('budgets.subtitle') }}</p>
-      </CCol>
-      <CCol xs="auto">
-        <CButton color="primary" @click="openCreate" style="min-height:44px;">
-          <CIcon icon="cilPlus" class="me-1" /> {{ t('budgets.add') }}
-        </CButton>
-      </CCol>
-    </CRow>
-
+    <!-- Stat cards -->
     <CRow class="g-3 mb-3">
       <CCol xs="12" sm="4">
         <CCard class="border-top border-primary border-3">
@@ -46,15 +35,19 @@
 
     <template v-else>
       <!-- Desktop Table -->
-      <CCard class="d-none d-md-block">
-        <CCardBody class="p-0">
-          <CTable hover responsive class="mb-0">
+      <CCard class="d-none d-md-block" style="overflow:visible;">
+        <CCardBody class="p-0" style="overflow:visible;">
+          <CTable hover class="mb-0">
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell>{{ t('budgets.name') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('budgets.academicYear') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('common.status') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('common.actions') }}</CTableHeaderCell>
+                <CTableHeaderCell class="text-end">
+                  <CButton color="primary" size="sm" @click="openCreate">
+                    <CIcon icon="cilPlus" class="me-1" /> {{ t('budgets.add') }}
+                  </CButton>
+                </CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
@@ -65,24 +58,30 @@
                 <CTableDataCell class="fw-semibold">{{ b.name }}</CTableDataCell>
                 <CTableDataCell>{{ b.academic_year?.name || b.academic_year_id || '—' }}</CTableDataCell>
                 <CTableDataCell><CBadge :color="statusColor(b.status)">{{ statusLabel(b.status) }}</CBadge></CTableDataCell>
-                <CTableDataCell>
-                  <div class="d-flex gap-1 flex-wrap">
-                    <CButton size="sm" color="info" variant="outline" @click="openDetail(b)" style="min-height:36px;" title="Angalia">
-                      <CIcon icon="cilInfo" />
-                    </CButton>
-                    <CButton size="sm" color="primary" variant="outline" @click="openEdit(b)" style="min-height:36px;" title="Hariri">
-                      <CIcon icon="cilPencil" />
-                    </CButton>
-                    <CButton v-if="b.status === 'draft'" size="sm" color="success" variant="outline" @click="doActivate(b)" style="min-height:36px;" title="Washa">
-                      <CIcon icon="cilCheck" />
-                    </CButton>
-                    <CButton v-if="b.status === 'active'" size="sm" color="warning" variant="outline" @click="doClose(b)" style="min-height:36px;" title="Funga">
-                      <CIcon icon="cilLockLocked" />
-                    </CButton>
-                    <CButton size="sm" color="danger" variant="outline" @click="doDelete(b)" style="min-height:36px;" title="Futa">
-                      <CIcon icon="cilTrash" />
-                    </CButton>
-                  </div>
+                <CTableDataCell class="text-center" style="overflow:visible; position:relative;">
+                  <CDropdown alignment="end">
+                    <CDropdownToggle color="info" variant="outline" size="sm" :caret="false" style="min-height:36px; min-width:36px;">
+                      <CIcon icon="cilOptions" />
+                    </CDropdownToggle>
+                    <CDropdownMenu>
+                      <CDropdownItem @click="openDetail(b)" style="cursor:pointer;">
+                        <CIcon icon="cilInfo" class="me-2 text-info" /> {{ t('common.view') }}
+                      </CDropdownItem>
+                      <CDropdownItem @click="openEdit(b)" style="cursor:pointer;">
+                        <CIcon icon="cilPencil" class="me-2 text-primary" /> {{ t('common.edit') }}
+                      </CDropdownItem>
+                      <CDropdownItem v-if="b.status === 'draft'" @click="doActivate(b)" style="cursor:pointer;">
+                        <CIcon icon="cilCheck" class="me-2 text-success" /> {{ t('budgets.activate') }}
+                      </CDropdownItem>
+                      <CDropdownItem v-if="b.status === 'active'" @click="doClose(b)" style="cursor:pointer;">
+                        <CIcon icon="cilLockLocked" class="me-2 text-warning" /> {{ t('budgets.close') }}
+                      </CDropdownItem>
+                      <CDropdownDivider />
+                      <CDropdownItem @click="doDelete(b)" style="cursor:pointer;" class="text-danger">
+                        <CIcon icon="cilTrash" class="me-2" /> {{ t('common.delete') }}
+                      </CDropdownItem>
+                    </CDropdownMenu>
+                  </CDropdown>
                 </CTableDataCell>
               </CTableRow>
             </CTableBody>
@@ -92,6 +91,11 @@
 
       <!-- Mobile Cards -->
       <div class="d-md-none">
+        <div class="d-flex justify-content-end mb-2">
+          <CButton color="primary" size="sm" @click="openCreate" style="min-height:44px;">
+            <CIcon icon="cilPlus" class="me-1" /> {{ t('budgets.add') }}
+          </CButton>
+        </div>
         <div v-if="!store.budgets.length" class="text-center text-muted py-4">{{ t('budgets.noBudgets') }}</div>
         <CCard v-for="b in store.budgets" :key="b.id" class="mb-2">
           <CCardBody>
@@ -102,23 +106,29 @@
               </div>
               <CBadge :color="statusColor(b.status)">{{ statusLabel(b.status) }}</CBadge>
             </div>
-            <div class="d-flex gap-2 flex-wrap">
-              <CButton size="sm" color="info" variant="outline" @click="openDetail(b)" style="min-height:44px;">
-                <CIcon icon="cilInfo" />
-              </CButton>
-              <CButton size="sm" color="primary" variant="outline" @click="openEdit(b)" style="min-height:44px;">
-                <CIcon icon="cilPencil" />
-              </CButton>
-              <CButton v-if="b.status === 'draft'" size="sm" color="success" variant="outline" @click="doActivate(b)" style="min-height:44px;">
-                <CIcon icon="cilCheck" />
-              </CButton>
-              <CButton v-if="b.status === 'active'" size="sm" color="warning" variant="outline" @click="doClose(b)" style="min-height:44px;">
-                <CIcon icon="cilLockLocked" />
-              </CButton>
-              <CButton size="sm" color="danger" variant="outline" @click="doDelete(b)" style="min-height:44px;">
-                <CIcon icon="cilTrash" />
-              </CButton>
-            </div>
+            <CDropdown>
+              <CDropdownToggle color="info" variant="outline" size="sm" :caret="false" style="min-height:44px; min-width:44px;">
+                <CIcon icon="cilOptions" />
+              </CDropdownToggle>
+              <CDropdownMenu>
+                <CDropdownItem @click="openDetail(b)" style="cursor:pointer;">
+                  <CIcon icon="cilInfo" class="me-2 text-info" /> {{ t('common.view') }}
+                </CDropdownItem>
+                <CDropdownItem @click="openEdit(b)" style="cursor:pointer;">
+                  <CIcon icon="cilPencil" class="me-2 text-primary" /> {{ t('common.edit') }}
+                </CDropdownItem>
+                <CDropdownItem v-if="b.status === 'draft'" @click="doActivate(b)" style="cursor:pointer;">
+                  <CIcon icon="cilCheck" class="me-2 text-success" /> {{ t('budgets.activate') }}
+                </CDropdownItem>
+                <CDropdownItem v-if="b.status === 'active'" @click="doClose(b)" style="cursor:pointer;">
+                  <CIcon icon="cilLockLocked" class="me-2 text-warning" /> {{ t('budgets.close') }}
+                </CDropdownItem>
+                <CDropdownDivider />
+                <CDropdownItem @click="doDelete(b)" style="cursor:pointer;" class="text-danger">
+                  <CIcon icon="cilTrash" class="me-2" /> {{ t('common.delete') }}
+                </CDropdownItem>
+              </CDropdownMenu>
+            </CDropdown>
           </CCardBody>
         </CCard>
       </div>
@@ -191,6 +201,22 @@
         <CButton color="secondary" variant="outline" @click="showDetail=false">{{ t('common.close') }}</CButton>
       </CModalFooter>
     </CModal>
+    <!-- Delete Confirm Modal -->
+    <CModal :visible="!!confirmDelete" @close="confirmDelete=null" size="sm">
+      <CModalHeader style="border-bottom:2px solid #dc3545;">
+        <CModalTitle class="text-danger">{{ t('common.confirmDelete') }}</CModalTitle>
+      </CModalHeader>
+      <CModalBody>
+        <p>{{ t('common.confirmDeleteMsg', { name: confirmDelete?.name }) }}</p>
+      </CModalBody>
+      <CModalFooter class="border-top-0">
+        <CButton color="light" @click="confirmDelete=null" :disabled="deleting">{{ t('common.cancel') }}</CButton>
+        <CButton color="danger" @click="confirmDoDelete" :disabled="deleting">
+          <CSpinner v-if="deleting" size="sm" class="me-1" />{{ t('common.yesDelete') }}
+        </CButton>
+      </CModalFooter>
+    </CModal>
+
   </CContainer>
 </template>
 
@@ -203,7 +229,9 @@ import api from '@/services/api'
 const { t } = useI18n()
 const store = useBudgetsStore()
 
-const showForm   = ref(false)
+const showForm      = ref(false)
+const confirmDelete = ref(null)
+const deleting      = ref(false)
 const showDetail = ref(false)
 const editing    = ref(null)
 const detailItem = ref(null)
@@ -297,14 +325,23 @@ async function doClose(b) {
   }
 }
 
-async function doDelete(b) {
-  if (!confirm(`${t('common.delete')} "${b.name}"?`)) return
+function doDelete(b) {
+  confirmDelete.value = b
+}
+
+async function confirmDoDelete() {
+  if (!confirmDelete.value) return
+  const target = confirmDelete.value
+  confirmDelete.value = null
+  deleting.value = true
   try {
-    await store.deleteBudget(b.id)
+    await store.deleteBudget(target.id)
     successMsg.value = t('budgets.messages.deleted')
     await store.fetchBudgets()
   } catch (e) {
     store.error = e?.response?.data?.message || t('budgets.errors.delete')
+  } finally {
+    deleting.value = false
   }
 }
 

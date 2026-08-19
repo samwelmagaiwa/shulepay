@@ -14,7 +14,14 @@
 set -euo pipefail
 
 # ── Config ────────────────────────────────────────────────────────────────────
-APP_DIR="/opt/shulepay"
+# Detect if running locally (Windows/Git Bash) or on the server
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -d "/opt/shulepay" ]]; then
+  APP_DIR="/opt/shulepay"
+else
+  APP_DIR="$SCRIPT_DIR"
+fi
+
 COMPOSE_FILE="$APP_DIR/docker-compose.prod.yml"
 ENV_FILE="$APP_DIR/.env"
 BACKUP_TAG_FILE="$APP_DIR/.previous_tag"

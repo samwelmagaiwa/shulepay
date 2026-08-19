@@ -898,6 +898,8 @@ export default {
     allBudgets:  'Bajeti Zote',
     active:      'Zinazofanya Kazi',
     closed:      'Zilizofungwa',
+    activate:    'Washa',
+    close:       'Funga Bajeti',
     name:        'Jina',
     academicYear:'Mwaka wa Masomo',
     status:      'Hali',

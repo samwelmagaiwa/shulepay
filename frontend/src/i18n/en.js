@@ -898,6 +898,8 @@ export default {
     allBudgets:  'All Budgets',
     active:      'Active',
     closed:      'Closed',
+    activate:    'Activate',
+    close:       'Close Budget',
     name:        'Name',
     academicYear:'Academic Year',
     status:      'Status',
