@@ -186,6 +186,66 @@ cmd_migrate() {
   success "Migrations done"
 }
 
+cmd_release() {
+  # Must be run from the project root (where .git lives)
+  [[ -d ".git" ]] || error "Not a git repository. Run this from the project root."
+  command -v git &>/dev/null || error "git is not installed."
+
+  log "══════════════════════════════════════════"
+  log "  ShulePay — Release"
+  log "══════════════════════════════════════════"
+
+  # 1. Show what will be committed
+  log "Checking working tree..."
+  git status --short
+  echo ""
+
+  # 2. Stage all changes
+  git add -A
+  STAGED=$(git diff --cached --name-only)
+  if [[ -z "$STAGED" ]]; then
+    warn "Nothing to commit — working tree is clean."
+    exit 0
+  fi
+
+  log "Files staged for commit:"
+  echo "$STAGED" | sed 's/^/  → /'
+  echo ""
+
+  # 3. Ask for commit message (or accept from arg)
+  COMMIT_MSG="${2:-}"
+  if [[ -z "$COMMIT_MSG" ]]; then
+    echo -e "${CYAN}Enter commit message (or press Enter for auto-generated):${NC}"
+    read -r COMMIT_MSG
+  fi
+
+  # Auto-generate message from changed file count if empty
+  if [[ -z "$COMMIT_MSG" ]]; then
+    FILE_COUNT=$(echo "$STAGED" | wc -l | tr -d ' ')
+    BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    COMMIT_MSG="chore: update ${FILE_COUNT} file(s) on ${BRANCH} [$(date '+%Y-%m-%d %H:%M')]"
+  fi
+
+  # 4. Commit
+  log "Committing: \"$COMMIT_MSG\""
+  git commit -m "$COMMIT_MSG"
+  success "Committed"
+
+  # 5. Push
+  BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  log "Pushing to origin/$BRANCH..."
+  git push origin "$BRANCH"
+  success "Pushed to origin/$BRANCH"
+
+  # 6. Show latest commit
+  echo ""
+  echo -e "${CYAN}Latest commit:${NC}"
+  git log --oneline -1
+  echo ""
+  success "Release done! CI/CD pipeline will now trigger on GitHub. 🚀"
+  log "Watch it at: https://github.com/samwelmagaiwa/shulepay/actions"
+}
+
 cmd_shell() {
   local service=${2:-backend}
   case "$service" in
@@ -200,6 +260,7 @@ cmd_shell() {
 COMMAND=${1:-help}
 
 case "$COMMAND" in
+  release)  cmd_release "$@" ;;
   deploy)   cmd_deploy ;;
   rollback) cmd_rollback ;;
   status)   require_env; cmd_status ;;
@@ -211,6 +272,11 @@ case "$COMMAND" in
     echo ""
     echo -e "${CYAN}ShulePay Deploy Script${NC}"
     echo "───────────────────────────────────"
+    echo -e "${YELLOW}LOCAL COMMANDS${NC}"
+    echo "  ./deploy.sh release              Stage, commit & push to GitHub"
+    echo "  ./deploy.sh release \"my message\" Use a custom commit message"
+    echo ""
+    echo -e "${YELLOW}SERVER COMMANDS${NC}"
     echo "  ./deploy.sh deploy      Full deploy: pull → migrate → restart"
     echo "  ./deploy.sh rollback    Roll back to previous image"
     echo "  ./deploy.sh status      Show container status & resource usage"
