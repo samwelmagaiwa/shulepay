@@ -45,11 +45,12 @@ RUN chown -R www-data:www-data /var/www/html \
  && chmod -R 755 /var/www/html/storage \
  && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Copy supervisor config
+# Copy configs
 COPY docker/supervisord.conf /etc/supervisord.conf
+COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 
-# Expose PHP-FPM port
-EXPOSE 9000
+# Expose HTTP port
+EXPOSE 80
 
 USER www-data
 

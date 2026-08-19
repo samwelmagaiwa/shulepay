@@ -42,7 +42,7 @@ services:
     volumes:
       - backend_storage:/var/www/html/storage
     expose:
-      - "9000"
+      - "80"
 
   frontend:
     image: ${DOCKERHUB_USERNAME}/magreth-frontend:latest
@@ -52,7 +52,7 @@ services:
       - backend
     environment:
       FRONTEND_SERVER_NAME: magrethschools.sc.tz
-      BACKEND_UPSTREAM: http://backend:9000
+      BACKEND_UPSTREAM: http://backend:80
     ports:
       - "127.0.0.1:8080:80"
 
