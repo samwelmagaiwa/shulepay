@@ -202,6 +202,7 @@ jobs:
             mkdir -p /www/shulepay
             printf 'APP_ENV=production\n'                  > /www/shulepay/.env
             printf 'APP_DEBUG=false\n'                    >> /www/shulepay/.env
+            printf 'DB_CONNECTION=mysql\n'                >> /www/shulepay/.env
             printf 'APP_KEY=%s\n' "$APP_KEY"              >> /www/shulepay/.env
             printf 'APP_URL=https://magrethschools.sc.tz\n' >> /www/shulepay/.env
             printf 'DB_DATABASE=shulepay\n'               >> /www/shulepay/.env
