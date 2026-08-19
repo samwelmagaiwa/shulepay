@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Accountant;
 
 use App\Http\Controllers\Controller;
@@ -51,13 +52,13 @@ class RefundController extends Controller
 
         $refund = DB::transaction(function () use ($invoice, $data) {
             $refund = Refund::create([
-                'student_id'   => $invoice->student_id,
-                'invoice_id'   => $invoice->id,
+                'student_id' => $invoice->student_id,
+                'invoice_id' => $invoice->id,
                 'amount_cents' => $data['amount_cents'],
-                'reason'       => $data['reason'],
-                'method'       => $data['method'],
-                'refunded_by'  => auth()->id(),
-                'refunded_at'  => now(),
+                'reason' => $data['reason'],
+                'method' => $data['method'],
+                'refunded_by' => auth()->id(),
+                'refunded_at' => now(),
             ]);
 
             // Reduce the total paid by creating a negative-equivalent: sync invoice status
@@ -67,11 +68,11 @@ class RefundController extends Controller
 
             AuditLogger::log('refund_created', $refund, [
                 'before' => [],
-                'after'  => [
-                    'invoice_id'   => $invoice->id,
+                'after' => [
+                    'invoice_id' => $invoice->id,
                     'amount_cents' => $data['amount_cents'],
-                    'method'       => $data['method'],
-                    'reason'       => $data['reason'],
+                    'method' => $data['method'],
+                    'reason' => $data['reason'],
                 ],
             ]);
 
@@ -87,7 +88,7 @@ class RefundController extends Controller
                 app(SmsService::class)->notifyGuardians($refundStudent, $message);
             }
         } catch (\Throwable $e) {
-            Log::warning('[RefundController] Refund SMS failed: ' . $e->getMessage());
+            Log::warning('[RefundController] Refund SMS failed: '.$e->getMessage());
         }
 
         return response()->json(new RefundResource($refund), 201);
@@ -100,11 +101,11 @@ class RefundController extends Controller
 
             AuditLogger::log('refund_deleted', $refund, [
                 'before' => [
-                    'invoice_id'   => $refund->invoice_id,
+                    'invoice_id' => $refund->invoice_id,
                     'amount_cents' => $refund->amount_cents->cents(),
-                    'reason'       => $refund->reason,
+                    'reason' => $refund->reason,
                 ],
-                'after'  => [],
+                'after' => [],
             ]);
 
             $refund->delete();

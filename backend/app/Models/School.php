@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use App\Enums\SchoolLevel;
@@ -28,6 +29,7 @@ class School extends Model
         'settings',
         'is_active',
     ];
+
     protected $casts = [
         'is_active' => 'boolean',
         'settings' => 'array',
@@ -38,22 +40,27 @@ class School extends Model
     {
         return $this->hasMany(AcademicYear::class);
     }
+
     public function schoolClasses(): HasMany
     {
         return $this->hasMany(SchoolClass::class);
     }
+
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);
     }
+
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
     }
+
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
     }
+
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
@@ -67,6 +74,7 @@ class School extends Model
     public function currentTerm(): ?Term
     {
         $year = $this->currentAcademicYear();
+
         return $year ? $year->terms()->where('is_current', true)->first() : null;
     }
 
@@ -86,7 +94,7 @@ class School extends Model
             ->where('admission_number', 'like', "{$prefix}/{$code}/%/{$year}")
             ->max('admission_number');
 
-        if ($last && preg_match('/\/(\d+)\/' . $year . '$/', $last, $m)) {
+        if ($last && preg_match('/\/(\d+)\/'.$year.'$/', $last, $m)) {
             $seq = (int) $m[1] + 1;
         } else {
             $seq = 1;

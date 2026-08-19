@@ -2,10 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\State;
 use App\Models\Lga;
-use App\Models\Ward;
+use App\Models\Place;
+use App\Models\State;
 use App\Models\Village;
+use App\Models\Ward;
 use Illuminate\Database\Seeder;
 
 class TanzaniaLocationsFromCsvSeeder extends Seeder
@@ -26,7 +27,7 @@ class TanzaniaLocationsFromCsvSeeder extends Seeder
             return;
         }
 
-        foreach (glob($directory . DIRECTORY_SEPARATOR . '*.csv') as $path) {
+        foreach (glob($directory.DIRECTORY_SEPARATOR.'*.csv') as $path) {
             $this->importFile($path);
         }
     }
@@ -52,11 +53,11 @@ class TanzaniaLocationsFromCsvSeeder extends Seeder
             $row = array_pad($row, 8, null);
             [$region, $regionCode, $district, $districtCode, $ward, $wardCode, $street, $places] = $row;
 
-            $regionName   = $this->normalizeName($region);
+            $regionName = $this->normalizeName($region);
             $districtName = $this->normalizeName($district);
-            $wardName     = $this->normalizeName($ward);
-            $streetName   = $this->normalizeName($street);
-            $placeName    = $this->normalizeName($places);
+            $wardName = $this->normalizeName($ward);
+            $streetName = $this->normalizeName($street);
+            $placeName = $this->normalizeName($places);
 
             // We need at least region + district + ward to build the hierarchy
             if (! $regionName || ! $districtName || ! $wardName) {
@@ -65,19 +66,19 @@ class TanzaniaLocationsFromCsvSeeder extends Seeder
 
             // State/Region
             $state = State::firstOrCreate([
-                'name'         => $regionName,
+                'name' => $regionName,
                 'country_code' => 'TZ',
             ]);
 
             // District (LGA model is mapped to the "districts" table)
             $districtModel = Lga::firstOrCreate([
-                'name'     => $districtName,
+                'name' => $districtName,
                 'state_id' => $state->id,
             ]);
 
             // Ward
             $wardModel = Ward::firstOrCreate([
-                'name'   => $wardName,
+                'name' => $wardName,
                 'lga_id' => $districtModel->id,
             ]);
 
@@ -85,16 +86,16 @@ class TanzaniaLocationsFromCsvSeeder extends Seeder
             $villageModel = null;
             if ($streetName) {
                 $villageModel = Village::firstOrCreate([
-                    'name'    => $streetName,
+                    'name' => $streetName,
                     'ward_id' => $wardModel->id,
                 ]);
             }
 
             // Place (optional, tied to village)
             if ($placeName && $villageModel) {
-                \App\Models\Place::firstOrCreate([
+                Place::firstOrCreate([
                     'village_id' => $villageModel->id,
-                    'name'       => $placeName,
+                    'name' => $placeName,
                 ]);
             }
         }

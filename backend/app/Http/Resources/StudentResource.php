@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -29,7 +30,7 @@ class StudentResource extends JsonResource
             'ward' => $this->ward,
             'street' => $this->street,
             'religion' => $this->religion,
-            'photo' => $this->photo ? url('storage/' . $this->photo) : null,
+            'photo' => $this->photo ? url('storage/'.$this->photo) : null,
             'notes' => $this->notes,
 
             // Current enrollment fields (admission_number, class, school)
@@ -51,8 +52,7 @@ class StudentResource extends JsonResource
             // Full enrollment history (when loaded)
             'enrollments' => $this->whenLoaded(
                 'enrollments',
-                fn() =>
-                $this->enrollments->map(fn($e) => [
+                fn () => $this->enrollments->map(fn ($e) => [
                     'id' => $e->id,
                     'school' => $e->school?->name,
                     'school_class' => $e->schoolClass?->name,
@@ -64,8 +64,7 @@ class StudentResource extends JsonResource
 
             'guardians' => $this->whenLoaded(
                 'guardians',
-                fn() =>
-                $this->guardians->map(fn($g) => [
+                fn () => $this->guardians->map(fn ($g) => [
                     'id' => $g->id,
                     'full_name' => $g->fullName(),
                     'phone' => $g->phone,
@@ -76,13 +75,12 @@ class StudentResource extends JsonResource
 
             'invoices' => $this->whenLoaded(
                 'invoices',
-                fn() =>
-                InvoiceResource::collection($this->invoices)
+                fn () => InvoiceResource::collection($this->invoices)
             ),
 
             'outstanding_balance_cents' => $this->when(
                 $this->relationLoaded('invoices'),
-                fn() => $this->outstandingBalanceCents()
+                fn () => $this->outstandingBalanceCents()
             ),
 
             'created_at' => $this->created_at?->toISOString(),

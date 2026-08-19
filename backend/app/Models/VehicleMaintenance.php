@@ -6,7 +6,8 @@ use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class VehicleMaintenance extends Model {
+class VehicleMaintenance extends Model
+{
     protected $table = 'vehicle_maintenance';
 
     protected $fillable = [
@@ -15,17 +16,19 @@ class VehicleMaintenance extends Model {
     ];
 
     protected $casts = [
-        'cost_cents'       => MoneyCast::class,
-        'service_date'     => 'date',
+        'cost_cents' => MoneyCast::class,
+        'service_date' => 'date',
         'next_service_date' => 'date',
-        'odometer_km'      => 'integer',
+        'odometer_km' => 'integer',
     ];
 
-    public function vehicle(): BelongsTo {
+    public function vehicle(): BelongsTo
+    {
         return $this->belongsTo(Vehicle::class);
     }
 
-    public function recorder(): BelongsTo {
+    public function recorder(): BelongsTo
+    {
         return $this->belongsTo(User::class, 'recorded_by');
     }
 }

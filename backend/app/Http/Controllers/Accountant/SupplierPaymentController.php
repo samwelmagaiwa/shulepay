@@ -10,8 +10,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class SupplierPaymentController extends Controller {
-    public function index(Request $request): JsonResponse {
+class SupplierPaymentController extends Controller
+{
+    public function index(Request $request): JsonResponse
+    {
         $query = SupplierPayment::with(['supplier', 'recorder'])->latest('payment_date');
 
         if ($request->filled('supplier_id')) {
@@ -21,14 +23,15 @@ class SupplierPaymentController extends Controller {
         return response()->json($query->paginate(50));
     }
 
-    public function store(Request $request): JsonResponse {
+    public function store(Request $request): JsonResponse
+    {
         $data = $request->validate([
-            'supplier_id'  => 'required|exists:suppliers,id',
+            'supplier_id' => 'required|exists:suppliers,id',
             'amount_cents' => 'required|integer|min:1',
-            'method'       => 'required|in:cash,bank,mpesa,cheque',
-            'reference'    => 'nullable|string|max:255',
+            'method' => 'required|in:cash,bank,mpesa,cheque',
+            'reference' => 'nullable|string|max:255',
             'payment_date' => 'required|date',
-            'notes'        => 'nullable|string',
+            'notes' => 'nullable|string',
         ]);
 
         return DB::transaction(function () use ($data) {
@@ -48,11 +51,12 @@ class SupplierPaymentController extends Controller {
         });
     }
 
-    public function destroy(SupplierPayment $supplierPayment): JsonResponse {
+    public function destroy(SupplierPayment $supplierPayment): JsonResponse
+    {
         DB::transaction(function () use ($supplierPayment) {
             // Reverse the balance reduction
             $supplier = Supplier::lockForUpdate()->findOrFail($supplierPayment->supplier_id);
-            $current  = (int) $supplier->getRawOriginal('balance_cents');
+            $current = (int) $supplier->getRawOriginal('balance_cents');
             $supplier->update(['balance_cents' => $current + (int) $supplierPayment->getRawOriginal('amount_cents')]);
 
             AuditLog::record('supplier_payment.deleted', $supplierPayment, $supplierPayment->toArray(), []);

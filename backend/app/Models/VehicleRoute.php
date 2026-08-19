@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class VehicleRoute extends Model {
+class VehicleRoute extends Model
+{
     use BelongsToSchool;
 
     protected $table = 'vehicle_routes';
@@ -19,17 +20,19 @@ class VehicleRoute extends Model {
     ];
 
     protected $casts = [
-        'distance_km'       => 'decimal:2',
+        'distance_km' => 'decimal:2',
         'estimated_minutes' => 'integer',
         'monthly_fare_cents' => MoneyCast::class,
-        'is_active'         => 'boolean',
+        'is_active' => 'boolean',
     ];
 
-    public function school(): BelongsTo {
+    public function school(): BelongsTo
+    {
         return $this->belongsTo(School::class);
     }
 
-    public function subscriptions(): HasMany {
+    public function subscriptions(): HasMany
+    {
         return $this->hasMany(StudentTransportSubscription::class, 'route_id');
     }
 }

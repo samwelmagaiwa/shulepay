@@ -10,24 +10,27 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-class SupplierController extends Controller {
-    public function index(Request $request): AnonymousResourceCollection {
+class SupplierController extends Controller
+{
+    public function index(Request $request): AnonymousResourceCollection
+    {
         $query = Supplier::with('school')->latest();
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%'.$request->search.'%');
         }
 
         return SupplierResource::collection($query->paginate(20));
     }
 
-    public function store(Request $request): JsonResponse {
+    public function store(Request $request): JsonResponse
+    {
         $data = $request->validate([
-            'name'         => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'contact_name' => 'nullable|string|max:255',
-            'phone'        => 'nullable|string|max:50',
-            'email'        => 'nullable|email|max:255',
-            'address'      => 'nullable|string',
+            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:255',
+            'address' => 'nullable|string',
         ]);
 
         $supplier = Supplier::create($data);
@@ -36,17 +39,19 @@ class SupplierController extends Controller {
         return response()->json(new SupplierResource($supplier->load('school')), 201);
     }
 
-    public function show(Supplier $supplier): JsonResponse {
+    public function show(Supplier $supplier): JsonResponse
+    {
         return response()->json(new SupplierResource($supplier->load('school')));
     }
 
-    public function update(Request $request, Supplier $supplier): JsonResponse {
+    public function update(Request $request, Supplier $supplier): JsonResponse
+    {
         $data = $request->validate([
-            'name'         => 'sometimes|required|string|max:255',
+            'name' => 'sometimes|required|string|max:255',
             'contact_name' => 'nullable|string|max:255',
-            'phone'        => 'nullable|string|max:50',
-            'email'        => 'nullable|email|max:255',
-            'address'      => 'nullable|string',
+            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:255',
+            'address' => 'nullable|string',
         ]);
 
         $before = $supplier->toArray();
@@ -56,7 +61,8 @@ class SupplierController extends Controller {
         return response()->json(new SupplierResource($supplier->load('school')));
     }
 
-    public function destroy(Supplier $supplier): JsonResponse {
+    public function destroy(Supplier $supplier): JsonResponse
+    {
         AuditLog::record('supplier.deleted', $supplier, $supplier->toArray(), []);
         $supplier->delete();
 

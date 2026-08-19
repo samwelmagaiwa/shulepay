@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Accountant;
 
 use App\Http\Controllers\Controller;
@@ -17,10 +18,7 @@ use Illuminate\Support\Facades\DB;
 
 class StudentController extends Controller
 {
-
-    public function __construct(private StudentRegistrationService $registrationService)
-    {
-    }
+    public function __construct(private StudentRegistrationService $registrationService) {}
 
     public function register(RegisterStudentRequest $request): JsonResponse
     {
@@ -28,6 +26,7 @@ class StudentController extends Controller
             $request->validated(),
             $request->file('photo')
         );
+
         return response()->json(new StudentResource($student), 201);
     }
 
@@ -35,8 +34,10 @@ class StudentController extends Controller
     {
         $request->validate(['school_id' => 'required|exists:schools,id']);
         $school = School::findOrFail($request->school_id);
+
         return response()->json(['admission_number' => $school->nextAdmissionNumber()]);
     }
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = Student::query();
@@ -46,9 +47,9 @@ class StudentController extends Controller
         $schoolId = $userSchoolId ?? ($request->filled('school_id') ? $request->integer('school_id') : null);
 
         if ($schoolId) {
-            $query->whereHas('enrollments', fn($q) => $q->where('school_id', $schoolId)->where('status', 'active'));
+            $query->whereHas('enrollments', fn ($q) => $q->where('school_id', $schoolId)->where('status', 'active'));
         } else {
-            $query->whereHas('enrollments', fn($q) => $q->where('status', 'active'));
+            $query->whereHas('enrollments', fn ($q) => $q->where('status', 'active'));
         }
 
         $query->with([
@@ -60,17 +61,17 @@ class StudentController extends Controller
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(
-                fn($q) => $q
+                fn ($q) => $q
                     ->where('first_name', 'like', "%{$s}%")
                     ->orWhere('last_name', 'like', "%{$s}%")
-                    ->orWhereHas('enrollments', fn($eq) => $eq->where('admission_number', 'like', "%{$s}%"))
+                    ->orWhereHas('enrollments', fn ($eq) => $eq->where('admission_number', 'like', "%{$s}%"))
             );
         }
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
         if ($request->filled('school_class_id')) {
-            $query->whereHas('enrollments', fn($q) => $q->where('school_class_id', $request->school_class_id));
+            $query->whereHas('enrollments', fn ($q) => $q->where('school_class_id', $request->school_class_id));
         }
 
         // has_debt=1 → only students with unpaid balance; has_debt=0 → only fully paid
@@ -80,18 +81,19 @@ class StudentController extends Controller
                 // has at least one invoice where balance > 0
                 $query->whereHas('invoices', function ($q) use ($schoolIdForDebt) {
                     $q->where('school_id', $schoolIdForDebt)
-                      ->whereIn('status', ['unpaid', 'partial']);
+                        ->whereIn('status', ['unpaid', 'partial']);
                 });
             } else {
                 // no unpaid/partial invoices
                 $query->whereDoesntHave('invoices', function ($q) use ($schoolIdForDebt) {
                     $q->where('school_id', $schoolIdForDebt)
-                      ->whereIn('status', ['unpaid', 'partial']);
+                        ->whereIn('status', ['unpaid', 'partial']);
                 });
             }
         }
 
         $perPage = min((int) $request->input('per_page', 20), 100);
+
         return StudentResource::collection($query->orderBy('last_name')->paginate($perPage));
     }
 
@@ -141,6 +143,7 @@ class StudentController extends Controller
             'invoices.payments',
             'invoices.term',
         ]);
+
         return new StudentResource($student);
     }
 
@@ -163,10 +166,10 @@ class StudentController extends Controller
         ];
         $studentData = array_filter(
             array_intersect_key($validated, array_flip($fields)),
-            fn($v) => !is_null($v)
+            fn ($v) => ! is_null($v)
         );
 
-        if (!empty($studentData)) {
+        if (! empty($studentData)) {
             $student->update($studentData);
         }
 
@@ -176,6 +179,7 @@ class StudentController extends Controller
         }
 
         AuditLog::record('student_updated', $student, $before, $student->fresh()->toArray());
+
         return new StudentResource($student->load(['currentEnrollment.schoolClass', 'currentEnrollment.school']));
     }
 
@@ -183,6 +187,7 @@ class StudentController extends Controller
     {
         AuditLog::record('student_deleted', $student, $student->toArray(), []);
         $student->delete();
+
         return response()->json(['message' => 'Mwanafunzi amefutwa.']);
     }
 }

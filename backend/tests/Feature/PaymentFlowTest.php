@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests\Feature;
 
 use App\Models\AcademicYear;
@@ -21,7 +22,9 @@ class PaymentFlowTest extends TestCase
     use RefreshDatabase;
 
     private User $accountant;
+
     private Student $student;
+
     private Invoice $invoice;
 
     protected function setUp(): void

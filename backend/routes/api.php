@@ -1,46 +1,50 @@
 <?php
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\Superadmin\RolePermissionController;
-use App\Http\Controllers\Superadmin\SuperadminUserController;
-use App\Http\Controllers\Transport\TransportController;
-use App\Http\Controllers\Inventory\InventoryController;
-use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Auth\TwoFactorController;
-use App\Http\Controllers\Reports\ReportController;
+
 use App\Http\Controllers\Accountant\AssetController;
 use App\Http\Controllers\Accountant\BulkImportController;
+use App\Http\Controllers\Accountant\ClearanceController;
+use App\Http\Controllers\Accountant\DiscountController;
 use App\Http\Controllers\Accountant\EmployeeController;
 use App\Http\Controllers\Accountant\ExpenseCategoryController;
 use App\Http\Controllers\Accountant\ExpenseController;
-use App\Http\Controllers\Accountant\PayrollController;
-use App\Http\Controllers\Accountant\PettyCashController;
-use App\Http\Controllers\Accountant\SupplierController;
-use App\Http\Controllers\Accountant\SupplierPaymentController;
-use App\Http\Controllers\Owner\BudgetController;
-use App\Http\Controllers\Accountant\ClearanceController;
-use App\Http\Controllers\Accountant\DiscountController;
 use App\Http\Controllers\Accountant\FeeStructureController;
 use App\Http\Controllers\Accountant\GuardianController;
 use App\Http\Controllers\Accountant\InstallmentController;
 use App\Http\Controllers\Accountant\InvoiceController;
 use App\Http\Controllers\Accountant\PaymentController;
+use App\Http\Controllers\Accountant\PayrollController;
+use App\Http\Controllers\Accountant\PettyCashController;
 use App\Http\Controllers\Accountant\ReceiptController;
 use App\Http\Controllers\Accountant\RefundController;
 use App\Http\Controllers\Accountant\RolloverController;
 use App\Http\Controllers\Accountant\StudentController;
+use App\Http\Controllers\Accountant\SupplierController;
+use App\Http\Controllers\Accountant\SupplierPaymentController;
+use App\Http\Controllers\Api\AttendanceController;
+use App\Http\Controllers\Api\ExamController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\SubjectController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\TwoFactorController;
+use App\Http\Controllers\Inventory\InventoryController;
+use App\Http\Controllers\Owner\BudgetController;
 use App\Http\Controllers\Owner\DashboardController;
 use App\Http\Controllers\Owner\UserController;
 use App\Http\Controllers\ParentPortal\ChildController;
 use App\Http\Controllers\ParentPortal\StatementController;
+use App\Http\Controllers\Reports\ReportController;
 use App\Http\Controllers\Shared\AcademicYearController;
 use App\Http\Controllers\Shared\AuditLogController;
-use App\Http\Controllers\Shared\LoginHistoryController;
 use App\Http\Controllers\Shared\LocationController;
+use App\Http\Controllers\Shared\LoginHistoryController;
 use App\Http\Controllers\Shared\SchoolClassController;
 use App\Http\Controllers\Shared\SchoolController;
 use App\Http\Controllers\Shared\TermController;
 use App\Http\Controllers\Shared\UserSettingsController;
 use App\Http\Controllers\Sms\SmsController;
+use App\Http\Controllers\Superadmin\RolePermissionController;
+use App\Http\Controllers\Superadmin\SuperadminUserController;
+use App\Http\Controllers\Transport\TransportController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public ────────────────────────────────────────────────────
@@ -73,14 +77,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Teaching staff — attendance + notifications
     Route::middleware('role:teacher|head_teacher|headmaster|academic_teacher')->group(function () {
-        Route::get('attendance/register', [\App\Http\Controllers\Api\AttendanceController::class, 'getRegister']);
-        Route::post('attendance/bulk-mark', [\App\Http\Controllers\Api\AttendanceController::class, 'bulkMark']);
-        Route::get('attendance/summary', [\App\Http\Controllers\Api\AttendanceController::class, 'summary']);
-        Route::get('attendance/student-report', [\App\Http\Controllers\Api\AttendanceController::class, 'studentReport']);
-        Route::get('notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
-        Route::post('notifications/mark-all-read', [\App\Http\Controllers\Api\NotificationController::class, 'markAllRead']);
-        Route::get('notifications/unread-count', [\App\Http\Controllers\Api\NotificationController::class, 'unreadCount']);
-        Route::post('notifications/{notification}/read', [\App\Http\Controllers\Api\NotificationController::class, 'markRead']);
+        Route::get('attendance/register', [AttendanceController::class, 'getRegister']);
+        Route::post('attendance/bulk-mark', [AttendanceController::class, 'bulkMark']);
+        Route::get('attendance/summary', [AttendanceController::class, 'summary']);
+        Route::get('attendance/student-report', [AttendanceController::class, 'studentReport']);
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
+        Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead']);
     });
 
     // Accountant + Owner + Superadmin
@@ -185,15 +189,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('sms/logs', [SmsController::class, 'logs']);
 
         // ── Phase 5: Academics & Missing Modules ──────────────────
-        Route::apiResource('subjects', \App\Http\Controllers\Api\SubjectController::class);
-        Route::apiResource('exams', \App\Http\Controllers\Api\ExamController::class);
-        Route::apiResource('attendances', \App\Http\Controllers\Api\AttendanceController::class);
+        Route::apiResource('subjects', SubjectController::class);
+        Route::apiResource('exams', ExamController::class);
+        Route::apiResource('attendances', AttendanceController::class);
 
         // Attendance register (new bulk endpoints)
-        Route::get('attendance/register', [\App\Http\Controllers\Api\AttendanceController::class, 'getRegister']);
-        Route::post('attendance/bulk-mark', [\App\Http\Controllers\Api\AttendanceController::class, 'bulkMark']);
-        Route::get('attendance/summary', [\App\Http\Controllers\Api\AttendanceController::class, 'summary']);
-        Route::get('attendance/student-report', [\App\Http\Controllers\Api\AttendanceController::class, 'studentReport']);
+        Route::get('attendance/register', [AttendanceController::class, 'getRegister']);
+        Route::post('attendance/bulk-mark', [AttendanceController::class, 'bulkMark']);
+        Route::get('attendance/summary', [AttendanceController::class, 'summary']);
+        Route::get('attendance/student-report', [AttendanceController::class, 'studentReport']);
 
         // Notifications
         Route::get('notifications', [NotificationController::class, 'index']);

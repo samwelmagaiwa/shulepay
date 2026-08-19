@@ -20,10 +20,10 @@ class SmsTemplates
     {
         $invoice = $payment->invoice;
         $student = $invoice->student;
-        $amount  = number_format($payment->amount_cents->cents() / 100, 0, '.', ',');
+        $amount = number_format($payment->amount_cents->cents() / 100, 0, '.', ',');
         $balance = number_format($invoice->balanceDueCents() / 100, 0, '.', ',');
-        $method  = strtoupper($payment->method instanceof \UnitEnum ? $payment->method->value : (string) $payment->method);
-        $name    = $student->first_name;
+        $method = strtoupper($payment->method instanceof \UnitEnum ? $payment->method->value : (string) $payment->method);
+        $name = $student->first_name;
 
         if ($invoice->balanceDueCents() <= 0) {
             return "ShulePay: Malipo ya TZS {$amount} ({$method}) kwa {$name} yamepokewa. Ada IMELIPWA KIKAMILIFU. Asante!";
@@ -41,10 +41,10 @@ class SmsTemplates
     public static function invoiceIssued(Invoice $invoice): string
     {
         $student = $invoice->student;
-        $total   = number_format($invoice->total_amount_cents->cents() / 100, 0, '.', ',');
-        $due     = $invoice->due_date ? Carbon::parse($invoice->due_date)->format('d/m/Y') : '—';
-        $name    = $student->first_name;
-        $term    = $invoice->term?->name ?? '';
+        $total = number_format($invoice->total_amount_cents->cents() / 100, 0, '.', ',');
+        $due = $invoice->due_date ? Carbon::parse($invoice->due_date)->format('d/m/Y') : '—';
+        $name = $student->first_name;
+        $term = $invoice->term?->name ?? '';
 
         return "ShulePay: Ankara ya {$term} imetolewa kwa {$name}. Jumla: TZS {$total}. Mwisho kulipa: {$due}. Tafadhali lipa mapema.";
     }
@@ -58,13 +58,13 @@ class SmsTemplates
     {
         $student = $invoice->student;
         $balance = number_format($invoice->balanceDueCents() / 100, 0, '.', ',');
-        $due     = $invoice->due_date ? Carbon::parse($invoice->due_date)->format('d/m/Y') : '—';
-        $name    = $student->first_name;
+        $due = $invoice->due_date ? Carbon::parse($invoice->due_date)->format('d/m/Y') : '—';
+        $name = $student->first_name;
 
         return match ($urgency) {
             'upcoming' => "ShulePay: Kumbusho - Ada ya {$name} ya TZS {$balance} inaisha {$due}. Tafadhali lipa haraka. Msaada: shule yako.",
-            'overdue'  => "ShulePay: MUHIMU - Ada ya {$name} ya TZS {$balance} imepita tarehe. Tafadhali lipa leo ili kuepuka adhabu. Wasiliana na shule.",
-            default    => "ShulePay: Ada ya {$name} ya TZS {$balance} bado haijalipiwa. Mwisho: {$due}. Tafadhali lipa mapema. Asante.",
+            'overdue' => "ShulePay: MUHIMU - Ada ya {$name} ya TZS {$balance} imepita tarehe. Tafadhali lipa leo ili kuepuka adhabu. Wasiliana na shule.",
+            default => "ShulePay: Ada ya {$name} ya TZS {$balance} bado haijalipiwa. Mwisho: {$due}. Tafadhali lipa mapema. Asante.",
         };
     }
 
@@ -76,7 +76,7 @@ class SmsTemplates
     public static function bulkReminder(string $template, Student $student, Invoice $invoice): string
     {
         $balance = number_format($invoice->balanceDueCents() / 100, 0, '.', ',');
-        $due     = $invoice->due_date ? Carbon::parse($invoice->due_date)->format('d/m/Y') : '—';
+        $due = $invoice->due_date ? Carbon::parse($invoice->due_date)->format('d/m/Y') : '—';
 
         return str_replace(
             ['[Jina]', '[Kiasi]', '[Tarehe]', '[Shule]'],
@@ -91,9 +91,9 @@ class SmsTemplates
     {
         $invoice = $refund->invoice;
         $student = $invoice?->student;
-        $amount  = number_format($refund->amount_cents->cents() / 100, 0, '.', ',');
-        $name    = $student?->first_name ?? 'Mwanafunzi';
-        $method  = strtoupper($refund->method ?? 'cash');
+        $amount = number_format($refund->amount_cents->cents() / 100, 0, '.', ',');
+        $name = $student?->first_name ?? 'Mwanafunzi';
+        $method = strtoupper($refund->method ?? 'cash');
 
         return "ShulePay: Marejesho ya TZS {$amount} ({$method}) kwa {$name} yamefanyika. Wasiliana na shule kwa maswali.";
     }
@@ -103,8 +103,8 @@ class SmsTemplates
     public static function installmentPlanCreated(Invoice $invoice, int $totalInstallments, int $amountPerInstallmentCents): string
     {
         $student = $invoice->student;
-        $amount  = number_format($amountPerInstallmentCents / 100, 0, '.', ',');
-        $name    = $student->first_name;
+        $amount = number_format($amountPerInstallmentCents / 100, 0, '.', ',');
+        $name = $student->first_name;
 
         return "ShulePay: Mpango wa malipo {$totalInstallments} kwa {$name} umewekwa. Kila mkopo: TZS {$amount}. Lipa kwa wakati. Asante!";
     }
@@ -114,7 +114,7 @@ class SmsTemplates
     public static function installmentPaid(int $installmentNumber, int $totalInstallments, string $studentName, int $remainingCents): string
     {
         $remaining = number_format($remainingCents / 100, 0, '.', ',');
-        $left      = $totalInstallments - $installmentNumber;
+        $left = $totalInstallments - $installmentNumber;
 
         if ($left === 0) {
             return "ShulePay: Hongera! {$studentName} amelipa mkopo wa mwisho. Ada IMELIPWA KIKAMILIFU. Asante sana!";
@@ -127,7 +127,7 @@ class SmsTemplates
 
     public static function clearanceIssued(Student $student, string $academicYear): string
     {
-        $name = $student->first_name . ' ' . $student->last_name;
+        $name = $student->first_name.' '.$student->last_name;
 
         return "ShulePay: Hati ya kufuzu (clearance) ya {$name} mwaka {$academicYear} imetolewa. Ada zote zimelipwa. Asante!";
     }
@@ -143,8 +143,8 @@ class SmsTemplates
 
     public static function studentWelcome(Student $student, string $schoolName, string $className): string
     {
-        $name = $student->first_name . ' ' . $student->last_name;
-        $adm  = $student->currentEnrollment?->admission_number ?? '';
+        $name = $student->first_name.' '.$student->last_name;
+        $adm = $student->currentEnrollment?->admission_number ?? '';
 
         return "ShulePay: Karibu {$name} ({$adm}) amesajiliwa katika {$schoolName} - {$className}. Tunafurahi kuwa nawe. Shule inakusubiri!";
     }
@@ -173,6 +173,7 @@ class SmsTemplates
     public static function absenceAlert(string $studentName, string $className, string $date, ?string $admissionNumber = null): string
     {
         $adm = $admissionNumber ? " ({$admissionNumber})" : '';
+
         return "ShulePay: Taarifa ya Kutokuhudhuria - {$studentName}{$adm} wa {$className} HAKUHUDHURIA tarehe {$date}. Wasiliana na mzazi/mlezi.";
     }
 
@@ -181,7 +182,7 @@ class SmsTemplates
     public static function weeklySummary(string $schoolName, int $collectionsCents, int $pendingCents, int $invoiceCount): string
     {
         $collected = number_format($collectionsCents / 100, 0, '.', ',');
-        $pending   = number_format($pendingCents / 100, 0, '.', ',');
+        $pending = number_format($pendingCents / 100, 0, '.', ',');
 
         return "ShulePay Wiki: {$schoolName} - Makusanyo: TZS {$collected} | Madeni: TZS {$pending} | Ankara: {$invoiceCount}. Ripoti kamili: mfumo.";
     }
@@ -215,7 +216,7 @@ class SmsTemplates
             return $message;
         }
 
-        return substr($message, 0, $maxLength - 3) . '...';
+        return substr($message, 0, $maxLength - 3).'...';
     }
 
     /**
@@ -228,8 +229,8 @@ class SmsTemplates
             return [$message];
         }
 
-        $parts   = [];
-        $words   = explode(' ', $message);
+        $parts = [];
+        $words = explode(' ', $message);
         $current = '';
 
         foreach ($words as $word) {
@@ -252,7 +253,7 @@ class SmsTemplates
         if (count($parts) > 1) {
             $total = count($parts);
             $parts = array_values(array_map(
-                fn ($p, $i) => '(' . ($i + 1) . "/{$total}) {$p}",
+                fn ($p, $i) => '('.($i + 1)."/{$total}) {$p}",
                 $parts,
                 array_keys($parts)
             ));

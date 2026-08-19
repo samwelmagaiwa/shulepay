@@ -15,22 +15,23 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class AttendanceController extends Controller {
-
+class AttendanceController extends Controller
+{
     /**
      * Get the attendance register for a class on a given date.
      * Returns all active enrolled students with their attendance status if already marked.
      */
-    public function getRegister(Request $request) {
+    public function getRegister(Request $request)
+    {
         $request->validate([
             'school_class_id' => 'required|exists:school_classes,id',
-            'date'            => 'nullable|date',
+            'date' => 'nullable|date',
         ]);
 
-        $classId  = $request->school_class_id;
-        $date     = $request->date ?? now()->toDateString();
+        $classId = $request->school_class_id;
+        $date = $request->date ?? now()->toDateString();
 
-        $class    = SchoolClass::findOrFail($classId);
+        $class = SchoolClass::findOrFail($classId);
         $schoolId = $class->school_id;
 
         // Get active enrollments for this class
@@ -47,22 +48,22 @@ class AttendanceController extends Controller {
             ->keyBy('student_id');
 
         $students = $enrollments->map(function ($enrollment) use ($existing) {
-            $student    = $enrollment->student;
+            $student = $enrollment->student;
             $attendance = $existing->get($student->id);
 
             return [
-                'student_id'       => $student->id,
-                'full_name'        => $student->fullName(),
+                'student_id' => $student->id,
+                'full_name' => $student->fullName(),
                 'admission_number' => $enrollment->admission_number,
-                'status'           => $attendance?->status ?? null,
-                'remarks'          => $attendance?->remarks ?? null,
-                'attendance_id'    => $attendance?->id ?? null,
+                'status' => $attendance?->status ?? null,
+                'remarks' => $attendance?->remarks ?? null,
+                'attendance_id' => $attendance?->id ?? null,
             ];
         })->sortBy('full_name')->values();
 
         return response()->json([
-            'class'    => ['id' => $class->id, 'name' => $class->name],
-            'date'     => $date,
+            'class' => ['id' => $class->id, 'name' => $class->name],
+            'date' => $date,
             'students' => $students,
         ]);
     }
@@ -70,21 +71,22 @@ class AttendanceController extends Controller {
     /**
      * Bulk mark/update attendance for a class on a date.
      */
-    public function bulkMark(Request $request) {
+    public function bulkMark(Request $request)
+    {
         $request->validate([
             'school_class_id' => 'required|exists:school_classes,id',
-            'date'            => 'required|date',
-            'records'         => 'required|array|min:1',
+            'date' => 'required|date',
+            'records' => 'required|array|min:1',
             'records.*.student_id' => 'required|exists:students,id',
-            'records.*.status'     => 'required|in:present,absent,late',
-            'records.*.remarks'    => 'nullable|string',
+            'records.*.status' => 'required|in:present,absent,late',
+            'records.*.remarks' => 'nullable|string',
         ]);
 
-        $classId  = $request->school_class_id;
-        $date     = $request->date;
-        $records  = $request->records;
+        $classId = $request->school_class_id;
+        $date = $request->date;
+        $records = $request->records;
         $schoolId = SchoolClass::findOrFail($classId)->school_id;
-        $saved    = [];
+        $saved = [];
 
         DB::transaction(function () use ($records, $classId, $schoolId, $date, &$saved) {
             foreach ($records as $rec) {
@@ -92,8 +94,8 @@ class AttendanceController extends Controller {
                     ['date' => $date, 'student_id' => $rec['student_id'], 'school_class_id' => $classId],
                     [
                         'school_id' => $schoolId,
-                        'status'    => $rec['status'],
-                        'remarks'   => $rec['remarks'] ?? null,
+                        'status' => $rec['status'],
+                        'remarks' => $rec['remarks'] ?? null,
                     ]
                 );
                 $saved[] = $att;
@@ -103,13 +105,14 @@ class AttendanceController extends Controller {
         // Notify owners about absent students (in-app + SMS)
         $absentRecords = collect($records)->where('status', 'absent');
         if ($absentRecords->count() > 0) {
-            $class     = SchoolClass::find($classId);
+            $class = SchoolClass::find($classId);
             $className = $class?->name ?? 'Darasa';
 
             $absentStudents = $absentRecords->map(function ($r) {
-                $student    = Student::with('currentEnrollment')->find($r['student_id']);
+                $student = Student::with('currentEnrollment')->find($r['student_id']);
+
                 return $student ? [
-                    'name'             => $student->fullName(),
+                    'name' => $student->fullName(),
                     'admission_number' => $student->currentEnrollment?->admission_number,
                 ] : null;
             })->filter()->values();
@@ -118,22 +121,22 @@ class AttendanceController extends Controller {
 
             // In-app notification
             SchoolNotification::create([
-                'school_id'      => $schoolId,
-                'type'           => 'absence_alert',
-                'title'          => "Wanafunzi {$absentRecords->count()} hawakuhudhuria - {$className}",
-                'body'           => "Tarehe {$date}: {$absentNames}",
-                'data'           => [
-                    'class_id'     => $classId,
-                    'date'         => $date,
+                'school_id' => $schoolId,
+                'type' => 'absence_alert',
+                'title' => "Wanafunzi {$absentRecords->count()} hawakuhudhuria - {$className}",
+                'body' => "Tarehe {$date}: {$absentNames}",
+                'data' => [
+                    'class_id' => $classId,
+                    'date' => $date,
                     'absent_count' => $absentRecords->count(),
                 ],
                 'recipient_role' => 'owner',
-                'is_read'        => false,
+                'is_read' => false,
             ]);
 
             // SMS to school owner(s) + fixed alert number
             $ownerPhones = User::where('school_id', $schoolId)
-                ->whereHas('roles', fn($q) => $q->where('name', 'owner'))
+                ->whereHas('roles', fn ($q) => $q->where('name', 'owner'))
                 ->whereNotNull('phone')
                 ->pluck('phone')
                 ->push('0743519104')
@@ -153,24 +156,25 @@ class AttendanceController extends Controller {
                     $sms->sendBulk($ownerPhones, $message);
                 }
             } catch (\Throwable $e) {
-                Log::warning('[AttendanceController] absence SMS failed: ' . $e->getMessage());
+                Log::warning('[AttendanceController] absence SMS failed: '.$e->getMessage());
             }
         }
 
         return response()->json([
-            'saved'        => count($saved),
+            'saved' => count($saved),
             'absent_count' => $absentRecords->count(),
-            'late_count'   => collect($records)->where('status', 'late')->count(),
+            'late_count' => collect($records)->where('status', 'late')->count(),
         ]);
     }
 
     /**
      * Attendance summary for a date range (per class).
      */
-    public function summary(Request $request) {
+    public function summary(Request $request)
+    {
         $request->validate([
             'from_date' => 'required|date',
-            'to_date'   => 'required|date|after_or_equal:from_date',
+            'to_date' => 'required|date|after_or_equal:from_date',
         ]);
 
         $schoolId = app()->bound('active_school') ? app('active_school')->id : auth()->user()->school_id;
@@ -184,12 +188,13 @@ class AttendanceController extends Controller {
             ->groupBy('school_class_id')
             ->map(function ($group) {
                 $byStatus = $group->keyBy('status');
+
                 return [
-                    'class_id'   => $group->first()->school_class_id,
+                    'class_id' => $group->first()->school_class_id,
                     'class_name' => $group->first()->schoolClass?->name,
-                    'present'    => (int) ($byStatus->get('present')?->count ?? 0),
-                    'absent'     => (int) ($byStatus->get('absent')?->count ?? 0),
-                    'late'       => (int) ($byStatus->get('late')?->count ?? 0),
+                    'present' => (int) ($byStatus->get('present')?->count ?? 0),
+                    'absent' => (int) ($byStatus->get('absent')?->count ?? 0),
+                    'late' => (int) ($byStatus->get('late')?->count ?? 0),
                 ];
             })
             ->values();
@@ -200,11 +205,12 @@ class AttendanceController extends Controller {
     /**
      * Detailed attendance report for a specific student.
      */
-    public function studentReport(Request $request) {
+    public function studentReport(Request $request)
+    {
         $request->validate([
             'student_id' => 'required|exists:students,id',
-            'from_date'  => 'required|date',
-            'to_date'    => 'required|date|after_or_equal:from_date',
+            'from_date' => 'required|date',
+            'to_date' => 'required|date|after_or_equal:from_date',
         ]);
 
         $records = Attendance::where('student_id', $request->student_id)
@@ -215,14 +221,14 @@ class AttendanceController extends Controller {
         $student = Student::findOrFail($request->student_id);
 
         return response()->json([
-            'student'     => ['id' => $student->id, 'name' => $student->fullName()],
-            'from_date'   => $request->from_date,
-            'to_date'     => $request->to_date,
-            'total_days'  => $records->count(),
-            'present'     => $records->where('status', 'present')->count(),
-            'absent'      => $records->where('status', 'absent')->count(),
-            'late'        => $records->where('status', 'late')->count(),
-            'records'     => $records,
+            'student' => ['id' => $student->id, 'name' => $student->fullName()],
+            'from_date' => $request->from_date,
+            'to_date' => $request->to_date,
+            'total_days' => $records->count(),
+            'present' => $records->where('status', 'present')->count(),
+            'absent' => $records->where('status', 'absent')->count(),
+            'late' => $records->where('status', 'late')->count(),
+            'records' => $records,
         ]);
     }
 }

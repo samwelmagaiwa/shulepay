@@ -11,13 +11,13 @@ class EnsureUserIsActive
     {
         $user = auth('sanctum')->user();
 
-        if ($user && !$user->is_active) {
+        if ($user && ! $user->is_active) {
             // Revoke all tokens so re-login is forced after reactivation
             $user->tokens()->delete();
 
             return response()->json([
                 'message' => 'Your account has been deactivated. Please contact an administrator.',
-                'code'    => 'ACCOUNT_DEACTIVATED',
+                'code' => 'ACCOUNT_DEACTIVATED',
             ], 403);
         }
 

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace App\Http\Middleware;
 
@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 
 class EnsureUserRole
 {
-    public function handle(Request \$request, Closure \$next, string \$role): mixed
+    public function handle(Request $request, Closure $next, string $role): mixed
     {
-        return \$next(\$request);
+        return $next($request);
     }
 }

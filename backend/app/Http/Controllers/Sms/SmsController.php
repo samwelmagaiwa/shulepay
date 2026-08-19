@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Sms;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Invoice;
-use App\Models\School;
 use App\Models\SmsLog;
 use App\Models\Student;
 use App\Services\Sms\SmsService;
@@ -25,21 +24,21 @@ class SmsController extends Controller
     public function blast(Request $request): JsonResponse
     {
         $request->validate([
-            'student_ids'   => 'required|array|min:1',
+            'student_ids' => 'required|array|min:1',
             'student_ids.*' => 'required|integer|exists:students,id',
-            'message'       => 'required|string|max:480',
+            'message' => 'required|string|max:480',
         ]);
 
-        $user       = auth()->user();
-        $schoolId   = $user->school_id;
-        $template   = $request->message;
+        $user = auth()->user();
+        $schoolId = $user->school_id;
+        $template = $request->message;
         $studentIds = $request->student_ids;
 
         $students = Student::with(['guardians' => function ($q) {
             $q->wherePivot('receives_sms', true);
         }])->whereIn('id', $studentIds)->get();
 
-        $sent   = 0;
+        $sent = 0;
         $failed = 0;
 
         foreach ($students as $student) {
@@ -55,16 +54,16 @@ class SmsController extends Controller
 
             // Determine target guardians
             $guardians = $student->guardians;
-            $primary   = $guardians->first(fn ($g) => (bool) ($g->pivot->is_primary ?? false));
-            $targets   = $primary ? collect([$primary]) : $guardians;
+            $primary = $guardians->first(fn ($g) => (bool) ($g->pivot->is_primary ?? false));
+            $targets = $primary ? collect([$primary]) : $guardians;
 
             foreach ($targets as $guardian) {
                 $phone = $guardian->phone;
-                if (!$phone) {
+                if (! $phone) {
                     continue;
                 }
 
-                $ok     = $this->sms->sendTemplate($phone, $resolved);
+                $ok = $this->sms->sendTemplate($phone, $resolved);
                 $status = $ok ? 'sent' : 'failed';
                 if ($ok) {
                     $sent++;
@@ -73,21 +72,21 @@ class SmsController extends Controller
                 }
 
                 SmsLog::create([
-                    'school_id'       => $schoolId,
-                    'sender_id'       => $user->id,
+                    'school_id' => $schoolId,
+                    'sender_id' => $user->id,
                     'recipient_phone' => $phone,
-                    'message'         => $resolved,
-                    'status'          => $status,
-                    'student_id'      => $student->id,
-                    'sent_at'         => now(),
+                    'message' => $resolved,
+                    'status' => $status,
+                    'student_id' => $student->id,
+                    'sent_at' => now(),
                 ]);
             }
         }
 
         AuditLog::record('sms_blast', null, [], [
             'student_ids' => $studentIds,
-            'sent'        => $sent,
-            'failed'      => $failed,
+            'sent' => $sent,
+            'failed' => $failed,
         ]);
 
         return response()->json(['sent' => $sent, 'failed' => $failed]);
@@ -99,7 +98,7 @@ class SmsController extends Controller
      */
     public function reminder(Request $request): JsonResponse
     {
-        $user     = auth()->user();
+        $user = auth()->user();
         $schoolId = $user->school_id;
 
         $invoices = Invoice::with(['student.guardians', 'student.currentEnrollment'])
@@ -107,12 +106,12 @@ class SmsController extends Controller
             ->whereIn('status', ['unpaid', 'partial'])
             ->get();
 
-        $sent   = 0;
+        $sent = 0;
         $failed = 0;
 
         foreach ($invoices as $invoice) {
             $student = $invoice->student;
-            if (!$student) {
+            if (! $student) {
                 continue;
             }
 
@@ -126,11 +125,11 @@ class SmsController extends Controller
             $primaryGuardian = $student->guardians()
                 ->wherePivot('is_primary', true)
                 ->first();
-            if (!$primaryGuardian || !$primaryGuardian->phone) {
+            if (! $primaryGuardian || ! $primaryGuardian->phone) {
                 continue;
             }
 
-            $ok     = $this->sms->sendTemplate($primaryGuardian->phone, $message);
+            $ok = $this->sms->sendTemplate($primaryGuardian->phone, $message);
             $status = $ok ? 'sent' : 'failed';
             if ($ok) {
                 $sent++;
@@ -139,13 +138,13 @@ class SmsController extends Controller
             }
 
             SmsLog::create([
-                'school_id'       => $schoolId,
-                'sender_id'       => $user->id,
+                'school_id' => $schoolId,
+                'sender_id' => $user->id,
                 'recipient_phone' => $primaryGuardian->phone,
-                'message'         => $message,
-                'status'          => $status,
-                'student_id'      => $student->id,
-                'sent_at'         => now(),
+                'message' => $message,
+                'status' => $status,
+                'student_id' => $student->id,
+                'sent_at' => now(),
             ]);
         }
 

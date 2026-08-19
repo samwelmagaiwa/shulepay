@@ -10,8 +10,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-class ExpenseController extends Controller {
-    public function index(Request $request): AnonymousResourceCollection {
+class ExpenseController extends Controller
+{
+    public function index(Request $request): AnonymousResourceCollection
+    {
         $query = Expense::with(['school', 'category', 'recorder', 'approver'])
             ->latest('expense_date');
 
@@ -31,19 +33,20 @@ class ExpenseController extends Controller {
         return ExpenseResource::collection($query->paginate(20));
     }
 
-    public function store(Request $request): JsonResponse {
+    public function store(Request $request): JsonResponse
+    {
         $data = $request->validate([
-            'category_id'       => 'required|exists:expense_categories,id',
-            'amount_cents'      => 'required|integer|min:1',
-            'description'       => 'required|string|max:500',
-            'vendor'            => 'nullable|string|max:255',
+            'category_id' => 'required|exists:expense_categories,id',
+            'amount_cents' => 'required|integer|min:1',
+            'description' => 'required|string|max:500',
+            'vendor' => 'nullable|string|max:255',
             'receipt_reference' => 'nullable|string|max:255',
-            'expense_date'      => 'required|date',
-            'notes'             => 'nullable|string',
+            'expense_date' => 'required|date',
+            'notes' => 'nullable|string',
         ]);
 
         $data['recorded_by'] = auth()->id();
-        $data['status']      = 'pending';
+        $data['status'] = 'pending';
 
         $expense = Expense::create($data);
         AuditLog::record('expense.created', $expense, [], $data);
@@ -51,23 +54,25 @@ class ExpenseController extends Controller {
         return response()->json(new ExpenseResource($expense->load(['school', 'category', 'recorder'])), 201);
     }
 
-    public function show(Expense $expense): JsonResponse {
+    public function show(Expense $expense): JsonResponse
+    {
         return response()->json(new ExpenseResource($expense->load(['school', 'category', 'recorder', 'approver'])));
     }
 
-    public function update(Request $request, Expense $expense): JsonResponse {
+    public function update(Request $request, Expense $expense): JsonResponse
+    {
         if ($expense->status !== 'pending') {
             return response()->json(['message' => 'Only pending expenses can be updated.'], 422);
         }
 
         $data = $request->validate([
-            'category_id'       => 'sometimes|required|exists:expense_categories,id',
-            'amount_cents'      => 'sometimes|required|integer|min:1',
-            'description'       => 'sometimes|required|string|max:500',
-            'vendor'            => 'nullable|string|max:255',
+            'category_id' => 'sometimes|required|exists:expense_categories,id',
+            'amount_cents' => 'sometimes|required|integer|min:1',
+            'description' => 'sometimes|required|string|max:500',
+            'vendor' => 'nullable|string|max:255',
             'receipt_reference' => 'nullable|string|max:255',
-            'expense_date'      => 'sometimes|required|date',
-            'notes'             => 'nullable|string',
+            'expense_date' => 'sometimes|required|date',
+            'notes' => 'nullable|string',
         ]);
 
         $before = $expense->toArray();
@@ -77,7 +82,8 @@ class ExpenseController extends Controller {
         return response()->json(new ExpenseResource($expense->load(['school', 'category', 'recorder', 'approver'])));
     }
 
-    public function destroy(Expense $expense): JsonResponse {
+    public function destroy(Expense $expense): JsonResponse
+    {
         if ($expense->status !== 'pending') {
             return response()->json(['message' => 'Only pending expenses can be deleted.'], 422);
         }
@@ -88,14 +94,15 @@ class ExpenseController extends Controller {
         return response()->json(['message' => 'Expense deleted.']);
     }
 
-    public function approve(Expense $expense): JsonResponse {
+    public function approve(Expense $expense): JsonResponse
+    {
         if ($expense->status !== 'pending') {
             return response()->json(['message' => 'Expense is not pending.'], 422);
         }
 
         $before = $expense->toArray();
         $expense->update([
-            'status'      => 'approved',
+            'status' => 'approved',
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);

@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Vehicle extends Model {
+class Vehicle extends Model
+{
     use BelongsToSchool;
 
     protected $fillable = [
@@ -17,20 +18,23 @@ class Vehicle extends Model {
     ];
 
     protected $casts = [
-        'year'     => 'integer',
+        'year' => 'integer',
         'capacity' => 'integer',
-        'status'   => 'string',
+        'status' => 'string',
     ];
 
-    public function school(): BelongsTo {
+    public function school(): BelongsTo
+    {
         return $this->belongsTo(School::class);
     }
 
-    public function subscriptions(): HasMany {
+    public function subscriptions(): HasMany
+    {
         return $this->hasMany(StudentTransportSubscription::class);
     }
 
-    public function maintenanceRecords(): HasMany {
+    public function maintenanceRecords(): HasMany
+    {
         return $this->hasMany(VehicleMaintenance::class);
     }
 }

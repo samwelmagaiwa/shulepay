@@ -4,85 +4,86 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::table('assets', function (Blueprint $table) {
             // Identity
-            if (!Schema::hasColumn('assets', 'asset_tag')) {
+            if (! Schema::hasColumn('assets', 'asset_tag')) {
                 $table->string('asset_tag')->unique()->after('id');
             }
-            if (!Schema::hasColumn('assets', 'quantity')) {
+            if (! Schema::hasColumn('assets', 'quantity')) {
                 $table->unsignedInteger('quantity')->default(1)->after('asset_tag');
             }
-            if (!Schema::hasColumn('assets', 'serial_no')) {
+            if (! Schema::hasColumn('assets', 'serial_no')) {
                 $table->string('serial_no')->nullable();
             }
-            if (!Schema::hasColumn('assets', 'photo')) {
+            if (! Schema::hasColumn('assets', 'photo')) {
                 $table->string('photo')->nullable();
             }
 
             // Purchase
-            if (!Schema::hasColumn('assets', 'purchase_cost_cents')) {
+            if (! Schema::hasColumn('assets', 'purchase_cost_cents')) {
                 $table->unsignedBigInteger('purchase_cost_cents')->default(0);
             }
-            if (!Schema::hasColumn('assets', 'supplier_name')) {
+            if (! Schema::hasColumn('assets', 'supplier_name')) {
                 $table->string('supplier_name')->nullable();
             }
-            if (!Schema::hasColumn('assets', 'invoice_no')) {
+            if (! Schema::hasColumn('assets', 'invoice_no')) {
                 $table->string('invoice_no')->nullable();
             }
-            if (!Schema::hasColumn('assets', 'funding_source')) {
+            if (! Schema::hasColumn('assets', 'funding_source')) {
                 $table->string('funding_source')->nullable();
             }
 
             // Depreciation
-            if (!Schema::hasColumn('assets', 'depreciation_method')) {
+            if (! Schema::hasColumn('assets', 'depreciation_method')) {
                 $table->string('depreciation_method')->nullable();
             }
-            if (!Schema::hasColumn('assets', 'useful_life_years')) {
+            if (! Schema::hasColumn('assets', 'useful_life_years')) {
                 $table->unsignedSmallInteger('useful_life_years')->nullable();
             }
-            if (!Schema::hasColumn('assets', 'depreciation_rate')) {
+            if (! Schema::hasColumn('assets', 'depreciation_rate')) {
                 $table->decimal('depreciation_rate', 5, 2)->nullable();
             }
-            if (!Schema::hasColumn('assets', 'salvage_value_cents')) {
+            if (! Schema::hasColumn('assets', 'salvage_value_cents')) {
                 $table->unsignedBigInteger('salvage_value_cents')->default(0);
             }
-            if (!Schema::hasColumn('assets', 'accumulated_depreciation_cents')) {
+            if (! Schema::hasColumn('assets', 'accumulated_depreciation_cents')) {
                 $table->unsignedBigInteger('accumulated_depreciation_cents')->default(0);
             }
 
             // Custody
-            if (!Schema::hasColumn('assets', 'custodian')) {
+            if (! Schema::hasColumn('assets', 'custodian')) {
                 $table->string('custodian')->nullable();
             }
-            if (!Schema::hasColumn('assets', 'warranty_expiry')) {
+            if (! Schema::hasColumn('assets', 'warranty_expiry')) {
                 $table->date('warranty_expiry')->nullable();
             }
 
             // Status
-            if (!Schema::hasColumn('assets', 'status')) {
+            if (! Schema::hasColumn('assets', 'status')) {
                 $table->string('status')->default('in_use');
             }
 
             // Disposal
-            if (!Schema::hasColumn('assets', 'disposal_date')) {
+            if (! Schema::hasColumn('assets', 'disposal_date')) {
                 $table->date('disposal_date')->nullable();
             }
-            if (!Schema::hasColumn('assets', 'disposal_value_cents')) {
+            if (! Schema::hasColumn('assets', 'disposal_value_cents')) {
                 $table->unsignedBigInteger('disposal_value_cents')->default(0);
             }
-            if (!Schema::hasColumn('assets', 'disposal_reason')) {
+            if (! Schema::hasColumn('assets', 'disposal_reason')) {
                 $table->text('disposal_reason')->nullable();
             }
 
             // Audit
-            if (!Schema::hasColumn('assets', 'registered_by')) {
+            if (! Schema::hasColumn('assets', 'registered_by')) {
                 $table->unsignedBigInteger('registered_by')->nullable();
                 $table->foreign('registered_by')->references('id')->on('users');
             }
-            if (!Schema::hasColumn('assets', 'registered_at')) {
+            if (! Schema::hasColumn('assets', 'registered_at')) {
                 $table->timestamp('registered_at')->nullable();
             }
         });

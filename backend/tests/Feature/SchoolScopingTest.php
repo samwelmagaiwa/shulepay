@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests\Feature;
 
 use App\Models\AcademicYear;
@@ -18,9 +19,13 @@ class SchoolScopingTest extends TestCase
     use RefreshDatabase;
 
     private School $msingi;
+
     private School $sekondari;
+
     private User $accountantA;   // scoped to msingi
+
     private User $accountantB;   // scoped to sekondari
+
     private User $owner;         // cross-school
 
     protected function setUp(): void

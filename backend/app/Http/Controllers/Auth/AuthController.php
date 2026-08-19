@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -9,22 +10,24 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
-class AuthController extends Controller {
-    public function login(Request $request): JsonResponse {
+class AuthController extends Controller
+{
+    public function login(Request $request): JsonResponse
+    {
         $request->validate([
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'password' => 'required|string',
         ]);
 
         // Find user for logging purposes (even on failure)
         $foundUser = User::where('email', $request->email)->first();
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        if (! Auth::attempt($request->only('email', 'password'))) {
             LoginHistory::create([
-                'user_id'      => $foundUser?->id,
-                'ip_address'   => $request->ip(),
-                'user_agent'   => $request->userAgent(),
-                'status'       => 'failed',
+                'user_id' => $foundUser?->id,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'status' => 'failed',
                 'attempted_at' => now(),
             ]);
 
@@ -37,13 +40,13 @@ class AuthController extends Controller {
         $user = Auth::user();
 
         // Block deactivated accounts immediately after credential check
-        if (!$user->is_active) {
+        if (! $user->is_active) {
             Auth::logout();
             LoginHistory::create([
-                'user_id'      => $user->id,
-                'ip_address'   => $request->ip(),
-                'user_agent'   => $request->userAgent(),
-                'status'       => 'failed',
+                'user_id' => $user->id,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'status' => 'failed',
                 'attempted_at' => now(),
             ]);
             throw ValidationException::withMessages([
@@ -52,19 +55,20 @@ class AuthController extends Controller {
         }
 
         LoginHistory::create([
-            'user_id'      => $user->id,
-            'ip_address'   => $request->ip(),
-            'user_agent'   => $request->userAgent(),
-            'status'       => 'success',
+            'user_id' => $user->id,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'status' => 'success',
             'attempted_at' => now(),
         ]);
 
         // If 2FA is enabled, do not issue a token yet — ask frontend to verify OTP
         if ($user->{'2fa_enabled'}) {
             Auth::logout(); // un-auth the session guard; Sanctum is stateless but guard may be set
+
             return response()->json([
                 'requires_2fa' => true,
-                'user_id'      => $user->id,
+                'user_id' => $user->id,
             ]);
         }
 
@@ -72,30 +76,34 @@ class AuthController extends Controller {
 
         return response()->json([
             'token' => $token,
-            'user'  => [
-                'id'        => $user->id,
-                'name'      => $user->name,
-                'email'     => $user->email,
-                'role'      => $user->getRoleNames()->first(),
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->getRoleNames()->first(),
                 'school_id' => $user->school_id,
             ],
         ]);
     }
 
-    public function logout(Request $request): JsonResponse {
+    public function logout(Request $request): JsonResponse
+    {
         $request->user()->currentAccessToken()->delete();
+
         return response()->json(['message' => 'Umefanikiwa kutoka.']);
     }
 
-    public function me(Request $request): JsonResponse {
+    public function me(Request $request): JsonResponse
+    {
         $user = $request->user()->load('school');
+
         return response()->json([
-            'id'        => $user->id,
-            'name'      => $user->name,
-            'email'     => $user->email,
-            'role'      => $user->getRoleNames()->first(),
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->getRoleNames()->first(),
             'school_id' => $user->school_id,
-            'school'    => $user->school?->only(['id', 'name', 'level']),
+            'school' => $user->school?->only(['id', 'name', 'level']),
         ]);
     }
 }

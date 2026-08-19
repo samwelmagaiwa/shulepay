@@ -7,7 +7,8 @@ use App\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SupplierPayment extends Model {
+class SupplierPayment extends Model
+{
     use BelongsToSchool;
 
     protected $table = 'supplier_payments';
@@ -22,15 +23,18 @@ class SupplierPayment extends Model {
         'payment_date' => 'date',
     ];
 
-    public function supplier(): BelongsTo {
+    public function supplier(): BelongsTo
+    {
         return $this->belongsTo(Supplier::class);
     }
 
-    public function school(): BelongsTo {
+    public function school(): BelongsTo
+    {
         return $this->belongsTo(School::class);
     }
 
-    public function recorder(): BelongsTo {
+    public function recorder(): BelongsTo
+    {
         return $this->belongsTo(User::class, 'recorded_by');
     }
 }

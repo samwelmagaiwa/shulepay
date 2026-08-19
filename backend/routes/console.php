@@ -16,4 +16,3 @@ Schedule::command(SendWeeklyReport::class)
     ->at('08:00')
     ->withoutOverlapping()
     ->runInBackground();
-

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Enums;
 
 enum SchoolLevel: string
@@ -10,13 +11,17 @@ enum SchoolLevel: string
 
     public static function tryFromValue(?string $value): ?self
     {
-        if (!$value)
+        if (! $value) {
             return null;
+        }
         $val = strtolower($value);
-        if ($val === 'msingi')
+        if ($val === 'msingi') {
             return self::Primary;
-        if ($val === 'sekondari')
+        }
+        if ($val === 'sekondari') {
             return self::Secondary;
+        }
+
         return self::tryFrom($val);
     }
 

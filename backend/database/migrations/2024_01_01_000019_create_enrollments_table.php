@@ -1,10 +1,13 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-    public function up(): void {
+return new class extends Migration
+{
+    public function up(): void
+    {
         // One enrollment per student per school per academic year.
         // Moving Msingi → Sekondari = new enrollment row, same student identity.
         Schema::create('enrollments', function (Blueprint $table) {
@@ -23,7 +26,8 @@ return new class extends Migration {
         });
     }
 
-    public function down(): void {
+    public function down(): void
+    {
         Schema::dropIfExists('enrollments');
     }
 };

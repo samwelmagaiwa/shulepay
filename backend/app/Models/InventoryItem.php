@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class InventoryItem extends Model {
+class InventoryItem extends Model
+{
     use BelongsToSchool, SoftDeletes;
 
     protected $fillable = [
@@ -18,25 +19,29 @@ class InventoryItem extends Model {
     ];
 
     protected $casts = [
-        'quantity'       => 'decimal:2',
-        'reorder_level'  => 'decimal:2',
+        'quantity' => 'decimal:2',
+        'reorder_level' => 'decimal:2',
         'unit_cost_cents' => MoneyCast::class,
-        'is_active'      => 'boolean',
+        'is_active' => 'boolean',
     ];
 
-    public function school(): BelongsTo {
+    public function school(): BelongsTo
+    {
         return $this->belongsTo(School::class);
     }
 
-    public function category(): BelongsTo {
+    public function category(): BelongsTo
+    {
         return $this->belongsTo(ExpenseCategory::class, 'category_id');
     }
 
-    public function transactions(): HasMany {
+    public function transactions(): HasMany
+    {
         return $this->hasMany(InventoryTransaction::class, 'item_id');
     }
 
-    public function isLowStock(): bool {
+    public function isLowStock(): bool
+    {
         return (float) $this->quantity <= (float) $this->reorder_level;
     }
 }

@@ -35,3 +35,14 @@
 [0;36m[23:14:52][0m   ShulePay — Release
 [0;36m[23:14:52][0m ══════════════════════════════════════════
 [0;36m[23:14:52][0m Checking working tree...
+[0;36m[23:14:52][0m Files staged for commit:
+[0;36m[23:14:52][0m Committing: "fix: use PHP regex in migration instead of MySQL REGEXP_REPLACE (SQLite CI compat)"
+[0;32m✔ Committed[0m
+[0;36m[23:14:53][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[23:14:56][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[23:20:45][0m ══════════════════════════════════════════
+[0;36m[23:20:45][0m   ShulePay — Release
+[0;36m[23:20:45][0m ══════════════════════════════════════════
+[0;36m[23:20:45][0m Checking working tree...

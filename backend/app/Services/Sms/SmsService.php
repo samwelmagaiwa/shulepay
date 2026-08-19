@@ -20,7 +20,8 @@ class SmsService
         try {
             return $this->gateway->send($phone, $message);
         } catch (\Throwable $e) {
-            Log::warning("[SmsService] send failed to {$phone}: " . $e->getMessage());
+            Log::warning("[SmsService] send failed to {$phone}: ".$e->getMessage());
+
             return false;
         }
     }
@@ -36,6 +37,7 @@ class SmsService
                 $sent++;
             }
         }
+
         return $sent;
     }
 
@@ -44,13 +46,14 @@ class SmsService
      */
     public function sendTemplate(string $phone, string $message): bool
     {
-        $parts   = SmsTemplates::splitParts($message);
+        $parts = SmsTemplates::splitParts($message);
         $success = true;
         foreach ($parts as $part) {
-            if (!$this->send($phone, $part)) {
+            if (! $this->send($phone, $part)) {
                 $success = false;
             }
         }
+
         return $success;
     }
 
@@ -74,7 +77,7 @@ class SmsService
 
         foreach ($targets as $guardian) {
             $phone = $guardian->phone;
-            if (!$phone) {
+            if (! $phone) {
                 continue;
             }
 
@@ -83,16 +86,16 @@ class SmsService
             // Log every attempt (sent or failed)
             try {
                 SmsLog::create([
-                    'school_id'       => $schoolId,
-                    'sender_id'       => auth()->id(),
+                    'school_id' => $schoolId,
+                    'sender_id' => auth()->id(),
                     'recipient_phone' => $phone,
-                    'message'         => $message,
-                    'status'          => $ok ? 'sent' : 'failed',
-                    'student_id'      => $student->id,
-                    'sent_at'         => now(),
+                    'message' => $message,
+                    'status' => $ok ? 'sent' : 'failed',
+                    'student_id' => $student->id,
+                    'sent_at' => now(),
                 ]);
             } catch (\Throwable $logEx) {
-                Log::warning('[SmsService] SmsLog write failed: ' . $logEx->getMessage());
+                Log::warning('[SmsService] SmsLog write failed: '.$logEx->getMessage());
             }
 
             if ($ok) {
@@ -116,7 +119,7 @@ class SmsService
             );
             $this->notifyGuardians($payment->invoice->student, $message);
         } catch (\Throwable $e) {
-            Log::warning("[SmsService] notifyPayment failed: " . $e->getMessage());
+            Log::warning('[SmsService] notifyPayment failed: '.$e->getMessage());
         }
     }
 
@@ -125,7 +128,7 @@ class SmsService
         try {
             $this->gateway->send($this->normaliseTz($phone), $message);
         } catch (\Throwable $e) {
-            Log::warning("[SmsService] sendReminder failed: " . $e->getMessage());
+            Log::warning('[SmsService] sendReminder failed: '.$e->getMessage());
         }
     }
 
@@ -135,6 +138,7 @@ class SmsService
         if (str_starts_with($phone, '+')) {
             return $phone; // already international
         }
-        return '+255' . ltrim($phone, '0');
+
+        return '+255'.ltrim($phone, '0');
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Shared;
 
 use App\Http\Controllers\Controller;
@@ -15,11 +16,11 @@ class AuditLogController extends Controller
     public function index(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'user_id'      => ['nullable', 'integer', 'exists:users,id'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'subject_type' => ['nullable', 'string', 'max:200'],
-            'action'       => ['nullable', 'string', 'max:100'],
-            'date_from'    => ['nullable', 'date'],
-            'date_to'      => ['nullable', 'date'],
+            'action' => ['nullable', 'string', 'max:100'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
         ]);
 
         $query = AuditLog::with('user')->latest();
@@ -32,13 +33,13 @@ class AuditLogController extends Controller
             // Accept short class names like "Invoice" or full "App\Models\Invoice"
             $type = $data['subject_type'];
             if (! str_contains($type, '\\')) {
-                $type = 'App\\Models\\' . $type;
+                $type = 'App\\Models\\'.$type;
             }
             $query->where('model_type', $type);
         }
 
         if (! empty($data['action'])) {
-            $query->where('action', 'like', '%' . $data['action'] . '%');
+            $query->where('action', 'like', '%'.$data['action'].'%');
         }
 
         if (! empty($data['date_from'])) {
@@ -51,28 +52,28 @@ class AuditLogController extends Controller
 
         $logs = $query->paginate(20);
 
-        $items = $logs->getCollection()->map(fn(AuditLog $log) => [
-            'id'           => $log->id,
-            'action'       => $log->action,
+        $items = $logs->getCollection()->map(fn (AuditLog $log) => [
+            'id' => $log->id,
+            'action' => $log->action,
             'subject_type' => $log->model_type,
-            'subject_id'   => $log->model_id,
-            'changes'      => [
+            'subject_id' => $log->model_id,
+            'changes' => [
                 'before' => $log->before,
-                'after'  => $log->after,
+                'after' => $log->after,
             ],
-            'note'         => null, // AuditLog model has no 'note' column; include for API consistency
-            'user'         => $log->user ? ['id' => $log->user->id, 'name' => $log->user->name] : null,
-            'ip'           => $log->ip_address,
-            'created_at'   => $log->created_at?->toISOString(),
+            'note' => null, // AuditLog model has no 'note' column; include for API consistency
+            'user' => $log->user ? ['id' => $log->user->id, 'name' => $log->user->name] : null,
+            'ip' => $log->ip_address,
+            'created_at' => $log->created_at?->toISOString(),
         ]);
 
         return response()->json([
             'data' => $items,
             'meta' => [
                 'current_page' => $logs->currentPage(),
-                'last_page'    => $logs->lastPage(),
-                'per_page'     => $logs->perPage(),
-                'total'        => $logs->total(),
+                'last_page' => $logs->lastPage(),
+                'per_page' => $logs->perPage(),
+                'total' => $logs->total(),
             ],
         ]);
     }

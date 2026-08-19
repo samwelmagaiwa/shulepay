@@ -19,7 +19,7 @@ class SubjectController extends Controller
             'school_id' => 'required|exists:schools,id',
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:50',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
         ]);
 
         return response()->json(Subject::create($validated), 201);
@@ -36,16 +36,18 @@ class SubjectController extends Controller
             'school_id' => 'sometimes|exists:schools,id',
             'name' => 'sometimes|string|max:255',
             'code' => 'nullable|string|max:50',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
         ]);
 
         $subject->update($validated);
+
         return response()->json($subject);
     }
 
     public function destroy(Subject $subject)
     {
         $subject->delete();
+
         return response()->noContent();
     }
 }

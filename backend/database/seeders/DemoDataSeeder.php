@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\AcademicYear;
-use App\Models\FeeItem;
 use App\Models\FeeStructure;
 use App\Models\School;
 use App\Models\Term;
@@ -71,12 +70,14 @@ class DemoDataSeeder extends Seeder
     private function seedFeeStructures(School $school, User $accountant): void
     {
         $year = AcademicYear::where('school_id', $school->id)->where('is_current', true)->first();
-        if (!$year)
+        if (! $year) {
             return;
+        }
 
         $term1 = Term::where('academic_year_id', $year->id)->where('number', 1)->first();
-        if (!$term1)
+        if (! $term1) {
             return;
+        }
 
         $feeItems = $school->level->value === 'primary'
             ? [

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class ClearDemoData extends Command
 {
-    protected $signature   = 'shulepay:clear-demo
+    protected $signature = 'shulepay:clear-demo
                                 {--school-id=1 : Only clear students belonging to this school}
                                 {--force : Skip confirmation prompt}';
 
@@ -17,10 +17,11 @@ class ClearDemoData extends Command
     {
         $schoolId = (int) $this->option('school-id');
 
-        if (!$this->option('force')) {
+        if (! $this->option('force')) {
             $this->warn("This will PERMANENTLY delete all students, enrollments, invoices, payments, and guardian records for school ID {$schoolId}.");
-            if (!$this->confirm('Continue?')) {
+            if (! $this->confirm('Continue?')) {
                 $this->info('Aborted.');
+
                 return 0;
             }
         }
@@ -34,7 +35,7 @@ class ClearDemoData extends Command
 
             // Invoice lines (FK → invoices)
             $invoiceIds = DB::table('invoices')->where('school_id', $schoolId)->pluck('id');
-            $lineCount  = DB::table('invoice_lines')->whereIn('invoice_id', $invoiceIds)->delete();
+            $lineCount = DB::table('invoice_lines')->whereIn('invoice_id', $invoiceIds)->delete();
 
             // Invoices
             $invoiceCount = DB::table('invoices')->where('school_id', $schoolId)->delete();
@@ -82,7 +83,7 @@ class ClearDemoData extends Command
                 ['invoice_lines',   $lineCount],
                 ['invoices',        $invoiceCount],
                 ['enrollments',     $enrollCount],
-                ['student_guardian',$pivotCount],
+                ['student_guardian', $pivotCount],
                 ['students',        $studentCount],
                 ['guardians',       $guardianCount],
                 ['users (parent)',  $orphanParentIds->count()],
@@ -90,6 +91,7 @@ class ClearDemoData extends Command
         });
 
         $this->info('Demo data cleared. Ready for real import.');
+
         return 0;
     }
 }

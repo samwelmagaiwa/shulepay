@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Employee extends Model {
+class Employee extends Model
+{
     use BelongsToSchool, SoftDeletes;
 
     protected $fillable = [
@@ -19,18 +20,21 @@ class Employee extends Model {
 
     protected $casts = [
         'basic_salary_cents' => MoneyCast::class,
-        'hire_date'          => 'date',
+        'hire_date' => 'date',
     ];
 
-    public function school(): BelongsTo {
+    public function school(): BelongsTo
+    {
         return $this->belongsTo(School::class);
     }
 
-    public function user(): BelongsTo {
+    public function user(): BelongsTo
+    {
         return $this->belongsTo(User::class);
     }
 
-    public function payrollEntries(): HasMany {
+    public function payrollEntries(): HasMany
+    {
         return $this->hasMany(Payroll::class, 'employee_id');
     }
 }

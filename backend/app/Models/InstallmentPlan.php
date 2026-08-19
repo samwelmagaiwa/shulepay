@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use App\Casts\MoneyCast;
@@ -18,9 +19,9 @@ class InstallmentPlan extends Model
     ];
 
     protected $casts = [
-        'amount_cents'      => MoneyCast::class,
+        'amount_cents' => MoneyCast::class,
         'paid_amount_cents' => MoneyCast::class,
-        'due_date'          => 'date',
+        'due_date' => 'date',
     ];
 
     public function invoice(): BelongsTo

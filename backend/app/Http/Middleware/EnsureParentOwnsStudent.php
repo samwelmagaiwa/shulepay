@@ -1,22 +1,25 @@
 <?php
+
 namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
 
-class EnsureParentOwnsStudent {
-    public function handle(Request $request, Closure $next): mixed {
+class EnsureParentOwnsStudent
+{
+    public function handle(Request $request, Closure $next): mixed
+    {
         $user = $request->user();
 
         $studentId = $request->route('student')
             ? $request->route('student')->id
             : $request->input('student_id');
 
-        if (!$studentId) {
+        if (! $studentId) {
             return $next($request);
         }
 
-        if (!$user->guardian) {
+        if (! $user->guardian) {
             abort(403, 'Ruhusa imekataliwa.');
         }
 
@@ -24,7 +27,7 @@ class EnsureParentOwnsStudent {
             ->where('students.id', $studentId)
             ->exists();
 
-        if (!$owns) {
+        if (! $owns) {
             abort(403, 'Ruhusa imekataliwa — mwanafunzi huyu si wako.');
         }
 

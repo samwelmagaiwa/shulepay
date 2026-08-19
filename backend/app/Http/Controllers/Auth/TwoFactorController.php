@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -9,21 +10,23 @@ use App\Services\Sms\SmsTemplates;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class TwoFactorController extends Controller {
+class TwoFactorController extends Controller
+{
     public function __construct(private SmsService $sms) {}
 
     /**
      * POST /api/2fa/request
      * Generate and send a 6-digit OTP to the user's phone.
      */
-    public function request(Request $request): JsonResponse {
+    public function request(Request $request): JsonResponse
+    {
         $request->validate([
             'user_id' => 'required|integer|exists:users,id',
         ]);
 
         $user = User::findOrFail($request->user_id);
 
-        if (!$user->phone) {
+        if (! $user->phone) {
             return response()->json(['message' => 'Nambari ya simu haipatikani.'], 422);
         }
 
@@ -33,8 +36,8 @@ class TwoFactorController extends Controller {
         $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         OtpCode::create([
-            'user_id'    => $user->id,
-            'code'       => $code,
+            'user_id' => $user->id,
+            'code' => $code,
             'expires_at' => now()->addMinutes(10),
             'ip_address' => $request->ip(),
         ]);
@@ -54,10 +57,11 @@ class TwoFactorController extends Controller {
      * Verify OTP and return Sanctum token.
      * Rate-limited: 5 attempts per 15 minutes per IP (configured in RouteServiceProvider/routes).
      */
-    public function verify(Request $request): JsonResponse {
+    public function verify(Request $request): JsonResponse
+    {
         $request->validate([
             'user_id' => 'required|integer|exists:users,id',
-            'code'    => 'required|string|size:6',
+            'code' => 'required|string|size:6',
         ]);
 
         $user = User::findOrFail($request->user_id);
@@ -68,7 +72,7 @@ class TwoFactorController extends Controller {
             ->latest()
             ->first();
 
-        if (!$otp) {
+        if (! $otp) {
             return response()->json(['message' => 'Msimbo si sahihi au umeisha muda wake.'], 422);
         }
 
@@ -80,11 +84,11 @@ class TwoFactorController extends Controller {
 
         return response()->json([
             'token' => $token,
-            'user'  => [
-                'id'        => $user->id,
-                'name'      => $user->name,
-                'email'     => $user->email,
-                'role'      => $user->getRoleNames()->first(),
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->getRoleNames()->first(),
                 'school_id' => $user->school_id,
             ],
         ]);

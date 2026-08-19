@@ -10,8 +10,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-class EmployeeController extends Controller {
-    public function index(Request $request): AnonymousResourceCollection {
+class EmployeeController extends Controller
+{
+    public function index(Request $request): AnonymousResourceCollection
+    {
         $query = Employee::with('school')->latest();
 
         if ($request->filled('status')) {
@@ -24,16 +26,17 @@ class EmployeeController extends Controller {
         return EmployeeResource::collection($query->paginate(20));
     }
 
-    public function store(Request $request): JsonResponse {
+    public function store(Request $request): JsonResponse
+    {
         $data = $request->validate([
-            'user_id'            => 'nullable|exists:users,id',
-            'staff_number'       => 'required|string|max:50|unique:employees,staff_number',
-            'full_name'          => 'required|string|max:255',
-            'role'               => 'required|string|max:100',
-            'department'         => 'nullable|string|max:100',
+            'user_id' => 'nullable|exists:users,id',
+            'staff_number' => 'required|string|max:50|unique:employees,staff_number',
+            'full_name' => 'required|string|max:255',
+            'role' => 'required|string|max:100',
+            'department' => 'nullable|string|max:100',
             'basic_salary_cents' => 'required|integer|min:0',
-            'hire_date'          => 'required|date',
-            'status'             => 'sometimes|in:active,on_leave,terminated',
+            'hire_date' => 'required|date',
+            'status' => 'sometimes|in:active,on_leave,terminated',
         ]);
 
         $employee = Employee::create($data);
@@ -42,20 +45,22 @@ class EmployeeController extends Controller {
         return response()->json(new EmployeeResource($employee->load('school')), 201);
     }
 
-    public function show(Employee $employee): JsonResponse {
+    public function show(Employee $employee): JsonResponse
+    {
         return response()->json(new EmployeeResource($employee->load('school')));
     }
 
-    public function update(Request $request, Employee $employee): JsonResponse {
+    public function update(Request $request, Employee $employee): JsonResponse
+    {
         $data = $request->validate([
-            'user_id'            => 'nullable|exists:users,id',
-            'staff_number'       => 'sometimes|required|string|max:50|unique:employees,staff_number,' . $employee->id,
-            'full_name'          => 'sometimes|required|string|max:255',
-            'role'               => 'sometimes|required|string|max:100',
-            'department'         => 'nullable|string|max:100',
+            'user_id' => 'nullable|exists:users,id',
+            'staff_number' => 'sometimes|required|string|max:50|unique:employees,staff_number,'.$employee->id,
+            'full_name' => 'sometimes|required|string|max:255',
+            'role' => 'sometimes|required|string|max:100',
+            'department' => 'nullable|string|max:100',
             'basic_salary_cents' => 'sometimes|required|integer|min:0',
-            'hire_date'          => 'sometimes|required|date',
-            'status'             => 'sometimes|in:active,on_leave,terminated',
+            'hire_date' => 'sometimes|required|date',
+            'status' => 'sometimes|in:active,on_leave,terminated',
         ]);
 
         $before = $employee->toArray();
@@ -65,7 +70,8 @@ class EmployeeController extends Controller {
         return response()->json(new EmployeeResource($employee->load('school')));
     }
 
-    public function destroy(Employee $employee): JsonResponse {
+    public function destroy(Employee $employee): JsonResponse
+    {
         AuditLog::record('employee.deleted', $employee, $employee->toArray(), []);
         $employee->delete();
 

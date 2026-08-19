@@ -1,10 +1,12 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class LoginHistory extends Model {
+class LoginHistory extends Model
+{
     protected $table = 'login_history';
 
     protected $fillable = [
@@ -15,5 +17,8 @@ class LoginHistory extends Model {
         'attempted_at' => 'datetime',
     ];
 
-    public function user(): BelongsTo { return $this->belongsTo(User::class); }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }

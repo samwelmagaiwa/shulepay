@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use App\Casts\MoneyCast;
@@ -20,7 +21,7 @@ class Refund extends Model
 
     protected $casts = [
         'amount_cents' => MoneyCast::class,
-        'refunded_at'  => 'datetime',
+        'refunded_at' => 'datetime',
     ];
 
     public function student(): BelongsTo

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace App\Http\Middleware;
 
@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 
 class RecordAuditLog
 {
-    public function handle(Request \$request, Closure \$next): mixed
+    public function handle(Request $request, Closure $next): mixed
     {
-        return \$next(\$request);
+        return $next($request);
     }
 }

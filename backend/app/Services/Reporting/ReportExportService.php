@@ -17,8 +17,8 @@ class ReportExportService
             ->setPaper('a4', 'portrait')
             ->setOptions([
                 'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled'      => false,
-                'defaultFont'          => 'sans-serif',
+                'isRemoteEnabled' => false,
+                'defaultFont' => 'sans-serif',
             ]);
 
         return $pdf->download($filename);
@@ -28,7 +28,7 @@ class ReportExportService
      * Stream a CSV download response.
      *
      * @param  string[]  $headers  Column header row
-     * @param  array[]   $rows     Data rows (each an array of scalar values)
+     * @param  array[]  $rows  Data rows (each an array of scalar values)
      */
     public function toCsv(array $headers, array $rows, string $filename): StreamedResponse
     {
@@ -36,7 +36,7 @@ class ReportExportService
             $handle = fopen('php://output', 'w');
 
             // UTF-8 BOM so Excel opens it correctly
-            fputs($handle, "\xEF\xBB\xBF");
+            fwrite($handle, "\xEF\xBB\xBF");
 
             fputcsv($handle, $headers);
 
@@ -50,7 +50,7 @@ class ReportExportService
         $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
         $response->headers->set(
             'Content-Disposition',
-            'attachment; filename="' . $filename . '"'
+            'attachment; filename="'.$filename.'"'
         );
 
         return $response;

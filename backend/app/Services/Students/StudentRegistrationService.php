@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\Students;
 
 use App\Models\Discount;
@@ -37,25 +38,25 @@ class StudentRegistrationService
 
             // 3. Create student
             $student = Student::create([
-                'first_name'          => $data['first_name'],
-                'middle_name'         => $data['middle_name'] ?? null,
-                'last_name'           => $data['last_name'],
-                'gender'              => $data['gender'],
-                'date_of_birth'       => $data['date_of_birth'],
-                'birth_certificate_no'=> $data['birth_certificate_no'] ?? null,
-                'nationality'         => $data['nationality'] ?? 'Tanzanian',
-                'religion'            => $data['religion'] ?? null,
-                'blood_group'         => $data['blood_group'] ?? null,
-                'allergies'           => $data['allergies'] ?? null,
-                'medical_conditions'  => $data['medical_conditions'] ?? null,
-                'address'             => $data['address'] ?? null,
-                'region'              => $data['region'] ?? null,
-                'district'            => $data['district'] ?? null,
-                'ward'                => $data['ward'] ?? null,
-                'street'              => $data['street'] ?? null,
-                'photo'               => $photoPath,
-                'status'              => $data['status'] ?? 'active',
-                'notes'               => $data['notes'] ?? null,
+                'first_name' => $data['first_name'],
+                'middle_name' => $data['middle_name'] ?? null,
+                'last_name' => $data['last_name'],
+                'gender' => $data['gender'],
+                'date_of_birth' => $data['date_of_birth'],
+                'birth_certificate_no' => $data['birth_certificate_no'] ?? null,
+                'nationality' => $data['nationality'] ?? 'Tanzanian',
+                'religion' => $data['religion'] ?? null,
+                'blood_group' => $data['blood_group'] ?? null,
+                'allergies' => $data['allergies'] ?? null,
+                'medical_conditions' => $data['medical_conditions'] ?? null,
+                'address' => $data['address'] ?? null,
+                'region' => $data['region'] ?? null,
+                'district' => $data['district'] ?? null,
+                'ward' => $data['ward'] ?? null,
+                'street' => $data['street'] ?? null,
+                'photo' => $photoPath,
+                'status' => $data['status'] ?? 'active',
+                'notes' => $data['notes'] ?? null,
             ]);
 
             // 4. Create enrollment
@@ -109,7 +110,7 @@ class StudentRegistrationService
                 $message = SmsTemplates::studentWelcome($student, $school->name, $className);
                 app(SmsService::class)->notifyGuardians($student, $message);
             } catch (\Throwable $e) {
-                Log::warning('[StudentRegistrationService] Welcome SMS failed: ' . $e->getMessage());
+                Log::warning('[StudentRegistrationService] Welcome SMS failed: '.$e->getMessage());
             }
 
             return $student;
@@ -126,19 +127,20 @@ class StudentRegistrationService
             if ($existingUser->guardian) {
                 return $existingUser->guardian;
             }
+
             return Guardian::create([
-                'user_id'    => $existingUser->id,
+                'user_id' => $existingUser->id,
                 'first_name' => $this->firstName($gData['full_name']),
-                'last_name'  => $this->lastName($gData['full_name']),
-                'phone'      => $gData['phone'],
-                'email'      => $existingUser->email,
-                'national_id'=> $gData['national_id'] ?? null,
-                'address'    => $gData['address'] ?? null,
+                'last_name' => $this->lastName($gData['full_name']),
+                'phone' => $gData['phone'],
+                'email' => $existingUser->email,
+                'national_id' => $gData['national_id'] ?? null,
+                'address' => $gData['address'] ?? null,
             ]);
         }
 
         // Create a new user account for the guardian
-        $email = !empty($gData['email']) ? $gData['email'] : null;
+        $email = ! empty($gData['email']) ? $gData['email'] : null;
 
         // If email already taken, null it out and rely on phone only
         if ($email && User::where('email', $email)->exists()) {
@@ -146,35 +148,37 @@ class StudentRegistrationService
         }
 
         $user = User::create([
-            'name'     => $gData['full_name'],
-            'email'    => $email ?? $gData['phone'] . '@guardian.local',
-            'phone'    => $gData['phone'],
+            'name' => $gData['full_name'],
+            'email' => $email ?? $gData['phone'].'@guardian.local',
+            'phone' => $gData['phone'],
             'password' => bcrypt(Str::random(16)),
-            'role'     => 'parent',
+            'role' => 'parent',
         ]);
 
         $user->assignRole('parent');
 
         return Guardian::create([
-            'user_id'    => $user->id,
+            'user_id' => $user->id,
             'first_name' => $this->firstName($gData['full_name']),
-            'last_name'  => $this->lastName($gData['full_name']),
-            'phone'      => $gData['phone'],
-            'email'      => $email,
-            'national_id'=> $gData['national_id'] ?? null,
-            'address'    => $gData['address'] ?? null,
+            'last_name' => $this->lastName($gData['full_name']),
+            'phone' => $gData['phone'],
+            'email' => $email,
+            'national_id' => $gData['national_id'] ?? null,
+            'address' => $gData['address'] ?? null,
         ]);
     }
 
     private function firstName(string $fullName): string
     {
         $parts = explode(' ', trim($fullName));
+
         return $parts[0] ?? $fullName;
     }
 
     private function lastName(string $fullName): string
     {
         $parts = explode(' ', trim($fullName));
+
         return count($parts) > 1 ? implode(' ', array_slice($parts, 1)) : $fullName;
     }
 
@@ -188,7 +192,7 @@ class StudentRegistrationService
             ->with('feeItems')
             ->first();
 
-        if (!$feeStructure) {
+        if (! $feeStructure) {
             return; // No fee structure configured — skip silently
         }
 
@@ -200,7 +204,7 @@ class StudentRegistrationService
             'school_id' => $data['school_id'],
             'term_id' => $data['term_id'],
             'academic_year_id' => $data['academic_year_id'],
-            'invoice_number' => 'INV-' . strtoupper(Str::random(8)),
+            'invoice_number' => 'INV-'.strtoupper(Str::random(8)),
             'total_amount_cents' => $totalCents,
             'arrears_cents' => $openingBalance,
             'discount_cents' => 0,
@@ -220,7 +224,7 @@ class StudentRegistrationService
         }
 
         // Apply discount if provided
-        if (!empty($data['discount_type']) && !empty($data['discount_amount_cents'])) {
+        if (! empty($data['discount_type']) && ! empty($data['discount_amount_cents'])) {
             Discount::create([
                 'student_id' => $student->id,
                 'invoice_id' => $invoice->id,

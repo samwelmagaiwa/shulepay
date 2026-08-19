@@ -15,13 +15,14 @@ use Illuminate\Support\Facades\Log;
 
 class SendWeeklyReport extends Command
 {
-    protected $signature   = 'reports:weekly';
+    protected $signature = 'reports:weekly';
+
     protected $description = 'Generate and dispatch weekly fee-collections summary for every school';
 
     public function handle(): int
     {
         $from = now()->subDays(7)->startOfDay();
-        $to   = now()->endOfDay();
+        $to = now()->endOfDay();
 
         $schools = School::where('is_active', true)->get();
 
@@ -45,7 +46,7 @@ class SendWeeklyReport extends Command
             ->selectRaw('COUNT(*) as count, SUM(amount_cents) as total_cents')
             ->first();
 
-        $count      = (int) ($payments->count ?? 0);
+        $count = (int) ($payments->count ?? 0);
         $totalCents = (int) ($payments->total_cents ?? 0);
 
         // Aggregate pending (unpaid / partial) invoices
@@ -55,23 +56,23 @@ class SendWeeklyReport extends Command
             ->sum('total_amount_cents');
 
         $summary = [
-            'school_id'    => $school->id,
-            'school_name'  => $school->name,
-            'period_from'  => $from->toDateString(),
-            'period_to'    => $to->toDateString(),
-            'payment_count'=> $count,
-            'total_cents'  => $totalCents,
-            'pending_cents'=> $pendingCents,
+            'school_id' => $school->id,
+            'school_name' => $school->name,
+            'period_from' => $from->toDateString(),
+            'period_to' => $to->toDateString(),
+            'payment_count' => $count,
+            'total_cents' => $totalCents,
+            'pending_cents' => $pendingCents,
         ];
 
         // Audit log entry
         AuditLog::create([
-            'user_id'    => null,
-            'action'     => 'weekly_report_generated',
+            'user_id' => null,
+            'action' => 'weekly_report_generated',
             'model_type' => School::class,
-            'model_id'   => $school->id,
-            'before'     => null,
-            'after'      => $summary,
+            'model_id' => $school->id,
+            'before' => null,
+            'after' => $summary,
             'ip_address' => null,
             'user_agent' => 'Scheduler',
         ]);
@@ -92,7 +93,7 @@ class SendWeeklyReport extends Command
                 Log::channel('daily')->info('[reports:weekly] No owner phone', ['school' => $school->name]);
             }
         } catch (\Throwable $e) {
-            Log::warning('[reports:weekly] SMS failed for ' . $school->name . ': ' . $e->getMessage());
+            Log::warning('[reports:weekly] SMS failed for '.$school->name.': '.$e->getMessage());
         }
 
         $totalTzs = number_format($totalCents / 100, 2);

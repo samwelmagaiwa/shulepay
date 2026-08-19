@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Shared;
 
 use App\Http\Controllers\Controller;
-use App\Models\State;
 use App\Models\Lga;
-use App\Models\Ward;
+use App\Models\State;
 use App\Models\Village;
+use App\Models\Ward;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -34,7 +34,7 @@ class LocationController extends Controller
     {
         $stateId = $request->state_id;
 
-        if (!$stateId) {
+        if (! $stateId) {
             return response()->json(['data' => []]);
         }
 
@@ -58,7 +58,7 @@ class LocationController extends Controller
     {
         $lgaId = $request->lga_id;
 
-        if (!$lgaId) {
+        if (! $lgaId) {
             return response()->json(['data' => []]);
         }
 
@@ -82,7 +82,7 @@ class LocationController extends Controller
     {
         $wardId = $request->ward_id;
 
-        if (!$wardId) {
+        if (! $wardId) {
             return response()->json(['data' => []]);
         }
 

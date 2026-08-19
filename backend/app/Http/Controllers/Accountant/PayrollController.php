@@ -117,7 +117,7 @@ class PayrollController extends Controller
             ?? ($data['school_id'] ?? null)
             ?? auth()->user()->school_id;
 
-        if (!$schoolId) {
+        if (! $schoolId) {
             return response()->json(['message' => 'No active school set.'], 422);
         }
 
@@ -137,6 +137,7 @@ class PayrollController extends Controller
 
                 if ($exists) {
                     $skipped[] = $employee->staff_number;
+
                     continue;
                 }
 

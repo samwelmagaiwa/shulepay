@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Accountant;
 
 use App\Http\Controllers\Controller;
@@ -11,22 +12,31 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-class PaymentController extends Controller {
+class PaymentController extends Controller
+{
     public function __construct(private PaymentProcessor $processor) {}
 
-    public function index(Request $request): AnonymousResourceCollection {
+    public function index(Request $request): AnonymousResourceCollection
+    {
         // BelongsToSchool scope filters by active_school automatically
         $query = Payment::with(['receipt', 'invoice.student', 'invoice.term'])
             ->latest('paid_at');
 
-        if ($request->filled('method'))     $query->where('method', $request->method);
-        if ($request->filled('student_id')) $query->where('student_id', $request->student_id);
-        if ($request->filled('date'))       $query->whereDate('paid_at', $request->date);
+        if ($request->filled('method')) {
+            $query->where('method', $request->method);
+        }
+        if ($request->filled('student_id')) {
+            $query->where('student_id', $request->student_id);
+        }
+        if ($request->filled('date')) {
+            $query->whereDate('paid_at', $request->date);
+        }
 
         return PaymentResource::collection($query->paginate(20));
     }
 
-    public function store(StorePaymentRequest $request): JsonResponse {
+    public function store(StorePaymentRequest $request): JsonResponse
+    {
         $invoice = Invoice::with([
             'student.currentEnrollment.schoolClass',
             'student.currentEnrollment.school',
@@ -44,6 +54,7 @@ class PaymentController extends Controller {
             'invoice.school',
             'invoice.academicYear',
         ]);
+
         return (new PaymentResource($payment))->response()->setStatusCode(201);
     }
 }

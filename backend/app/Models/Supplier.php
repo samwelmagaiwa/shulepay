@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Supplier extends Model {
+class Supplier extends Model
+{
     use BelongsToSchool, SoftDeletes;
 
     protected $fillable = [
@@ -20,11 +21,13 @@ class Supplier extends Model {
         'balance_cents' => MoneyCast::class,
     ];
 
-    public function school(): BelongsTo {
+    public function school(): BelongsTo
+    {
         return $this->belongsTo(School::class);
     }
 
-    public function payments(): HasMany {
+    public function payments(): HasMany
+    {
         return $this->hasMany(SupplierPayment::class);
     }
 }

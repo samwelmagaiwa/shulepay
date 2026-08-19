@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Superadmin;
 
 use App\Http\Controllers\Controller;
-use App\Models\School;
 use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -26,14 +26,14 @@ class SuperadminUserController extends Controller
             $query->where('school_id', $request->integer('school_id'));
         }
         if ($request->filled('role')) {
-            $query->whereHas('roles', fn($q) => $q->where('name', $request->string('role')));
+            $query->whereHas('roles', fn ($q) => $q->where('name', $request->string('role')));
         }
         if ($request->filled('is_active')) {
             $query->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
         }
         if ($request->filled('search')) {
             $q = $request->string('search');
-            $query->where(fn($qb) => $qb->where('name', 'like', "%{$q}%")->orWhere('email', 'like', "%{$q}%"));
+            $query->where(fn ($qb) => $qb->where('name', 'like', "%{$q}%")->orWhere('email', 'like', "%{$q}%"));
         }
 
         return response()->json($query->paginate(25));
@@ -43,39 +43,39 @@ class SuperadminUserController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'        => 'required|string|max:255',
-            'email'       => 'required|email|unique:users,email',
-            'password'    => 'required|string|min:8',
-            'phone'       => 'nullable|string|max:20',
-            'school_id'   => 'nullable|integer|exists:schools,id',
-            'role'        => 'required|string|exists:roles,name',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8',
+            'phone' => 'nullable|string|max:20',
+            'school_id' => 'nullable|integer|exists:schools,id',
+            'role' => 'required|string|exists:roles,name',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string|exists:permissions,name',
         ]);
 
         $user = User::create([
-            'name'      => $data['name'],
-            'email'     => $data['email'],
-            'password'  => Hash::make($data['password']),
-            'phone'     => $data['phone'] ?? null,
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+            'phone' => $data['phone'] ?? null,
             'school_id' => $data['school_id'] ?? null,
             'is_active' => true,
         ]);
 
         $user->syncRoles([$data['role']]);
 
-        if (!empty($data['permissions'])) {
+        if (! empty($data['permissions'])) {
             $user->syncPermissions($data['permissions']);
         }
 
         AuditLogger::log('superadmin_user_created', $user, [
             'after' => [
-                'name'        => $user->name,
-                'email'       => $user->email,
-                'role'        => $data['role'],
-                'school_id'   => $data['school_id'] ?? null,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $data['role'],
+                'school_id' => $data['school_id'] ?? null,
                 'permissions' => $data['permissions'] ?? [],
-                'created_by'  => auth()->user()->name,
+                'created_by' => auth()->user()->name,
             ],
         ]);
 
@@ -94,23 +94,33 @@ class SuperadminUserController extends Controller
         $this->guardSelf($user);
 
         $data = $request->validate([
-            'name'          => 'sometimes|required|string|max:255',
-            'email'         => 'sometimes|required|email|unique:users,email,' . $user->id,
-            'password'      => 'sometimes|required|string|min:8',
-            'phone'         => 'nullable|string|max:20',
-            'school_id'     => 'nullable|integer|exists:schools,id',
-            'role'          => 'sometimes|required|string|exists:roles,name',
-            'permissions'   => 'nullable|array',
+            'name' => 'sometimes|required|string|max:255',
+            'email' => 'sometimes|required|email|unique:users,email,'.$user->id,
+            'password' => 'sometimes|required|string|min:8',
+            'phone' => 'nullable|string|max:20',
+            'school_id' => 'nullable|integer|exists:schools,id',
+            'role' => 'sometimes|required|string|exists:roles,name',
+            'permissions' => 'nullable|array',
             'permissions.*' => 'string|exists:permissions,name',
         ]);
 
         $before = $user->only(['name', 'email', 'school_id']);
 
-        if (isset($data['name']))      $user->name      = $data['name'];
-        if (isset($data['email']))     $user->email     = $data['email'];
-        if (isset($data['password']))  $user->password  = Hash::make($data['password']);
-        if (isset($data['phone']))     $user->phone     = $data['phone'];
-        if (array_key_exists('school_id', $data)) $user->school_id = $data['school_id'];
+        if (isset($data['name'])) {
+            $user->name = $data['name'];
+        }
+        if (isset($data['email'])) {
+            $user->email = $data['email'];
+        }
+        if (isset($data['password'])) {
+            $user->password = Hash::make($data['password']);
+        }
+        if (isset($data['phone'])) {
+            $user->phone = $data['phone'];
+        }
+        if (array_key_exists('school_id', $data)) {
+            $user->school_id = $data['school_id'];
+        }
 
         $user->save();
 
@@ -123,8 +133,8 @@ class SuperadminUserController extends Controller
         }
 
         AuditLogger::log('superadmin_user_updated', $user, [
-            'before'     => $before,
-            'after'      => $user->fresh()->only(['name', 'email', 'school_id']),
+            'before' => $before,
+            'after' => $user->fresh()->only(['name', 'email', 'school_id']),
             'updated_by' => auth()->user()->name,
         ]);
 
@@ -141,7 +151,7 @@ class SuperadminUserController extends Controller
             'reason' => 'nullable|string|max:500',
         ]);
 
-        if (!$user->is_active) {
+        if (! $user->is_active) {
             return response()->json(['message' => 'User is already deactivated.'], 422);
         }
 
@@ -149,19 +159,19 @@ class SuperadminUserController extends Controller
         $user->tokens()->delete();
 
         $user->update([
-            'is_active'           => false,
-            'deactivated_at'      => now(),
+            'is_active' => false,
+            'deactivated_at' => now(),
             'deactivation_reason' => $data['reason'] ?? null,
         ]);
 
         AuditLogger::log('user_deactivated', $user, [
-            'reason'       => $data['reason'] ?? null,
+            'reason' => $data['reason'] ?? null,
             'deactivated_by' => auth()->user()->name,
         ]);
 
         return response()->json([
-            'message'   => "User '{$user->name}' has been deactivated.",
-            'user'      => $user->load(['roles', 'school']),
+            'message' => "User '{$user->name}' has been deactivated.",
+            'user' => $user->load(['roles', 'school']),
         ]);
     }
 
@@ -175,8 +185,8 @@ class SuperadminUserController extends Controller
         }
 
         $user->update([
-            'is_active'           => true,
-            'deactivated_at'      => null,
+            'is_active' => true,
+            'deactivated_at' => null,
             'deactivation_reason' => null,
         ]);
 
@@ -186,7 +196,7 @@ class SuperadminUserController extends Controller
 
         return response()->json([
             'message' => "User '{$user->name}' has been reactivated.",
-            'user'    => $user->load(['roles', 'school']),
+            'user' => $user->load(['roles', 'school']),
         ]);
     }
 
@@ -194,7 +204,7 @@ class SuperadminUserController extends Controller
     public function syncPermissions(Request $request, User $user): JsonResponse
     {
         $data = $request->validate([
-            'permissions'   => 'required|array',
+            'permissions' => 'required|array',
             'permissions.*' => 'string|exists:permissions,name',
         ]);
 
@@ -202,7 +212,7 @@ class SuperadminUserController extends Controller
 
         AuditLogger::log('user_permissions_updated', $user, [
             'permissions' => $data['permissions'],
-            'updated_by'  => auth()->user()->name,
+            'updated_by' => auth()->user()->name,
         ]);
 
         return response()->json($user->load(['roles', 'permissions', 'school']));
@@ -217,7 +227,7 @@ class SuperadminUserController extends Controller
         $user->tokens()->delete();
 
         AuditLogger::log('superadmin_user_deleted', $user, [
-            'before'     => $user->only(['name', 'email', 'school_id']),
+            'before' => $user->only(['name', 'email', 'school_id']),
             'deleted_by' => auth()->user()->name,
         ]);
 
@@ -235,20 +245,20 @@ class SuperadminUserController extends Controller
         $allPerms = Permission::pluck('name')->toArray();
 
         $data = $request->validate([
-            'forbidden_permissions'   => 'required|array',
-            'forbidden_permissions.*' => ['string', \Illuminate\Validation\Rule::in($allPerms)],
+            'forbidden_permissions' => 'required|array',
+            'forbidden_permissions.*' => ['string', Rule::in($allPerms)],
         ]);
 
         $user->update(['forbidden_permissions' => array_values(array_unique($data['forbidden_permissions']))]);
 
         AuditLogger::log('user_permissions_restricted', $user, [
             'forbidden_permissions' => $data['forbidden_permissions'],
-            'restricted_by'        => auth()->user()->name,
+            'restricted_by' => auth()->user()->name,
         ]);
 
         return response()->json([
-            'message'               => "Restrictions updated for '{$user->name}'.",
-            'user'                  => $user->load(['roles', 'permissions', 'school']),
+            'message' => "Restrictions updated for '{$user->name}'.",
+            'user' => $user->load(['roles', 'permissions', 'school']),
             'forbidden_permissions' => $user->forbidden_permissions ?? [],
         ]);
     }

@@ -40,16 +40,16 @@ class Asset extends Model
     ];
 
     protected $casts = [
-        'cost_cents'                     => MoneyCast::class,
-        'current_value_cents'            => MoneyCast::class,
-        'purchase_cost_cents'            => MoneyCast::class,
-        'salvage_value_cents'            => MoneyCast::class,
+        'cost_cents' => MoneyCast::class,
+        'current_value_cents' => MoneyCast::class,
+        'purchase_cost_cents' => MoneyCast::class,
+        'salvage_value_cents' => MoneyCast::class,
         'accumulated_depreciation_cents' => MoneyCast::class,
-        'disposal_value_cents'           => MoneyCast::class,
-        'purchase_date'                  => 'date',
-        'warranty_expiry'                => 'date',
-        'disposal_date'                  => 'date',
-        'registered_at'                  => 'datetime',
+        'disposal_value_cents' => MoneyCast::class,
+        'purchase_date' => 'date',
+        'warranty_expiry' => 'date',
+        'disposal_date' => 'date',
+        'registered_at' => 'datetime',
     ];
 
     protected static function boot(): void
@@ -80,32 +80,32 @@ class Asset extends Model
     {
         $cost = (int) $this->getRawOriginal('purchase_cost_cents');
 
-        if (!$this->purchase_date || $cost === 0) {
+        if (! $this->purchase_date || $cost === 0) {
             return $cost;
         }
 
-        $years   = now()->diffInDays($this->purchase_date) / 365.25;
+        $years = now()->diffInDays($this->purchase_date) / 365.25;
         $salvage = (int) $this->getRawOriginal('salvage_value_cents');
 
         $depreciation = 0;
 
         if ($this->depreciation_method === 'straight_line' && $this->useful_life_years > 0) {
-            $annualDep    = ($cost - $salvage) / $this->useful_life_years;
+            $annualDep = ($cost - $salvage) / $this->useful_life_years;
             $depreciation = (int) min($annualDep * $years, $cost - $salvage);
         } elseif ($this->depreciation_method === 'reducing_balance' && $this->depreciation_rate > 0) {
-            $rate       = $this->depreciation_rate / 100;
+            $rate = $this->depreciation_rate / 100;
             $currentVal = $cost;
             $wholeYears = (int) $years;
 
             for ($i = 0; $i < $wholeYears; $i++) {
-                $dep           = (int) ($currentVal * $rate);
+                $dep = (int) ($currentVal * $rate);
                 $depreciation += $dep;
-                $currentVal   -= $dep;
+                $currentVal -= $dep;
             }
 
             $partial = $years - $wholeYears;
             if ($partial > 0) {
-                $dep           = (int) ($currentVal * $rate * $partial);
+                $dep = (int) ($currentVal * $rate * $partial);
                 $depreciation += $dep;
             }
         }
@@ -121,12 +121,12 @@ class Asset extends Model
     public static function nextAssetTag(int $schoolId): string
     {
         $school = School::find($schoolId);
-        $prefix = strtoupper($school?->code ?? 'AST') . '-AST-';
-        $last   = self::where('asset_tag', 'like', $prefix . '%')
+        $prefix = strtoupper($school?->code ?? 'AST').'-AST-';
+        $last = self::where('asset_tag', 'like', $prefix.'%')
             ->orderByDesc('asset_tag')
             ->value('asset_tag');
         $next = $last ? ((int) substr($last, strlen($prefix)) + 1) : 1;
 
-        return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $next, 3, '0', STR_PAD_LEFT);
     }
 }

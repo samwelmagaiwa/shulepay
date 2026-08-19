@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 return [
     'default_term' => env('DEFAULT_TERM', 1),

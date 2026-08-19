@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('states', function (Blueprint $table) {
@@ -43,16 +44,16 @@ return new class extends Migration {
         });
 
         Schema::table('students', function (Blueprint $table) {
-            if (!Schema::hasColumn('students', 'region')) {
+            if (! Schema::hasColumn('students', 'region')) {
                 $table->string('region')->nullable()->after('photo');
             }
-            if (!Schema::hasColumn('students', 'district')) {
+            if (! Schema::hasColumn('students', 'district')) {
                 $table->string('district')->nullable()->after('region');
             }
-            if (!Schema::hasColumn('students', 'ward')) {
+            if (! Schema::hasColumn('students', 'ward')) {
                 $table->string('ward')->nullable()->after('district');
             }
-            if (!Schema::hasColumn('students', 'street')) {
+            if (! Schema::hasColumn('students', 'street')) {
                 $table->string('street')->nullable()->after('ward');
             }
         });

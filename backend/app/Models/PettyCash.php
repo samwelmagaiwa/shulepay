@@ -7,7 +7,8 @@ use App\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class PettyCash extends Model {
+class PettyCash extends Model
+{
     use BelongsToSchool;
 
     protected $table = 'petty_cash_entries';
@@ -18,16 +19,18 @@ class PettyCash extends Model {
     ];
 
     protected $casts = [
-        'amount_cents'       => MoneyCast::class,
+        'amount_cents' => MoneyCast::class,
         'balance_after_cents' => MoneyCast::class,
-        'entry_date'         => 'date',
+        'entry_date' => 'date',
     ];
 
-    public function school(): BelongsTo {
+    public function school(): BelongsTo
+    {
         return $this->belongsTo(School::class);
     }
 
-    public function recorder(): BelongsTo {
+    public function recorder(): BelongsTo
+    {
         return $this->belongsTo(User::class, 'recorded_by');
     }
 }

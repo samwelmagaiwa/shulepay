@@ -1,11 +1,11 @@
 <?php
+
 namespace App\Http\Controllers\Accountant;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\InstallmentResource;
 use App\Models\InstallmentPlan;
 use App\Models\Invoice;
-use App\Models\SchoolClass;
 use App\Services\AuditLogger;
 use App\Services\Sms\SmsService;
 use App\Services\Sms\SmsTemplates;
@@ -39,8 +39,7 @@ class InstallmentController extends Controller
             $s = $request->search;
             $query->whereHas(
                 'student',
-                fn($q) =>
-                $q->where('first_name', 'like', "%{$s}%")
+                fn ($q) => $q->where('first_name', 'like', "%{$s}%")
                     ->orWhere('last_name', 'like', "%{$s}%")
             );
         }
@@ -115,7 +114,7 @@ class InstallmentController extends Controller
             $message = SmsTemplates::installmentPlanCreated($invoiceForSms, (int) $data['total_installments'], $installmentAmountCents);
             app(SmsService::class)->notifyGuardians($invoiceForSms->student, $message);
         } catch (\Throwable $e) {
-            Log::warning('[InstallmentController] Plan created SMS failed: ' . $e->getMessage());
+            Log::warning('[InstallmentController] Plan created SMS failed: '.$e->getMessage());
         }
 
         return response()->json(new InstallmentResource($first), 201);
@@ -138,13 +137,12 @@ class InstallmentController extends Controller
 
         // All unpaid/partial invoices for this class + term that don't already have a plan
         $invoices = Invoice::allSchools()
-            ->when(!empty($data['school_id']), fn($q) => $q->where('school_id', $data['school_id']))
+            ->when(! empty($data['school_id']), fn ($q) => $q->where('school_id', $data['school_id']))
             ->where('term_id', $data['term_id'])
             ->whereIn('status', ['unpaid', 'partial'])
             ->whereHas(
                 'student.currentEnrollment',
-                fn($q) =>
-                $q->where('school_class_id', $data['school_class_id'])
+                fn ($q) => $q->where('school_class_id', $data['school_class_id'])
             )
             ->whereDoesntHave('installmentPlans')
             ->with(['student.currentEnrollment', 'student.guardians'])
@@ -163,11 +161,12 @@ class InstallmentController extends Controller
         $intervalDays = (int) $data['interval_days'];
         $total = (int) $data['total_installments'];
 
-        DB::transaction(function () use ($invoices, $data, $startDate, $intervalDays, $total, &$created) {
+        DB::transaction(function () use ($invoices, $startDate, $intervalDays, $total, &$created) {
             foreach ($invoices as $invoice) {
                 $balanceDue = $invoice->balanceDueCents();
-                if ($balanceDue <= 0)
+                if ($balanceDue <= 0) {
                     continue;
+                }
 
                 $amountCents = (int) ceil($balanceDue / $total);
 
@@ -194,7 +193,7 @@ class InstallmentController extends Controller
                     $msg = SmsTemplates::installmentPlanCreated($invoice->loadMissing('student'), $total, $amountCents);
                     app(SmsService::class)->notifyGuardians($invoice->student, $msg);
                 } catch (\Throwable $e) {
-                    Log::warning('[InstallmentController] Bulk plan SMS failed: ' . $e->getMessage());
+                    Log::warning('[InstallmentController] Bulk plan SMS failed: '.$e->getMessage());
                 }
 
                 $created++;
@@ -210,6 +209,7 @@ class InstallmentController extends Controller
     public function show(InstallmentPlan $installment): InstallmentResource
     {
         $installment->load(['invoice', 'student']);
+
         return new InstallmentResource($installment);
     }
 
@@ -295,7 +295,7 @@ class InstallmentController extends Controller
             );
             app(SmsService::class)->notifyGuardians($paidStudent, $message);
         } catch (\Throwable $e) {
-            Log::warning('[InstallmentController] Mark paid SMS failed: ' . $e->getMessage());
+            Log::warning('[InstallmentController] Mark paid SMS failed: '.$e->getMessage());
         }
 
         return response()->json([

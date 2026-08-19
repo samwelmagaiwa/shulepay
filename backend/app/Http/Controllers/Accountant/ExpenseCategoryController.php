@@ -8,8 +8,10 @@ use App\Models\ExpenseCategory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class ExpenseCategoryController extends Controller {
-    public function index(Request $request): JsonResponse {
+class ExpenseCategoryController extends Controller
+{
+    public function index(Request $request): JsonResponse
+    {
         $query = ExpenseCategory::query();
 
         if ($school = app()->bound('active_school') ? app('active_school') : null) {
@@ -25,10 +27,11 @@ class ExpenseCategoryController extends Controller {
         return response()->json($query->orderBy('name')->get());
     }
 
-    public function store(Request $request): JsonResponse {
+    public function store(Request $request): JsonResponse
+    {
         $data = $request->validate([
-            'name'        => 'required|string|max:255',
-            'type'        => 'required|in:operational,capital,staff,other',
+            'name' => 'required|string|max:255',
+            'type' => 'required|in:operational,capital,staff,other',
             'description' => 'nullable|string|max:500',
         ]);
 
@@ -42,10 +45,11 @@ class ExpenseCategoryController extends Controller {
         return response()->json($category, 201);
     }
 
-    public function update(Request $request, ExpenseCategory $expenseCategory): JsonResponse {
+    public function update(Request $request, ExpenseCategory $expenseCategory): JsonResponse
+    {
         $data = $request->validate([
-            'name'        => 'sometimes|required|string|max:255',
-            'type'        => 'sometimes|required|in:operational,capital,staff,other',
+            'name' => 'sometimes|required|string|max:255',
+            'type' => 'sometimes|required|in:operational,capital,staff,other',
             'description' => 'nullable|string|max:500',
         ]);
 
@@ -56,7 +60,8 @@ class ExpenseCategoryController extends Controller {
         return response()->json($expenseCategory);
     }
 
-    public function destroy(ExpenseCategory $expenseCategory): JsonResponse {
+    public function destroy(ExpenseCategory $expenseCategory): JsonResponse
+    {
         AuditLog::record('expense_category.deleted', $expenseCategory, $expenseCategory->toArray(), []);
         $expenseCategory->delete();
 

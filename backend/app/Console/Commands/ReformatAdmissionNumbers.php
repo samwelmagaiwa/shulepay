@@ -1,15 +1,18 @@
 <?php
+
 namespace App\Console\Commands;
 
 use App\Enums\SchoolLevel;
 use App\Models\Enrollment;
 use App\Models\School;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 class ReformatAdmissionNumbers extends Command
 {
     protected $signature = 'admissions:reformat {--dry-run : Preview changes without saving}';
+
     protected $description = 'Reformat old MSG-{n} style admission numbers to PRM/SEC/CODE/NNNN/YEAR format';
 
     public function handle(): int
@@ -26,9 +29,9 @@ class ReformatAdmissionNumbers extends Command
                 ->orWhereRaw("admission_number NOT REGEXP '^(PRM|SEC)/[A-Z]+/[0-9]{4}/[0-9]{4}$'"); // anything not matching new format
         })->get();
 
-
         if ($enrollments->isEmpty()) {
             $this->info('No old-format admission numbers found. Nothing to do.');
+
             return self::SUCCESS;
         }
 
@@ -40,8 +43,9 @@ class ReformatAdmissionNumbers extends Command
         DB::transaction(function () use ($grouped, $schools, $dryRun) {
             foreach ($grouped as $schoolId => $schoolEnrollments) {
                 $school = $schools[$schoolId] ?? null;
-                if (!$school) {
+                if (! $school) {
                     $this->warn("  School ID {$schoolId} not found — skipping.");
+
                     continue;
                 }
 
@@ -53,6 +57,7 @@ class ReformatAdmissionNumbers extends Command
                     if (preg_match('/(\d+)$/', $e->admission_number, $m)) {
                         return (int) $m[1];
                     }
+
                     return 0;
                 })->values();
 
@@ -62,8 +67,8 @@ class ReformatAdmissionNumbers extends Command
                 foreach ($sorted as $enrollment) {
                     // Use admitted_at year if available, else created_at year
                     $year = $enrollment->admitted_at
-                        ? \Carbon\Carbon::parse($enrollment->admitted_at)->year
-                        : \Carbon\Carbon::parse($enrollment->created_at)->year;
+                        ? Carbon::parse($enrollment->admitted_at)->year
+                        : Carbon::parse($enrollment->created_at)->year;
 
                     $seqByYear[$year] = ($seqByYear[$year] ?? 0) + 1;
                     $seq = $seqByYear[$year];
@@ -73,7 +78,7 @@ class ReformatAdmissionNumbers extends Command
 
                     $this->line("  {$oldNumber} → {$newNumber}");
 
-                    if (!$dryRun) {
+                    if (! $dryRun) {
                         $enrollment->admission_number = $newNumber;
                         $enrollment->save();
                     }

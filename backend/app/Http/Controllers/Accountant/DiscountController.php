@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Accountant;
 
 use App\Http\Controllers\Controller;
@@ -13,8 +14,8 @@ class DiscountController extends Controller
     public function index(Request $request): JsonResponse
     {
         $discounts = Discount::with(['student', 'invoice', 'appliedBy'])
-            ->when($request->student_id, fn($q) => $q->where('student_id', $request->student_id))
-            ->when($request->invoice_id, fn($q) => $q->where('invoice_id', $request->invoice_id))
+            ->when($request->student_id, fn ($q) => $q->where('student_id', $request->student_id))
+            ->when($request->invoice_id, fn ($q) => $q->where('invoice_id', $request->invoice_id))
             ->latest()
             ->paginate(50);
 
@@ -24,9 +25,9 @@ class DiscountController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'invoice_id'   => 'required|exists:invoices,id',
+            'invoice_id' => 'required|exists:invoices,id',
             'amount_cents' => 'required|integer|min:1',
-            'reason'       => 'required|string|max:255',
+            'reason' => 'required|string|max:255',
         ]);
 
         $invoice = Invoice::with('payments')->findOrFail($data['invoice_id']);
@@ -37,19 +38,19 @@ class DiscountController extends Controller
 
         $discount = DB::transaction(function () use ($data, $invoice) {
             $d = Discount::create([
-                'invoice_id'    => $invoice->id,
-                'student_id'    => $invoice->student_id,
-                'type'          => 'general',
-                'amount_cents'  => $data['amount_cents'],
-                'reason'        => $data['reason'],
-                'applied_by'    => auth()->id(),
-                'applied_at'    => now(),
+                'invoice_id' => $invoice->id,
+                'student_id' => $invoice->student_id,
+                'type' => 'general',
+                'amount_cents' => $data['amount_cents'],
+                'reason' => $data['reason'],
+                'applied_by' => auth()->id(),
+                'applied_at' => now(),
             ]);
 
             // Recalculate invoice status
-            $totalPaid      = $invoice->payments()->sum('amount_cents');
+            $totalPaid = $invoice->payments()->sum('amount_cents');
             $totalDiscounts = $invoice->discounts()->sum('amount_cents');
-            $balance        = $invoice->total_amount_cents - $totalPaid - $totalDiscounts;
+            $balance = $invoice->total_amount_cents - $totalPaid - $totalDiscounts;
 
             $invoice->update([
                 'status' => $balance <= 0 ? 'paid' : ($totalPaid > 0 ? 'partial' : 'unpaid'),
@@ -67,9 +68,9 @@ class DiscountController extends Controller
             $invoice = $discount->invoice()->with('payments', 'discounts')->first();
             $discount->delete();
 
-            $totalPaid      = $invoice->payments()->sum('amount_cents');
+            $totalPaid = $invoice->payments()->sum('amount_cents');
             $totalDiscounts = $invoice->discounts()->sum('amount_cents');
-            $balance        = $invoice->total_amount_cents - $totalPaid - $totalDiscounts;
+            $balance = $invoice->total_amount_cents - $totalPaid - $totalDiscounts;
 
             $invoice->update([
                 'status' => $balance <= 0 ? 'paid' : ($totalPaid > 0 ? 'partial' : 'unpaid'),

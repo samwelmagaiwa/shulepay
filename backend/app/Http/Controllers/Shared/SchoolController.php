@@ -27,8 +27,8 @@ class SchoolController extends Controller
         }
 
         if ($request->filled('search')) {
-            $q = '%' . $request->search . '%';
-            $query->where(fn($w) => $w->where('name', 'like', $q)->orWhere('code', 'like', $q));
+            $q = '%'.$request->search.'%';
+            $query->where(fn ($w) => $w->where('name', 'like', $q)->orWhere('code', 'like', $q));
         }
 
         $schools = $query->orderBy('name')->get();
@@ -40,6 +40,7 @@ class SchoolController extends Controller
     public function show(School $school): JsonResponse
     {
         $school->loadCount('enrollments');
+
         return response()->json(new SchoolResource($school));
     }
 
@@ -55,10 +56,10 @@ class SchoolController extends Controller
         }
 
         // Ensure slug uniqueness
-        $base  = $data['slug'];
+        $base = $data['slug'];
         $count = 1;
         while (School::where('slug', $data['slug'])->exists()) {
-            $data['slug'] = $base . '-' . $count++;
+            $data['slug'] = $base.'-'.$count++;
         }
 
         if ($request->hasFile('logo')) {
@@ -87,11 +88,11 @@ class SchoolController extends Controller
 
         // Re-slug if name changed
         if (isset($data['name']) && $data['name'] !== $school->name) {
-            $base  = Str::slug($data['name']);
-            $slug  = $base;
+            $base = Str::slug($data['name']);
+            $slug = $base;
             $count = 1;
             while (School::where('slug', $slug)->where('id', '!=', $school->id)->exists()) {
-                $slug = $base . '-' . $count++;
+                $slug = $base.'-'.$count++;
             }
             $data['slug'] = $slug;
         }
@@ -111,6 +112,7 @@ class SchoolController extends Controller
         if ($school->enrollments()->exists()) {
             $school->update(['is_active' => false]);
             AuditLogger::log('school.deactivated', $school, []);
+
             return response()->json(['message' => 'School deactivated (has existing students).']);
         }
 
@@ -134,16 +136,18 @@ class SchoolController extends Controller
         // Strip stop-words, keep significant words
         $stopWords = ['school', 'primary', 'secondary', 'st', 'saint', 'ya', 'the', 'of', 'and', 'la', 'da'];
         $words = preg_split('/[\s.]+/', strtolower($name));
-        $significant = array_filter($words, fn($w) => $w && !in_array(rtrim($w, '.'), $stopWords));
+        $significant = array_filter($words, fn ($w) => $w && ! in_array(rtrim($w, '.'), $stopWords));
 
         // Remove vowels from each word, uppercase, join
-        $abbrev = implode('', array_map(fn($w) => preg_replace('/[aeiou]/i', '', $w), $significant));
+        $abbrev = implode('', array_map(fn ($w) => preg_replace('/[aeiou]/i', '', $w), $significant));
         $abbrev = strtoupper(substr($abbrev, 0, 8));
-        if (!$abbrev) $abbrev = strtoupper(substr(preg_replace('/\s+/', '', $name), 0, 6));
+        if (! $abbrev) {
+            $abbrev = strtoupper(substr(preg_replace('/\s+/', '', $name), 0, 6));
+        }
 
         // Sequential number among schools with same prefix
         $year = now()->year;
-        $seq  = School::where('registration_number', 'like', "{$prefix}/%/{$year}")->count() + 1;
+        $seq = School::where('registration_number', 'like', "{$prefix}/%/{$year}")->count() + 1;
 
         return sprintf('%s/%s/%04d/%d', $prefix, $abbrev, $seq, $year);
     }
@@ -151,8 +155,9 @@ class SchoolController extends Controller
     /** PATCH /api/schools/{school}/toggle-status — owner only */
     public function toggleStatus(School $school): JsonResponse
     {
-        $school->update(['is_active' => !$school->is_active]);
+        $school->update(['is_active' => ! $school->is_active]);
         AuditLogger::log('school.status_toggled', $school, ['is_active' => $school->is_active]);
+
         return response()->json(new SchoolResource($school));
     }
 }

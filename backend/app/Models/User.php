@@ -1,26 +1,31 @@
 <?php
+
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Traits\HasRoles;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     protected $fillable = ['name', 'email', 'password', 'school_id', 'phone', 'avatar', '2fa_enabled',
-                           'is_active', 'deactivated_at', 'deactivation_reason', 'forbidden_permissions'];
-    protected $hidden   = ['password', 'remember_token'];
-    protected $casts    = [
-        'email_verified_at'   => 'datetime',
-        'password'            => 'hashed',
-        '2fa_enabled'         => 'boolean',
-        'is_active'           => 'boolean',
-        'deactivated_at'      => 'datetime',
+        'is_active', 'deactivated_at', 'deactivation_reason', 'forbidden_permissions'];
+
+    protected $hidden = ['password', 'remember_token'];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        '2fa_enabled' => 'boolean',
+        'is_active' => 'boolean',
+        'deactivated_at' => 'datetime',
         'forbidden_permissions' => 'array',
     ];
 
@@ -34,7 +39,7 @@ class User extends Authenticatable
         if ($this->hasRole('superadmin')) {
             return true;
         }
-        $permName = $permission instanceof \Spatie\Permission\Models\Permission
+        $permName = $permission instanceof Permission
             ? $permission->name : (string) $permission;
 
         $forbidden = $this->forbidden_permissions ?? [];
@@ -49,10 +54,11 @@ class User extends Authenticatable
     public function effectivePermissions(): array
     {
         if ($this->hasRole('superadmin')) {
-            return \Spatie\Permission\Models\Permission::all()->pluck('name')->toArray();
+            return Permission::all()->pluck('name')->toArray();
         }
         $all = $this->getAllPermissions()->pluck('name')->toArray();
         $forbidden = $this->forbidden_permissions ?? [];
+
         return array_values(array_diff($all, $forbidden));
     }
 

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Shared;
 
 use App\Http\Controllers\Controller;
@@ -30,7 +31,7 @@ class TermController extends Controller
         $terms = $query->orderBy('number')->get();
 
         // If globally fetched across multiple active academic years, prevent duplicate names in dropdowns
-        if (!$request->filled('academic_year_id') && (!$user || !$user->school_id)) {
+        if (! $request->filled('academic_year_id') && (! $user || ! $user->school_id)) {
             $terms = $terms->unique('number')->values();
         }
 
@@ -46,14 +47,14 @@ class TermController extends Controller
     {
         $data = $request->validate([
             'academic_year_id' => 'required|integer|exists:academic_years,id',
-            'name'             => 'required|string|max:100',
-            'number'           => 'required|integer|between:1,4',
-            'start_date'       => 'required|date',
-            'end_date'         => 'required|date|after:start_date',
-            'is_current'       => 'boolean',
+            'name' => 'required|string|max:100',
+            'number' => 'required|integer|between:1,4',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+            'is_current' => 'boolean',
         ]);
 
-        if (!empty($data['is_current'])) {
+        if (! empty($data['is_current'])) {
             Term::where('academic_year_id', $data['academic_year_id'])
                 ->update(['is_current' => false]);
         }
@@ -66,14 +67,14 @@ class TermController extends Controller
     public function update(Request $request, Term $term): JsonResponse
     {
         $data = $request->validate([
-            'name'       => 'sometimes|required|string|max:100',
-            'number'     => 'sometimes|required|integer|between:1,4',
+            'name' => 'sometimes|required|string|max:100',
+            'number' => 'sometimes|required|integer|between:1,4',
             'start_date' => 'sometimes|required|date',
-            'end_date'   => 'sometimes|required|date|after:start_date',
+            'end_date' => 'sometimes|required|date|after:start_date',
             'is_current' => 'boolean',
         ]);
 
-        if (!empty($data['is_current'])) {
+        if (! empty($data['is_current'])) {
             Term::where('academic_year_id', $term->academic_year_id)
                 ->where('id', '!=', $term->id)
                 ->update(['is_current' => false]);

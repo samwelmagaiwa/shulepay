@@ -1,11 +1,13 @@
 <?php
+
 namespace App\Models;
 
 use App\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SmsLog extends Model {
+class SmsLog extends Model
+{
     use BelongsToSchool;
 
     protected $fillable = [
@@ -17,7 +19,18 @@ class SmsLog extends Model {
         'sent_at' => 'datetime',
     ];
 
-    public function school(): BelongsTo   { return $this->belongsTo(School::class); }
-    public function sender(): BelongsTo   { return $this->belongsTo(User::class, 'sender_id'); }
-    public function student(): BelongsTo  { return $this->belongsTo(Student::class); }
+    public function school(): BelongsTo
+    {
+        return $this->belongsTo(School::class);
+    }
+
+    public function sender(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(Student::class);
+    }
 }

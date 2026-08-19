@@ -46,12 +46,14 @@ class ExamController extends Controller
         ]);
 
         $exam->update($validated);
+
         return response()->json($exam);
     }
 
     public function destroy(Exam $exam)
     {
         $exam->delete();
+
         return response()->noContent();
     }
 }

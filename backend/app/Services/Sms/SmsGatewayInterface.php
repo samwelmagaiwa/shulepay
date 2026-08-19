@@ -1,6 +1,8 @@
 <?php
+
 namespace App\Services\Sms;
 
-interface SmsGatewayInterface {
+interface SmsGatewayInterface
+{
     public function send(string $to, string $message): bool;
 }

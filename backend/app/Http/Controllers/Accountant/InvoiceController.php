@@ -1,12 +1,13 @@
 <?php
+
 namespace App\Http\Controllers\Accountant;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\InvoiceResource;
-use App\Models\Invoice;
-use App\Models\Term;
 use App\Models\AcademicYear;
+use App\Models\Invoice;
 use App\Models\Student;
+use App\Models\Term;
 use App\Services\Billing\InvoiceGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,9 +15,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class InvoiceController extends Controller
 {
-    public function __construct(private InvoiceGenerator $generator)
-    {
-    }
+    public function __construct(private InvoiceGenerator $generator) {}
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -29,34 +28,34 @@ class InvoiceController extends Controller
         }
 
         if ($request->filled('term_number')) {
-            $query->whereHas('term', fn($q) => $q->where('number', (int) $request->term_number));
+            $query->whereHas('term', fn ($q) => $q->where('number', (int) $request->term_number));
         } elseif ($request->filled('term_id')) {
             $query->where('term_id', $request->integer('term_id'));
         }
-        if ($request->filled('student_id'))
+        if ($request->filled('student_id')) {
             $query->where('student_id', $request->student_id);
+        }
         if ($request->filled('invoice_number')) {
             $query->where('invoice_number', $request->invoice_number);
         }
         if ($request->filled('school_class_id')) {
             $query->whereHas(
                 'student.currentEnrollment',
-                fn($q) =>
-                $q->where('school_class_id', $request->school_class_id)
+                fn ($q) => $q->where('school_class_id', $request->school_class_id)
             );
         }
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
                 $q->where('invoice_number', 'like', "%{$s}%")
-                  ->orWhereHas('student', fn($sq) => $sq
-                      ->where('first_name',  'like', "%{$s}%")
-                      ->orWhere('middle_name', 'like', "%{$s}%")
-                      ->orWhere('last_name',  'like', "%{$s}%")
-                  )
-                  ->orWhereHas('student.currentEnrollment', fn($sq) => $sq
-                      ->where('admission_number', 'like', "%{$s}%")
-                  );
+                    ->orWhereHas('student', fn ($sq) => $sq
+                        ->where('first_name', 'like', "%{$s}%")
+                        ->orWhere('middle_name', 'like', "%{$s}%")
+                        ->orWhere('last_name', 'like', "%{$s}%")
+                    )
+                    ->orWhereHas('student.currentEnrollment', fn ($sq) => $sq
+                        ->where('admission_number', 'like', "%{$s}%")
+                    );
             });
         }
 
@@ -91,10 +90,12 @@ class InvoiceController extends Controller
         if ($request->filled('student_id')) {
             $student = Student::findOrFail($request->student_id);
             $invoice = $this->generator->generateForStudent($student, $term, $year);
+
             return response()->json(new InvoiceResource($invoice), 201);
         }
 
         $results = $this->generator->generateForTerm($term, $year);
+
         return response()->json($results, 201);
     }
 }

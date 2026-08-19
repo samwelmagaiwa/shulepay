@@ -9,8 +9,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class PettyCashController extends Controller {
-    public function index(Request $request): JsonResponse {
+class PettyCashController extends Controller
+{
+    public function index(Request $request): JsonResponse
+    {
         $entries = PettyCash::with('recorder')
             ->orderBy('entry_date', 'desc')
             ->orderBy('id', 'desc')
@@ -20,20 +22,21 @@ class PettyCashController extends Controller {
             'data' => $entries->values(),
             'meta' => [
                 'current_page' => $entries->currentPage(),
-                'last_page'    => $entries->lastPage(),
-                'per_page'     => $entries->perPage(),
-                'total'        => $entries->total(),
+                'last_page' => $entries->lastPage(),
+                'per_page' => $entries->perPage(),
+                'total' => $entries->total(),
             ],
         ]);
     }
 
-    public function store(Request $request): JsonResponse {
+    public function store(Request $request): JsonResponse
+    {
         $data = $request->validate([
-            'type'        => 'required|in:top_up,expense',
+            'type' => 'required|in:top_up,expense',
             'amount_cents' => 'required|integer|min:1',
             'description' => 'required|string|max:500',
-            'reference'   => 'nullable|string|max:255',
-            'entry_date'  => 'required|date',
+            'reference' => 'nullable|string|max:255',
+            'entry_date' => 'required|date',
         ]);
 
         return DB::transaction(function () use ($data) {
@@ -41,7 +44,7 @@ class PettyCashController extends Controller {
             $schoolId = $school?->id;
 
             // Get current balance from last entry
-            $lastEntry = PettyCash::when($schoolId, fn($q) => $q->where('school_id', $schoolId))
+            $lastEntry = PettyCash::when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
                 ->orderBy('entry_date', 'desc')
                 ->orderBy('id', 'desc')
                 ->first();
@@ -58,7 +61,7 @@ class PettyCashController extends Controller {
             }
 
             $data['balance_after_cents'] = $balanceAfter;
-            $data['recorded_by']         = auth()->id();
+            $data['recorded_by'] = auth()->id();
 
             $entry = PettyCash::create($data);
             AuditLog::record('petty_cash.created', $entry, [], $data);
@@ -67,11 +70,12 @@ class PettyCashController extends Controller {
         });
     }
 
-    public function balance(): JsonResponse {
+    public function balance(): JsonResponse
+    {
         $school = app()->bound('active_school') ? app('active_school') : null;
         $schoolId = $school?->id;
 
-        $lastEntry = PettyCash::when($schoolId, fn($q) => $q->where('school_id', $schoolId))
+        $lastEntry = PettyCash::when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
             ->orderBy('entry_date', 'desc')
             ->orderBy('id', 'desc')
             ->first();

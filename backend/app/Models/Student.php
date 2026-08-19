@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,7 @@ class Student extends Model
         'ward',
         'street',
     ];
+
     protected $casts = ['date_of_birth' => 'date'];
 
     public function enrollments(): HasMany
@@ -58,14 +60,17 @@ class Student extends Model
     {
         return $this->hasMany(Invoice::class);
     }
+
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
     }
+
     public function discounts(): HasMany
     {
         return $this->hasMany(Discount::class);
     }
+
     public function refunds(): HasMany
     {
         return $this->hasMany(Refund::class);
@@ -78,6 +83,6 @@ class Student extends Model
 
     public function outstandingBalanceCents(): int
     {
-        return $this->invoices->sum(fn(Invoice $inv) => $inv->balanceDueCents());
+        return $this->invoices->sum(fn (Invoice $inv) => $inv->balanceDueCents());
     }
 }

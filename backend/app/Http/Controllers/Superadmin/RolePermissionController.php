@@ -14,31 +14,31 @@ class RolePermissionController extends Controller
     public static function allPermissions(): array
     {
         return [
-            'Dashboard'     => ['dashboard.view'],
-            'Students'      => ['students.view', 'students.create', 'students.edit', 'students.delete', 'students.bulk_import'],
-            'Guardians'     => ['guardians.view', 'guardians.create', 'guardians.edit', 'guardians.delete'],
-            'Invoices'      => ['invoices.view', 'invoices.generate'],
-            'Payments'      => ['payments.view', 'payments.create'],
-            'Installments'  => ['installments.view', 'installments.create', 'installments.mark_paid'],
-            'Refunds'       => ['refunds.view', 'refunds.create', 'refunds.delete'],
-            'Fee Structures'=> ['fee_structures.view', 'fee_structures.create', 'fee_structures.edit', 'fee_structures.delete'],
-            'Discounts'     => ['discounts.view', 'discounts.create', 'discounts.delete'],
-            'Clearance'     => ['clearance.view', 'clearance.issue'],
-            'Expenses'      => ['expenses.view', 'expenses.create', 'expenses.edit', 'expenses.delete', 'expenses.approve'],
-            'Petty Cash'    => ['petty_cash.view', 'petty_cash.create'],
-            'Payroll'       => ['payroll.view', 'payroll.create', 'payroll.mark_paid'],
-            'Employees'     => ['employees.view', 'employees.create', 'employees.edit', 'employees.delete'],
-            'Suppliers'     => ['suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete'],
-            'Assets'        => ['assets.view', 'assets.create', 'assets.edit', 'assets.delete', 'assets.dispose'],
-            'Budgets'       => ['budgets.view', 'budgets.create', 'budgets.edit', 'budgets.delete', 'budgets.activate'],
-            'Attendance'    => ['attendance.view', 'attendance.mark'],
-            'Transport'     => ['transport.view', 'transport.manage'],
-            'Inventory'     => ['inventory.view', 'inventory.manage'],
-            'Reports'       => ['reports.view', 'reports.export'],
-            'SMS'           => ['sms.send'],
-            'Users'         => ['users.view', 'users.create', 'users.edit', 'users.delete'],
-            'Schools'       => ['schools.view', 'schools.create', 'schools.edit', 'schools.delete'],
-            'Audit Log'     => ['audit.view'],
+            'Dashboard' => ['dashboard.view'],
+            'Students' => ['students.view', 'students.create', 'students.edit', 'students.delete', 'students.bulk_import'],
+            'Guardians' => ['guardians.view', 'guardians.create', 'guardians.edit', 'guardians.delete'],
+            'Invoices' => ['invoices.view', 'invoices.generate'],
+            'Payments' => ['payments.view', 'payments.create'],
+            'Installments' => ['installments.view', 'installments.create', 'installments.mark_paid'],
+            'Refunds' => ['refunds.view', 'refunds.create', 'refunds.delete'],
+            'Fee Structures' => ['fee_structures.view', 'fee_structures.create', 'fee_structures.edit', 'fee_structures.delete'],
+            'Discounts' => ['discounts.view', 'discounts.create', 'discounts.delete'],
+            'Clearance' => ['clearance.view', 'clearance.issue'],
+            'Expenses' => ['expenses.view', 'expenses.create', 'expenses.edit', 'expenses.delete', 'expenses.approve'],
+            'Petty Cash' => ['petty_cash.view', 'petty_cash.create'],
+            'Payroll' => ['payroll.view', 'payroll.create', 'payroll.mark_paid'],
+            'Employees' => ['employees.view', 'employees.create', 'employees.edit', 'employees.delete'],
+            'Suppliers' => ['suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete'],
+            'Assets' => ['assets.view', 'assets.create', 'assets.edit', 'assets.delete', 'assets.dispose'],
+            'Budgets' => ['budgets.view', 'budgets.create', 'budgets.edit', 'budgets.delete', 'budgets.activate'],
+            'Attendance' => ['attendance.view', 'attendance.mark'],
+            'Transport' => ['transport.view', 'transport.manage'],
+            'Inventory' => ['inventory.view', 'inventory.manage'],
+            'Reports' => ['reports.view', 'reports.export'],
+            'SMS' => ['sms.send'],
+            'Users' => ['users.view', 'users.create', 'users.edit', 'users.delete'],
+            'Schools' => ['schools.view', 'schools.create', 'schools.edit', 'schools.delete'],
+            'Audit Log' => ['audit.view'],
         ];
     }
 
@@ -58,19 +58,19 @@ class RolePermissionController extends Controller
         $this->ensurePermissionsExist();
 
         $roles = Role::with('permissions')->orderBy('name')->get()
-            ->map(fn($r) => [
-                'id'          => $r->id,
-                'name'        => $r->name,
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'name' => $r->name,
                 'permissions' => $r->permissions->pluck('name'),
             ]);
 
         $allPermissions = self::allPermissions();
-        $allFlat        = collect($allPermissions)->flatten()->values();
+        $allFlat = collect($allPermissions)->flatten()->values();
 
         return response()->json([
-            'roles'           => $roles,
+            'roles' => $roles,
             'all_permissions' => $allPermissions,
-            'all_flat'        => $allFlat,
+            'all_flat' => $allFlat,
         ]);
     }
 
@@ -84,8 +84,8 @@ class RolePermissionController extends Controller
         $role = Role::create(['name' => $data['name'], 'guard_name' => 'web']);
 
         return response()->json([
-            'id'          => $role->id,
-            'name'        => $role->name,
+            'id' => $role->id,
+            'name' => $role->name,
             'permissions' => [],
         ], 201);
     }
@@ -94,7 +94,7 @@ class RolePermissionController extends Controller
     public function destroy(Role $role): JsonResponse
     {
         $protected = ['superadmin', 'owner', 'accountant', 'parent',
-                      'teacher', 'head_teacher', 'headmaster', 'academic_teacher'];
+            'teacher', 'head_teacher', 'headmaster', 'academic_teacher'];
 
         if (in_array($role->name, $protected)) {
             return response()->json(['message' => "Role '{$role->name}' is a system role and cannot be deleted."], 422);
@@ -109,7 +109,7 @@ class RolePermissionController extends Controller
     public function syncPermissions(Request $request, Role $role): JsonResponse
     {
         $data = $request->validate([
-            'permissions'   => ['required', 'array'],
+            'permissions' => ['required', 'array'],
             'permissions.*' => ['string'],
         ]);
 
@@ -122,8 +122,8 @@ class RolePermissionController extends Controller
         $role->syncPermissions($toSync);
 
         return response()->json([
-            'id'          => $role->id,
-            'name'        => $role->name,
+            'id' => $role->id,
+            'name' => $role->name,
             'permissions' => $role->fresh()->permissions->pluck('name'),
         ]);
     }
