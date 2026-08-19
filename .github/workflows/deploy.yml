@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 env:
-  BACKEND_IMAGE:  ${{ secrets.DOCKERHUB_USERNAME }}/shulepay-backend
-  FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/shulepay-frontend
+  BACKEND_IMAGE:  magaiwa/magreth-backend
+  FRONTEND_IMAGE: magaiwa/magreth-frontend
 
 # ══════════════════════════════════════════════════════════════════════════════
 # JOB 1 — BACKEND CHECKS (lint + tests)
