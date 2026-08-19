@@ -43,11 +43,19 @@ COPY . .
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
  && chmod -R 755 /var/www/html/storage \
- && chmod -R 755 /var/www/html/bootstrap/cache
+ && chmod -R 755 /var/www/html/bootstrap/cache \
+ && mkdir -p /tmp/nginx/client_body /tmp/nginx/proxy /tmp/nginx/fastcgi /var/lib/nginx/logs \
+ && chown -R www-data:www-data /tmp/nginx /var/lib/nginx \
+ && ln -sf /dev/stdout /var/lib/nginx/logs/access.log \
+ && ln -sf /dev/stderr /var/lib/nginx/logs/error.log
 
 # Copy configs
 COPY docker/supervisord.conf /etc/supervisord.conf
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+
+# Override nginx main config to use writable paths
+RUN sed -i 's|error_log.*|error_log /var/lib/nginx/logs/error.log warn;|' /etc/nginx/nginx.conf \
+ && sed -i 's|pid.*|pid /tmp/nginx.pid;|' /etc/nginx/nginx.conf
 
 # Expose HTTP port
 EXPOSE 80
