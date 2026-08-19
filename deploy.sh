@@ -94,10 +94,14 @@ cmd_deploy() {
     || error "Failed to start containers"
   success "Containers started"
 
-  # 5. Wait for DB health
-  log "Waiting for database..."
-  health_check shulepay_db 90 \
-    || error "Database did not become healthy in time. Run: ./deploy.sh logs"
+  # 5. Wait for DB health (skip if using external DB — no shulepay_db container)
+  if docker ps --filter "name=shulepay_db" --format '{{.Names}}' | grep -q shulepay_db; then
+    log "Waiting for database..."
+    health_check shulepay_db 90 \
+      || error "Database did not become healthy in time. Run: ./deploy.sh logs"
+  else
+    log "Using external database — skipping container health check"
+  fi
 
   # 6. Run migrations
   log "Running database migrations..."
