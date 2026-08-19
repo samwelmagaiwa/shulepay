@@ -79,7 +79,7 @@ jobs:
 
       - name: Run tests
         working-directory: backend
-        run: php artisan test --parallel
+        run: php artisan test
 
   # ══════════════════════════════════════════════════════════════════════════════
   # JOB 2 — FRONTEND CHECKS (lint + build check)
