@@ -4,7 +4,14 @@ namespace App\Http\Requests\Student;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateStudentRequest extends FormRequest {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool
+    {
+        $user = auth()->user();
+        if (! $user) return false;
+        if ($user->school_id === null) return true; // superadmin
+        $student = $this->route('student');
+        return $student?->currentEnrollment?->school_id === $user->school_id;
+    }
 
     public function rules(): array {
         return [

@@ -41,11 +41,11 @@ class StudentController extends Controller
     {
         $query = Student::query();
 
-        if ($request->filled('school_id')) {
-            $schoolId = $request->integer('school_id');
-            $query->whereHas('enrollments', fn($q) => $q->where('school_id', $schoolId)->where('status', 'active'));
-        } elseif (auth()->user()->school_id) {
-            $schoolId = auth()->user()->school_id;
+        $userSchoolId = auth()->user()->school_id;
+        // Non-superadmin users are always scoped to their own school
+        $schoolId = $userSchoolId ?? ($request->filled('school_id') ? $request->integer('school_id') : null);
+
+        if ($schoolId) {
             $query->whereHas('enrollments', fn($q) => $q->where('school_id', $schoolId)->where('status', 'active'));
         } else {
             $query->whereHas('enrollments', fn($q) => $q->where('status', 'active'));

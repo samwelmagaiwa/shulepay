@@ -56,7 +56,7 @@ class ReportController extends Controller
         $partialCount  = (clone $invoiceBase)->where('status', 'partial')->count();
         $unpaidCount   = (clone $invoiceBase)->where('status', 'unpaid')->count();
 
-        // Rows grouped by period
+        // $groupBy is validated above as in:day,week,month,class — safe to use in DB::raw
         $periodExpr = match ($groupBy) {
             'week'  => DB::raw("DATE_FORMAT(paid_at, '%x-W%v') as period"),
             'month' => DB::raw("DATE_FORMAT(paid_at, '%Y-%m') as period"),

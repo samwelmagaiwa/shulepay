@@ -19,8 +19,10 @@ class AssetController extends Controller
     {
         $query = Asset::with(['school', 'registeredBy'])->latest('created_at');
 
-        if ($request->filled('school_id')) {
-            $query->where('school_id', $request->school_id);
+        $userSchoolId = auth()->user()->school_id;
+        $schoolId = $userSchoolId ?? ($request->filled('school_id') ? $request->integer('school_id') : null);
+        if ($schoolId) {
+            $query->where('school_id', $schoolId);
         }
         if ($request->filled('category')) {
             $query->where('category', $request->category);
@@ -60,8 +62,10 @@ class AssetController extends Controller
             $photoPath = $request->file('photo')->store('assets', 'public');
         }
 
+        $schoolId = auth()->user()->school_id ?? $data['school_id'];
+
         $asset = Asset::create([
-            'school_id'           => $data['school_id'],
+            'school_id'           => $schoolId,
             'asset_tag'           => $data['asset_tag'],
             'name'                => $data['name'],
             'category'            => $data['category'],

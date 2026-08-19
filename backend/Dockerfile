@@ -51,4 +51,6 @@ COPY docker/supervisord.conf /etc/supervisord.conf
 # Expose PHP-FPM port
 EXPOSE 9000
 
+USER www-data
+
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]

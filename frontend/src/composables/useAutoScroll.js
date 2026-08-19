@@ -94,14 +94,12 @@ const getScrollLimit = (forceRefresh = false) => {
       // Use MINIMUM of boundary and physical limit
       const finalLimit = Math.min(scrollableToBoundary, physicalMax)
       cachedMaxScroll = finalLimit
-      console.log('[AutoScroll] Calculated max:', finalLimit)
       return finalLimit
     }
   }
   
   // Fallback to physical max and cache it
   cachedMaxScroll = physicalMax
-  console.log('[AutoScroll] Using physical max:', physicalMax)
   return physicalMax
 }
 

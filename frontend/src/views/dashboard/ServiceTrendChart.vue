@@ -37,7 +37,6 @@ const scrollToToday = () => {
     
     if (maxScroll > 0) {
       container.scrollLeft = maxScroll
-      console.log('[Chart] Scroll attempt', attempt, '- maxScroll:', maxScroll)
     } else {
       // Retry if not ready
       setTimeout(() => tryScroll(attempt + 1), 200 * attempt)

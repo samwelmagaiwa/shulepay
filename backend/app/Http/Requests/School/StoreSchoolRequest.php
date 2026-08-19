@@ -7,7 +7,10 @@ use Illuminate\Validation\Rule;
 
 class StoreSchoolRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool
+    {
+        return auth()->check() && auth()->user()->hasRole(['superadmin', 'admin']);
+    }
 
     public function rules(): array
     {

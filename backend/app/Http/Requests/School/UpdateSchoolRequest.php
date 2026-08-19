@@ -7,7 +7,14 @@ use Illuminate\Validation\Rule;
 
 class UpdateSchoolRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool
+    {
+        $user = auth()->user();
+        if (! $user) return false;
+        if ($user->hasRole('superadmin')) return true;
+        $school = $this->route('school');
+        return $school && $school->id === $user->school_id;
+    }
 
     public function rules(): array
     {

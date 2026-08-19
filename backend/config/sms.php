@@ -7,7 +7,7 @@ return [
         'api_url'    => env('SMS_API_URL', 'https://messaging.kilakona.co.tz/api/v1/vendor/message/send'),
         'api_key'    => env('SMS_API_KEY', ''),
         'secret_key' => env('SMS_SECRET_KEY', ''),
-        'sender_id'  => env('SMS_SENDER_ID', 'ShulePay'),
+        'sender_id'  => env('SMS_SENDER_ID', 'MAGRETH SCH'),
         'country_code' => env('SMS_COUNTRY_CODE', '255'),
     ],
 
