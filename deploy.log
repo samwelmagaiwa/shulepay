@@ -46,3 +46,14 @@
 [0;36m[23:20:45][0m   ShulePay — Release
 [0;36m[23:20:45][0m ══════════════════════════════════════════
 [0;36m[23:20:45][0m Checking working tree...
+[0;36m[23:20:46][0m Files staged for commit:
+[0;36m[23:20:46][0m Committing: "fix: remove BOM and restore escaped dollar signs in 10 PHP files corrupted by Pint"
+[0;32m✔ Committed[0m
+[0;36m[23:20:46][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[23:20:52][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[23:24:07][0m ══════════════════════════════════════════
+[0;36m[23:24:07][0m   ShulePay — Release
+[0;36m[23:24:08][0m ══════════════════════════════════════════
+[0;36m[23:24:08][0m Checking working tree...

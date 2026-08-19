@@ -6,5 +6,8 @@ use Illuminate\Notifications\Notification;
 
 class PaymentRecordedSms extends Notification
 {
-    public function via($notifiable): array { return ['sms']; }
+    public function via($notifiable): array
+    {
+        return ['sms'];
+    }
 }

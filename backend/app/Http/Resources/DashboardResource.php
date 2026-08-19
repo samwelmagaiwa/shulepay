@@ -6,5 +6,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class DashboardResource extends JsonResource
 {
-    public function toArray($request): array { return parent::toArray($request); }
+    public function toArray($request): array
+    {
+        return parent::toArray($request);
+    }
 }
