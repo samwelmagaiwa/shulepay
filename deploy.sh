@@ -1,0 +1,225 @@
+#!/usr/bin/env bash
+# =============================================================================
+# ShulePay — Production Deploy Script
+# Usage:
+#   ./deploy.sh deploy      → full deploy (pull + migrate + restart)
+#   ./deploy.sh rollback    → roll back to previous image tag
+#   ./deploy.sh status      → show running containers & health
+#   ./deploy.sh logs        → tail logs from all services
+#   ./deploy.sh restart     → restart containers without pulling
+#   ./deploy.sh migrate     → run migrations only
+#   ./deploy.sh shell       → open shell inside backend container
+# =============================================================================
+
+set -euo pipefail
+
+# ── Config ────────────────────────────────────────────────────────────────────
+APP_DIR="/opt/shulepay"
+COMPOSE_FILE="$APP_DIR/docker-compose.prod.yml"
+ENV_FILE="$APP_DIR/.env"
+BACKUP_TAG_FILE="$APP_DIR/.previous_tag"
+LOG_FILE="$APP_DIR/deploy.log"
+
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+log()     { echo -e "${CYAN}[$(date '+%H:%M:%S')]${NC} $*" | tee -a "$LOG_FILE"; }
+success() { echo -e "${GREEN}✔ $*${NC}" | tee -a "$LOG_FILE"; }
+warn()    { echo -e "${YELLOW}⚠ $*${NC}" | tee -a "$LOG_FILE"; }
+error()   { echo -e "${RED}✖ $*${NC}" | tee -a "$LOG_FILE"; exit 1; }
+
+require_env() {
+  [[ -f "$ENV_FILE" ]] || error ".env file not found at $ENV_FILE"
+  set -a; source "$ENV_FILE"; set +a
+}
+
+require_docker() {
+  command -v docker &>/dev/null        || error "Docker is not installed."
+  docker compose version &>/dev/null   || error "Docker Compose plugin not installed."
+  docker info &>/dev/null              || error "Docker daemon is not running."
+}
+
+health_check() {
+  local container=$1
+  local max_wait=${2:-60}
+  local waited=0
+  log "Waiting for $container to become healthy..."
+  until docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null | grep -q "healthy"; do
+    sleep 3; waited=$((waited + 3))
+    [[ $waited -ge $max_wait ]] && return 1
+  done
+  return 0
+}
+
+# ── Commands ──────────────────────────────────────────────────────────────────
+
+cmd_deploy() {
+  log "══════════════════════════════════════════"
+  log "  ShulePay — Starting Deployment"
+  log "══════════════════════════════════════════"
+
+  require_env
+  require_docker
+
+  # 1. Save current image tag for potential rollback
+  CURRENT_TAG=$(docker inspect --format='{{index .RepoTags 0}}' "${DOCKERHUB_USERNAME}/shulepay-backend:latest" 2>/dev/null | grep -oP ':\K.*' || echo "none")
+  echo "$CURRENT_TAG" > "$BACKUP_TAG_FILE"
+  log "Previous tag saved for rollback: $CURRENT_TAG"
+
+  # 2. Log in to Docker Hub
+  log "Logging in to Docker Hub..."
+  echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin 2>/dev/null \
+    || warn "Docker Hub login skipped (may already be authenticated)"
+
+  # 3. Pull latest images
+  log "Pulling latest images from Docker Hub..."
+  docker compose -f "$COMPOSE_FILE" pull \
+    || error "Failed to pull images from Docker Hub"
+  success "Images pulled successfully"
+
+  # 4. Start / recreate containers
+  log "Starting containers..."
+  docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --force-recreate \
+    || error "Failed to start containers"
+  success "Containers started"
+
+  # 5. Wait for DB health
+  log "Waiting for database..."
+  health_check shulepay_db 90 \
+    || error "Database did not become healthy in time. Run: ./deploy.sh logs"
+
+  # 6. Run migrations
+  log "Running database migrations..."
+  docker exec shulepay_backend php artisan migrate --force \
+    || error "Migrations failed. Run: ./deploy.sh rollback"
+  success "Migrations complete"
+
+  # 7. Artisan optimisation
+  log "Optimising Laravel..."
+  docker exec shulepay_backend php artisan config:cache
+  docker exec shulepay_backend php artisan route:cache
+  docker exec shulepay_backend php artisan view:cache
+  docker exec shulepay_backend php artisan event:cache
+  success "Laravel cache warmed"
+
+  # 8. Storage link
+  docker exec shulepay_backend php artisan storage:link 2>/dev/null || true
+
+  # 9. Queue restart (picks up new code)
+  docker exec shulepay_backend php artisan queue:restart 2>/dev/null || true
+
+  # 10. Final health check
+  log "Verifying containers are running..."
+  cmd_status
+
+  # 11. Remove dangling images to free disk
+  log "Cleaning up dangling images..."
+  docker image prune -f
+  success "Cleanup done"
+
+  log "══════════════════════════════════════════"
+  success "Deployment complete! 🚀"
+  log "══════════════════════════════════════════"
+}
+
+cmd_rollback() {
+  require_env
+  require_docker
+
+  [[ -f "$BACKUP_TAG_FILE" ]] || error "No previous tag found. Cannot rollback."
+  PREV_TAG=$(cat "$BACKUP_TAG_FILE")
+  [[ "$PREV_TAG" == "none" ]] && error "Previous tag is 'none'. Cannot rollback."
+
+  warn "Rolling back to tag: $PREV_TAG"
+
+  # Pull the previous image
+  docker pull "${DOCKERHUB_USERNAME}/shulepay-backend:${PREV_TAG}" \
+    || error "Could not pull previous backend image"
+  docker pull "${DOCKERHUB_USERNAME}/shulepay-frontend:${PREV_TAG}" \
+    || error "Could not pull previous frontend image"
+
+  # Re-tag as latest
+  docker tag "${DOCKERHUB_USERNAME}/shulepay-backend:${PREV_TAG}"  "${DOCKERHUB_USERNAME}/shulepay-backend:latest"
+  docker tag "${DOCKERHUB_USERNAME}/shulepay-frontend:${PREV_TAG}" "${DOCKERHUB_USERNAME}/shulepay-frontend:latest"
+
+  # Restart
+  docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --force-recreate
+
+  success "Rolled back to $PREV_TAG"
+}
+
+cmd_status() {
+  echo ""
+  echo -e "${CYAN}Container status:${NC}"
+  docker compose -f "$COMPOSE_FILE" ps
+  echo ""
+  echo -e "${CYAN}Resource usage:${NC}"
+  docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" \
+    shulepay_backend shulepay_frontend shulepay_db 2>/dev/null || true
+  echo ""
+}
+
+cmd_logs() {
+  local service=${2:-}
+  if [[ -n "$service" ]]; then
+    docker compose -f "$COMPOSE_FILE" logs -f --tail=100 "$service"
+  else
+    docker compose -f "$COMPOSE_FILE" logs -f --tail=50
+  fi
+}
+
+cmd_restart() {
+  require_env
+  require_docker
+  log "Restarting containers..."
+  docker compose -f "$COMPOSE_FILE" restart
+  success "Containers restarted"
+}
+
+cmd_migrate() {
+  log "Running migrations..."
+  docker exec shulepay_backend php artisan migrate --force
+  success "Migrations done"
+}
+
+cmd_shell() {
+  local service=${2:-backend}
+  case "$service" in
+    backend)  docker exec -it shulepay_backend bash ;;
+    frontend) docker exec -it shulepay_frontend sh ;;
+    db)       docker exec -it shulepay_db mysql -u root -p ;;
+    *)        error "Unknown service: $service. Use: backend, frontend, db" ;;
+  esac
+}
+
+# ── Router ────────────────────────────────────────────────────────────────────
+COMMAND=${1:-help}
+
+case "$COMMAND" in
+  deploy)   cmd_deploy ;;
+  rollback) cmd_rollback ;;
+  status)   require_env; cmd_status ;;
+  logs)     require_env; cmd_logs "$@" ;;
+  restart)  cmd_restart ;;
+  migrate)  cmd_migrate ;;
+  shell)    cmd_shell "$@" ;;
+  help|*)
+    echo ""
+    echo -e "${CYAN}ShulePay Deploy Script${NC}"
+    echo "───────────────────────────────────"
+    echo "  ./deploy.sh deploy      Full deploy: pull → migrate → restart"
+    echo "  ./deploy.sh rollback    Roll back to previous image"
+    echo "  ./deploy.sh status      Show container status & resource usage"
+    echo "  ./deploy.sh logs        Tail all container logs"
+    echo "  ./deploy.sh logs db     Tail logs for a specific service"
+    echo "  ./deploy.sh restart     Restart containers (no pull)"
+    echo "  ./deploy.sh migrate     Run artisan migrate only"
+    echo "  ./deploy.sh shell       Open bash in backend container"
+    echo "  ./deploy.sh shell db    Open MySQL shell"
+    echo ""
+    ;;
+esac
