@@ -12,7 +12,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class EmployeeController extends Controller
 {
-    public function active(Request $request): \Illuminate\Http\JsonResponse
+    public function active(Request $request): JsonResponse
     {
         $schoolId = $request->integer('school_id') ?: ((int) $request->header('X-School-Id') ?: null);
 

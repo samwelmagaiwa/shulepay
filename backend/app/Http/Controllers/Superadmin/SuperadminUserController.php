@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class SuperadminUserController extends Controller
 {
@@ -209,6 +210,7 @@ class SuperadminUserController extends Controller
         ]);
 
         $user->syncPermissions($data['permissions']);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         AuditLogger::log('user_permissions_updated', $user, [
             'permissions' => $data['permissions'],

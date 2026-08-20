@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Employee;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,7 +18,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('inventory_transactions', function (Blueprint $table) {
-            $table->dropForeignIdFor(\App\Models\Employee::class, 'issued_to_employee_id');
+            $table->dropForeignIdFor(Employee::class, 'issued_to_employee_id');
             $table->dropColumn('issued_to_employee_id');
         });
     }

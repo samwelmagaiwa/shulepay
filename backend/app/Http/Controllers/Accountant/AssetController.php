@@ -184,7 +184,7 @@ class AssetController extends Controller
         $asset->load(['custodianEmployee:id,full_name,department,role,staff_number', 'school']);
 
         return response()->json([
-            'asset'    => new AssetResource($asset),
+            'asset' => new AssetResource($asset),
             'custodian_employee' => $asset->custodianEmployee,
         ]);
     }

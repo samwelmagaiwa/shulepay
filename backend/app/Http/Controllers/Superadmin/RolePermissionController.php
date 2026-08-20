@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionController extends Controller
 {
@@ -120,6 +121,7 @@ class RolePermissionController extends Controller
         $toSync = array_intersect($data['permissions'], $valid);
 
         $role->syncPermissions($toSync);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return response()->json([
             'id' => $role->id,

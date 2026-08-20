@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
-use App\Models\Employee;
 use App\Traits\BelongsToSchool;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;

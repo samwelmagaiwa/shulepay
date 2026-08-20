@@ -365,13 +365,13 @@ class InventoryController extends Controller
         }
 
         $validated = $request->validate([
-            'type'                   => 'required|in:in,out,adjustment',
-            'quantity'               => 'required|numeric|min:0.01',
-            'issued_to'              => 'nullable|string|max:200',
-            'issued_to_employee_id'  => 'nullable|exists:employees,id',
-            'notes'                  => 'nullable|string',
-            'reference'              => 'nullable|string',
-            'transaction_date'       => 'required|date',
+            'type' => 'required|in:in,out,adjustment',
+            'quantity' => 'required|numeric|min:0.01',
+            'issued_to' => 'nullable|string|max:200',
+            'issued_to_employee_id' => 'nullable|exists:employees,id',
+            'notes' => 'nullable|string',
+            'reference' => 'nullable|string',
+            'transaction_date' => 'required|date',
         ]);
 
         $validated['item_id'] = $item->id;
@@ -434,8 +434,9 @@ class InventoryController extends Controller
         // Group by employee
         $grouped = $records->groupBy('issued_to_employee_id')->map(function ($txns) {
             $emp = $txns->first()->issuedToEmployee;
+
             return [
-                'employee'     => $emp,
+                'employee' => $emp,
                 'total_issued' => $txns->sum('quantity'),
                 'transactions' => $txns->values(),
             ];
