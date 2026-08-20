@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureParentOwnsStudent;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\SetActiveSchool;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -30,5 +31,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Always return JSON 401 for API routes — never redirect to "login"
+        $exceptions->render(function (AuthenticationException $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+        });
     })->create();
