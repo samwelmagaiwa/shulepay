@@ -18,7 +18,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated    = computed(() => !!token.value && token.value !== 'undefined')
   const role               = computed(() => user.value?.role ?? null)
+  const permissions        = computed(() => user.value?.permissions ?? [])
   const isSuperAdmin       = computed(() => role.value === 'superadmin')
+  const hasPermission      = (perm) => isSuperAdmin.value || permissions.value.includes(perm)
   const isAccountant       = computed(() => role.value === 'accountant' || role.value === 'superadmin')
   const isOwner            = computed(() => role.value === 'owner' || role.value === 'superadmin')
   const isParent           = computed(() => role.value === 'parent')
@@ -74,7 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     token, user,
-    isAuthenticated, role,
+    isAuthenticated, role, permissions, hasPermission,
     isAccountant, isOwner, isParent, isSuperAdmin,
     isTeacher, isHeadTeacher, isHeadmaster, isAcademicTeacher, isStaff,
     login, logout, fetchMe,

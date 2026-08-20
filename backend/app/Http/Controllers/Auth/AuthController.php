@@ -124,6 +124,7 @@ class AuthController extends Controller
             'role' => $user->getRoleNames()->first(),
             'school_id' => $user->school_id,
             'school' => $user->school?->only(['id', 'name', 'level']),
+            'permissions' => $user->getAllPermissions()->pluck('name'),
         ]);
     }
 }

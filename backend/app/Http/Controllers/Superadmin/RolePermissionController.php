@@ -33,7 +33,7 @@ class RolePermissionController extends Controller
             'Budgets' => ['budgets.view', 'budgets.create', 'budgets.edit', 'budgets.delete', 'budgets.activate'],
             'Attendance' => ['attendance.view', 'attendance.mark'],
             'Transport' => ['transport.view', 'transport.manage'],
-            'Inventory' => ['inventory.view', 'inventory.manage'],
+            'Inventory' => ['inventory.view', 'inventory.manage', 'inventory.adjustment'],
             'Reports' => ['reports.view', 'reports.export'],
             'SMS' => ['sms.send'],
             'Users' => ['users.view', 'users.create', 'users.edit', 'users.delete'],

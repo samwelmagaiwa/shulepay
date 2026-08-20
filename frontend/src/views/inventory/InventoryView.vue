@@ -4,11 +4,14 @@ import { useI18n } from 'vue-i18n'
 import { useInventoryStore } from '@/stores/inventory'
 import { useSchoolsStore }   from '@/stores/schools'
 import { useSchoolStore }    from '@/stores/school'
+import { useAuthStore }      from '@/stores/auth'
 
 const { t }        = useI18n()
 const store        = useInventoryStore()
 const schoolStore  = useSchoolsStore()
 const navSchool    = useSchoolStore()
+const auth         = useAuthStore()
+const canAdjust    = computed(() => auth.hasPermission('inventory.adjustment'))
 
 const schools = computed(() => schoolStore.schools)
 
@@ -746,7 +749,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
           <CCardBody>
             <CAlert v-if="txnError" color="danger">{{ txnError }}</CAlert>
             <CRow class="g-2">
-              <CCol md="4"><CFormLabel>{{ t('inventory.txnType') }}</CFormLabel><CFormSelect v-model="txnForm.type"><option value="in">{{ t('inventory.txnIn') }}</option><option value="out">{{ t('inventory.txnOut') }}</option><option value="adjustment">{{ t('inventory.txnAdjustment') }}</option></CFormSelect></CCol>
+              <CCol md="4"><CFormLabel>{{ t('inventory.txnType') }}</CFormLabel><CFormSelect v-model="txnForm.type"><option value="in">{{ t('inventory.txnIn') }}</option><option value="out">{{ t('inventory.txnOut') }}</option><option v-if="canAdjust" value="adjustment">{{ t('inventory.txnAdjustment') }}</option></CFormSelect></CCol>
               <CCol md="4"><CFormLabel>{{ t('inventory.txnQty') }}</CFormLabel><CFormInput v-model.number="txnForm.quantity" type="number" step="0.01" min="0.01" /></CCol>
               <CCol md="4"><CFormLabel>{{ t('inventory.txnDate') }}</CFormLabel><CFormInput v-model="txnForm.transaction_date" type="date" /></CCol>
               <CCol v-if="txnForm.type === 'out'" xs="12" md="6">

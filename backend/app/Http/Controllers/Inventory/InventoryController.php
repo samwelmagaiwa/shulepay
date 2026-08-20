@@ -359,6 +359,11 @@ class InventoryController extends Controller
             return response()->json(['message' => 'Muamala wa stoo ni kwa bidhaa za matumizi tu.'], 422);
         }
 
+        $user = auth()->user();
+        if ($request->input('type') === 'adjustment' && ! $user->hasRole('superadmin') && ! $user->hasPermissionTo('inventory.adjustment')) {
+            return response()->json(['message' => 'Huna ruhusa ya kufanya marekebisho ya stoo. Wasiliana na Superadmin.'], 403);
+        }
+
         $validated = $request->validate([
             'type' => 'required|in:in,out,adjustment',
             'quantity' => 'required|numeric|min:0.01',
