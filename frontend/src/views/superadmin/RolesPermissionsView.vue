@@ -32,9 +32,8 @@ const allSchools           = ref([])        // all active schools from API
 const userGrantedSchools   = ref([])        // schools this user can already access
 const schoolAccessLoading  = ref(false)
 const schoolGranting       = ref(null)      // schoolId currently being saved
-const showSchoolPanel = computed(() =>
-  userPerms.value.has('multi_school') || userPermsBase.value.has('multi_school')
-)
+// Always show the school panel — let superadmin manage access directly
+const showSchoolPanel = computed(() => true)
 
 // create role form
 const showCreate     = ref(false)
@@ -253,6 +252,22 @@ const allPermsFlat = computed(() => Object.values(allPermissions.value).flat())
 const activePermCount = computed(() => activePerms.value.size)
 const totalPermCount  = computed(() => allPermsFlat.value.length)
 
+// Put 'Access' (multi_school) first, rest alphabetical
+const sortedPermissions = computed(() => {
+  const entries = Object.entries(allPermissions.value)
+  const access  = entries.filter(([mod]) => mod === 'Access')
+  const rest    = entries.filter(([mod]) => mod !== 'Access').sort(([a], [b]) => a.localeCompare(b))
+  return [...access, ...rest]
+})
+
+// Multi-school users across all loaded role users
+const multiSchoolUsers = computed(() =>
+  roleUsers.value.filter(u =>
+    (u.permissions ?? []).some(p => (typeof p === 'string' ? p : p.name) === 'multi_school') ||
+    (activeRole.value?.permissions ?? []).includes('multi_school')
+  )
+)
+
 // ── Create role ───────────────────────────────────────────────────────────────
 async function createRole() {
   createError.value = ''
@@ -443,8 +458,46 @@ function initials(name) {
             </CCardHeader>
 
             <CCardBody style="max-height:72vh; overflow-y:auto;">
+
+              <!-- Multi-School Access — always pinned first, full-width, prominent -->
+              <div class="mb-3 rounded-3 overflow-hidden" style="border:2px solid #0d6efd;">
+                <div class="d-flex align-items-center justify-content-between px-3 py-2"
+                  style="background:linear-gradient(135deg,#0d6efd18,#0d6efd08);">
+                  <div class="d-flex align-items-center gap-2">
+                    <span style="font-size:1.2rem;">🏫</span>
+                    <div>
+                      <div class="fw-bold text-primary">Multi-School Access</div>
+                      <div class="text-muted" style="font-size:.72rem;">
+                        Users with this permission can be granted access to multiple schools and switch between them after login.
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    class="d-flex align-items-center gap-2 px-3 py-2 rounded-3"
+                    style="cursor:pointer; border:2px solid #0d6efd; transition:all .15s; min-width:180px;"
+                    :style="activePerms.value?.has('multi_school') || activePerms.has('multi_school')
+                      ? 'background:#0d6efd; color:#fff;'
+                      : 'background:#fff; color:#0d6efd;'"
+                    @click="togglePerm('multi_school')"
+                  >
+                    <div
+                      class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width:20px; height:20px; border:2px solid currentColor; transition:all .15s;"
+                      :style="activePerms.has('multi_school') ? 'background:#fff; border-color:#fff;' : ''"
+                    >
+                      <svg v-if="activePerms.has('multi_school')" viewBox="0 0 12 12" width="12" height="12">
+                        <polyline points="2,6 5,9 10,3" stroke="#0d6efd" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                    <span class="fw-semibold">
+                      {{ activePerms.has('multi_school') ? 'Enabled for this role' : 'Enable for this role' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               <CRow class="g-3">
-                <CCol v-for="(perms, module) in allPermissions" :key="module" xs="12" sm="6" lg="4">
+                <CCol v-for="[module, perms] in sortedPermissions.filter(([m]) => m !== 'Access')" :key="module" xs="12" sm="6" lg="4">
                   <div class="border rounded-3 overflow-hidden h-100">
                     <div
                       class="d-flex align-items-center justify-content-between px-3 py-2"
@@ -459,7 +512,6 @@ function initials(name) {
                       <span class="fw-semibold small">{{ module }}</span>
                       <div class="d-flex align-items-center gap-1">
                         <small class="opacity-75">{{ perms.filter(p => activePerms.has(p)).length }}/{{ perms.length }}</small>
-                        <CIcon :icon="moduleState(perms) === 'all' ? 'cilCheckAlt' : 'cilMinus'" size="sm" />
                       </div>
                     </div>
                     <div class="p-2">
@@ -480,7 +532,7 @@ function initials(name) {
                           </svg>
                         </div>
                         <span :class="activePerms.has(perm) ? 'fw-semibold text-dark' : 'text-muted'">
-                          {{ perm === 'multi_school' ? 'Multi-School Access' : perm.split('.')[1]?.replace(/_/g,' ') }}
+                          {{ perm.split('.')[1]?.replace(/_/g,' ') ?? perm }}
                         </span>
                       </div>
                     </div>
@@ -533,19 +585,21 @@ function initials(name) {
 
         <div style="max-height:60vh; overflow-y:auto;" class="p-3">
 
-          <!-- ── Multi-School Access Panel ───────────────────────────────────── -->
-          <div v-if="showSchoolPanel" class="mb-3 border rounded-3 overflow-hidden">
-            <div class="d-flex align-items-center justify-content-between px-3 py-2" style="background:#0d6efd14;">
+          <!-- ── Multi-School Access Panel — always visible, full-width ─────── -->
+          <div class="mb-3 rounded-3 overflow-hidden" style="border:2px solid #0d6efd;">
+            <div class="d-flex align-items-center justify-content-between px-3 py-2"
+              style="background:linear-gradient(135deg,#0d6efd18,#0d6efd08);">
               <div>
-                <span class="fw-semibold small text-primary">🏫 Multi-School Access</span>
-                <span class="text-muted ms-2" style="font-size:.72rem;">
-                  Grant access to specific schools. User can then switch between them after login.
-                </span>
+                <div class="fw-bold text-primary">🏫 Multi-School Access</div>
+                <div class="text-muted" style="font-size:.72rem;">
+                  Toggle schools below. Primary school is always accessible — only grant extras.
+                  Granting any school automatically gives the <code>multi_school</code> permission.
+                </div>
               </div>
               <div class="d-flex align-items-center gap-2">
                 <CSpinner v-if="schoolAccessLoading" size="sm" />
-                <span v-else class="badge bg-primary bg-opacity-10 text-primary" style="font-size:.7rem;">
-                  {{ userGrantedSchools.length }} school{{ userGrantedSchools.length !== 1 ? 's' : '' }} granted
+                <span v-else class="badge text-primary px-2 py-1" style="background:#0d6efd20; font-size:.75rem; border-radius:20px;">
+                  {{ userGrantedSchools.length > 0 ? `${userGrantedSchools.length} extra school${userGrantedSchools.length !== 1 ? 's' : ''} granted` : 'Primary school only' }}
                 </span>
               </div>
             </div>
@@ -555,46 +609,51 @@ function initials(name) {
               <div v-else class="d-flex flex-wrap gap-2">
                 <div
                   v-for="school in allSchools" :key="school.id"
-                  class="d-flex align-items-center gap-2 px-3 py-2 rounded-3 border"
-                  style="cursor:pointer; transition:all .15s; min-width:180px; user-select:none;"
-                  :style="userGrantedSchools.includes(school.id)
-                    ? 'background:#0d6efd12; border-color:#0d6efd66;'
-                    : 'background:#f8f9fa; border-color:#dee2e6;'"
-                  @click="toggleSchoolAccess(school)"
+                  class="d-flex align-items-center gap-2 px-3 py-2 rounded-3"
+                  :style="school.id === selectedUser?.school_id
+                    ? 'background:#e9f5ee; border:2px solid #007f3e; cursor:default; min-width:180px; user-select:none;'
+                    : userGrantedSchools.includes(school.id)
+                      ? 'background:#0d6efd12; border:2px solid #0d6efd88; cursor:pointer; min-width:180px; user-select:none; transition:all .15s;'
+                      : 'background:#f8f9fa; border:2px solid #dee2e6; cursor:pointer; min-width:180px; user-select:none; transition:all .15s;'"
+                  @click="school.id !== selectedUser?.school_id && toggleSchoolAccess(school)"
                 >
                   <CSpinner v-if="schoolGranting === school.id" size="sm" />
                   <div
                     v-else
                     class="rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center"
-                    style="width:18px; height:18px; border:2px solid; transition:all .15s;"
-                    :style="userGrantedSchools.includes(school.id)
-                      ? 'background:#0d6efd; border-color:#0d6efd;'
-                      : 'background:transparent; border-color:#adb5bd;'"
+                    style="width:20px; height:20px; border:2px solid; transition:all .15s;"
+                    :style="school.id === selectedUser?.school_id
+                      ? 'background:#007f3e; border-color:#007f3e;'
+                      : userGrantedSchools.includes(school.id)
+                        ? 'background:#0d6efd; border-color:#0d6efd;'
+                        : 'background:transparent; border-color:#adb5bd;'"
                   >
-                    <svg v-if="userGrantedSchools.includes(school.id)" viewBox="0 0 12 12" width="10" height="10">
-                      <polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <svg v-if="school.id === selectedUser?.school_id || userGrantedSchools.includes(school.id)"
+                      viewBox="0 0 12 12" width="11" height="11">
+                      <polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
                     </svg>
                   </div>
-                  <div>
-                    <div class="fw-semibold" style="font-size:.82rem;">{{ school.name }}</div>
-                    <div class="text-muted" style="font-size:.68rem;">{{ school.level ?? '—' }}</div>
+                  <div class="flex-grow-1">
+                    <div class="fw-semibold" style="font-size:.84rem;">{{ school.name }}</div>
+                    <div class="text-muted" style="font-size:.68rem; text-transform:capitalize;">{{ school.level ?? '—' }}</div>
                   </div>
-                  <!-- Primary school marker -->
                   <span
                     v-if="school.id === selectedUser?.school_id"
-                    class="ms-auto badge text-muted"
-                    style="background:#e9ecef; font-size:.6rem;"
+                    class="badge text-success ms-1"
+                    style="background:#007f3e20; font-size:.6rem;"
                   >primary</span>
+                  <span
+                    v-else-if="userGrantedSchools.includes(school.id)"
+                    class="badge text-primary ms-1"
+                    style="background:#0d6efd20; font-size:.6rem;"
+                  >granted</span>
                 </div>
-              </div>
-              <div class="text-muted mt-2" style="font-size:.72rem;">
-                ⓘ Primary school ({{ selectedUser?.school?.name ?? '—' }}) is always accessible. Only grant extras here.
               </div>
             </div>
           </div>
 
           <CRow class="g-3">
-            <CCol v-for="(perms, module) in allPermissions" :key="module" xs="12" sm="6" lg="4">
+            <CCol v-for="[module, perms] in sortedPermissions.filter(([m]) => m !== 'Access')" :key="module" xs="12" sm="6" lg="4">
               <div class="border rounded-3 overflow-hidden h-100">
                 <!-- Module header -->
                 <div
