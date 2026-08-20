@@ -31,6 +31,7 @@ class StoreAssetRequest extends FormRequest
             'depreciation_rate' => 'nullable|numeric|min:0.01|max:100',
             'salvage_value' => 'nullable|numeric|min:0',
             'custodian' => 'nullable|string|max:200',
+            'custodian_employee_id' => 'nullable|exists:employees,id',
             'location' => 'nullable|string|max:200',
             'condition' => 'nullable|in:excellent,good,fair,poor',
             'status' => 'nullable|in:in_use,under_repair,disposed,lost,written_off',

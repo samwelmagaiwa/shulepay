@@ -17,7 +17,7 @@ class AssetController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Asset::with(['school', 'registeredBy'])->latest('created_at');
+        $query = Asset::with(['school', 'registeredBy', 'custodianEmployee'])->latest('created_at');
 
         $user = auth()->user();
         $requestedSchoolId = $request->filled('school_id')
@@ -87,6 +87,7 @@ class AssetController extends Controller
             'depreciation_rate' => $data['depreciation_rate'] ?? null,
             'salvage_value_cents' => isset($data['salvage_value']) ? (int) round($data['salvage_value'] * 100) : 0,
             'custodian' => $data['custodian'] ?? null,
+            'custodian_employee_id' => $data['custodian_employee_id'] ?? null,
             'location' => $data['location'] ?? null,
             'condition' => $data['condition'] ?? 'good',
             'status' => $data['status'] ?? 'in_use',
@@ -98,12 +99,12 @@ class AssetController extends Controller
 
         AuditLogger::log('asset.created', $asset, ['after' => $asset->toArray()]);
 
-        return response()->json(new AssetResource($asset->load(['school', 'registeredBy'])), 201);
+        return response()->json(new AssetResource($asset->load(['school', 'registeredBy', 'custodianEmployee'])), 201);
     }
 
     public function show(Asset $asset): JsonResponse
     {
-        return response()->json(new AssetResource($asset->load(['school', 'registeredBy'])));
+        return response()->json(new AssetResource($asset->load(['school', 'registeredBy', 'custodianEmployee'])));
     }
 
     public function update(UpdateAssetRequest $request, Asset $asset): JsonResponse
@@ -126,6 +127,7 @@ class AssetController extends Controller
             'useful_life_years' => $data['useful_life_years'] ?? null,
             'depreciation_rate' => $data['depreciation_rate'] ?? null,
             'custodian' => $data['custodian'] ?? null,
+            'custodian_employee_id' => array_key_exists('custodian_employee_id', $data) ? $data['custodian_employee_id'] : null,
             'location' => $data['location'] ?? null,
             'condition' => $data['condition'] ?? null,
             'status' => $data['status'] ?? null,
@@ -152,7 +154,7 @@ class AssetController extends Controller
 
         AuditLogger::log('asset.updated', $asset, ['before' => $before, 'after' => $asset->toArray()]);
 
-        return response()->json(new AssetResource($asset->load(['school', 'registeredBy'])));
+        return response()->json(new AssetResource($asset->load(['school', 'registeredBy', 'custodianEmployee'])));
     }
 
     public function dispose(Request $request, Asset $asset): JsonResponse
@@ -174,7 +176,17 @@ class AssetController extends Controller
 
         AuditLogger::log('asset.disposed', $asset, ['before' => $before, 'after' => $asset->toArray()]);
 
-        return response()->json(new AssetResource($asset->load(['school', 'registeredBy'])));
+        return response()->json(new AssetResource($asset->load(['school', 'registeredBy', 'custodianEmployee'])));
+    }
+
+    public function staffHistory(Asset $asset): JsonResponse
+    {
+        $asset->load(['custodianEmployee:id,full_name,department,role,staff_number', 'school']);
+
+        return response()->json([
+            'asset'    => new AssetResource($asset),
+            'custodian_employee' => $asset->custodianEmployee,
+        ]);
     }
 
     public function destroy(Asset $asset): JsonResponse

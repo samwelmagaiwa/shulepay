@@ -12,6 +12,21 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class EmployeeController extends Controller
 {
+    public function active(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $schoolId = $request->integer('school_id') ?: ((int) $request->header('X-School-Id') ?: null);
+
+        $query = Employee::select('id', 'full_name', 'department', 'role', 'staff_number', 'school_id')
+            ->where('status', 'active')
+            ->orderBy('full_name');
+
+        if ($schoolId) {
+            $query->where('school_id', $schoolId);
+        }
+
+        return response()->json($query->get());
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = Employee::with('school')->latest();

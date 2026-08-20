@@ -62,6 +62,11 @@ export const useInventoryStore = defineStore('inventory', () => {
     return data
   }
 
+  async function fetchStaffUsage(itemId) {
+    const { data } = await api.get(`/inventory/items/${itemId}/staff-usage`)
+    return data
+  }
+
   async function fetchSummary() {
     try {
       const { data } = await api.get('/inventory/summary')
@@ -126,7 +131,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     // Consumables
     items, loading, error, summaryStats,
     fetchItems, createItem, updateItem, deleteItem,
-    recordTransaction, fetchTransactions, fetchSummary,
+    recordTransaction, fetchTransactions, fetchStaffUsage, fetchSummary,
     // Fixed assets
     assets, assetsLoading, assetsError, currentPage, lastPage, total,
     fetchAssets, nextTag, createAsset, updateAsset, disposeAsset, deleteAsset,

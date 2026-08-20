@@ -22,6 +22,18 @@ export const useEmployeesStore = defineStore('employees', () => {
     }
   }
 
+  const activeEmployees = ref([])
+
+  async function fetchActiveEmployees(schoolId) {
+    try {
+      const params = schoolId ? { school_id: schoolId } : {}
+      const { data } = await api.get('/employees/active', { params })
+      activeEmployees.value = data
+    } catch (e) {
+      // non-fatal
+    }
+  }
+
   async function createEmployee(payload) {
     const { data } = await api.post('/employees', payload)
     return data
@@ -36,5 +48,5 @@ export const useEmployeesStore = defineStore('employees', () => {
     await api.delete(`/employees/${id}`)
   }
 
-  return { employees, loading, error, pagination, fetchEmployees, createEmployee, updateEmployee, deleteEmployee }
+  return { employees, activeEmployees, loading, error, pagination, fetchEmployees, fetchActiveEmployees, createEmployee, updateEmployee, deleteEmployee }
 })

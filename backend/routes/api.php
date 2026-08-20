@@ -158,6 +158,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('petty-cash', PettyCashController::class)->only(['index', 'store']);
 
         // Employees & Payroll
+        Route::get('employees/active', [EmployeeController::class, 'active']);
         Route::apiResource('employees', EmployeeController::class);
         Route::post('payroll/bulk-generate', [PayrollController::class, 'bulkGenerate']);
         Route::apiResource('payroll', PayrollController::class)->only(['index', 'store', 'show']);
@@ -238,6 +239,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('items/{item}/dispose', [InventoryController::class, 'dispose']);
             Route::get('items/{item}/transactions', [InventoryController::class, 'transactions']);
             Route::post('items/{item}/transaction', [InventoryController::class, 'transaction']);
+            Route::get('items/{item}/staff-usage', [InventoryController::class, 'staffUsage']);
             Route::get('summary', [InventoryController::class, 'summary']);
         });
     });

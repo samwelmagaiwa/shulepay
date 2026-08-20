@@ -365,12 +365,13 @@ class InventoryController extends Controller
         }
 
         $validated = $request->validate([
-            'type' => 'required|in:in,out,adjustment',
-            'quantity' => 'required|numeric|min:0.01',
-            'issued_to' => 'nullable|string|max:200',
-            'notes' => 'nullable|string',
-            'reference' => 'nullable|string',
-            'transaction_date' => 'required|date',
+            'type'                   => 'required|in:in,out,adjustment',
+            'quantity'               => 'required|numeric|min:0.01',
+            'issued_to'              => 'nullable|string|max:200',
+            'issued_to_employee_id'  => 'nullable|exists:employees,id',
+            'notes'                  => 'nullable|string',
+            'reference'              => 'nullable|string',
+            'transaction_date'       => 'required|date',
         ]);
 
         $validated['item_id'] = $item->id;
@@ -408,12 +409,39 @@ class InventoryController extends Controller
         $this->authorizeSchool($item->school_id);
 
         $records = InventoryTransaction::where('item_id', $item->id)
-            ->with('recorder:id,name')
+            ->with(['recorder:id,name', 'issuedToEmployee:id,full_name,department,role'])
             ->orderByDesc('transaction_date')
             ->orderByDesc('id')
             ->get();
 
         return response()->json($records);
+    }
+
+    // ── Staff usage history for a consumable item ────────────────────────────
+
+    public function staffUsage(Request $request, InventoryItem $item): JsonResponse
+    {
+        $this->authorizeSchool($item->school_id);
+
+        $records = InventoryTransaction::where('item_id', $item->id)
+            ->where('type', 'out')
+            ->whereNotNull('issued_to_employee_id')
+            ->with(['issuedToEmployee:id,full_name,department,role,staff_number', 'recorder:id,name'])
+            ->orderByDesc('transaction_date')
+            ->orderByDesc('id')
+            ->get();
+
+        // Group by employee
+        $grouped = $records->groupBy('issued_to_employee_id')->map(function ($txns) {
+            $emp = $txns->first()->issuedToEmployee;
+            return [
+                'employee'     => $emp,
+                'total_issued' => $txns->sum('quantity'),
+                'transactions' => $txns->values(),
+            ];
+        })->values();
+
+        return response()->json(['item' => $item->only(['id', 'name', 'unit']), 'staff_usage' => $grouped]);
     }
 
     // ── Summary ───────────────────────────────────────────────────────────────

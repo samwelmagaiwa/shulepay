@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Models\Employee;
 use App\Traits\BelongsToSchool;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -28,7 +29,7 @@ class Asset extends Model
         'salvage_value_cents', 'accumulated_depreciation_cents',
 
         // Custody
-        'custodian', 'warranty_expiry',
+        'custodian', 'custodian_employee_id', 'warranty_expiry',
 
         // Status
         'status',
@@ -71,6 +72,11 @@ class Asset extends Model
     public function registeredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'registered_by');
+    }
+
+    public function custodianEmployee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'custodian_employee_id');
     }
 
     /**

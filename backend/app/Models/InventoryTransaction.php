@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Employee;
 
 class InventoryTransaction extends Model
 {
     protected $fillable = [
         'item_id', 'school_id', 'type', 'quantity', 'notes',
-        'reference', 'issued_to', 'transaction_date', 'recorded_by',
+        'reference', 'issued_to', 'issued_to_employee_id', 'transaction_date', 'recorded_by',
     ];
 
     protected $casts = [
@@ -25,5 +26,10 @@ class InventoryTransaction extends Model
     public function recorder(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function issuedToEmployee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'issued_to_employee_id');
     }
 }

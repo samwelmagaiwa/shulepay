@@ -38,6 +38,13 @@ class AssetResource extends JsonResource
             'current_value_cents' => (int) $this->getRawOriginal('current_value_cents'),
             'accumulated_depreciation_cents' => (int) $this->getRawOriginal('accumulated_depreciation_cents'),
             'custodian' => $this->custodian,
+            'custodian_employee_id' => $this->custodian_employee_id,
+            'custodian_employee' => $this->whenLoaded('custodianEmployee', fn () => $this->custodianEmployee ? [
+                'id'         => $this->custodianEmployee->id,
+                'full_name'  => $this->custodianEmployee->full_name,
+                'department' => $this->custodianEmployee->department,
+                'role'       => $this->custodianEmployee->role,
+            ] : null),
             'location' => $this->location,
             'condition' => $this->condition,
             'status' => $this->status ?? 'in_use',
