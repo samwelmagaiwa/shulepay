@@ -20,7 +20,7 @@ const isStudentsActive  = computed(() => ['/wanafunzi', '/walezi', '/wanafunzi/c
 const isFinanceActive   = computed(() => ['/ada-madeni', '/installments', '/malipo', '/ada'].some(p => route.path.startsWith(p)))
 const isExpensesActive  = computed(() => ['/matumizi', '/payroll', '/wasambazaji', '/mali', '/bajeti'].some(p => route.path.startsWith(p)))
 const isSchuleActive    = computed(() => ['/mahudhurio', '/usafiri', '/inventory'].some(p => route.path.startsWith(p)))
-const isAdminActive     = computed(() => ['/admin/schools', '/admin/wafanyakazi', '/bajeti', '/admin/rollover', '/admin/terms', '/admin/academic-years', '/audit', '/superadmin'].some(p => route.path.startsWith(p)))
+const isAdminActive     = computed(() => ['/admin/schools', '/admin/wafanyakazi', '/bajeti', '/admin/rollover', '/admin/terms', '/admin/academic-years', '/admin/branding', '/audit', '/superadmin'].some(p => route.path.startsWith(p)))
 const { t, locale } = useI18n()
 const { colorMode, setColorMode } = useColorModes('shulepay-theme')
 
@@ -275,6 +275,9 @@ function go(path) {
             </CDropdownItem>
             <CDropdownItem @click="router.push('/audit')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/audit') }">
               <CIcon icon="cilHistory" class="me-2" /> {{ t('nav.audit') }}
+            </CDropdownItem>
+            <CDropdownItem @click="router.push('/admin/branding')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/branding') }">
+              🎨 {{ t('nav.branding') }}
             </CDropdownItem>
             <template v-if="auth.isSuperAdmin">
               <CDropdownDivider />
