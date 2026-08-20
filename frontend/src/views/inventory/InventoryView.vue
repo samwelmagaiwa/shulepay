@@ -1,16 +1,18 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useInventoryStore } from '@/stores/inventory'
-import { useSchoolsStore }   from '@/stores/schools'
-import { useSchoolStore }    from '@/stores/school'
-import { useAuthStore }      from '@/stores/auth'
+import { useInventoryStore }  from '@/stores/inventory'
+import { useSchoolsStore }    from '@/stores/schools'
+import { useSchoolStore }     from '@/stores/school'
+import { useAuthStore }       from '@/stores/auth'
+import { useEmployeesStore }  from '@/stores/employees'
 
 const { t }        = useI18n()
 const store        = useInventoryStore()
 const schoolStore  = useSchoolsStore()
 const navSchool    = useSchoolStore()
 const auth         = useAuthStore()
+const empStore     = useEmployeesStore()
 const canAdjust    = computed(() => auth.hasPermission('inventory.adjustment'))
 
 const schools = computed(() => schoolStore.schools)
@@ -115,15 +117,42 @@ const selectedItem     = ref(null)
 const showTxnPanel     = ref(false)
 const itemTransactions = ref([])
 const txnLoading       = ref(false)
-const txnForm = ref({ type: 'in', quantity: 1, issued_to: '', notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) })
+const txnForm = ref({ type: 'in', quantity: 1, issued_to_employee_id: '', notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) })
 const txnSaving = ref(false)
 const txnError  = ref('')
+
+const selectedTxnEmployee = computed(() =>
+  txnForm.value.issued_to_employee_id
+    ? empStore.activeEmployees.find(e => e.id == txnForm.value.issued_to_employee_id)
+    : null
+)
+
+// ── Staff usage modal ─────────────────────────────────────────────────────────
+const showStaffUsage     = ref(false)
+const staffUsageItem     = ref(null)
+const staffUsageData     = ref([])
+const staffUsageLoading  = ref(false)
+
+async function openStaffUsage(item) {
+  staffUsageItem.value    = item
+  showStaffUsage.value    = true
+  staffUsageLoading.value = true
+  staffUsageData.value    = []
+  try {
+    const res = await store.fetchStaffUsage(item.id)
+    staffUsageData.value = res.staff_usage || []
+  } finally {
+    staffUsageLoading.value = false
+  }
+}
 
 async function openItemPanel(item) {
   selectedItem.value = item
   showTxnPanel.value = true
   txnLoading.value = true
-  txnForm.value = { type: 'in', quantity: 1, issued_to: '', notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) }
+  txnForm.value = { type: 'in', quantity: 1, issued_to_employee_id: '', notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) }
+  // Load active employees for this school so dropdown is ready
+  empStore.fetchActiveEmployees(item.school_id || navSchool.activeSchoolId)
   try {
     itemTransactions.value = await store.fetchTransactions(item.id)
   } finally {
@@ -139,7 +168,7 @@ async function recordTransaction() {
     if (result.item) selectedItem.value = result.item
     itemTransactions.value = await store.fetchTransactions(selectedItem.value.id)
     await store.fetchSummary()
-    txnForm.value = { type: 'in', quantity: 1, issued_to: '', notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) }
+    txnForm.value = { type: 'in', quantity: 1, issued_to_employee_id: '', notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) }
   } catch (e) {
     txnError.value = e?.response?.data?.message || t('common.saveFailed')
   } finally {
@@ -219,7 +248,7 @@ function defaultForm() {
     asset_tag: '', name: '', category: '', school_id: navSchool.activeSchoolId || '', quantity: 1,
     serial_no: '', purchase_cost: '', purchase_date: '', supplier_name: '',
     invoice_no: '', funding_source: '', depreciation_method: '', useful_life_years: '',
-    depreciation_rate: '', salvage_value: '', custodian: '', location: '',
+    depreciation_rate: '', salvage_value: '', custodian: '', custodian_employee_id: '', location: '',
     condition: 'good', status: 'in_use', warranty_expiry: '', notes: '',
   }
 }
@@ -282,12 +311,14 @@ function openAdd() {
   editAsset.value = null; formError.value = ''; photoFile.value = null; photoPreview.value = ''
   depPreview.value = null; activeTab.value = 0
   form.value = defaultForm()
+  empStore.fetchActiveEmployees(navSchool.activeSchoolId)
   showModal.value = true
 }
 
 function openEdit(a) {
   editAsset.value = a; formError.value = ''; photoFile.value = null; photoPreview.value = ''
   depPreview.value = null; activeTab.value = 0
+  empStore.fetchActiveEmployees(a.school_id || navSchool.activeSchoolId)
   form.value = {
     asset_tag:           a.asset_tag || '',
     name:                a.name || '',
@@ -304,8 +335,9 @@ function openEdit(a) {
     useful_life_years:   a.useful_life_years || '',
     depreciation_rate:   a.depreciation_rate || '',
     salvage_value:       Math.round((a.salvage_value_cents || 0) / 100),
-    custodian:           a.custodian || '',
-    location:            a.location || '',
+    custodian:              a.custodian || '',
+    custodian_employee_id:  a.custodian_employee_id || '',
+    location:               a.location || '',
     condition:           a.condition || 'good',
     status:              a.status || 'in_use',
     warranty_expiry:     a.warranty_expiry || '',
@@ -754,7 +786,16 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
               <CCol md="4"><CFormLabel>{{ t('inventory.txnDate') }}</CFormLabel><CFormInput v-model="txnForm.transaction_date" type="date" /></CCol>
               <CCol v-if="txnForm.type === 'out'" xs="12" md="6">
                 <CFormLabel>{{ t('inventory.txnIssuedTo') }} *</CFormLabel>
-                <CFormInput v-model="txnForm.issued_to" :placeholder="t('inventory.txnIssuedToPlaceholder')" />
+                <CFormSelect v-model="txnForm.issued_to_employee_id" style="min-height:38px;">
+                  <option value="">{{ t('inventory.txnSelectEmployee') }}</option>
+                  <option v-for="emp in empStore.activeEmployees" :key="emp.id" :value="emp.id">
+                    {{ emp.full_name }}{{ emp.department ? ' — ' + emp.department : '' }}
+                  </option>
+                </CFormSelect>
+                <div v-if="selectedTxnEmployee" class="mt-1 text-muted small">
+                  <span class="badge bg-info text-dark me-1">{{ selectedTxnEmployee.role }}</span>
+                  <span v-if="selectedTxnEmployee.department">{{ selectedTxnEmployee.department }}</span>
+                </div>
               </CCol>
               <CCol :md="txnForm.type === 'out' ? 6 : 6"><CFormLabel>{{ t('inventory.txnReference') }}</CFormLabel><CFormInput v-model="txnForm.reference" placeholder="LPO-001..." /></CCol>
               <CCol xs="12" md="6"><CFormLabel>{{ t('inventory.txnNotes') }}</CFormLabel><CFormInput v-model="txnForm.notes" /></CCol>
@@ -767,31 +808,95 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
           </CCardBody>
         </CCard>
         <div v-if="txnLoading" class="text-center py-3"><CSpinner /></div>
-        <CTable v-else-if="itemTransactions.length > 0" responsive small>
-          <CTableHead class="table-light">
-            <CTableRow>
-              <CTableHeaderCell>{{ t('inventory.txnDateCol') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('inventory.txnTypeCol') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('inventory.txnQtyCol') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('inventory.txnIssuedTo') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('inventory.txnNotesCol') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('inventory.txnRecordedBy') }}</CTableHeaderCell>
-            </CTableRow>
-          </CTableHead>
-          <CTableBody>
-            <CTableRow v-for="txn in itemTransactions" :key="txn.id">
-              <CTableDataCell>{{ txn.transaction_date }}</CTableDataCell>
-              <CTableDataCell><CBadge :color="txnTypeBadge(txn.type)">{{ txnTypeLabel(txn.type) }}</CBadge></CTableDataCell>
-              <CTableDataCell>{{ Number(txn.quantity).toLocaleString() }}</CTableDataCell>
-              <CTableDataCell>{{ txn.issued_to || '—' }}</CTableDataCell>
-              <CTableDataCell>{{ txn.notes || txn.reference || '—' }}</CTableDataCell>
-              <CTableDataCell class="small text-muted">{{ txn.recorder?.name || '—' }}</CTableDataCell>
-            </CTableRow>
-          </CTableBody>
-        </CTable>
+        <template v-else-if="itemTransactions.length > 0">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-semibold small text-muted">{{ t('inventory.txnHistory') }} ({{ itemTransactions.length }})</span>
+            <CButton size="sm" color="info" variant="outline" @click="openStaffUsage(selectedItem)">
+              👥 {{ t('inventory.staffUsageBtn') }}
+            </CButton>
+          </div>
+          <CTable responsive small>
+            <CTableHead class="table-light">
+              <CTableRow>
+                <CTableHeaderCell>{{ t('inventory.txnDateCol') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('inventory.txnTypeCol') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('inventory.txnQtyCol') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('inventory.txnIssuedTo') }}</CTableHeaderCell>
+                <CTableHeaderCell class="d-none d-md-table-cell">{{ t('inventory.txnNotesCol') }}</CTableHeaderCell>
+                <CTableHeaderCell class="d-none d-md-table-cell">{{ t('inventory.txnRecordedBy') }}</CTableHeaderCell>
+              </CTableRow>
+            </CTableHead>
+            <CTableBody>
+              <CTableRow v-for="txn in itemTransactions" :key="txn.id">
+                <CTableDataCell>{{ txn.transaction_date }}</CTableDataCell>
+                <CTableDataCell><CBadge :color="txnTypeBadge(txn.type)">{{ txnTypeLabel(txn.type) }}</CBadge></CTableDataCell>
+                <CTableDataCell>{{ Number(txn.quantity).toLocaleString() }}</CTableDataCell>
+                <CTableDataCell>
+                  <template v-if="txn.issued_to_employee">
+                    <div class="fw-semibold small">{{ txn.issued_to_employee.full_name }}</div>
+                    <div class="text-muted" style="font-size:0.75rem;">{{ txn.issued_to_employee.department || txn.issued_to_employee.role }}</div>
+                  </template>
+                  <span v-else class="text-muted">—</span>
+                </CTableDataCell>
+                <CTableDataCell class="small text-muted d-none d-md-table-cell">{{ txn.notes || txn.reference || '—' }}</CTableDataCell>
+                <CTableDataCell class="small text-muted d-none d-md-table-cell">{{ txn.recorder?.name || '—' }}</CTableDataCell>
+              </CTableRow>
+            </CTableBody>
+          </CTable>
+        </template>
         <div v-else class="text-center text-muted py-3">{{ t('inventory.noTxnHistory') }}</div>
       </CModalBody>
       <CModalFooter><CButton color="secondary" @click="showTxnPanel = false">{{ t('common.close') }}</CButton></CModalFooter>
+    </CModal>
+
+    <!-- Staff Usage History Modal (Consumables) -->
+    <CModal :visible="showStaffUsage" @close="showStaffUsage = false" size="lg">
+      <CModalHeader>
+        <CModalTitle>👥 {{ staffUsageItem?.name }} — {{ t('inventory.staffUsageTitle') }}</CModalTitle>
+      </CModalHeader>
+      <CModalBody>
+        <div v-if="staffUsageLoading" class="text-center py-4"><CSpinner /></div>
+        <div v-else-if="staffUsageData.length === 0" class="text-center text-muted py-4">{{ t('inventory.staffUsageEmpty') }}</div>
+        <div v-else>
+          <div v-for="row in staffUsageData" :key="row.employee?.id" class="mb-4 border rounded p-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <div class="fw-bold fs-6">{{ row.employee?.full_name }}</div>
+                <div class="text-muted small">
+                  <span class="badge bg-secondary me-1">{{ row.employee?.role }}</span>
+                  {{ row.employee?.department || '' }}
+                  <span v-if="row.employee?.staff_number" class="ms-2 text-muted">· {{ row.employee.staff_number }}</span>
+                </div>
+              </div>
+              <div class="text-end">
+                <div class="fw-bold text-danger">{{ Number(row.total_issued).toLocaleString() }} {{ staffUsageItem?.unit }}</div>
+                <div class="text-muted small">{{ t('inventory.staffTotalIssued') }}</div>
+              </div>
+            </div>
+            <CTable small responsive class="mb-0">
+              <CTableHead class="table-light">
+                <CTableRow>
+                  <CTableHeaderCell>{{ t('inventory.txnDateCol') }}</CTableHeaderCell>
+                  <CTableHeaderCell>{{ t('inventory.txnQtyCol') }}</CTableHeaderCell>
+                  <CTableHeaderCell>{{ t('inventory.txnNotesCol') }}</CTableHeaderCell>
+                  <CTableHeaderCell>{{ t('inventory.txnRecordedBy') }}</CTableHeaderCell>
+                </CTableRow>
+              </CTableHead>
+              <CTableBody>
+                <CTableRow v-for="txn in row.transactions" :key="txn.id">
+                  <CTableDataCell>{{ txn.transaction_date }}</CTableDataCell>
+                  <CTableDataCell>{{ Number(txn.quantity).toLocaleString() }}</CTableDataCell>
+                  <CTableDataCell class="text-muted small">{{ txn.notes || txn.reference || '—' }}</CTableDataCell>
+                  <CTableDataCell class="text-muted small">{{ txn.recorder?.name || '—' }}</CTableDataCell>
+                </CTableRow>
+              </CTableBody>
+            </CTable>
+          </div>
+        </div>
+      </CModalBody>
+      <CModalFooter>
+        <CButton color="secondary" @click="showStaffUsage = false">{{ t('common.close') }}</CButton>
+      </CModalFooter>
     </CModal>
 
     <!-- ══════════════════════════════════════════════
@@ -841,7 +946,14 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
 
         <h6 class="text-primary fw-bold border-bottom pb-1 mb-2">{{ t('assets.detail.condition') }}</h6>
         <CRow class="g-2 mb-3">
-          <CCol xs="6" md="3"><small class="text-muted">{{ t('assets.custodian') }}</small><div>{{ detailAsset.custodian || '—' }}</div></CCol>
+          <CCol xs="6" md="3">
+            <small class="text-muted">{{ t('assets.custodian') }}</small>
+            <div v-if="detailAsset.custodian_employee" class="fw-semibold">
+              {{ detailAsset.custodian_employee.full_name }}
+              <div class="text-muted small">{{ detailAsset.custodian_employee.department || detailAsset.custodian_employee.role }}</div>
+            </div>
+            <div v-else>{{ detailAsset.custodian || '—' }}</div>
+          </CCol>
           <CCol xs="6" md="3"><small class="text-muted">{{ t('assets.location') }}</small><div>{{ detailAsset.location || '—' }}</div></CCol>
           <CCol xs="6" md="3"><small class="text-muted">{{ t('assets.condition') }}</small><div><CBadge :color="conditionBadgeColor(detailAsset.condition)">{{ conditionLabel(detailAsset.condition) }}</CBadge></div></CCol>
           <CCol xs="6" md="3"><small class="text-muted">{{ t('common.status') }}</small><div><CBadge :color="statusBadgeColor(detailAsset.status)">{{ statusLabel(detailAsset.status) }}</CBadge></div></CCol>
@@ -968,7 +1080,19 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
         <!-- Tab 4: Condition -->
         <div v-show="activeTab === 3">
           <CRow class="g-3">
-            <CCol xs="12" md="6"><label class="form-label fw-semibold">{{ t('assets.custodian') }}</label><CFormInput v-model="form.custodian" style="min-height:44px;" /></CCol>
+            <CCol xs="12" md="6">
+              <label class="form-label fw-semibold">{{ t('assets.custodianEmployee') }}</label>
+              <CFormSelect v-model="form.custodian_employee_id" style="min-height:44px;" @update:modelValue="val => { const emp = empStore.activeEmployees.find(e => e.id == val); if (emp) form.custodian = emp.full_name }">
+                <option value="">— {{ t('assets.noCustodian') }} —</option>
+                <option v-for="emp in empStore.activeEmployees" :key="emp.id" :value="emp.id">
+                  {{ emp.full_name }}{{ emp.department ? ' (' + emp.department + ')' : '' }}
+                </option>
+              </CFormSelect>
+              <div v-if="form.custodian_employee_id" class="mt-1 text-muted small">
+                {{ empStore.activeEmployees.find(e => e.id == form.custodian_employee_id)?.department || '' }}
+              </div>
+            </CCol>
+            <CCol xs="12" md="6"><label class="form-label fw-semibold">{{ t('assets.custodian') }} ({{ t('assets.custodianFreeText') }})</label><CFormInput v-model="form.custodian" style="min-height:44px;" /></CCol>
             <CCol xs="12" md="6">
               <label class="form-label fw-semibold">{{ t('assets.condition') }}</label>
               <CFormSelect v-model="form.condition" style="min-height:44px;">
