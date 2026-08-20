@@ -350,7 +350,13 @@
         <CRow class="g-3">
           <CCol xs="12" sm="6">
             <label class="form-label">{{ t('students.openingBalance') }}</label>
-            <CFormInput type="number" v-model.number="form.opening_balance" min="0" placeholder="0" />
+            <CFormInput
+              type="text"
+              inputmode="numeric"
+              :value="formatAmount(form.opening_balance)"
+              @input="form.opening_balance = parseAmount($event.target.value)"
+              placeholder="0"
+            />
             <div class="text-muted small">{{ t('students.openingBalanceHint') }}</div>
           </CCol>
           <CCol xs="12" sm="6">
@@ -527,6 +533,16 @@ function blankForm() {
 }
 
 const form = ref(blankForm())
+
+function formatAmount(val) {
+  if (!val && val !== 0) return ''
+  return Number(val).toLocaleString('en-TZ')
+}
+
+function parseAmount(str) {
+  const n = parseInt(String(str).replace(/,/g, ''), 10)
+  return isNaN(n) ? 0 : n
+}
 
 const fullName = computed(() =>
   [form.value.first_name, form.value.middle_name, form.value.last_name].filter(Boolean).join(' ')

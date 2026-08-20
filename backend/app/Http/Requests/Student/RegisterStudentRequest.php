@@ -53,7 +53,7 @@ class RegisterStudentRequest extends FormRequest
             'guardians.*.email' => 'nullable|email|max:200',
             'guardians.*.national_id' => 'nullable|string|max:50',
             'guardians.*.address' => 'nullable|string',
-            'guardians.*.is_primary_contact' => 'nullable|boolean',
+            'guardians.*.is_primary_contact' => 'nullable|in:true,false,1,0,yes,no',
 
             // Financial
             'discount_type' => 'nullable|in:sibling,staff,sponsor,other',
