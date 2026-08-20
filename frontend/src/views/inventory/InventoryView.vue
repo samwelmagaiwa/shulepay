@@ -82,10 +82,23 @@ async function saveItem() {
   }
 }
 
-async function deleteItem(item) {
-  if (!confirm(t('common.confirmDeleteMsg', { name: item.name }))) return
-  await store.deleteItem(item.id)
-  await store.fetchSummary()
+const itemToDelete  = ref(null)
+const showDeleteItemModal = ref(false)
+const deletingItem  = ref(false)
+
+function confirmDeleteItem(item) { itemToDelete.value = item; showDeleteItemModal.value = true }
+
+async function doDeleteItem() {
+  deletingItem.value = true
+  try {
+    await store.deleteItem(itemToDelete.value.id)
+    showDeleteItemModal.value = false
+    await store.fetchSummary()
+  } catch (e) {
+    alert(e?.response?.data?.message || t('common.deleteFailed'))
+  } finally {
+    deletingItem.value = false
+  }
 }
 
 // ── Transaction panel ─────────────────────────────────────────────────────────
@@ -93,7 +106,7 @@ const selectedItem     = ref(null)
 const showTxnPanel     = ref(false)
 const itemTransactions = ref([])
 const txnLoading       = ref(false)
-const txnForm = ref({ type: 'in', quantity: 1, notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) })
+const txnForm = ref({ type: 'in', quantity: 1, issued_to: '', notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) })
 const txnSaving = ref(false)
 const txnError  = ref('')
 
@@ -101,7 +114,7 @@ async function openItemPanel(item) {
   selectedItem.value = item
   showTxnPanel.value = true
   txnLoading.value = true
-  txnForm.value = { type: 'in', quantity: 1, notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) }
+  txnForm.value = { type: 'in', quantity: 1, issued_to: '', notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) }
   try {
     itemTransactions.value = await store.fetchTransactions(item.id)
   } finally {
@@ -117,7 +130,7 @@ async function recordTransaction() {
     if (result.item) selectedItem.value = result.item
     itemTransactions.value = await store.fetchTransactions(selectedItem.value.id)
     await store.fetchSummary()
-    txnForm.value = { type: 'in', quantity: 1, notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) }
+    txnForm.value = { type: 'in', quantity: 1, issued_to: '', notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) }
   } catch (e) {
     txnError.value = e?.response?.data?.message || t('common.saveFailed')
   } finally {
@@ -540,7 +553,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
                   <CButtonGroup size="sm">
                     <CButton color="info" variant="ghost" @click="openItemPanel(item)">📋 {{ t('inventory.btnTransactions') }}</CButton>
                     <CButton color="primary" variant="ghost" @click.stop="openEditItem(item)">✏️</CButton>
-                    <CButton color="danger" variant="ghost" @click.stop="deleteItem(item)">🗑️</CButton>
+                    <CButton color="danger" variant="ghost" @click.stop="confirmDeleteItem(item)">🗑️</CButton>
                   </CButtonGroup>
                 </CTableDataCell>
               </CTableRow>
@@ -727,8 +740,12 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
               <CCol md="4"><CFormLabel>{{ t('inventory.txnType') }}</CFormLabel><CFormSelect v-model="txnForm.type"><option value="in">{{ t('inventory.txnIn') }}</option><option value="out">{{ t('inventory.txnOut') }}</option><option value="adjustment">{{ t('inventory.txnAdjustment') }}</option></CFormSelect></CCol>
               <CCol md="4"><CFormLabel>{{ t('inventory.txnQty') }}</CFormLabel><CFormInput v-model.number="txnForm.quantity" type="number" step="0.01" min="0.01" /></CCol>
               <CCol md="4"><CFormLabel>{{ t('inventory.txnDate') }}</CFormLabel><CFormInput v-model="txnForm.transaction_date" type="date" /></CCol>
-              <CCol md="6"><CFormLabel>{{ t('inventory.txnReference') }}</CFormLabel><CFormInput v-model="txnForm.reference" placeholder="LPO-001..." /></CCol>
-              <CCol md="6"><CFormLabel>{{ t('inventory.txnNotes') }}</CFormLabel><CFormInput v-model="txnForm.notes" /></CCol>
+              <CCol v-if="txnForm.type === 'out'" xs="12" md="6">
+                <CFormLabel>{{ t('inventory.txnIssuedTo') }} *</CFormLabel>
+                <CFormInput v-model="txnForm.issued_to" :placeholder="t('inventory.txnIssuedToPlaceholder')" />
+              </CCol>
+              <CCol :md="txnForm.type === 'out' ? 6 : 6"><CFormLabel>{{ t('inventory.txnReference') }}</CFormLabel><CFormInput v-model="txnForm.reference" placeholder="LPO-001..." /></CCol>
+              <CCol xs="12" md="6"><CFormLabel>{{ t('inventory.txnNotes') }}</CFormLabel><CFormInput v-model="txnForm.notes" /></CCol>
               <CCol xs="12" class="text-end">
                 <CButton color="success" :disabled="txnSaving" @click="recordTransaction">
                   <CSpinner v-if="txnSaving" size="sm" class="me-1" />{{ t('inventory.txnRecord') }}
@@ -741,8 +758,12 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
         <CTable v-else-if="itemTransactions.length > 0" responsive small>
           <CTableHead class="table-light">
             <CTableRow>
-              <CTableHeaderCell>{{ t('inventory.txnDateCol') }}</CTableHeaderCell><CTableHeaderCell>{{ t('inventory.txnTypeCol') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('inventory.txnQtyCol') }}</CTableHeaderCell><CTableHeaderCell>{{ t('inventory.txnNotesCol') }}</CTableHeaderCell>
+              <CTableHeaderCell>{{ t('inventory.txnDateCol') }}</CTableHeaderCell>
+              <CTableHeaderCell>{{ t('inventory.txnTypeCol') }}</CTableHeaderCell>
+              <CTableHeaderCell>{{ t('inventory.txnQtyCol') }}</CTableHeaderCell>
+              <CTableHeaderCell>{{ t('inventory.txnIssuedTo') }}</CTableHeaderCell>
+              <CTableHeaderCell>{{ t('inventory.txnNotesCol') }}</CTableHeaderCell>
+              <CTableHeaderCell>{{ t('inventory.txnRecordedBy') }}</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
           <CTableBody>
@@ -750,7 +771,9 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
               <CTableDataCell>{{ txn.transaction_date }}</CTableDataCell>
               <CTableDataCell><CBadge :color="txnTypeBadge(txn.type)">{{ txnTypeLabel(txn.type) }}</CBadge></CTableDataCell>
               <CTableDataCell>{{ Number(txn.quantity).toLocaleString() }}</CTableDataCell>
-              <CTableDataCell>{{ txn.notes || txn.reference || '-' }}</CTableDataCell>
+              <CTableDataCell>{{ txn.issued_to || '—' }}</CTableDataCell>
+              <CTableDataCell>{{ txn.notes || txn.reference || '—' }}</CTableDataCell>
+              <CTableDataCell class="small text-muted">{{ txn.recorder?.name || '—' }}</CTableDataCell>
             </CTableRow>
           </CTableBody>
         </CTable>
@@ -992,7 +1015,22 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
       </CModalFooter>
     </CModal>
 
-    <!-- Delete Confirm -->
+    <!-- Delete Consumable Confirm Modal -->
+    <CModal :visible="showDeleteItemModal" @close="showDeleteItemModal = false" size="sm" class="modal-fullscreen-sm-down">
+      <CModalHeader><CModalTitle>{{ t('common.confirmDelete') }}</CModalTitle></CModalHeader>
+      <CModalBody>
+        {{ t('common.confirmDeleteMsg', { name: itemToDelete?.name }) }}
+        <div class="text-danger small mt-1">{{ t('common.cannotUndo') }}</div>
+      </CModalBody>
+      <CModalFooter class="gap-2">
+        <CButton color="secondary" @click="showDeleteItemModal = false" style="min-height:44px;">{{ t('common.close') }}</CButton>
+        <CButton color="danger" :disabled="deletingItem" @click="doDeleteItem" style="min-height:44px;">
+          <CSpinner v-if="deletingItem" size="sm" class="me-1" />{{ t('common.delete') }}
+        </CButton>
+      </CModalFooter>
+    </CModal>
+
+    <!-- Delete Fixed Asset Confirm -->
     <CModal :visible="showDeleteModal" @close="showDeleteModal = false" size="sm" class="modal-fullscreen-sm-down">
       <CModalHeader><CModalTitle>{{ t('common.confirmDelete') }}</CModalTitle></CModalHeader>
       <CModalBody>
