@@ -9,15 +9,18 @@ import {
   cilXCircle,
   cilChartLine,
   cilHistory,
-  cilHospital, 
+  cilHospital,
   cilFile,
-  cilUser, 
+  cilUser,
   cilChevronBottom,
   cilChevronTop,
   cilInfo,
 } from '@coreui/icons'
 import { useDashboardStore } from '@/stores/dashboard'
+import { useI18n } from 'vue-i18n'
 import { ref, watch } from 'vue'
+
+const { t } = useI18n()
 
 const dashboard = useDashboardStore()
 
@@ -76,7 +79,7 @@ watch(
   <div class="metrics-grid mb-0 px-0">
     <CRow
       :gutter="3"
-      class="row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3 px-0 mx-0 flex-nowrap flex-lg-wrap metrics-row"
+      class="row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3 px-0 mx-0 metrics-row"
     >
       <!-- Total OPD -->
       <CCol class="metric-col">
@@ -90,7 +93,7 @@ watch(
             </div>
             <div class="stat-main-info">
               <h3 class="stat-value" style="color: #6366f1">{{ getValue('total_patients') }}</h3>
-              <span class="stat-label">Wanafunzi Wote</span>
+              <span class="stat-label">{{ t('dashboard.cardTotalStudents') }}</span>
             </div>
           </div>
           <div
@@ -139,7 +142,7 @@ watch(
                   {{ getValue('emergency_visits') }}
                 </h3>
               </div>
-              <span class="stat-label">Madeni Yanayodai</span>
+              <span class="stat-label">{{ t('dashboard.cardDebt') }}</span>
             </div>
           </div>
           <div
@@ -167,7 +170,7 @@ watch(
             </div>
             <div class="stat-main-info">
               <h3 class="stat-value" style="color: #0ea5e9">{{ getValue('new_visits') }}</h3>
-              <span class="stat-label">Wanafunzi Wapya</span>
+              <span class="stat-label">{{ t('dashboard.cardNewStudents') }}</span>
             </div>
           </div>
           <div
@@ -194,7 +197,7 @@ watch(
             </div>
             <div class="stat-main-info">
               <h3 class="stat-value" style="color: #a855f7">{{ getValue('followups') }}</h3>
-              <span class="stat-label">Makusanyo ya Leo</span>
+              <span class="stat-label">{{ t('dashboard.cardTodayCollect') }}</span>
             </div>
           </div>
           <div
@@ -223,7 +226,7 @@ watch(
               <h3 class="stat-value" style="color: #10b981">
                 {{ getValue('consulted') }}
               </h3>
-              <span class="stat-label">Ankara Zilizolipwa</span>
+              <span class="stat-label">{{ t('dashboard.cardPaidInvoices') }}</span>
             </div>
           </div>
           <div
@@ -310,7 +313,7 @@ watch(
                 class="stat-label"
                 :class="{ 'orange-text-shadow-sm': !dashboard.isTodaySelected }"
               >
-                {{ dashboard.isTodaySelected ? 'Bado Hawajalipa' : 'Hawajalipiwa' }}
+                {{ dashboard.isTodaySelected ? t('dashboard.cardNotPaidToday') : t('dashboard.cardUnpaid') }}
               </span>
             </div>
           </div>
@@ -859,16 +862,6 @@ watch(
 }
 
 @media (max-width: 991.98px) {
-  .metrics-grid {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 1.5rem; /* Space for shadows only when scrolling */
-    margin-bottom: 0.5rem;
-  }
-
-  .metrics-row {
-    flex-wrap: nowrap !important;
-  }
 }
 .metric-col {
   transition: all 0.3s ease;
