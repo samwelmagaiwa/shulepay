@@ -17,7 +17,7 @@ return new class extends Migration
                 $system['logo_path'] = $this->moveLogo($system['logo_path']);
                 SystemSetting::set('branding', $system);
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // system_settings table may not exist yet
         }
 
@@ -62,7 +62,7 @@ return new class extends Migration
 
                 return $newPath;
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // File missing on disk; fix the DB reference only
         }
 
