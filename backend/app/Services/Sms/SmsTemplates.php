@@ -205,6 +205,16 @@ class SmsTemplates
         return "ShulePay: Mshahara wa {$month} wa TZS {$salary} umechakatwa kwa {$employeeName}. Lipa kupitia njia iliyochaguliwa.";
     }
 
+    // ── LOW STOCK ALERT (to accountant / owner / superadmin) ─────────────────
+
+    public static function lowStockAlert(string $itemName, float $currentQty, float $reorderLevel, string $unit, string $schoolName): string
+    {
+        $qty   = number_format($currentQty, 0);
+        $level = number_format($reorderLevel, 0);
+
+        return "ShulePay ⚠️ Tahadhari: Bidhaa '{$itemName}' shule {$schoolName} imepungua chini ya kiwango cha uagizaji. Iliyobaki: {$qty} {$unit}. Kiwango cha uagizaji upya: {$level} {$unit}. Tafadhali agiza upya kuepuka usumbufu.";
+    }
+
     // ── HELPERS ──────────────────────────────────────────────────────────────
 
     /**

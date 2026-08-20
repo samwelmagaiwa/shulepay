@@ -25,19 +25,25 @@ class SupplierPaymentController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        // Accept both 'payment_date' and legacy 'paid_at' from frontend
+        if ($request->has('paid_at') && ! $request->has('payment_date')) {
+            $request->merge(['payment_date' => $request->paid_at]);
+        }
+
         $data = $request->validate([
-            'supplier_id' => 'required|exists:suppliers,id',
+            'supplier_id'  => 'required|exists:suppliers,id',
             'amount_cents' => 'required|integer|min:1',
-            'method' => 'required|in:cash,bank,mpesa,cheque',
-            'reference' => 'nullable|string|max:255',
+            'method'       => 'required|in:cash,bank,mpesa,cheque',
+            'reference'    => 'nullable|string|max:255',
             'payment_date' => 'required|date',
-            'notes' => 'nullable|string',
+            'notes'        => 'nullable|string',
         ]);
 
         return DB::transaction(function () use ($data) {
             $supplier = Supplier::lockForUpdate()->findOrFail($data['supplier_id']);
 
             $data['recorded_by'] = auth()->id();
+            $data['school_id']   = $supplier->school_id;
 
             $payment = SupplierPayment::create($data);
 

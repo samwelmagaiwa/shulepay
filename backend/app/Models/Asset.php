@@ -78,14 +78,19 @@ class Asset extends Model
      */
     public function computeCurrentValueCents(): int
     {
-        $cost = (int) $this->getRawOriginal('purchase_cost_cents');
+        // getRawOriginal() is empty on new records; fall back to attributes array
+        $cost = (int) ($this->getRawOriginal('purchase_cost_cents') ?: ($this->attributes['purchase_cost_cents'] ?? 0));
 
-        if (! $this->purchase_date || $cost === 0) {
+        $purchaseDate = $this->purchase_date instanceof \Carbon\Carbon
+            ? $this->purchase_date
+            : \Carbon\Carbon::parse($this->attributes['purchase_date'] ?? null);
+
+        if (! $purchaseDate || $cost === 0) {
             return $cost;
         }
 
-        $years = now()->diffInDays($this->purchase_date) / 365.25;
-        $salvage = (int) $this->getRawOriginal('salvage_value_cents');
+        $years = abs($purchaseDate->diffInDays(now())) / 365.25;
+        $salvage = (int) ($this->getRawOriginal('salvage_value_cents') ?: ($this->attributes['salvage_value_cents'] ?? 0));
 
         $depreciation = 0;
 

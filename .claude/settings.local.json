@@ -83,7 +83,31 @@
       "Bash(xxd app/Console/Commands/CarryForwardArrears.php)",
       "Bash(python3 -c ' *)",
       "Bash(vendor/bin/pint app/Console/Commands/CarryForwardArrears.php app/Console/Commands/GenerateTermInvoices.php app/Console/Commands/SendFeeReminders.php app/Http/Resources/DashboardResource.php app/Notifications/FeeReminderSms.php app/Notifications/PaymentRecordedSms.php)",
-      "Bash(sshpass -p 'Samwel123' ssh -o StrictHostKeyChecking=no root@169.58.188.122 \"ls -la /www/shulepay/\")"
+      "Bash(sshpass -p 'Samwel123' ssh -o StrictHostKeyChecking=no root@169.58.188.122 \"ls -la /www/shulepay/\")",
+      "Read(//c/Program Files/MySQL/MySQL Server 8.0/bin/**)",
+      "Read(//c/Program Files/MySQL/MySQL Server 8.4/bin/**)",
+      "Read(//c/Program Files/**)",
+      "Bash(php artisan tinker '--execute= *)",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 -o StrictHostKeyChecking=no root@169.58.188.122 \"echo connected && /www/server/mysql/bin/mysql -u root -pSamwel123@ shulepay -e \\\\\"SELECT id, name, code FROM schools;\\\\\"\")",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 '/www/server/mysql/bin/mysql -u root -pSamwel123@ shulepay -e \" *)",
+      "Bash(scp -i /c/Users/MAMC/.ssh/id_ed25519 /d/Projects/shulepay/import_prod.sql root@169.58.188.122:/tmp/import_prod.sql)",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"/www/server/mysql/bin/mysql -u root -pSamwel123@ shulepay < /tmp/import_prod.sql && echo 'Import done' && /www/server/mysql/bin/mysql -u root -pSamwel123@ shulepay -e \\\\\"SELECT 'students' as t, COUNT\\(*\\) as n FROM students UNION SELECT 'invoices', COUNT\\(*\\) FROM invoices UNION SELECT 'payments', COUNT\\(*\\) FROM payments UNION SELECT 'users', COUNT\\(*\\) FROM users;\\\\\"\")",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 ' *)",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"cat /www/server/panel/vhost/nginx/proxy/magrethschools.sc.tz/*.conf 2>/dev/null\")",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"docker exec shulepay_backend tail -5 /var/www/html/storage/logs/queue-worker.log\")",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"docker exec shulepay_backend php artisan queue:restart && sleep 3 && docker exec shulepay_backend tail -5 /var/www/html/storage/logs/queue-worker.log\")",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"docker exec shulepay_backend env | grep -E 'DB_|QUEUE|CACHE'\")",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"docker exec shulepay_backend grep -n 'Connection refused\\\\|Processing\\\\|Processed\\\\|Failed' /var/www/html/storage/logs/queue-worker.log | tail -20\")",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"docker exec shulepay_backend sed -n '605,620p' /var/www/html/storage/logs/queue-worker.log\")",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"docker exec shulepay_backend cat /etc/supervisord.conf\")",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"/www/server/mysql/bin/mysql -u root -pSamwel123@ shulepay -e 'SELECT u.id, u.name, u.email, r.name as role FROM users u JOIN model_has_roles mr ON mr.model_id = u.id AND mr.model_type=\\\\\"App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\User\\\\\" JOIN roles r ON r.id = mr.role_id ORDER BY u.id;'\")",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"/www/server/mysql/bin/mysql -u root -pSamwel123@ shulepay -e 'SELECT u.id, u.name, r.name as role FROM users u LEFT JOIN model_has_roles mr ON mr.model_id=u.id LEFT JOIN roles r ON r.id=mr.role_id;'\")",
+      "PowerShell(cd D:\\\\Projects\\\\shulepay\\\\backend; php artisan tinker --execute=\\(Get-Content ..\\\\check_roles.php -Raw\\) 2>$null)",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 '/www/server/mysql/bin/mysql -u root -pSamwel123@ shulepay -e '\\\\'' *)",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"echo 'SMS_COUNTRY_CODE=255' >> /www/shulepay/.env && grep SMS_COUNTRY_CODE /www/shulepay/.env\")",
+      "Bash(git commit -m 'docs: write comprehensive README with setup, architecture, roles, deployment *)",
+      "Bash(git commit -m 'docs: update SSL section — aaPanel handles auto-renewal via nightly cron *)",
+      "Bash(xargs grep -li \"setting\\\\|configuration\\\\|branding\")"
     ]
   }
 }

@@ -22,29 +22,37 @@ if (auth.isSuperAdmin) {
 }
 
 // ── Form state ───────────────────────────────────────────────────────────────
-const appName     = ref(branding.appName)
-const appTagline  = ref(branding.appTagline)
-const logoFile    = ref(null)
-const logoPreview = ref(branding.logoUrl)
-const saving      = ref(false)
-const removing    = ref(false)
-const success     = ref('')
-const error       = ref('')
+const appName        = ref('')
+const appTagline     = ref('')
+const logoFile       = ref(null)
+const logoPreview    = ref(null)
+const saving         = ref(false)
+const removing       = ref(false)
+const loadingBranding = ref(false)
+const success        = ref('')
+const error          = ref('')
+const fileInputKey   = ref(0)   // increment to reset <input type="file">
 
-// Fetch branding when superadmin picks a school
-watch(selectedSchoolId, async (id) => {
+async function fetchBranding(id) {
+  loadingBranding.value = true
   error.value = ''
+  logoFile.value = null
+  fileInputKey.value++
   try {
     const params = id ? { school_id: id } : {}
     const res = await api.get('/branding', { params })
     appName.value     = res.data.app_name    || ''
     appTagline.value  = res.data.app_tagline || ''
     logoPreview.value = res.data.logo_url    || null
-    logoFile.value    = null
   } catch {
     error.value = 'Failed to load branding.'
+  } finally {
+    loadingBranding.value = false
   }
-})
+}
+
+// Load on mount and whenever school selection changes
+watch(selectedSchoolId, (id) => fetchBranding(id), { immediate: true })
 
 async function save() {
   saving.value  = true
@@ -127,7 +135,19 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
         <div class="row g-0">
 
           <!-- LEFT: Form fields -->
-          <div class="col-12 col-lg-8 p-4 border-end">
+          <div class="col-12 col-lg-8 p-4 border-end" style="position:relative;">
+
+            <!-- Loading overlay while fetching school branding -->
+            <div
+              v-if="loadingBranding"
+              class="d-flex align-items-center justify-content-center"
+              style="position:absolute;inset:0;background:rgba(255,255,255,.75);z-index:10;border-radius:inherit;"
+            >
+              <div class="text-center text-muted">
+                <div class="spinner-border spinner-border-sm mb-1" role="status"></div>
+                <div class="small">Loading configuration…</div>
+              </div>
+            </div>
 
             <div class="row g-3">
 
@@ -140,6 +160,7 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
                   class="form-control"
                   placeholder="ShulePay"
                   maxlength="80"
+                  :disabled="loadingBranding"
                 />
                 <div class="form-text">Shown in the header, footer and receipts.</div>
               </div>
@@ -153,6 +174,7 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
                   class="form-control"
                   placeholder="nexoryaTECH"
                   maxlength="80"
+                  :disabled="loadingBranding"
                 />
                 <div class="form-text">Shown below the app name.</div>
               </div>
@@ -160,43 +182,52 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
               <!-- Logo -->
               <div class="col-12">
                 <label class="form-label fw-semibold mb-1">Logo</label>
-                <div class="d-flex align-items-center gap-3 flex-wrap">
-                  <!-- Current logo preview + remove -->
-                  <div v-if="logoPreview" class="d-flex align-items-center gap-2">
-                    <img
-                      :src="logoPreview"
-                      alt="logo"
-                      style="width:56px;height:56px;object-fit:contain;border:1px solid #dee2e6;border-radius:8px;background:#fff;"
-                      @error="logoPreview=null"
-                    />
+
+                <!-- Current saved logo -->
+                <div v-if="logoPreview" class="d-flex align-items-center gap-3 mb-2 p-2 rounded-2 border bg-light">
+                  <img
+                    :src="logoPreview"
+                    alt="Current logo"
+                    style="width:64px;height:64px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid #dee2e6;"
+                    @error="logoPreview=null"
+                  />
+                  <div class="flex-grow-1">
+                    <div class="small fw-semibold text-success mb-1">✓ Logo uploaded</div>
                     <button
                       type="button"
                       class="btn btn-sm btn-outline-danger"
-                      :disabled="removing"
+                      :disabled="removing || loadingBranding"
                       @click="removeLogo"
                     >
                       <span v-if="removing" class="spinner-border spinner-border-sm me-1"></span>
-                      {{ removing ? 'Removing…' : '🗑 Remove' }}
+                      {{ removing ? 'Removing…' : '🗑 Remove logo' }}
                     </button>
                   </div>
-                  <!-- File picker -->
-                  <div class="flex-grow-1" style="min-width:200px;">
-                    <input
-                      type="file"
-                      class="form-control form-control-sm"
-                      accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                      @change="onLogoChange"
-                    />
-                    <div class="form-text">PNG, JPG, SVG or WebP · max 2 MB · square min 200×200 px</div>
-                  </div>
                 </div>
+
+                <!-- No logo placeholder -->
+                <div v-else class="d-flex align-items-center gap-2 mb-2 p-2 rounded-2 border bg-light text-muted small">
+                  <div style="width:48px;height:48px;border:2px dashed #ced4da;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🖼</div>
+                  <span>No logo set — upload one below</span>
+                </div>
+
+                <!-- File picker (key resets input on school change) -->
+                <input
+                  :key="fileInputKey"
+                  type="file"
+                  class="form-control form-control-sm"
+                  accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                  :disabled="loadingBranding"
+                  @change="onLogoChange"
+                />
+                <div class="form-text">PNG, JPG, SVG or WebP · max 2 MB · square min 200×200 px</div>
               </div>
 
             </div>
 
             <!-- Save -->
             <div class="mt-4 pt-3 border-top">
-              <button class="btn btn-primary px-4" :disabled="saving" @click="save">
+              <button class="btn btn-primary px-4" :disabled="saving || loadingBranding" @click="save">
                 <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
                 {{ saving ? 'Saving…' : 'Save Branding' }}
               </button>
@@ -206,7 +237,10 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
 
           <!-- RIGHT: Live Preview -->
           <div class="col-12 col-lg-4 p-4 d-flex flex-column" style="background:#f8f9fa;">
-            <div class="small fw-bold text-muted text-uppercase mb-3" style="letter-spacing:.06em;">Live Preview</div>
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div class="small fw-bold text-muted text-uppercase" style="letter-spacing:.06em;">Live Preview</div>
+              <div v-if="loadingBranding" class="spinner-border spinner-border-sm text-muted" style="width:.8rem;height:.8rem;" role="status"></div>
+            </div>
 
             <!-- Header simulation -->
             <div class="rounded-3 border bg-white p-3 shadow-sm d-flex align-items-center gap-3 mb-3">

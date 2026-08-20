@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-class Money
+class Money implements \JsonSerializable
 {
     public function __construct(private readonly int $cents) {}
 
@@ -39,6 +39,11 @@ class Money
     public function format(): string
     {
         return 'TZS '.number_format($this->tzs(), 2);
+    }
+
+    public function jsonSerialize(): int
+    {
+        return $this->cents;
     }
 
     public function isZero(): bool

@@ -26,11 +26,14 @@ class SupplierController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
+            'name'         => 'required|string|max:255',
             'contact_name' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
+            'phone'        => ['nullable', 'string', 'max:20', 'regex:/^\+?[0-9\s\-]{7,20}$/'],
+            'email'        => 'nullable|email|max:255|unique:suppliers,email',
+            'address'      => 'nullable|string|max:500',
+        ], [
+            'phone.regex' => 'Nambari ya simu si sahihi. Mfano: +255712345678',
+            'email.unique' => 'Barua pepe hii tayari inatumiwa na msambazaji mwingine.',
         ]);
 
         $supplier = Supplier::create($data);
@@ -47,11 +50,14 @@ class SupplierController extends Controller
     public function update(Request $request, Supplier $supplier): JsonResponse
     {
         $data = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
+            'name'         => 'sometimes|required|string|max:255',
             'contact_name' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
+            'phone'        => ['nullable', 'string', 'max:20', 'regex:/^\+?[0-9\s\-]{7,20}$/'],
+            'email'        => 'nullable|email|max:255|unique:suppliers,email,'.$supplier->id,
+            'address'      => 'nullable|string|max:500',
+        ], [
+            'phone.regex' => 'Nambari ya simu si sahihi. Mfano: +255712345678',
+            'email.unique' => 'Barua pepe hii tayari inatumiwa na msambazaji mwingine.',
         ]);
 
         $before = $supplier->toArray();

@@ -259,8 +259,8 @@
         <!-- 6. Audit -->
         <h6 class="text-secondary fw-bold border-bottom pb-1 mb-2">{{ t('assets.detail.audit') }}</h6>
         <CRow class="g-2 mb-2">
-          <CCol xs="6" md="3"><small class="text-muted">{{ t('assets.registeredBy') }}</small><div>{{ detailAsset.registered_by || '—' }}</div></CCol>
-          <CCol xs="6" md="3"><small class="text-muted">{{ t('assets.registeredAt') }}</small><div>{{ detailAsset.registered_at || '—' }}</div></CCol>
+          <CCol xs="6" md="3"><small class="text-muted">{{ t('assets.registeredBy') }}</small><div>{{ typeof detailAsset.registered_by === 'object' ? (detailAsset.registered_by?.name || '—') : (detailAsset.registered_by || '—') }}</div></CCol>
+          <CCol xs="6" md="3"><small class="text-muted">{{ t('assets.registeredAt') }}</small><div>{{ detailAsset.registered_at ? detailAsset.registered_at.slice(0,16).replace('T',' ') : '—' }}</div></CCol>
           <CCol xs="6" md="3"><small class="text-muted">{{ t('common.createdAt') }}</small><div>{{ detailAsset.created_at || '—' }}</div></CCol>
         </CRow>
 

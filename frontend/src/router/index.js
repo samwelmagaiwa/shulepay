@@ -114,13 +114,8 @@ const routes = [
         component: () => import('@/views/wasambazaji/SupplierList.vue'),
         meta: { requiresAuth: true, roles: ['accountant', 'owner'] },
       },
-      // Assets
-      {
-        path: 'mali',
-        name: 'Assets',
-        component: () => import('@/views/mali/AssetList.vue'),
-        meta: { requiresAuth: true, roles: ['accountant', 'owner'] },
-      },
+      // Assets → merged into Inventory
+      { path: 'mali', redirect: '/inventory' },
       // Admin — Schools
       {
         path: 'admin/schools',

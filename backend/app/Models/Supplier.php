@@ -17,6 +17,11 @@ class Supplier extends Model
         'school_id', 'name', 'contact_name', 'phone', 'email', 'address', 'balance_cents',
     ];
 
+    public function addDebt(int $cents): void
+    {
+        $this->update(['balance_cents' => (int) $this->getRawOriginal('balance_cents') + $cents]);
+    }
+
     protected $casts = [
         'balance_cents' => MoneyCast::class,
     ];

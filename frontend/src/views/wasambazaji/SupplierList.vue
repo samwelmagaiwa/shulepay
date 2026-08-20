@@ -123,8 +123,13 @@
         <CAlert v-if="formError" color="danger">{{ formError }}</CAlert>
         <CRow class="g-3">
           <CCol xs="12" md="6">
-            <label class="form-label fw-semibold">{{ t('suppliers.companyName') }} *</label>
-            <CFormInput v-model="form.name" style="min-height:44px;" />
+            <label class="form-label fw-semibold">{{ t('suppliers.companyName') }} <span class="text-danger">*</span></label>
+            <CFormInput
+              v-model="form.name"
+              :class="{ 'is-invalid': fieldErrors.name }"
+              @blur="validateField('name')"
+              style="min-height:44px;" />
+            <div v-if="fieldErrors.name" class="invalid-feedback">{{ fieldErrors.name }}</div>
           </CCol>
           <CCol xs="12" md="6">
             <label class="form-label fw-semibold">{{ t('suppliers.contactPerson') }}</label>
@@ -132,21 +137,35 @@
           </CCol>
           <CCol xs="12" md="6">
             <label class="form-label fw-semibold">{{ t('suppliers.phone') }}</label>
-            <CFormInput v-model="form.phone" placeholder="+255..." style="min-height:44px;" />
+            <CFormInput
+              v-model="form.phone"
+              placeholder="+255712345678"
+              :class="{ 'is-invalid': fieldErrors.phone }"
+              @blur="validateField('phone')"
+              style="min-height:44px;" />
+            <div v-if="fieldErrors.phone" class="invalid-feedback">{{ fieldErrors.phone }}</div>
+            <div class="form-text text-muted">{{ t('suppliers.phoneHint') }}</div>
           </CCol>
           <CCol xs="12" md="6">
             <label class="form-label fw-semibold">{{ t('suppliers.email') }}</label>
-            <CFormInput type="email" v-model="form.email" placeholder="email@example.com" style="min-height:44px;" />
+            <CFormInput
+              type="email"
+              v-model="form.email"
+              placeholder="email@example.com"
+              :class="{ 'is-invalid': fieldErrors.email }"
+              @blur="validateField('email')"
+              style="min-height:44px;" />
+            <div v-if="fieldErrors.email" class="invalid-feedback">{{ fieldErrors.email }}</div>
           </CCol>
           <CCol xs="12">
             <label class="form-label fw-semibold">{{ t('suppliers.address') }}</label>
-            <CFormInput v-model="form.address" style="min-height:44px;" />
+            <CFormInput v-model="form.address" :maxlength="500" style="min-height:44px;" />
           </CCol>
         </CRow>
       </CModalBody>
       <CModalFooter class="flex-wrap gap-2">
         <CButton color="secondary" @click="showModal = false" style="min-height:44px;">{{ t('common.close') }}</CButton>
-        <CButton color="primary" :disabled="saving || !form.name" @click="submitSupplier"
+        <CButton color="primary" :disabled="saving || !form.name.trim()" @click="submitSupplier"
                  class="ms-auto" style="min-height:44px;">
           <CSpinner v-if="saving" size="sm" class="me-1" />
           {{ editSupplier ? t('common.save') : t('suppliers.add') }}
@@ -159,34 +178,52 @@
       <CModalHeader><CModalTitle>{{ t('suppliers.payTitle') }} — {{ payTarget?.name }}</CModalTitle></CModalHeader>
       <CModalBody>
         <CAlert v-if="payError" color="danger">{{ payError }}</CAlert>
-        <div class="mb-2">
-          <div class="text-muted small">{{ t('suppliers.currentDebt') }}:</div>
+        <div class="mb-3 p-3 bg-light rounded border">
+          <div class="text-muted small mb-1">{{ t('suppliers.currentDebt') }}</div>
           <div class="fw-bold fs-4 text-danger">{{ formatMoney(payTarget?.balance_cents) }}</div>
         </div>
         <div class="mb-3">
-          <label class="form-label fw-semibold">{{ t('common.amount') }} (TZS) *</label>
-          <CFormInput type="number" v-model.number="payForm.amount_tzs" min="1" style="min-height:44px;" />
+          <label class="form-label fw-semibold">{{ t('common.amount') }} (TZS) <span class="text-danger">*</span></label>
+          <CFormInput
+            type="number"
+            v-model.number="payForm.amount_tzs"
+            min="1"
+            :class="{ 'is-invalid': payErrors.amount_tzs }"
+            @blur="validatePayField('amount_tzs')"
+            style="min-height:44px;" />
+          <div v-if="payErrors.amount_tzs" class="invalid-feedback">{{ payErrors.amount_tzs }}</div>
         </div>
         <div class="mb-3">
-          <label class="form-label fw-semibold">{{ t('common.paymentMethod') }} *</label>
+          <label class="form-label fw-semibold">{{ t('common.paymentMethod') }} <span class="text-danger">*</span></label>
           <CFormSelect v-model="payForm.method" style="min-height:44px;">
-            <option value="cash">{{ t('refunds.methods.cash') }}</option>
-            <option value="mpesa">{{ t('refunds.methods.mpesa') }}</option>
-            <option value="bank">{{ t('refunds.methods.bank') }}</option>
+            <option value="cash">{{ t('common.cash') }}</option>
+            <option value="mpesa">M-Pesa</option>
+            <option value="bank">{{ t('common.bank') }}</option>
+            <option value="cheque">{{ t('common.cheque') }}</option>
           </CFormSelect>
         </div>
         <div class="mb-3">
           <label class="form-label fw-semibold">{{ t('suppliers.reference') }}</label>
-          <CFormInput v-model="payForm.reference" style="min-height:44px;" />
+          <CFormInput v-model="payForm.reference" placeholder="LPO-001, CHQ-045..." style="min-height:44px;" />
         </div>
         <div class="mb-3">
-          <label class="form-label fw-semibold">{{ t('common.date') }}</label>
-          <CFormInput type="date" v-model="payForm.paid_at" style="min-height:44px;" />
+          <label class="form-label fw-semibold">{{ t('common.date') }} <span class="text-danger">*</span></label>
+          <CFormInput
+            type="date"
+            v-model="payForm.payment_date"
+            :class="{ 'is-invalid': payErrors.payment_date }"
+            @blur="validatePayField('payment_date')"
+            style="min-height:44px;" />
+          <div v-if="payErrors.payment_date" class="invalid-feedback">{{ payErrors.payment_date }}</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ t('common.notes') }}</label>
+          <CFormTextarea v-model="payForm.notes" rows="2" />
         </div>
       </CModalBody>
       <CModalFooter class="gap-2">
         <CButton color="secondary" @click="showPayModal = false" style="min-height:44px;">{{ t('common.close') }}</CButton>
-        <CButton color="primary" :disabled="paying || !payForm.amount_tzs" @click="submitPayment"
+        <CButton color="primary" :disabled="paying || !payForm.amount_tzs || !payForm.payment_date" @click="submitPayment"
                  style="min-height:44px;">
           <CSpinner v-if="paying" size="sm" class="me-1" />{{ t('suppliers.pay') }}
         </CButton>
@@ -228,12 +265,55 @@ const editSupplier = ref(null)
 const payTarget    = ref(null)
 
 const form = ref({ name: '', contact_name: '', phone: '', email: '', address: '' })
+const fieldErrors = ref({ name: '', phone: '', email: '' })
+
 const payForm = ref({
   amount_tzs: '',
   method: 'bank',
   reference: '',
-  paid_at: new Date().toISOString().split('T')[0],
+  payment_date: new Date().toISOString().split('T')[0],
+  notes: '',
 })
+const payErrors = ref({ amount_tzs: '', payment_date: '' })
+
+function validateField(field) {
+  fieldErrors.value[field] = ''
+  if (field === 'name' && !form.value.name.trim()) {
+    fieldErrors.value.name = t('suppliers.errors.nameRequired')
+  }
+  if (field === 'phone' && form.value.phone) {
+    const phoneRx = /^\+?[0-9\s\-]{7,20}$/
+    if (!phoneRx.test(form.value.phone.trim())) {
+      fieldErrors.value.phone = t('suppliers.errors.phoneInvalid')
+    }
+  }
+  if (field === 'email' && form.value.email) {
+    const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRx.test(form.value.email.trim())) {
+      fieldErrors.value.email = t('suppliers.errors.emailInvalid')
+    }
+  }
+}
+
+function validatePayField(field) {
+  payErrors.value[field] = ''
+  if (field === 'amount_tzs' && (!payForm.value.amount_tzs || payForm.value.amount_tzs < 1)) {
+    payErrors.value.amount_tzs = t('suppliers.errors.amountRequired')
+  }
+  if (field === 'payment_date' && !payForm.value.payment_date) {
+    payErrors.value.payment_date = t('suppliers.errors.dateRequired')
+  }
+}
+
+function validateSupplierForm() {
+  ['name', 'phone', 'email'].forEach(f => validateField(f))
+  return !Object.values(fieldErrors.value).some(Boolean)
+}
+
+function validatePayForm() {
+  ['amount_tzs', 'payment_date'].forEach(f => validatePayField(f))
+  return !Object.values(payErrors.value).some(Boolean)
+}
 
 function formatMoney(cents) {
   return 'TZS ' + Number((cents || 0) / 100).toLocaleString('sw-TZ', { minimumFractionDigits: 0 })
@@ -251,6 +331,7 @@ async function load() {
 function openAdd() {
   editSupplier.value = null
   formError.value    = ''
+  fieldErrors.value  = { name: '', phone: '', email: '' }
   form.value = { name: '', contact_name: '', phone: '', email: '', address: '' }
   showModal.value    = true
 }
@@ -258,6 +339,7 @@ function openAdd() {
 function openEdit(sup) {
   editSupplier.value = sup
   formError.value    = ''
+  fieldErrors.value  = { name: '', phone: '', email: '' }
   form.value = { name: sup.name, contact_name: sup.contact_name || '', phone: sup.phone || '',
     email: sup.email || '', address: sup.address || '' }
   showModal.value = true
@@ -266,15 +348,19 @@ function openEdit(sup) {
 function openPayment(sup) {
   payTarget.value = sup
   payError.value  = ''
+  payErrors.value = { amount_tzs: '', payment_date: '' }
   payForm.value = {
-    amount_tzs: Math.round((sup.balance_cents || 0) / 100),
-    method: 'bank', reference: '',
-    paid_at: new Date().toISOString().split('T')[0],
+    amount_tzs:   Math.round((sup.balance_cents || 0) / 100),
+    method:       'bank',
+    reference:    '',
+    payment_date: new Date().toISOString().split('T')[0],
+    notes:        '',
   }
   showPayModal.value = true
 }
 
 async function submitSupplier() {
+  if (!validateSupplierForm()) return
   formError.value = ''
   saving.value    = true
   try {
@@ -286,13 +372,22 @@ async function submitSupplier() {
     showModal.value = false
     await load()
   } catch (e) {
-    formError.value = e?.response?.data?.message || t('common.error')
+    const errors = e?.response?.data?.errors
+    if (errors) {
+      if (errors.name)  fieldErrors.value.name  = errors.name[0]
+      if (errors.phone) fieldErrors.value.phone = errors.phone[0]
+      if (errors.email) fieldErrors.value.email = errors.email[0]
+      formError.value = t('common.fixErrors')
+    } else {
+      formError.value = e?.response?.data?.message || t('common.saveFailed')
+    }
   } finally {
     saving.value = false
   }
 }
 
 async function submitPayment() {
+  if (!validatePayForm()) return
   payError.value = ''
   paying.value   = true
   try {
@@ -301,12 +396,16 @@ async function submitPayment() {
       amount_cents: Math.round(payForm.value.amount_tzs * 100),
       method:       payForm.value.method,
       reference:    payForm.value.reference || undefined,
-      paid_at:      payForm.value.paid_at,
+      payment_date: payForm.value.payment_date,
+      notes:        payForm.value.notes || undefined,
     })
     showPayModal.value = false
     await load()
   } catch (e) {
-    payError.value = e?.response?.data?.message || t('common.error')
+    const errors = e?.response?.data?.errors
+    if (errors?.amount_cents) payErrors.value.amount_tzs   = errors.amount_cents[0]
+    if (errors?.payment_date) payErrors.value.payment_date = errors.payment_date[0]
+    payError.value = e?.response?.data?.message || t('common.saveFailed')
   } finally {
     paying.value = false
   }

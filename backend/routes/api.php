@@ -228,12 +228,14 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('summary', [TransportController::class, 'vehicleSummary']);
         });
 
-        // Inventory
+        // Inventory (consumables + fixed assets)
         Route::prefix('inventory')->group(function () {
+            Route::get('next-tag', [InventoryController::class, 'nextTag']);
             Route::get('items', [InventoryController::class, 'index']);
             Route::post('items', [InventoryController::class, 'store']);
             Route::put('items/{item}', [InventoryController::class, 'update']);
             Route::delete('items/{item}', [InventoryController::class, 'destroy']);
+            Route::post('items/{item}/dispose', [InventoryController::class, 'dispose']);
             Route::get('items/{item}/transactions', [InventoryController::class, 'transactions']);
             Route::post('items/{item}/transaction', [InventoryController::class, 'transaction']);
             Route::get('summary', [InventoryController::class, 'summary']);

@@ -10,11 +10,10 @@ Route::get('/', function () {
 // Serve public storage files in local/dev environments where the symlink may not work
 if (app()->environment('local')) {
     Route::get('/storage/{path}', function (string $path) {
-        $fullPath = storage_path('app/public/'.$path);
-        if (! file_exists($fullPath)) {
+        if (! Storage::disk('public')->exists($path)) {
             abort(404);
         }
 
-        return response()->file($fullPath);
+        return Storage::disk('public')->response($path);
     })->where('path', '.*');
 }
