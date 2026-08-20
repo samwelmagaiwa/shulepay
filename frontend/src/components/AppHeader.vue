@@ -121,6 +121,7 @@ function go(path) {
           :src="branding.logoUrl"
           alt="Logo"
           style="height:36px; width:36px; object-fit:contain; border-radius:50%; margin-right:8px; flex-shrink:0;"
+          @error="branding.logoUrl = null"
         />
         <svg v-else viewBox="0 0 40 40" width="36" height="36" style="margin-right:8px; flex-shrink:0;">
           <circle cx="20" cy="20" r="19" fill="#007f3e"/>

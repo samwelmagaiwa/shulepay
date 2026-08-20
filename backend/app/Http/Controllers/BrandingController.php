@@ -220,7 +220,7 @@ class BrandingController extends Controller
         return [
             'app_name' => $appName,
             'app_tagline' => $appTagline,
-            'logo_url' => $logoPath ? Storage::disk('public')->url($logoPath) : null,
+            'logo_url' => $logoPath ? '/storage/'.$logoPath : null,
         ];
     }
 }
