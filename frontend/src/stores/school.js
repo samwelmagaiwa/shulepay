@@ -14,17 +14,19 @@ export const useSchoolStore = defineStore('school', () => {
     schools.value.find((s) => s.id === activeSchoolId.value) ?? null,
   )
 
-  async function fetchSchools(userSchoolId = null) {
+  async function fetchSchools() {
     loading.value = true
     try {
       const res = await api.get('/schools')
       const list = res.data.data ?? res.data
       schools.value = list
 
-      // Default to the user's own school on first load
-      if (!activeSchoolId.value && userSchoolId) {
-        setActive(userSchoolId)
-      } else if (!activeSchoolId.value && list.length > 0) {
+      // If no active school yet, default to first in the accessible list
+      if (!activeSchoolId.value && list.length > 0) {
+        setActive(list[0].id)
+      }
+      // If activeSchoolId is set but no longer in the accessible list, reset to first
+      if (activeSchoolId.value && list.length > 0 && !list.find(s => s.id === activeSchoolId.value)) {
         setActive(list[0].id)
       }
     } catch {

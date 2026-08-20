@@ -39,9 +39,9 @@ if (typeof window !== 'undefined') {
   })
 }
 
-// School switcher — visible to owner, accountant, superadmin only
+// School switcher — visible whenever the user has access to more than one school
 const showSchoolSwitcher = computed(
-  () => (auth.isOwner || auth.isAccountant || auth.isSuperAdmin) && schoolStore.schools.length > 1,
+  () => schoolStore.schools.length > 1,
 )
 
 function switchSchool(id) {

@@ -139,6 +139,7 @@ class AuthController extends Controller
                 'role' => $this->primaryRole($user),
                 'school_id' => $selectedSchoolId,
                 'permissions' => $user->effectivePermissions(),
+                'accessible_school_ids' => $user->hasRole('superadmin') ? null : $user->allAccessibleSchoolIds(),
             ],
         ]);
     }

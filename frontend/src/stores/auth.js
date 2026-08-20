@@ -56,9 +56,13 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = t
     user.value = u
 
-    // Load branding and school list (non-blocking)
+    // Force the login-selected school as active (override any stale localStorage value)
+    const schoolStore = useSchoolStore()
+    if (u.school_id) schoolStore.setActive(u.school_id)
+
+    // Load branding and full accessible school list (non-blocking)
     useBrandingStore().fetchBranding()
-    useSchoolStore().fetchSchools(u.school_id)
+    schoolStore.fetchSchools()
 
     return { token: t, user: u }
   }
