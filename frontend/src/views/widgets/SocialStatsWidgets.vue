@@ -245,13 +245,13 @@ watch(
         <div
           class="stat-card premium-shadow"
           :class="[
-            dashboard.isTodaySelected ? 'shadow-amber amber-theme-active' : 'shadow-orange orange-theme-active',
+            dashboard.isTodaySelected ? 'shadow-red red-theme-active' : 'shadow-orange orange-theme-active',
             { expanded: showPendingList },
           ]"
         >
           <!-- Notch Borders -->
-          <div class="notch-border top" :class="dashboard.isTodaySelected ? 'amber' : 'orange'"></div>
-          <div class="notch-border bottom" :class="dashboard.isTodaySelected ? 'amber' : 'orange'"></div>
+          <div class="notch-border top" :class="dashboard.isTodaySelected ? 'red' : 'orange'"></div>
+          <div class="notch-border bottom" :class="dashboard.isTodaySelected ? 'red' : 'orange'"></div>
           <!-- Decorative backgrounds for red theme -->
           <div v-if="!dashboard.isTodaySelected" class="decorative-curve-image"></div>
           <div v-if="!dashboard.isTodaySelected" class="vertical-dots"></div>
@@ -265,7 +265,7 @@ watch(
               :class="{ 'glass-morphism-orange': !dashboard.isTodaySelected }"
               :style="{
                 backgroundColor: dashboard.isTodaySelected
-                  ? 'rgba(251, 191, 36, 0.15)'
+                  ? 'rgba(239, 68, 68, 0.12)'
                   : 'transparent',
               }"
             >
@@ -293,14 +293,14 @@ watch(
                 v-else
                 :icon="cilClock"
                 class="stat-icon"
-                :style="{ color: '#fbbf24' }"
+                :style="{ color: '#ef4444' }"
               />
             </div>
             <div class="stat-main-info">
               <h3
                 class="stat-value"
                 :class="{ 'orange-text-shadow': !dashboard.isTodaySelected }"
-                :style="{ color: dashboard.isTodaySelected ? '#fbbf24' : '#f97316' }"
+                :style="{ color: dashboard.isTodaySelected ? '#ef4444' : '#f97316' }"
               >
                 {{ getValue('pending') }}
                 <CIcon
@@ -335,7 +335,7 @@ watch(
           <!-- Scrollable Patient List -->
           <div v-if="showPendingList" class="pending-list-container">
             <div v-if="isListLoading" class="text-center py-2">
-              <div class="spinner-border spinner-border-sm text-warning" role="status"></div>
+              <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
             </div>
             <div v-else-if="pendingPatients.length === 0" class="no-data-text">
               Hakuna wanafunzi wanaongoja
@@ -555,13 +555,13 @@ watch(
   box-shadow: 0 12px 30px -5px rgba(249, 115, 22, 0.6) !important;
 }
 
-.shadow-amber {
+.shadow-red {
   box-shadow:
-    0 6px 20px -4px rgba(251, 191, 36, 0.4),
-    0 4px 12px -2px rgba(251, 191, 36, 0.2) !important;
+    0 6px 20px -4px rgba(239, 68, 68, 0.4),
+    0 4px 12px -2px rgba(239, 68, 68, 0.2) !important;
 }
-.shadow-amber:hover {
-  box-shadow: 0 12px 30px -5px rgba(251, 191, 36, 0.6) !important;
+.shadow-red:hover {
+  box-shadow: 0 12px 30px -5px rgba(239, 68, 68, 0.6) !important;
 }
 
 .status-info-icon.mirror-design {
@@ -592,7 +592,7 @@ watch(
 }
 
 .notch-border.orange { background: #f97316; }
-.notch-border.amber  { background: #fbbf24; }
+.notch-border.red    { background: #ef4444; }
 
 .notch-border.top {
   top: 0;
@@ -612,12 +612,12 @@ watch(
   clip-path: polygon(0 0, 90% 0, 100% 100%, 0 100%);
 }
 
-.amber-theme-active {
+.red-theme-active {
   background-color: white !important;
-  border-left: 4px solid #fbbf24 !important;
-  border-top: 1px solid #fef9c3 !important;
-  border-right: 1px solid #fef9c3 !important;
-  border-bottom: 1px solid #fef9c3 !important;
+  border-left: 4px solid #ef4444 !important;
+  border-top: 1px solid #fee2e2 !important;
+  border-right: 1px solid #fee2e2 !important;
+  border-bottom: 1px solid #fee2e2 !important;
   position: relative;
 }
 
