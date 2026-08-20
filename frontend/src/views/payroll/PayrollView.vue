@@ -176,16 +176,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { CPagination, CPaginationItem } from '@coreui/vue'
 import { usePayrollStore }  from '@/stores/payroll'
 import { useSchoolsStore }  from '@/stores/schools'
+import { useSchoolStore }   from '@/stores/school'
 
 const { t, te, tm } = useI18n()
 
 const payrollStore = usePayrollStore()
 const schoolStore  = useSchoolsStore()
+const navSchool    = useSchoolStore()
 
 const entries  = ref([])
 const loading  = ref(false)
@@ -210,8 +212,13 @@ const now = new Date()
 const filters = ref({
   month: String(now.getMonth() + 1),
   year:  now.getFullYear(),
-  school_id: '',
+  school_id: navSchool.activeSchoolId || '',
   status: '',
+})
+
+watch(() => navSchool.activeSchoolId, (id) => {
+  filters.value.school_id = id || ''
+  load()
 })
 
 const monthKeys = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']

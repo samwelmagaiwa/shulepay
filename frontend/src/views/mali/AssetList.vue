@@ -534,21 +534,28 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAssetsStore }  from '@/stores/assets'
 import { useSchoolsStore } from '@/stores/schools'
+import { useSchoolStore }  from '@/stores/school'
 
 const { t } = useI18n()
 
-const assetsStore = useAssetsStore()
-const schoolStore = useSchoolsStore()
+const assetsStore  = useAssetsStore()
+const schoolStore  = useSchoolsStore()
+const navSchool    = useSchoolStore()
 
 const assets  = ref([])
 const loading = ref(false)
 const schools = computed(() => schoolStore.schools)
 
-const filters = ref({ school_id: '', category: '', condition: '', status: '', search: '' })
+watch(() => navSchool.activeSchoolId, (id) => {
+  filters.value.school_id = id || ''
+  load(1)
+})
+
+const filters = ref({ school_id: navSchool.activeSchoolId || '', category: '', condition: '', status: '', search: '' })
 
 // ── Options ───────────────────────────────────────────────────────────────────
 const categoryOptions = computed(() => [

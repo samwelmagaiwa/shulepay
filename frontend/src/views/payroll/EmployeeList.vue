@@ -211,21 +211,29 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { CPagination, CPaginationItem } from '@coreui/vue'
 import { useEmployeesStore } from '@/stores/employees'
 import { useSchoolsStore }   from '@/stores/schools'
+import { useSchoolStore }    from '@/stores/school'
 
 const { t } = useI18n()
 
 const empStore    = useEmployeesStore()
 const schoolStore = useSchoolsStore()
+const navSchool   = useSchoolStore()
 
 const employees  = ref([])
 const loading    = ref(false)
 const schools    = computed(() => schoolStore.schools)
-const filters    = ref({ school_id: '', status: '', search: '' })
+const filters    = ref({ school_id: navSchool.activeSchoolId || '', status: '', search: '' })
+
+watch(() => navSchool.activeSchoolId, (id) => {
+  filters.value.school_id = id || ''
+  page.value = 1
+  load()
+})
 const page       = ref(1)
 const meta       = ref({ total: 0, last_page: 1, per_page: 20, current_page: 1 })
 

@@ -221,10 +221,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useInvoicesStore } from '@/stores/invoices'
 import { useSchoolsStore }  from '@/stores/schools'
+import { useSchoolStore }   from '@/stores/school'
 import StatusBadge           from '@/components/StatusBadge.vue'
 import LipiaModal            from '@/components/LipiaModal.vue'
 import MwanafunziDrawer      from '@/components/MwanafunziDrawer.vue'
@@ -235,8 +236,9 @@ import api                   from '@/services/api'
 const { t } = useI18n()
 const invoicesStore = useInvoicesStore()
 const schoolsStore  = useSchoolsStore()
+const schoolStore   = useSchoolStore()
 
-const filters          = ref({ school_id: '', class_id: '', term_number: '', status: '', search: '' })
+const filters          = ref({ school_id: schoolStore.activeSchoolId || '', class_id: '', term_number: '', status: '', search: '' })
 const selectedInvoice  = ref(null)
 const showPayModal     = ref(false)
 const drawerStudent    = ref(null)
@@ -249,6 +251,11 @@ const invoices   = computed(() => invoicesStore.invoices)
 const loading    = computed(() => invoicesStore.loading)
 const pagination = computed(() => invoicesStore.pagination || {})
 const schools    = computed(() => schoolsStore.schools)
+
+watch(() => schoolStore.activeSchoolId, (id) => {
+  filters.value.school_id = id || ''
+  fetchData(1)
+})
 
 const totalOutstanding = computed(() =>
   invoices.value.reduce((s, i) => s + (i.balance_due_cents || 0), 0)

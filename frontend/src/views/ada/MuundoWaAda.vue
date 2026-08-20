@@ -160,17 +160,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useFeeStructuresStore } from '@/stores/feeStructures'
 import { useSchoolsStore }       from '@/stores/schools'
+import { useSchoolStore }        from '@/stores/school'
 import api from '@/services/api'
 
 const { t } = useI18n()
 const store       = useFeeStructuresStore()
 const schoolsStore = useSchoolsStore()
+const schoolStore  = useSchoolStore()
 
-const filters      = ref({ school_id: '', academic_year_id: '', term_id: '', school_class_id: '' })
+const filters      = ref({ school_id: schoolStore.activeSchoolId || '', academic_year_id: '', term_id: '', school_class_id: '' })
 const showModal    = ref(false)
 const editing      = ref(null)
 const saving       = ref(false)
@@ -182,6 +184,11 @@ const modalClasses     = ref([])   // classes filtered to selected school (for m
 const loadingModalClasses = ref(false)
 
 const schools = computed(() => schoolsStore.schools)
+
+watch(() => schoolStore.activeSchoolId, (id) => {
+  filters.value.school_id = id || ''
+  loadData()
+})
 
 const emptyForm = () => ({
   school_id: '', school_class_id: '', academic_year_id: '', term_id: '',

@@ -133,11 +133,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { CPagination, CPaginationItem } from '@coreui/vue'
 import { useStudentsStore } from '@/stores/students'
 import { useSchoolsStore }  from '@/stores/schools'
+import { useSchoolStore }   from '@/stores/school'
 import StatusBadge         from '@/components/StatusBadge.vue'
 import MwanafunziDrawer    from '@/components/MwanafunziDrawer.vue'
 import AddStudentModal     from '@/components/AddStudentModal.vue'
@@ -145,8 +146,9 @@ import AddStudentModal     from '@/components/AddStudentModal.vue'
 const { t } = useI18n()
 const studentsStore = useStudentsStore()
 const schoolsStore  = useSchoolsStore()
+const schoolStore   = useSchoolStore()
 
-const filters        = ref({ search: '', school_id: '', status: '', has_debt: '' })
+const filters        = ref({ search: '', school_id: schoolStore.activeSchoolId || '', status: '', has_debt: '' })
 const selectedStudent = ref(null)
 const showAddModal    = ref(false)
 const page            = ref(1)
@@ -164,6 +166,13 @@ const visiblePages = computed(() => {
 })
 
 const schools = computed(() => schoolsStore.schools)
+
+// Sync with nav school switcher
+watch(() => schoolStore.activeSchoolId, (id) => {
+  filters.value.school_id = id || ''
+  page.value = 1
+  fetchData()
+})
 
 function formatMoney(cents) {
   return 'TZS ' + Number(cents / 100).toLocaleString('sw-TZ', { minimumFractionDigits: 0 })
@@ -190,7 +199,7 @@ function debouncedFetch() {
 }
 
 function resetFilters() {
-  filters.value = { search: '', school_id: '', status: '', has_debt: '' }
+  filters.value = { search: '', school_id: schoolStore.activeSchoolId || '', status: '', has_debt: '' }
   page.value = 1
   fetchData()
 }
