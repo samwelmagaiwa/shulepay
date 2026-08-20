@@ -17,6 +17,8 @@
             <CFormSelect v-model="filters.status" @update:modelValue="page = 1; fetchData()">
               <option value="">{{ t('common.allStatuses') }}</option>
               <option value="active">{{ t('students.statuses.active') }}</option>
+              <option value="sponsored">{{ t('students.statuses.sponsored') }}</option>
+              <option value="orphaned">{{ t('students.statuses.orphaned') }}</option>
               <option value="transferred">{{ t('students.statuses.transferred') }}</option>
               <option value="graduated">{{ t('students.statuses.graduated') }}</option>
               <option value="dropped">{{ t('students.statuses.dropped') }}</option>

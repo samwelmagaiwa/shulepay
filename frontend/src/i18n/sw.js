@@ -275,6 +275,8 @@ export default {
     genderFemale: 'Kike (Msichana)',
     statuses: {
       active:      'Wanaosoma',
+      sponsored:   'Wanaolipiwa',
+      orphaned:    'Yatima',
       transferred: 'Waliohama',
       graduated:   'Wahitimu',
       dropped:     'Walioacha',
@@ -1304,6 +1306,8 @@ export default {
   },
   statusBadge: {
     active:      'Anasoma',
+    sponsored:   'Wanaolipiwa',
+    orphaned:    'Yatima',
     paid:        'Imelipwa',
     partial:     'Kiasi',
     unpaid:      'Haijalipwa',

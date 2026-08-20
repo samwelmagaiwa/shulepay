@@ -274,6 +274,8 @@ export default {
     genderFemale: 'Female (Girl)',
     statuses: {
       active:      'Active',
+      sponsored:   'Sponsored',
+      orphaned:    'Orphaned',
       transferred: 'Transferred',
       graduated:   'Graduated',
       dropped:     'Dropped Out',
@@ -1304,6 +1306,8 @@ export default {
   },
   statusBadge: {
     active:      'Active',
+    sponsored:   'Sponsored',
+    orphaned:    'Orphaned',
     paid:        'Paid',
     partial:     'Partial',
     unpaid:      'Unpaid',

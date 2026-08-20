@@ -99,6 +99,8 @@
                 <label class="form-label fw-semibold">{{ t('common.status') }} <span class="text-danger">*</span></label>
                 <CFormSelect v-model="form.status">
                   <option value="active">{{ t('students.statuses.active') }}</option>
+                  <option value="sponsored">{{ t('students.statuses.sponsored') }}</option>
+                  <option value="orphaned">{{ t('students.statuses.orphaned') }}</option>
                   <option value="transferred">{{ t('students.statuses.transferred') }}</option>
                   <option value="graduated">{{ t('students.statuses.graduated') }}</option>
                   <option value="dropped">{{ t('students.statuses.dropped') }}</option>

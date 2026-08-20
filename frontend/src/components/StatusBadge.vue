@@ -13,6 +13,8 @@ const colorMap = {
   partial:     'warning',
   unpaid:      'danger',
   active:      'success',
+  sponsored:   'info',
+  orphaned:    'warning',
   transferred: 'info',
   graduated:   'primary',
   dropped:     'secondary',

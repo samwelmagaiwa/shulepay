@@ -55,9 +55,9 @@ class StudentController extends Controller
         }
 
         if ($schoolId) {
-            $query->whereHas('enrollments', fn ($q) => $q->where('school_id', $schoolId)->where('status', 'active'));
+            $query->whereHas('enrollments', fn ($q) => $q->where('school_id', $schoolId));
         } else {
-            $query->whereHas('enrollments', fn ($q) => $q->where('status', 'active'));
+            $query->whereHas('enrollments');
         }
 
         $query->with([
