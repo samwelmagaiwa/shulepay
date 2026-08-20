@@ -540,7 +540,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
                 <CTableHeaderCell>{{ t('inventory.reorderLevel') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('inventory.unitCost') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('inventory.totalValueCol') }}</CTableHeaderCell>
-                <CTableHeaderCell></CTableHeaderCell>
+                <CTableHeaderCell>{{ t('common.actions') }}</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
@@ -555,13 +555,13 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
                 <CTableDataCell>{{ Number(item.reorder_level).toLocaleString() }}</CTableDataCell>
                 <CTableDataCell>{{ formatMoney(item.unit_cost_cents) }}</CTableDataCell>
                 <CTableDataCell>{{ formatMoney(item.total_value_cents) }}</CTableDataCell>
-                <CTableDataCell style="white-space:nowrap">
-                  <CButton size="sm" color="secondary" variant="ghost" @click.stop="toggleItemActions(item.id)" :title="t('common.actions')">👁️</CButton>
-                  <template v-if="expandedItemId === item.id">
-                    <CButton size="sm" color="info" variant="ghost" class="ms-1" @click.stop="openItemPanel(item)">📋 {{ t('inventory.btnTransactions') }}</CButton>
-                    <CButton size="sm" color="primary" variant="ghost" class="ms-1" @click.stop="openEditItem(item)">✏️</CButton>
-                    <CButton size="sm" color="danger" variant="ghost" class="ms-1" @click.stop="confirmDeleteItem(item)">🗑️</CButton>
-                  </template>
+                <CTableDataCell style="min-width:48px">
+                  <CButton size="sm" color="secondary" variant="ghost" @click.stop="toggleItemActions(item.id)">👁️</CButton>
+                  <div v-if="expandedItemId === item.id" class="d-flex flex-column gap-1 mt-1">
+                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click.stop="openItemPanel(item)">📋 {{ t('inventory.btnTransactions') }}</CButton>
+                    <CButton size="sm" color="primary" variant="ghost" class="text-start" @click.stop="openEditItem(item)">✏️ {{ t('common.edit') }}</CButton>
+                    <CButton size="sm" color="danger" variant="ghost" class="text-start" @click.stop="confirmDeleteItem(item)">🗑️ {{ t('common.delete') }}</CButton>
+                  </div>
                 </CTableDataCell>
               </CTableRow>
               <CTableRow v-if="filteredItems.length === 0">
