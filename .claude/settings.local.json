@@ -111,7 +111,11 @@
       "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"cd /www/shulepay && git pull origin master 2>&1\")",
       "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"ls /www/shulepay\")",
       "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"cat /www/shulepay/deploy.sh\")",
-      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"cd /www/shulepay && bash deploy.sh deploy 2>&1\")"
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"cd /www/shulepay && bash deploy.sh deploy 2>&1\")",
+      "Bash(ssh root@169.58.188.122 \"cd /opt/shulepay && git pull origin master && docker compose exec backend php artisan migrate --force && docker compose restart backend frontend\")",
+      "Bash(ssh root@169.58.188.122 \"ls /opt/\")",
+      "Bash(ssh root@169.58.188.122 \"ls /opt/shulepay/\")",
+      "Bash(ssh root@169.58.188.122 \"ls -la /opt/shulepay/ && docker ps --format 'table {{.Names}}\\\\t{{.Status}}'\")"
     ]
   }
 }

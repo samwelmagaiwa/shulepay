@@ -209,12 +209,23 @@ class SuperadminUserController extends Controller
             'permissions.*' => 'string|exists:permissions,name',
         ]);
 
+        // Guard: cannot assign permissions that belong to no known group (prevents DB pollution)
+        $known = collect(RolePermissionController::allPermissions())->flatten()->all();
+        $unknown = array_diff($data['permissions'], $known);
+        if (! empty($unknown)) {
+            return response()->json([
+                'message' => 'Ruhusa zisizojulikana: '.implode(', ', $unknown),
+            ], 422);
+        }
+
         $hadMultiSchool = $user->hasPermissionTo('multi_school');
+        $removingMultiSchool = $hadMultiSchool && ! in_array('multi_school', $data['permissions'], true);
+
         $user->syncPermissions($data['permissions']);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         // If multi_school was removed, revoke all explicit school access grants
-        if ($hadMultiSchool && ! in_array('multi_school', $data['permissions'], true)) {
+        if ($removingMultiSchool) {
             $user->accessibleSchools()->detach();
         }
 

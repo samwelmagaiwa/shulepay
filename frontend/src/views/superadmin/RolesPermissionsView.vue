@@ -136,7 +136,8 @@ async function openUserPerms(user) {
 
   // Direct permissions on this user (extras beyond the role)
   const directNames = (user.permissions ?? []).map(p => (typeof p === 'string' ? p : p.name))
-  userPerms.value = new Set(directNames)
+  userPerms.value         = new Set(directNames)
+  userPermsSnapshot.value = new Set(directNames)  // baseline for dirty-detection
 
   userPermModal.value  = true
 
@@ -222,21 +223,59 @@ function userModuleState(perms) {
   return 'partial'
 }
 
+// Snapshot of direct perms at modal open — used for dirty-detection
+const userPermsSnapshot = ref(new Set())
+
+const userPermsChanged = computed(() => {
+  const current = [...userPerms.value].sort().join(',')
+  const original = [...userPermsSnapshot.value].sort().join(',')
+  return current !== original
+})
+
+// Only the truly direct (non-role-inherited) perms — what we actually send
+const directPermsToSave = computed(() =>
+  [...userPerms.value].filter(p => !userPermsBase.value.has(p))
+)
+
 async function saveUserPermissions() {
   if (!selectedUser.value) return
+  if (schoolGranting.value || schoolAccessLoading.value) {
+    userPermError.value = 'Subiri operesheni ya shule ikamilike kwanza.'
+    return
+  }
+
   savingUserPerms.value = true
   userPermError.value   = ''
   try {
+    const removingMultiSchool = userPermsSnapshot.value.has('multi_school')
+      && !userPerms.value.has('multi_school')
+      && !userPermsBase.value.has('multi_school')
+
     const { data } = await api.put(`/superadmin/users/${selectedUser.value.id}/permissions`, {
-      permissions: [...userPerms.value],
+      permissions: directPermsToSave.value,
     })
-    // Refresh local user record
+
+    // If multi_school was removed, backend detached schools — clear the panel
+    if (removingMultiSchool) {
+      userGrantedSchools.value = []
+    }
+
+    // Refresh local user record in the list
+    const freshDirectNames = (data.permissions ?? []).map(p => (typeof p === 'string' ? p : p.name))
     const idx = roleUsers.value.findIndex(u => u.id === selectedUser.value.id)
     if (idx >= 0) roleUsers.value[idx].permissions = data.permissions
-    selectedUser.value  = { ...selectedUser.value, permissions: data.permissions }
+    selectedUser.value = { ...selectedUser.value, permissions: data.permissions }
+
+    // Sync userPerms to server truth (direct perms only from response)
+    userPerms.value = new Set(freshDirectNames)
+    // Update snapshot so dirty-detection resets
+    userPermsSnapshot.value = new Set(freshDirectNames)
+
     userPermSaved.value = true
   } catch (e) {
-    userPermError.value = e?.response?.data?.message || 'Failed to save'
+    userPermError.value = e?.response?.data?.message
+      || e?.response?.data?.errors?.permissions?.[0]
+      || 'Imeshindwa kuhifadhi. Jaribu tena.'
   } finally {
     savingUserPerms.value = false
   }
@@ -711,14 +750,25 @@ function initials(name) {
       </CModalBody>
 
       <CModalFooter class="border-top">
-        <div class="me-auto text-muted small">
-          Click a permission to grant/revoke it for this user only. Green = from role, blue = user-specific.
+        <div class="me-auto text-muted small d-flex align-items-center gap-2 flex-wrap">
+          <span>🟢 role &nbsp;🔵 user-specific</span>
+          <span v-if="schoolGranting || schoolAccessLoading" class="text-warning fw-semibold">
+            ⏳ School operation in progress…
+          </span>
+          <span v-else-if="userPermsChanged" class="text-primary fw-semibold">
+            {{ directPermsToSave.length }} direct permission{{ directPermsToSave.length !== 1 ? 's' : '' }} to save
+          </span>
         </div>
-        <CAlert v-if="userPermSaved" color="success" class="mb-0 py-1 px-3 small">Saved ✓</CAlert>
-        <CButton color="secondary" variant="ghost" @click="userPermModal = false">Close</CButton>
-        <CButton color="primary" :disabled="savingUserPerms" @click="saveUserPermissions" style="min-width:140px;">
+        <CAlert v-if="userPermSaved && !userPermsChanged" color="success" class="mb-0 py-1 px-3 small">Saved ✓</CAlert>
+        <CButton color="secondary" variant="ghost" @click="userPermModal = false; userPermSaved = false">Close</CButton>
+        <CButton
+          color="primary"
+          :disabled="savingUserPerms || !!schoolGranting || schoolAccessLoading || !userPermsChanged"
+          @click="saveUserPermissions"
+          style="min-width:160px;"
+        >
           <CSpinner v-if="savingUserPerms" size="sm" class="me-1" />
-          Save User Permissions
+          {{ userPermsChanged ? 'Save User Permissions' : 'No Changes' }}
         </CButton>
       </CModalFooter>
     </CModal>
