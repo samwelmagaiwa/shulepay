@@ -314,24 +314,26 @@ async function submitRegister() {
       <div class="text-muted small mt-2">{{ t('common.loading') }}</div>
     </div>
 
-    <!-- ── Submit FAB — fixed bottom ──────────────────────────────────────── -->
-    <div v-if="students.length > 0" class="submit-fab">
-      <div class="submit-inner px-3 py-2 d-flex align-items-center gap-3">
-        <div class="text-muted small flex-grow-1">
-          ✓ {{ presentCount }} &nbsp;⏰ {{ lateCount }} &nbsp;✗ {{ absentCount }}
-          / {{ totalStudents }}
+    <!-- ── Submit FAB — teleported to body to escape overflow context ──── -->
+    <Teleport to="body">
+      <div v-if="students.length > 0" class="submit-fab">
+        <div class="submit-inner px-3 py-2 d-flex align-items-center gap-3">
+          <div class="text-muted small flex-grow-1">
+            ✓ {{ presentCount }} &nbsp;⏰ {{ lateCount }} &nbsp;✗ {{ absentCount }}
+            / {{ totalStudents }}
+          </div>
+          <CButton
+            color="success"
+            :disabled="submitting"
+            @click="submitRegister"
+            class="submit-btn"
+          >
+            <CSpinner v-if="submitting" size="sm" class="me-1" style="width:14px;height:14px;" />
+            📨 {{ t('attendance.submit') }}
+          </CButton>
         </div>
-        <CButton
-          color="success"
-          :disabled="submitting"
-          @click="submitRegister"
-          class="submit-btn"
-        >
-          <CSpinner v-if="submitting" size="sm" class="me-1" style="width:14px;height:14px;" />
-          📨 {{ t('attendance.submit') }}
-        </CButton>
       </div>
-    </div>
+    </Teleport>
 
   </div>
 </template>
@@ -439,28 +441,7 @@ async function submitRegister() {
 .att-absent:active { background: rgba(220,53,69,.2); }
 .att-absent-active { background: #dc3545; color: #fff; box-shadow: 0 2px 6px rgba(220,53,69,.35); }
 
-/* ── Fixed submit bar ── */
-.submit-fab {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: rgba(255,255,255,.96);
-  border-top: 1px solid #dee2e6;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 -4px 16px rgba(0,0,0,.08);
-}
-.submit-inner {
-  max-width: 700px;
-  margin: 0 auto;
-}
-.submit-btn {
-  min-width: 150px;
-  font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 10px;
-}
+/* submit-fab moved to non-scoped block below */
 
 /* ── Desktop compact buttons (table view) ── */
 .att-btn-sm {
@@ -479,5 +460,30 @@ async function submitRegister() {
   .page-header h5 { font-size: 1rem; }
   .att-btn { font-size: .72rem; padding: 10px 2px; }
   .summary-chip { min-width: 54px; padding: 5px 10px; }
+}
+</style>
+
+<!-- Non-scoped: teleported FAB renders in <body>, outside this component's scope -->
+<style>
+.submit-fab {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1050;
+  background: rgba(255,255,255,.96);
+  border-top: 1px solid #dee2e6;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 -4px 16px rgba(0,0,0,.08);
+}
+.submit-inner {
+  max-width: 700px;
+  margin: 0 auto;
+}
+.submit-btn {
+  min-width: 150px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 10px;
 }
 </style>
