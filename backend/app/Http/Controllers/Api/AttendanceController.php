@@ -49,6 +49,9 @@ class AttendanceController extends Controller
 
         $students = $enrollments->map(function ($enrollment) use ($existing) {
             $student = $enrollment->student;
+            if (! $student) {
+                return null; // skip orphaned enrollment (student record deleted)
+            }
             $attendance = $existing->get($student->id);
 
             return [
@@ -59,7 +62,7 @@ class AttendanceController extends Controller
                 'remarks' => $attendance?->remarks ?? null,
                 'attendance_id' => $attendance?->id ?? null,
             ];
-        })->sortBy('full_name')->values();
+        })->filter()->sortBy('full_name')->values();
 
         return response()->json([
             'class' => ['id' => $class->id, 'name' => $class->name],
