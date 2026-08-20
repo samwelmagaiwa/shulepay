@@ -48,7 +48,7 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required|string',
-            'school_id' => 'nullable|integer|exists:schools,id',
+            'school_id' => 'nullable|integer|exists:schools,id,is_active,1',
         ]);
 
         // Find user for logging purposes (even on failure)
@@ -86,6 +86,25 @@ class AuthController extends Controller
             ]);
         }
 
+        // Validate selected school access BEFORE recording success
+        if ($request->filled('school_id')) {
+            $schoolId = (int) $request->school_id;
+            if (! $user->canAccessSchool($schoolId)) {
+                Auth::logout();
+                LoginHistory::create([
+                    'user_id' => $user->id,
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'status' => 'failed',
+                    'attempted_at' => now(),
+                ]);
+                $schoolName = School::find($schoolId)?->name ?? 'hiyo shule';
+                throw ValidationException::withMessages([
+                    'school_id' => ["Huna ruhusa ya kuingia {$schoolName}. Wasiliana na msimamizi."],
+                ]);
+            }
+        }
+
         LoginHistory::create([
             'user_id' => $user->id,
             'ip_address' => $request->ip(),
@@ -93,18 +112,6 @@ class AuthController extends Controller
             'status' => 'success',
             'attempted_at' => now(),
         ]);
-
-        // Validate selected school access
-        if ($request->filled('school_id')) {
-            $schoolId = (int) $request->school_id;
-            if (! $user->canAccessSchool($schoolId)) {
-                Auth::logout();
-                $schoolName = School::find($schoolId)?->name ?? 'hiyo shule';
-                throw ValidationException::withMessages([
-                    'school_id' => ["Huna ruhusa ya kuingia {$schoolName}. Wasiliana na msimamizi."],
-                ]);
-            }
-        }
 
         // If 2FA is enabled, do not issue a token yet — ask frontend to verify OTP
         if ($user->{'2fa_enabled'}) {

@@ -1164,6 +1164,10 @@ export default {
     loggingIn:   'Inaingia...',
     errorEmpty:  'Tafadhali jaza barua pepe na neno la siri.',
     errorInvalid:'Barua pepe au neno la siri si sahihi.',
+    selectSchool:    'Chagua Shule',
+    schoolPlaceholder:'— Chagua shule yako —',
+    errorNoSchool:   'Tafadhali chagua shule.',
+    errorSchoolAccess:'Huna ruhusa ya kuingia shule hiyo.',
     footer:      'ShulePay — nexoryaTECH. Haki zote zimehifadhiwa.',
   },
   profile: {

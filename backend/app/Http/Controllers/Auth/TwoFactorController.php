@@ -90,6 +90,7 @@ class TwoFactorController extends Controller
                 'email' => $user->email,
                 'role' => $user->getRoleNames()->first(),
                 'school_id' => $user->school_id,
+                'permissions' => $user->effectivePermissions(),
             ],
         ]);
     }

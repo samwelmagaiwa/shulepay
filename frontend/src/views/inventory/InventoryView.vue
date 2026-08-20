@@ -1196,7 +1196,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
     </CModal>
 
     <!-- Dispose Modal -->
-    <CModal :visible="showDisposeModal" @close="showDisposeModal = false" size="md" class="modal-fullscreen-sm-down">
+    <CModal :visible="showDisposeModal" @close="showDisposeModal = false" class="modal-fullscreen-sm-down">
       <CModalHeader><CModalTitle>{{ t('assets.form.dispose') }}: {{ disposeTarget?.name }}</CModalTitle></CModalHeader>
       <CModalBody>
         <CAlert v-if="disposeError" color="danger">{{ disposeError }}</CAlert>

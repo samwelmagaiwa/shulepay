@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
@@ -29,10 +29,6 @@ onMounted(async () => {
   }
 })
 
-watch(schools, (list) => {
-  if (list.length === 1) schoolId.value = list[0].id
-})
-
 async function handleLogin() {
   errorMessage.value = ''
   schoolError.value  = ''
@@ -49,7 +45,7 @@ async function handleLogin() {
   isLoading.value = true
 
   try {
-    await auth.login(email.value, password.value, schoolId.value || null)
+    await auth.login(email.value, password.value, schoolId.value !== '' ? schoolId.value : null)
     window.location.href = '/dashibodi'
   } catch (e) {
     const errors = e?.response?.data?.errors

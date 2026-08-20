@@ -425,7 +425,7 @@ async function deleteUser() {
     </CModal>
 
     <!-- School Access Modal -->
-    <CModal :visible="showAccessModal" @close="showAccessModal=false" size="md" backdrop="static">
+    <CModal :visible="showAccessModal" @close="showAccessModal=false" backdrop="static">
       <CModalHeader>
         <CModalTitle>🏫 {{ t('staff.manageAccess') }} — {{ accessTarget?.name }}</CModalTitle>
       </CModalHeader>
