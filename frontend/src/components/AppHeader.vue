@@ -8,9 +8,13 @@ import AppHeaderDropdownAccnt from '@/components/AppHeaderDropdownAccnt.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useBrandingStore } from '@/stores/branding'
+import { useSchoolStore } from '@/stores/school'
+import { useDashboardStore } from '@/stores/dashboard'
 
 const auth          = useAuthStore()
 const branding      = useBrandingStore()
+const schoolStore   = useSchoolStore()
+const dashboard     = useDashboardStore()
 const router        = useRouter()
 const route         = useRoute()
 const notifications = useNotificationsStore()
@@ -35,6 +39,16 @@ if (typeof window !== 'undefined') {
   })
 }
 
+// School switcher — visible to owner, accountant, superadmin only
+const showSchoolSwitcher = computed(
+  () => (auth.isOwner || auth.isAccountant || auth.isSuperAdmin) && schoolStore.schools.length > 1,
+)
+
+function switchSchool(id) {
+  schoolStore.setActive(id)
+  dashboard.fetchStats()
+}
+
 function switchLang(lang) {
   setLocale(lang)
 }
@@ -53,6 +67,24 @@ function go(path) {
       <CCloseButton @click="mobileNavOpen=false" />
     </COffcanvasHeader>
     <COffcanvasBody class="p-2">
+      <!-- Mobile school selector -->
+      <div v-if="showSchoolSwitcher" class="px-2 pb-2 mb-1 border-bottom">
+        <div class="text-muted small fw-bold text-uppercase mb-1" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.selectSchool') }}</div>
+        <div class="d-flex flex-column gap-1">
+          <button
+            v-for="s in schoolStore.schools"
+            :key="s.id"
+            type="button"
+            class="btn btn-sm text-start d-flex align-items-center gap-2"
+            :class="schoolStore.activeSchoolId === s.id ? 'btn-success' : 'btn-ghost-secondary'"
+            @click="switchSchool(s.id); mobileNavOpen=false"
+          >
+            <span>🏫</span>
+            <span class="flex-grow-1">{{ s.name }}</span>
+            <span v-if="schoolStore.activeSchoolId === s.id" class="ms-auto">✓</span>
+          </button>
+        </div>
+      </div>
       <nav class="d-flex flex-column gap-1">
         <RouterLink class="btn btn-ghost-secondary text-start" to="/dashibodi" @click="mobileNavOpen=false">
           {{ t('nav.dashboard') }}
@@ -293,6 +325,42 @@ function go(path) {
         </CDropdown>
       </CHeaderNav>
 
+      <!-- School selector (owner / accountant / superadmin, desktop) -->
+      <CDropdown
+        v-if="showSchoolSwitcher"
+        variant="nav-item"
+        placement="bottom-end"
+        class="d-none d-md-flex me-1"
+      >
+        <CDropdownToggle
+          :caret="false"
+          class="school-switcher-btn d-flex align-items-center gap-2"
+        >
+          <span class="school-icon">🏫</span>
+          <span class="school-name">
+            {{ schoolStore.activeSchool?.name ?? t('nav.selectSchool') }}
+          </span>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" opacity=".6">
+            <path d="M1 3l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </svg>
+        </CDropdownToggle>
+        <CDropdownMenu style="min-width:200px; border-radius:12px; border:none; box-shadow:0 8px 24px rgba(0,0,0,.14); padding:6px;">
+          <template v-for="s in schoolStore.schools" :key="s.id">
+            <CDropdownItem
+              component="button"
+              type="button"
+              :active="schoolStore.activeSchoolId === s.id"
+              class="school-option d-flex align-items-center gap-2"
+              @click="switchSchool(s.id)"
+            >
+              <span style="font-size:.75rem; opacity:.6;">🏫</span>
+              <span class="flex-grow-1">{{ s.name }}</span>
+              <span v-if="schoolStore.activeSchoolId === s.id" style="color:#007f3e; font-size:.75rem;">✓</span>
+            </CDropdownItem>
+          </template>
+        </CDropdownMenu>
+      </CDropdown>
+
       <!-- Right controls -->
       <CHeaderNav class="ms-auto d-flex align-items-center gap-2">
 
@@ -352,6 +420,35 @@ function go(path) {
 </template>
 
 <style scoped>
+/* School switcher pill */
+.school-switcher-btn {
+  background: rgba(0, 127, 62, 0.08);
+  border: 1.5px solid rgba(0, 127, 62, 0.2);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: #007f3e;
+  gap: 6px;
+  transition: background .15s, border-color .15s;
+  cursor: pointer;
+}
+.school-switcher-btn:hover {
+  background: rgba(0, 127, 62, 0.14);
+  border-color: rgba(0, 127, 62, 0.4);
+}
+.school-switcher-btn .school-name {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.school-option {
+  border-radius: 8px;
+  font-size: .88rem;
+  padding: 7px 10px;
+}
+
 .navbar-brand:hover { opacity: .85; }
 
 /* Direct RouterLink active (Dashboard, Reports) */

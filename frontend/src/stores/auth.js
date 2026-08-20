@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/services/api'
 import { useBrandingStore } from '@/stores/branding'
+import { useSchoolStore } from '@/stores/school'
 
 export const useAuthStore = defineStore('auth', () => {
   // Read from localStorage once at init — guard against 'undefined' string
@@ -49,8 +50,9 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = t
     user.value = u
 
-    // Load branding for this school (non-blocking)
+    // Load branding and school list (non-blocking)
     useBrandingStore().fetchBranding()
+    useSchoolStore().fetchSchools(u.school_id)
 
     return { token: t, user: u }
   }

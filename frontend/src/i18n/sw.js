@@ -40,6 +40,8 @@ export default {
     terms:            'Muhula',
     academicYears:    'Miaka ya Masomo',
     branding:         'Nembo & Jina',
+    selectSchool:     'Chagua Shule',
+    allSchools:       'Shule Zote',
   },
   common: {
     save:        'Hifadhi',

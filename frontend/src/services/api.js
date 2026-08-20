@@ -18,6 +18,12 @@ const api = axios.create({
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('shulepay_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
+
+  const schoolId = localStorage.getItem('active_school_id')
+  if (schoolId && Number(schoolId) > 0) {
+    config.headers['X-School-Id'] = schoolId
+  }
+
   return config
 })
 

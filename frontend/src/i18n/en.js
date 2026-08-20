@@ -40,6 +40,8 @@ export default {
     terms:            'Terms',
     academicYears:    'Academic Years',
     branding:         'Branding & Logo',
+    selectSchool:     'Select School',
+    allSchools:       'All Schools',
   },
   common: {
     save:        'Save',
