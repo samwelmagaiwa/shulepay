@@ -2,6 +2,7 @@
 
 return [
     'driver' => env('SMS_DRIVER', 'kilakona'),
+    'enabled' => env('SMS_ENABLED', false),
 
     'kilakona' => [
         'api_url' => env('SMS_API_URL', 'https://messaging.kilakona.co.tz/api/v1/vendor/message/send'),

@@ -9,6 +9,12 @@ class KilakonaGateway implements SmsGatewayInterface
 {
     public function send(string $to, string $message): bool
     {
+        if (! config('sms.enabled')) {
+            Log::info("[SMS-disabled] To:{$to} — {$message}");
+
+            return true;
+        }
+
         $apiKey = config('sms.kilakona.api_key');
         $secretKey = config('sms.kilakona.secret_key');
         $senderId = config('sms.kilakona.sender_id');
@@ -39,7 +45,11 @@ class KilakonaGateway implements SmsGatewayInterface
             }
 
             $body = $response->json();
-            $success = ! empty($body['success']) || (isset($body['code']) && $body['code'] == 200);
+
+            // Kilakona returns {"success":true,...} or {"code":200,...}
+            $success = ($body['success'] ?? false) === true
+                || (isset($body['code']) && (int) $body['code'] === 200);
+
             if (! $success) {
                 Log::warning('[Kilakona SMS] Non-success response: '.$response->body());
             }
