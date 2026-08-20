@@ -12,6 +12,26 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    // Highest privilege wins when a user has multiple Spatie roles
+    private const ROLE_PRIORITY = [
+        'superadmin', 'owner', 'accountant',
+        'head_teacher', 'headmaster', 'academic_pri', 'academic_sec',
+        'teacher_pri', 'teacher_sec', 'teacher', 'academic_teacher',
+        'parent',
+    ];
+
+    private function primaryRole(User $user): string
+    {
+        $names = $user->getRoleNames()->all();
+        foreach (self::ROLE_PRIORITY as $role) {
+            if (in_array($role, $names)) {
+                return $role;
+            }
+        }
+
+        return $names[0] ?? 'unknown';
+    }
+
     public function login(Request $request): JsonResponse
     {
         $request->validate([
@@ -80,7 +100,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->getRoleNames()->first(),
+                'role' => $this->primaryRole($user),
                 'school_id' => $user->school_id,
             ],
         ]);

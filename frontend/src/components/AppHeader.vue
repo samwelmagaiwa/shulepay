@@ -136,7 +136,7 @@ function go(path) {
         </CNavItem>
 
         <!-- Wanafunzi dropdown -->
-        <CDropdown v-if="auth.isAccountant || auth.isOwner" variant="nav-item" :caret="false">
+        <CDropdown v-if="auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher" variant="nav-item" :caret="false">
           <CDropdownToggle class="fw-semibold px-2" :class="{ 'nav-active': isStudentsActive }" style="font-size:.9rem;">
             {{ t('nav.students') }}
           </CDropdownToggle>
@@ -233,7 +233,7 @@ function go(path) {
         </CDropdown>
 
         <!-- Ripoti -->
-        <CNavItem v-if="auth.isAccountant || auth.isOwner">
+        <CNavItem v-if="auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher">
           <RouterLink to="/ripoti" class="nav-link fw-semibold px-2" style="font-size:.9rem;">
             {{ t('nav.reports') }}
           </RouterLink>

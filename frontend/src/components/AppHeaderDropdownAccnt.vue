@@ -12,7 +12,20 @@ const initials = computed(() => {
 })
 
 const roleName = computed(() => {
-  const map = { accountant: 'Muhasibu', owner: 'Mmiliki', parent: 'Mzazi' }
+  const map = {
+    superadmin:     'Super Admin',
+    owner:          'Mmiliki',
+    accountant:     'Muhasibu',
+    head_teacher:   'Mwalimu Mkuu',
+    headmaster:     'Mkurugenzi',
+    academic_pri:   'Msimamizi Masomo (Msingi)',
+    academic_sec:   'Msimamizi Masomo (Sekondari)',
+    teacher_pri:    'Mwalimu (Msingi)',
+    teacher_sec:    'Mwalimu (Sekondari)',
+    teacher:        'Mwalimu',
+    academic_teacher: 'Mwalimu Masomo',
+    parent:         'Mzazi',
+  }
   return map[auth.user?.role] || auth.user?.role || ''
 })
 
