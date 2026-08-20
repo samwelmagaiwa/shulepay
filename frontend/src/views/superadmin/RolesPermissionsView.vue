@@ -250,14 +250,10 @@ function initials(name) {
 </script>
 
 <template>
-  <CContainer fluid class="py-3">
+  <CContainer fluid class="pt-2 pb-3">
 
     <!-- Header -->
-    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-      <div>
-        <h4 class="mb-0 fw-bold">🔐 Roles & Permissions</h4>
-        <p class="text-muted small mb-0">Create roles and control what each role can access</p>
-      </div>
+    <div class="d-flex align-items-center justify-content-end mb-3">
       <CButton color="success" @click="showCreate = true; newRoleName = ''; createError = ''">
         + Create Role
       </CButton>
