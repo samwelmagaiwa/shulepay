@@ -7,8 +7,10 @@ import { setLocale } from '@/i18n'
 import AppHeaderDropdownAccnt from '@/components/AppHeaderDropdownAccnt.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useNotificationsStore } from '@/stores/notifications'
+import { useBrandingStore } from '@/stores/branding'
 
 const auth          = useAuthStore()
+const branding      = useBrandingStore()
 const router        = useRouter()
 const route         = useRoute()
 const notifications = useNotificationsStore()
@@ -47,7 +49,7 @@ function go(path) {
   <!-- Mobile Offcanvas Nav -->
   <COffcanvas placement="start" :visible="mobileNavOpen" @hide="mobileNavOpen=false">
     <COffcanvasHeader class="border-bottom">
-      <COffcanvasTitle class="fw-bold" style="color:#007f3e;">ShulePay</COffcanvasTitle>
+      <COffcanvasTitle class="fw-bold" style="color:#007f3e;">{{ branding.appName }}</COffcanvasTitle>
       <CCloseButton @click="mobileNavOpen=false" />
     </COffcanvasHeader>
     <COffcanvasBody class="p-2">
@@ -92,6 +94,7 @@ function go(path) {
         <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/schools" @click="mobileNavOpen=false">{{ t('nav.schools') }}</RouterLink>
         <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/wafanyakazi" @click="mobileNavOpen=false">👥 {{ t('nav.staff') }}</RouterLink>
         <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/audit" @click="mobileNavOpen=false">{{ t('nav.audit') }}</RouterLink>
+        <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/branding" @click="mobileNavOpen=false">🎨 {{ t('nav.branding') }}</RouterLink>
         <RouterLink v-if="auth.isSuperAdmin" class="btn btn-ghost-secondary text-start" to="/superadmin/users" @click="mobileNavOpen=false">👤 {{ t('nav.userManagement') }}</RouterLink>
         <RouterLink v-if="auth.isSuperAdmin" class="btn btn-ghost-secondary text-start" to="/superadmin/roles" @click="mobileNavOpen=false">🔐 {{ t('nav.rolesPermissions') }}</RouterLink>
         <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/bajeti" @click="mobileNavOpen=false">{{ t('nav.budgets') }}</RouterLink>
@@ -113,7 +116,13 @@ function go(path) {
       <!-- Brand -->
       <RouterLink to="/dashibodi"
         class="navbar-brand d-flex align-items-center me-4 text-decoration-none">
-        <svg viewBox="0 0 40 40" width="36" height="36" style="margin-right:8px; flex-shrink:0;">
+        <img
+          v-if="branding.logoUrl"
+          :src="branding.logoUrl"
+          alt="Logo"
+          style="height:36px; width:36px; object-fit:contain; border-radius:50%; margin-right:8px; flex-shrink:0;"
+        />
+        <svg v-else viewBox="0 0 40 40" width="36" height="36" style="margin-right:8px; flex-shrink:0;">
           <circle cx="20" cy="20" r="19" fill="#007f3e"/>
           <rect x="8"  y="13" width="11" height="16" rx="2" fill="white" opacity=".95"/>
           <rect x="21" y="13" width="11" height="16" rx="2" fill="white" opacity=".95"/>
@@ -122,8 +131,8 @@ function go(path) {
           <text x="29" y="14.5" text-anchor="middle" font-size="6" font-weight="bold" fill="#007f3e">$</text>
         </svg>
         <div class="d-flex flex-column lh-1">
-          <span class="fw-bold" style="color:#007f3e; font-size:1.05rem;">ShulePay</span>
-          <span style="color:#003082; font-size:0.6rem; font-weight:700; letter-spacing:1px; text-transform:uppercase;">nexoryaTECH</span>
+          <span class="fw-bold" style="color:#007f3e; font-size:1.05rem;">{{ branding.appName }}</span>
+          <span style="color:#003082; font-size:0.6rem; font-weight:700; letter-spacing:1px; text-transform:uppercase;">{{ branding.appTagline }}</span>
         </div>
       </RouterLink>
 

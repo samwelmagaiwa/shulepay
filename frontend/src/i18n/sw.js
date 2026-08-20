@@ -39,6 +39,7 @@ export default {
     userManagement:   'User Management',
     terms:            'Muhula',
     academicYears:    'Miaka ya Masomo',
+    branding:         'Nembo & Jina',
   },
   common: {
     save:        'Hifadhi',

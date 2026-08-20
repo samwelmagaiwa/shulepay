@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/services/api'
+import { useBrandingStore } from '@/stores/branding'
 
 export const useAuthStore = defineStore('auth', () => {
   // Read from localStorage once at init — guard against 'undefined' string
@@ -47,6 +48,9 @@ export const useAuthStore = defineStore('auth', () => {
     // Then update reactive state
     token.value = t
     user.value = u
+
+    // Load branding for this school (non-blocking)
+    useBrandingStore().fetchBranding()
 
     return { token: t, user: u }
   }

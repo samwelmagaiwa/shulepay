@@ -39,6 +39,7 @@ export default {
     userManagement:   'User Management',
     terms:            'Terms',
     academicYears:    'Academic Years',
+    branding:         'Branding & Logo',
   },
   common: {
     save:        'Save',

@@ -129,6 +129,12 @@ const routes = [
         meta: { requiresAuth: true, roles: ['owner'] },
       },
       {
+        path: 'admin/branding',
+        name: 'Branding',
+        component: () => import('@/views/admin/SchoolBranding.vue'),
+        meta: { requiresAuth: true, roles: ['owner', 'superadmin'] },
+      },
+      {
         path: 'admin/wafanyakazi',
         name: 'Wafanyakazi',
         component: () => import('@/views/admin/WafanyakaziView.vue'),

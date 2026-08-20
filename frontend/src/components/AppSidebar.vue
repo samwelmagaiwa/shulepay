@@ -2,8 +2,10 @@
 import { RouterLink } from 'vue-router'
 import { AppSidebarNav } from '@/components/AppSidebarNav.js'
 import { useSidebarStore } from '@/stores/sidebar.js'
+import { useBrandingStore } from '@/stores/branding'
 
-const sidebar = useSidebarStore()
+const sidebar  = useSidebarStore()
+const branding = useBrandingStore()
 </script>
 
 <template>
@@ -19,16 +21,18 @@ const sidebar = useSidebarStore()
       <RouterLink custom to="/" v-slot="{ href, navigate }">
         <CSidebarBrand v-bind="$attrs" as="a" :href="href" @click="navigate">
           <img
-            src="@/assets/images/muhilogo.jpg"
+            :src="branding.logoUrl || new URL('@/assets/images/muhilogo.jpg', import.meta.url).href"
             class="sidebar-brand-full flip-logo"
             height="60"
             width="100"
+            style="object-fit:contain;"
           />
           <img
-            src="@/assets/images/muhilogo.jpg"
+            :src="branding.logoUrl || new URL('@/assets/images/muhilogo.jpg', import.meta.url).href"
             class="sidebar-brand-narrow flip-logo"
             height="60"
             width="100"
+            style="object-fit:contain;"
           />
         </CSidebarBrand>
       </RouterLink>

@@ -9,7 +9,8 @@
   .bold   { font-weight: bold; }
   .hr     { border-top: 1px dashed #555; margin: 6px 0; }
   .row    { display: flex; justify-content: space-between; margin: 3px 0; }
-  .logo   { font-size: 15px; font-weight: bold; color: #007f3e; }
+  .logo-img { max-width: 70px; max-height: 50px; margin-bottom: 4px; }
+  .app-name { font-size: 15px; font-weight: bold; color: #007f3e; }
   .sub    { font-size: 8px; color: #555; }
   .receipt-no { font-size: 12px; font-weight: bold; margin: 4px 0; }
   .amount { font-size: 16px; font-weight: bold; color: #007f3e; text-align: center; margin: 6px 0; }
@@ -18,9 +19,12 @@
 </head>
 <body>
   <div class="center">
-    <div class="logo">ShulePay</div>
-    <div class="sub">nexoryaTECH — Mfumo wa Fedha za Shule</div>
-    @if($receipt->student?->school)
+    @if($logoBase64)
+    <img src="{{ $logoBase64 }}" class="logo-img" alt="Logo" /><br>
+    @endif
+    <div class="app-name">{{ $appName }}</div>
+    <div class="sub">{{ $appTagline }}</div>
+    @if($receipt->student?->school && $receipt->student->school->name !== $appName)
     <div class="sub bold">{{ $receipt->student->school->name }}</div>
     @endif
   </div>
@@ -76,7 +80,7 @@
   <div class="hr"></div>
   <div class="footer">
     Asante kwa malipo yako. Hati hii ni ushahidi wa malipo.<br>
-    ShulePay &copy; {{ date('Y') }} nexoryaTECH
+    {{ $appName }} &copy; {{ date('Y') }} {{ $appTagline }}
   </div>
 </body>
 </html>

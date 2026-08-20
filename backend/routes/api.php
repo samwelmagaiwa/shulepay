@@ -42,6 +42,7 @@ use App\Http\Controllers\Shared\SchoolController;
 use App\Http\Controllers\Shared\TermController;
 use App\Http\Controllers\Shared\UserSettingsController;
 use App\Http\Controllers\Sms\SmsController;
+use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\Superadmin\RolePermissionController;
 use App\Http\Controllers\Superadmin\SuperadminUserController;
 use App\Http\Controllers\Transport\TransportController;
@@ -69,6 +70,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('locations/districts', [LocationController::class, 'districts']);
     Route::get('locations/wards', [LocationController::class, 'wards']);
     Route::get('locations/streets', [LocationController::class, 'streets']);
+
+    // Branding (read: all authenticated; write: owner/superadmin only)
+    Route::get('branding', [BrandingController::class, 'show']);
+    Route::post('branding', [BrandingController::class, 'update']);
+    Route::delete('branding/logo', [BrandingController::class, 'deleteLogo']);
 
     // User settings (all authenticated users)
     Route::get('settings/profile', [UserSettingsController::class, 'profile']);
