@@ -157,12 +157,10 @@ aaPanel MariaDB 10.11  (database: shulepay)
 
 ## SSL Certificate
 
-Issued via Let's Encrypt (manual). **Expires: 2026-11-17.**
+Managed by **aaPanel** (Let's Encrypt via HTTP-01 challenge).
+aaPanel runs an automatic renewal cron every night at 01:31 — no manual action needed.
 
-Renew before expiry:
-```bash
-certbot renew --manual
-```
+To re-issue or check status: **aaPanel → Website → magrethschools.sc.tz → SSL → Let's Encrypt**.
 
 ---
 
