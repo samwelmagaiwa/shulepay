@@ -160,7 +160,29 @@ async function openItemPanel(item) {
   }
 }
 
+const txnFieldErrors = ref({ quantity: '', transaction_date: '', issued_to_employee_id: '' })
+
+function validateTxnForm() {
+  txnFieldErrors.value = { quantity: '', transaction_date: '', issued_to_employee_id: '' }
+  let ok = true
+  const qty = Number(txnForm.value.quantity)
+  if (!qty || qty <= 0) {
+    txnFieldErrors.value.quantity = t('inventory.errQtyRequired')
+    ok = false
+  }
+  if (txnForm.value.type === 'out' && qty > Number(selectedItem.value?.quantity ?? 0)) {
+    txnFieldErrors.value.quantity = t('inventory.errQtyExceeds', { max: selectedItem.value?.quantity })
+    ok = false
+  }
+  if (!txnForm.value.transaction_date) {
+    txnFieldErrors.value.transaction_date = t('inventory.errDateRequired')
+    ok = false
+  }
+  return ok
+}
+
 async function recordTransaction() {
+  if (!validateTxnForm()) return
   txnSaving.value = true
   txnError.value = ''
   try {
@@ -169,6 +191,7 @@ async function recordTransaction() {
     itemTransactions.value = await store.fetchTransactions(selectedItem.value.id)
     await store.fetchSummary()
     txnForm.value = { type: 'in', quantity: 1, issued_to_employee_id: '', notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) }
+    txnFieldErrors.value = { quantity: '', transaction_date: '', issued_to_employee_id: '' }
   } catch (e) {
     txnError.value = e?.response?.data?.message || t('common.saveFailed')
   } finally {
@@ -779,13 +802,45 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
         <CCard class="border-primary mb-3">
           <CCardHeader class="fw-semibold">{{ t('inventory.recordNew') }}</CCardHeader>
           <CCardBody>
-            <CAlert v-if="txnError" color="danger">{{ txnError }}</CAlert>
+            <CAlert v-if="txnError" color="danger" class="py-2">{{ txnError }}</CAlert>
             <CRow class="g-2">
-              <CCol md="4"><CFormLabel>{{ t('inventory.txnType') }}</CFormLabel><CFormSelect v-model="txnForm.type"><option value="in">{{ t('inventory.txnIn') }}</option><option value="out">{{ t('inventory.txnOut') }}</option><option v-if="canAdjust" value="adjustment">{{ t('inventory.txnAdjustment') }}</option></CFormSelect></CCol>
-              <CCol md="4"><CFormLabel>{{ t('inventory.txnQty') }}</CFormLabel><CFormInput v-model.number="txnForm.quantity" type="number" step="0.01" min="0.01" /></CCol>
-              <CCol md="4"><CFormLabel>{{ t('inventory.txnDate') }}</CFormLabel><CFormInput v-model="txnForm.transaction_date" type="date" /></CCol>
+              <!-- Type -->
+              <CCol md="4">
+                <CFormLabel>{{ t('inventory.txnType') }} <span class="text-danger">*</span></CFormLabel>
+                <CFormSelect v-model="txnForm.type">
+                  <option value="in">{{ t('inventory.txnIn') }}</option>
+                  <option value="out">{{ t('inventory.txnOut') }}</option>
+                  <option v-if="canAdjust" value="adjustment">{{ t('inventory.txnAdjustment') }}</option>
+                </CFormSelect>
+              </CCol>
+              <!-- Quantity -->
+              <CCol md="4">
+                <CFormLabel>{{ t('inventory.txnQty') }} <span class="text-danger">*</span></CFormLabel>
+                <CFormInput
+                  v-model.number="txnForm.quantity"
+                  type="number" step="0.01" min="0.01"
+                  :class="txnFieldErrors.quantity ? 'is-invalid' : ''"
+                  @input="txnFieldErrors.quantity = ''"
+                />
+                <div v-if="txnFieldErrors.quantity" class="invalid-feedback">{{ txnFieldErrors.quantity }}</div>
+                <div v-if="txnForm.type === 'out'" class="form-text text-muted">
+                  {{ t('inventory.available') }}: {{ Number(selectedItem?.quantity ?? 0).toLocaleString() }} {{ selectedItem?.unit }}
+                </div>
+              </CCol>
+              <!-- Date -->
+              <CCol md="4">
+                <CFormLabel>{{ t('inventory.txnDate') }} <span class="text-danger">*</span></CFormLabel>
+                <CFormInput
+                  v-model="txnForm.transaction_date"
+                  type="date"
+                  :class="txnFieldErrors.transaction_date ? 'is-invalid' : ''"
+                  @change="txnFieldErrors.transaction_date = ''"
+                />
+                <div v-if="txnFieldErrors.transaction_date" class="invalid-feedback">{{ txnFieldErrors.transaction_date }}</div>
+              </CCol>
+              <!-- Issued To (Stock Out only) -->
               <CCol v-if="txnForm.type === 'out'" xs="12" md="6">
-                <CFormLabel>{{ t('inventory.txnIssuedTo') }} *</CFormLabel>
+                <CFormLabel>{{ t('inventory.txnIssuedTo') }}</CFormLabel>
                 <CFormSelect v-model="txnForm.issued_to_employee_id" style="min-height:38px;">
                   <option value="">{{ t('inventory.txnSelectEmployee') }}</option>
                   <option v-for="emp in empStore.activeEmployees" :key="emp.id" :value="emp.id">
@@ -797,8 +852,16 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
                   <span v-if="selectedTxnEmployee.department">{{ selectedTxnEmployee.department }}</span>
                 </div>
               </CCol>
-              <CCol :md="txnForm.type === 'out' ? 6 : 6"><CFormLabel>{{ t('inventory.txnReference') }}</CFormLabel><CFormInput v-model="txnForm.reference" placeholder="LPO-001..." /></CCol>
-              <CCol xs="12" md="6"><CFormLabel>{{ t('inventory.txnNotes') }}</CFormLabel><CFormInput v-model="txnForm.notes" /></CCol>
+              <!-- Reference -->
+              <CCol :md="txnForm.type === 'out' ? 6 : 6">
+                <CFormLabel>{{ t('inventory.txnReference') }}</CFormLabel>
+                <CFormInput v-model="txnForm.reference" placeholder="LPO-001..." />
+              </CCol>
+              <!-- Notes -->
+              <CCol xs="12" md="6">
+                <CFormLabel>{{ t('inventory.txnNotes') }}</CFormLabel>
+                <CFormInput v-model="txnForm.notes" />
+              </CCol>
               <CCol xs="12" class="text-end">
                 <CButton color="success" :disabled="txnSaving" @click="recordTransaction">
                   <CSpinner v-if="txnSaving" size="sm" class="me-1" />{{ t('inventory.txnRecord') }}
@@ -828,7 +891,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
             </CTableHead>
             <CTableBody>
               <CTableRow v-for="txn in itemTransactions" :key="txn.id">
-                <CTableDataCell>{{ txn.transaction_date }}</CTableDataCell>
+                <CTableDataCell>{{ txn.transaction_date ? new Date(txn.transaction_date).toLocaleDateString('en-GB') : '—' }}</CTableDataCell>
                 <CTableDataCell><CBadge :color="txnTypeBadge(txn.type)">{{ txnTypeLabel(txn.type) }}</CBadge></CTableDataCell>
                 <CTableDataCell>{{ Number(txn.quantity).toLocaleString() }}</CTableDataCell>
                 <CTableDataCell>
@@ -884,7 +947,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
               </CTableHead>
               <CTableBody>
                 <CTableRow v-for="txn in row.transactions" :key="txn.id">
-                  <CTableDataCell>{{ txn.transaction_date }}</CTableDataCell>
+                  <CTableDataCell>{{ txn.transaction_date ? new Date(txn.transaction_date).toLocaleDateString('en-GB') : '—' }}</CTableDataCell>
                   <CTableDataCell>{{ Number(txn.quantity).toLocaleString() }}</CTableDataCell>
                   <CTableDataCell class="text-muted small">{{ txn.notes || txn.reference || '—' }}</CTableDataCell>
                   <CTableDataCell class="text-muted small">{{ txn.recorder?.name || '—' }}</CTableDataCell>
