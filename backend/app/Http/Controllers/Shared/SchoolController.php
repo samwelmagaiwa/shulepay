@@ -15,20 +15,30 @@ use Illuminate\Support\Str;
 
 class SchoolController extends Controller
 {
-    /** GET /api/schools — all authenticated users */
+    /** GET /api/schools — returns only schools the authenticated user can access */
     public function index(Request $request): JsonResponse
     {
+        $user  = auth()->user();
         $query = School::withCount('enrollments');
 
-        if ($request->boolean('all')) {
-            // owner sees inactive schools too
-        } else {
+        if (! $request->boolean('all')) {
             $query->where('is_active', true);
         }
 
         if ($request->filled('search')) {
             $q = '%'.$request->search.'%';
             $query->where(fn ($w) => $w->where('name', 'like', $q)->orWhere('code', 'like', $q));
+        }
+
+        // Superadmin sees every school; others are restricted to their accessible set
+        if ($user && ! $user->hasRole('superadmin')) {
+            $ids = $user->allAccessibleSchoolIds();
+            if (! empty($ids)) {
+                $query->whereIn('id', $ids);
+            } elseif ($user->school_id) {
+                // No explicit multi-school grants — only their primary school
+                $query->where('id', $user->school_id);
+            }
         }
 
         $schools = $query->orderBy('name')->get();

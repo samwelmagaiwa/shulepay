@@ -18,8 +18,15 @@ class SetActiveSchool
             $val = $request->header('X-School-Id') ?? $request->query('school_id');
             // Explicit "0" / "" / "all" → "Shule Zote" mode: no active_school, scope is skipped
             if ($val !== null && $val !== '' && $val !== '0' && $val !== 'all' && (int) $val > 0) {
-                $school = School::find((int) $val);
+                $schoolId = (int) $val;
+                $school   = School::find($schoolId);
                 if ($school) {
+                    // Enforce access: only allow if user can access this school
+                    if ($user = auth('sanctum')->user()) {
+                        if (! $user->canAccessSchool($schoolId)) {
+                            return response()->json(['message' => 'Huna ruhusa ya kufikia shule hii.'], 403);
+                        }
+                    }
                     app()->instance('active_school', $school);
                 }
             }

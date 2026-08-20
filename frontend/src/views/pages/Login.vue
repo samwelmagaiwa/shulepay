@@ -1,36 +1,69 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
+import api from '@/services/api'
 
 const { t } = useI18n()
 const auth         = useAuthStore()
 const email        = ref('')
 const password     = ref('')
+const schoolId     = ref('')
 const isLoading    = ref(false)
 const errorMessage = ref('')
+const schoolError  = ref('')
+
+const schools      = ref([])
+const schoolsLoaded = ref(false)
+
+onMounted(async () => {
+  try {
+    const { data } = await api.get('/auth/schools')
+    schools.value = data
+    // Auto-select if only one school
+    if (data.length === 1) schoolId.value = data[0].id
+  } catch {
+    schools.value = []
+  } finally {
+    schoolsLoaded.value = true
+  }
+})
+
+watch(schools, (list) => {
+  if (list.length === 1) schoolId.value = list[0].id
+})
 
 async function handleLogin() {
+  errorMessage.value = ''
+  schoolError.value  = ''
+
   if (!email.value || !password.value) {
     errorMessage.value = 'Tafadhali jaza barua pepe na neno la siri.'
     return
   }
+  if (schools.value.length > 1 && !schoolId.value) {
+    schoolError.value = 'Tafadhali chagua shule.'
+    return
+  }
 
-  isLoading.value    = true
-  errorMessage.value = ''
+  isLoading.value = true
 
   try {
-    await auth.login(email.value, password.value)
-
-    // Use hard redirect so the app boots fresh with the token already in localStorage
+    await auth.login(email.value, password.value, schoolId.value || null)
     window.location.href = '/dashibodi'
   } catch (e) {
-    const msg = e?.response?.data?.errors?.email?.[0]
+    const errors = e?.response?.data?.errors
+    const msg = errors?.school_id?.[0]
+             || errors?.email?.[0]
              || e?.response?.data?.message
              || e?.message
              || t('auth.errorInvalid')
-    errorMessage.value = msg
-    isLoading.value    = false
+    if (errors?.school_id) {
+      schoolError.value = errors.school_id[0]
+    } else {
+      errorMessage.value = msg
+    }
+    isLoading.value = false
   }
 }
 </script>
@@ -334,7 +367,7 @@ async function handleLogin() {
             </div>
           </div>
 
-          <div class="form-group mb-5">
+          <div class="form-group mb-4">
             <label class="form-label">{{ t('auth.passwordLabel') }}</label>
             <div class="input-wrapper">
               <input
@@ -347,6 +380,24 @@ async function handleLogin() {
                 :disabled="isLoading"
               />
             </div>
+          </div>
+
+          <!-- School selector — shown when multiple schools exist -->
+          <div v-if="schoolsLoaded && schools.length > 1" class="form-group mb-5">
+            <label class="form-label">🏫 {{ t('auth.selectSchool') }}</label>
+            <select
+              v-model="schoolId"
+              class="form-input"
+              :class="schoolError ? 'input-error' : ''"
+              :disabled="isLoading"
+              style="cursor:pointer;"
+            >
+              <option value="">{{ t('auth.schoolPlaceholder') }}</option>
+              <option v-for="s in schools" :key="s.id" :value="s.id">
+                {{ s.name }}{{ s.level ? ' (' + s.level + ')' : '' }}
+              </option>
+            </select>
+            <div v-if="schoolError" class="field-error">{{ schoolError }}</div>
           </div>
 
           <button type="submit" class="submit-btn" :disabled="isLoading">
@@ -453,6 +504,8 @@ async function handleLogin() {
   color: #ff6b6b;
 }
 .login-footer { margin-top: 2rem; text-align: center; color: rgba(255,255,255,.35); font-size: .75rem; }
+.input-error { border-color: rgba(220,53,69,.6) !important; box-shadow: 0 0 0 3px rgba(220,53,69,.2) !important; }
+.field-error { color: #ff6b6b; font-size: .82rem; margin-top: .3rem; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 480px) { .login-card { padding: 2rem 1.25rem; } }

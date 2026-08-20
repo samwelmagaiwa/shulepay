@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -65,6 +66,47 @@ class User extends Authenticatable
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    /** Schools explicitly granted via multi_school access (pivot table) */
+    public function accessibleSchools(): BelongsToMany
+    {
+        return $this->belongsToMany(School::class, 'user_school_access')->withTimestamps();
+    }
+
+    /**
+     * True if the user may act on the given school.
+     * Superadmins always pass. Others must match their primary school
+     * OR have an explicit grant in user_school_access (requires multi_school permission).
+     */
+    public function canAccessSchool(int $schoolId): bool
+    {
+        if ($this->hasRole('superadmin')) {
+            return true;
+        }
+        if ($this->school_id === $schoolId) {
+            return true;
+        }
+        if ($this->hasPermissionTo('multi_school')) {
+            return $this->accessibleSchools()->where('school_id', $schoolId)->exists();
+        }
+
+        return false;
+    }
+
+    /** IDs of all schools this user can act on (primary + granted extras) */
+    public function allAccessibleSchoolIds(): array
+    {
+        $ids = $this->school_id ? [$this->school_id] : [];
+        if ($this->hasRole('superadmin')) {
+            return [];  // empty = "all schools" for superadmin callers
+        }
+        if ($this->hasPermissionTo('multi_school')) {
+            $extra = $this->accessibleSchools()->pluck('schools.id')->toArray();
+            $ids   = array_unique(array_merge($ids, $extra));
+        }
+
+        return array_values($ids);
     }
 
     public function guardian(): HasOne

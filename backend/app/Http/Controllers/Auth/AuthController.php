@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\LoginHistory;
+use App\Models\School;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,11 +33,22 @@ class AuthController extends Controller
         return $names[0] ?? 'unknown';
     }
 
+    /** Public endpoint — returns schools list for login dropdown */
+    public function schools(): JsonResponse
+    {
+        $schools = School::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'level']);
+
+        return response()->json($schools);
+    }
+
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
+            'email'     => 'required|email',
+            'password'  => 'required|string',
+            'school_id' => 'nullable|integer|exists:schools,id',
         ]);
 
         // Find user for logging purposes (even on failure)
@@ -82,6 +94,18 @@ class AuthController extends Controller
             'attempted_at' => now(),
         ]);
 
+        // Validate selected school access
+        if ($request->filled('school_id')) {
+            $schoolId = (int) $request->school_id;
+            if (! $user->canAccessSchool($schoolId)) {
+                Auth::logout();
+                $schoolName = School::find($schoolId)?->name ?? 'hiyo shule';
+                throw ValidationException::withMessages([
+                    'school_id' => ["Huna ruhusa ya kuingia {$schoolName}. Wasiliana na msimamizi."],
+                ]);
+            }
+        }
+
         // If 2FA is enabled, do not issue a token yet — ask frontend to verify OTP
         if ($user->{'2fa_enabled'}) {
             Auth::logout(); // un-auth the session guard; Sanctum is stateless but guard may be set
@@ -94,14 +118,20 @@ class AuthController extends Controller
 
         $token = $user->createToken('shulepay')->plainTextToken;
 
+        // Resolve the active school for this session
+        $selectedSchoolId = $request->filled('school_id')
+            ? (int) $request->school_id
+            : $user->school_id;
+
         return response()->json([
             'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $this->primaryRole($user),
-                'school_id' => $user->school_id,
+            'user'  => [
+                'id'        => $user->id,
+                'name'      => $user->name,
+                'email'     => $user->email,
+                'role'      => $this->primaryRole($user),
+                'school_id' => $selectedSchoolId,
+                'permissions' => $user->effectivePermissions(),
             ],
         ]);
     }
@@ -124,7 +154,8 @@ class AuthController extends Controller
             'role' => $user->getRoleNames()->first(),
             'school_id' => $user->school_id,
             'school' => $user->school?->only(['id', 'name', 'level']),
-            'permissions' => $user->effectivePermissions(),
+            'permissions'            => $user->effectivePermissions(),
+            'accessible_school_ids'  => $user->hasRole('superadmin') ? null : $user->allAccessibleSchoolIds(),
         ]);
     }
 }

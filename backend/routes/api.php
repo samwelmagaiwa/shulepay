@@ -31,6 +31,7 @@ use App\Http\Controllers\Inventory\InventoryController;
 use App\Http\Controllers\Owner\BudgetController;
 use App\Http\Controllers\Owner\DashboardController;
 use App\Http\Controllers\Owner\UserController;
+use App\Http\Controllers\Owner\UserSchoolAccessController;
 use App\Http\Controllers\ParentPortal\ChildController;
 use App\Http\Controllers\ParentPortal\StatementController;
 use App\Http\Controllers\Reports\ReportController;
@@ -49,6 +50,7 @@ use App\Http\Controllers\Transport\TransportController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public ────────────────────────────────────────────────────
+Route::get('/auth/schools', [AuthController::class, 'schools']);
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 Route::get('/auth/me', [AuthController::class, 'me'])->middleware('auth:sanctum');
@@ -262,6 +264,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('users/{user}', [UserController::class, 'update']);
         Route::patch('users/{user}', [UserController::class, 'update']);
         Route::delete('users/{user}', [UserController::class, 'destroy']);
+
+        // Multi-school access management
+        Route::get('user-school-access/{user}', [UserSchoolAccessController::class, 'show']);
+        Route::post('user-school-access', [UserSchoolAccessController::class, 'grant']);
+        Route::delete('user-school-access/{user}/{school}', [UserSchoolAccessController::class, 'revoke']);
 
         // Academic year writes
         Route::post('academic-years', [AcademicYearController::class, 'store']);

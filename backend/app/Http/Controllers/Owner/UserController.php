@@ -47,13 +47,33 @@ class UserController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $schoolId = auth()->user()->school_id;
+        $authUser = auth()->user();
 
-        $users = User::with('roles')
-            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
-            ->whereHas('roles', fn ($q) => $q->whereIn('name', $this->allAllowedRoles()))
-            ->orderBy('name')
-            ->paginate(100);
+        // Respect the active school from the nav switcher (X-School-Id header)
+        $activeSchool = app()->bound('active_school') ? app('active_school') : null;
+        $schoolId     = $activeSchool?->id ?? $authUser->school_id;
+
+        // Superadmin with no active school → show all staff across all schools
+        if ($authUser->hasRole('superadmin') && ! $activeSchool) {
+            $users = User::with(['roles', 'school:id,name'])
+                ->withCount('accessibleSchools')
+                ->whereHas('roles', fn ($q) => $q->whereIn('name', $this->allAllowedRoles()))
+                ->orderBy('name')
+                ->paginate(100);
+        } else {
+            $users = User::with(['roles', 'school:id,name'])
+                ->withCount('accessibleSchools')
+                ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+                ->whereHas('roles', fn ($q) => $q->whereIn('name', $this->allAllowedRoles()))
+                ->orderBy('name')
+                ->paginate(100);
+        }
+
+        // Map accessible_schools_count → multi_school_count for clarity
+        $users->getCollection()->transform(function ($u) {
+            $u->multi_school_count = $u->accessible_schools_count ?? 0;
+            return $u;
+        });
 
         return response()->json($users);
     }

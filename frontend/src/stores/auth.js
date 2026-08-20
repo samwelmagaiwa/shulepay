@@ -16,11 +16,13 @@ export const useAuthStore = defineStore('auth', () => {
     try { return JSON.parse(readLS('shulepay_user')) } catch { return null }
   })())
 
-  const isAuthenticated    = computed(() => !!token.value && token.value !== 'undefined')
-  const role               = computed(() => user.value?.role ?? null)
-  const permissions        = computed(() => user.value?.permissions ?? [])
-  const isSuperAdmin       = computed(() => role.value === 'superadmin')
-  const hasPermission      = (perm) => isSuperAdmin.value || permissions.value.includes(perm)
+  const isAuthenticated       = computed(() => !!token.value && token.value !== 'undefined')
+  const role                  = computed(() => user.value?.role ?? null)
+  const permissions           = computed(() => user.value?.permissions ?? [])
+  const isSuperAdmin          = computed(() => role.value === 'superadmin')
+  const hasPermission         = (perm) => isSuperAdmin.value || permissions.value.includes(perm)
+  const hasMultiSchool        = computed(() => isSuperAdmin.value || hasPermission('multi_school'))
+  const accessibleSchoolIds   = computed(() => user.value?.accessible_school_ids ?? null)
   const isAccountant       = computed(() => role.value === 'accountant' || role.value === 'superadmin')
   const isOwner            = computed(() => role.value === 'owner' || role.value === 'superadmin')
   const isParent           = computed(() => role.value === 'parent')
@@ -30,8 +32,10 @@ export const useAuthStore = defineStore('auth', () => {
   const isAcademicTeacher  = computed(() => role.value === 'academic_teacher')
   const isStaff            = computed(() => ['teacher', 'head_teacher', 'headmaster', 'academic_teacher'].includes(role.value))
 
-  async function login(email, password) {
-    const res = await api.post('/auth/login', { email, password })
+  async function login(email, password, schoolId = null) {
+    const payload = { email, password }
+    if (schoolId) payload.school_id = schoolId
+    const res = await api.post('/auth/login', payload)
 
     // Backend returns { requires_2fa: true, user_id } when 2FA is enabled.
     // Relay this shape to the caller so the login component can redirect to the
@@ -77,6 +81,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     token, user,
     isAuthenticated, role, permissions, hasPermission,
+    hasMultiSchool, accessibleSchoolIds,
     isAccountant, isOwner, isParent, isSuperAdmin,
     isTeacher, isHeadTeacher, isHeadmaster, isAcademicTeacher, isStaff,
     login, logout, fetchMe,

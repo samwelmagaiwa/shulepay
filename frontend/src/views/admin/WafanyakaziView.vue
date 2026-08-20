@@ -160,6 +160,69 @@ async function saveUser() {
   }
 }
 
+// ── School Access (multi-school) ──────────────────────────────────────────────
+const showAccessModal  = ref(false)
+const accessTarget     = ref(null)   // the User object being managed
+const accessData       = ref(null)   // { primary_school_id, has_multi_school, accessible_schools }
+const accessLoading    = ref(false)
+const accessSaving     = ref(false)
+const grantSchoolId    = ref('')
+
+async function openAccess(user) {
+  accessTarget.value  = user
+  showAccessModal.value = true
+  accessLoading.value = true
+  accessData.value    = null
+  grantSchoolId.value = ''
+  try {
+    const { data } = await api.get(`/user-school-access/${user.id}`)
+    accessData.value = data
+  } finally {
+    accessLoading.value = false
+  }
+}
+
+async function grantAccess() {
+  if (!grantSchoolId.value) return
+  accessSaving.value = true
+  try {
+    const { data } = await api.post('/user-school-access', {
+      user_id: accessTarget.value.id,
+      school_id: grantSchoolId.value,
+    })
+    accessData.value = { ...accessData.value, ...data }
+    grantSchoolId.value = ''
+    await fetchData()
+  } catch (e) {
+    alert(e?.response?.data?.message || 'Hitilafu wakati wa kutoa ruhusa')
+  } finally {
+    accessSaving.value = false
+  }
+}
+
+async function revokeAccess(schoolId) {
+  accessSaving.value = true
+  try {
+    const { data } = await api.delete(`/user-school-access/${accessTarget.value.id}/${schoolId}`)
+    accessData.value = { ...accessData.value, ...data }
+    await fetchData()
+  } catch (e) {
+    alert(e?.response?.data?.message || 'Hitilafu wakati wa kuondoa ruhusa')
+  } finally {
+    accessSaving.value = false
+  }
+}
+
+// Schools the user doesn't already have access to (excluding primary)
+const grantableSchools = computed(() => {
+  if (!accessData.value) return schools.value
+  const already = new Set([
+    accessData.value.primary_school_id,
+    ...accessData.value.accessible_schools.map(s => s.id),
+  ])
+  return schools.value.filter(s => !already.has(s.id))
+})
+
 // ── Delete ────────────────────────────────────────────────────────────────────
 const confirmDelete = ref(null)
 
@@ -263,9 +326,18 @@ async function deleteUser() {
                   </template>
                   <span v-else class="text-muted">—</span>
                 </CTableDataCell>
-                <CTableDataCell>{{ schoolName(u.school_id) }}</CTableDataCell>
+                <CTableDataCell>
+                  {{ schoolName(u.school_id) }}
+                  <CBadge v-if="u.multi_school_count > 0" color="info" class="ms-1" style="font-size:.7rem;">
+                    +{{ u.multi_school_count }} {{ t('staff.extraSchools') }}
+                  </CBadge>
+                </CTableDataCell>
                 <CTableDataCell class="text-center">
                   <div class="d-flex gap-2 justify-content-center">
+                    <CButton v-if="auth.isOwner || auth.isSuperAdmin"
+                      size="sm" color="info" variant="ghost"
+                      :title="t('staff.manageAccess')"
+                      @click="openAccess(u)">🏫</CButton>
                     <CButton size="sm" color="warning" variant="ghost" @click="openEdit(u)">✏️</CButton>
                     <CButton size="sm" color="danger" variant="ghost" @click="confirmDelete = u">🗑️</CButton>
                   </div>
@@ -349,6 +421,62 @@ async function deleteUser() {
           <CSpinner v-if="saving" size="sm" class="me-1" />
           {{ editTarget ? t('common.saveChanges') : t('staff.add') }}
         </CButton>
+      </CModalFooter>
+    </CModal>
+
+    <!-- School Access Modal -->
+    <CModal :visible="showAccessModal" @close="showAccessModal=false" size="md" backdrop="static">
+      <CModalHeader>
+        <CModalTitle>🏫 {{ t('staff.manageAccess') }} — {{ accessTarget?.name }}</CModalTitle>
+      </CModalHeader>
+      <CModalBody>
+        <div v-if="accessLoading" class="text-center py-4"><CSpinner /></div>
+        <template v-else-if="accessData">
+          <!-- Primary school (always, cannot revoke) -->
+          <p class="fw-semibold mb-2">{{ t('staff.primarySchool') }}</p>
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <CBadge color="success" class="px-3 py-2" style="font-size:.85rem;">
+              🏠 {{ schoolName(accessData.primary_school_id) }}
+            </CBadge>
+            <span class="text-muted small">{{ t('staff.cannotRevoke') }}</span>
+          </div>
+
+          <!-- Extra granted schools -->
+          <p class="fw-semibold mb-2">{{ t('staff.extraAccess') }}</p>
+          <div v-if="accessData.accessible_schools.length === 0" class="text-muted small mb-3">
+            {{ t('staff.noExtraSchools') }}
+          </div>
+          <div v-else class="d-flex flex-wrap gap-2 mb-3">
+            <div v-for="s in accessData.accessible_schools" :key="s.id"
+              class="d-flex align-items-center gap-2 border rounded px-3 py-1">
+              <span>{{ s.name }}</span>
+              <CButton size="sm" color="danger" variant="ghost"
+                :disabled="accessSaving"
+                @click="revokeAccess(s.id)">✕</CButton>
+            </div>
+          </div>
+
+          <!-- Grant new school -->
+          <div v-if="grantableSchools.length > 0">
+            <p class="fw-semibold mb-2">{{ t('staff.grantSchool') }}</p>
+            <div class="d-flex gap-2">
+              <CFormSelect v-model="grantSchoolId" size="sm" class="flex-grow-1">
+                <option value="">— {{ t('common.selectSchool') }} —</option>
+                <option v-for="s in grantableSchools" :key="s.id" :value="s.id">{{ s.name }}</option>
+              </CFormSelect>
+              <CButton color="success" size="sm"
+                :disabled="!grantSchoolId || accessSaving"
+                @click="grantAccess">
+                <CSpinner v-if="accessSaving" size="sm" class="me-1" />
+                {{ t('staff.grant') }}
+              </CButton>
+            </div>
+          </div>
+          <div v-else class="text-muted small mt-2">{{ t('staff.allSchoolsGranted') }}</div>
+        </template>
+      </CModalBody>
+      <CModalFooter>
+        <CButton color="secondary" variant="ghost" @click="showAccessModal=false">{{ t('common.close') }}</CButton>
       </CModalFooter>
     </CModal>
 
