@@ -217,6 +217,12 @@ class BrandingController extends Controller
 
         $logoPath = $specific['logo_path'] ?? $system['logo_path'] ?? null;
 
+        if ($logoPath) {
+            // Old uploads were stored as "public/branding/..." on the local disk.
+            // Strip the leading "public/" so the URL resolves correctly under /storage/.
+            $logoPath = preg_replace('#^public/#', '', $logoPath);
+        }
+
         return [
             'app_name' => $appName,
             'app_tagline' => $appTagline,
