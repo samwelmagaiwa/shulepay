@@ -106,7 +106,7 @@ Deployment is fully automated via GitHub Actions on every push to `master`:
 ### Manual deploy (if needed)
 
 ```bash
-ssh root@169.58.188.122
+ssh user@<your-server-ip>
 cd /www/shulepay
 ./deploy.sh deploy
 ```
