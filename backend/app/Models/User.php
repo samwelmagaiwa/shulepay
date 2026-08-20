@@ -14,7 +14,10 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, HasRoles, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
+    use HasRoles {
+        hasPermissionTo as spatieHasPermissionTo;
+    }
 
     protected $fillable = ['name', 'email', 'password', 'school_id', 'phone', 'avatar', '2fa_enabled',
         'is_active', 'deactivated_at', 'deactivation_reason', 'forbidden_permissions'];
@@ -48,7 +51,7 @@ class User extends Authenticatable
             return false;
         }
 
-        return parent::hasPermissionTo($permission, $guardName);
+        return $this->spatieHasPermissionTo($permission, $guardName);
     }
 
     /** All effective permissions: role + direct, minus forbidden */
