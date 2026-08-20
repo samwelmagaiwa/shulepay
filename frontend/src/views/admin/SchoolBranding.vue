@@ -1,42 +1,70 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useBrandingStore } from '@/stores/branding'
+import { useAuthStore } from '@/stores/auth'
+import api from '@/services/api'
 
 const { t } = useI18n()
 const branding = useBrandingStore()
+const auth = useAuthStore()
 
+// ── Schools list (superadmin only) ──────────────────────────────────────────
+const schools = ref([])
+const selectedSchoolId = ref(null)
+const loadingSchools = ref(false)
+
+if (auth.isSuperAdmin) {
+  loadingSchools.value = true
+  api.get('/schools', { params: { all: true } })
+    .then(r => { schools.value = r.data.data ?? r.data })
+    .finally(() => { loadingSchools.value = false })
+}
+
+// ── Form state ───────────────────────────────────────────────────────────────
 const appName    = ref(branding.appName)
 const appTagline = ref(branding.appTagline)
 const logoFile   = ref(null)
 const logoPreview = ref(branding.logoUrl)
 const saving     = ref(false)
 const removing   = ref(false)
-const success    = ref(false)
+const success    = ref('')
 const error      = ref('')
 
-function onLogoChange(e) {
-  const file = e.target.files[0]
-  if (!file) return
-  logoFile.value = file
-  logoPreview.value = URL.createObjectURL(file)
-}
+// When superadmin picks a school, fetch that school's branding
+watch(selectedSchoolId, async (id) => {
+  if (!id) return
+  error.value = ''
+  try {
+    const res = await api.get('/branding', { params: { school_id: id } })
+    appName.value    = res.data.app_name    || ''
+    appTagline.value = res.data.app_tagline || ''
+    logoPreview.value = res.data.logo_url   || null
+    logoFile.value   = null
+  } catch {
+    error.value = 'Failed to load school branding.'
+  }
+})
 
 async function save() {
-  saving.value = true
-  error.value  = ''
-  success.value = false
+  saving.value  = true
+  error.value   = ''
+  success.value = ''
   try {
     const fd = new FormData()
-    fd.append('app_name',    appName.value)
+    fd.append('app_name', appName.value)
     fd.append('app_tagline', appTagline.value)
     if (logoFile.value) fd.append('logo', logoFile.value)
-    await branding.updateBranding(fd)
+    if (auth.isSuperAdmin && selectedSchoolId.value) {
+      fd.append('school_id', selectedSchoolId.value)
+    }
+    const res = await branding.updateBranding(fd)
     logoFile.value = null
-    success.value  = true
-    setTimeout(() => { success.value = false }, 3000)
+    logoPreview.value = res.logo_url || logoPreview.value
+    success.value = res.message || 'Branding saved successfully!'
+    setTimeout(() => { success.value = '' }, 3000)
   } catch (e) {
-    error.value = e.response?.data?.message || 'Hitilafu ya kuhifadhi.'
+    error.value = e.response?.data?.message || 'Failed to save.'
   } finally {
     saving.value = false
   }
@@ -44,19 +72,38 @@ async function save() {
 
 async function removeLogo() {
   removing.value = true
+  error.value    = ''
   try {
-    await branding.deleteLogo()
+    const params = auth.isSuperAdmin && selectedSchoolId.value
+      ? { school_id: selectedSchoolId.value }
+      : {}
+    await api.delete('/branding/logo', { params })
     logoPreview.value = null
     logoFile.value    = null
-  } catch {
-    // silent
+    branding.logoUrl  = null
+    localStorage.removeItem('branding_logo')
+  } catch (e) {
+    error.value = e.response?.data?.message || 'Failed to remove logo.'
   } finally {
     removing.value = false
   }
 }
 
+function onLogoChange(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  logoFile.value    = file
+  logoPreview.value = URL.createObjectURL(file)
+}
+
 const previewName    = computed(() => appName.value    || 'ShulePay')
 const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
+
+const schoolLabel = computed(() => {
+  if (!auth.isSuperAdmin) return null
+  if (!selectedSchoolId.value) return 'System Default'
+  return schools.value.find(s => s.id == selectedSchoolId.value)?.name || 'Selected School'
+})
 </script>
 
 <template>
@@ -66,8 +113,36 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
     <h4 class="fw-bold mb-4">🎨 {{ t('nav.branding') }}</h4>
 
     <!-- Alerts -->
-    <div class="alert alert-success py-2 small" v-if="success">✅ Branding saved successfully!</div>
+    <div class="alert alert-success py-2 small" v-if="success">✅ {{ success }}</div>
     <div class="alert alert-danger py-2 small" v-if="error">⚠️ {{ error }}</div>
+
+    <!-- Superadmin: school selector -->
+    <div v-if="auth.isSuperAdmin" class="card border-0 shadow-sm mb-4">
+      <div class="card-body py-3 px-4">
+        <div class="row align-items-center g-3">
+          <div class="col-auto">
+            <label class="form-label fw-semibold mb-0">Configure branding for</label>
+          </div>
+          <div class="col-12 col-md-4">
+            <select
+              v-model="selectedSchoolId"
+              class="form-select"
+              :disabled="loadingSchools"
+            >
+              <option :value="null">🌐 System Default (all schools)</option>
+              <option v-for="s in schools" :key="s.id" :value="s.id">
+                {{ s.name }}
+              </option>
+            </select>
+          </div>
+          <div class="col-auto">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2">
+              {{ schoolLabel }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Live Preview -->
     <div class="card border-0 shadow-sm mb-4 overflow-hidden">
@@ -129,31 +204,32 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
           <!-- Col 3: Logo -->
           <div class="col-12 col-md-4">
             <label class="form-label fw-semibold">Logo</label>
-            <div class="d-flex align-items-start gap-2 flex-wrap">
-              <div v-if="logoPreview" class="position-relative" style="width:72px;height:72px;flex-shrink:0;">
-                <img
-                  :src="logoPreview"
-                  alt="Current logo"
-                  style="width:72px;height:72px;object-fit:contain;border:1px solid #dee2e6;border-radius:8px;background:#fff;"
-                />
-                <button
-                  type="button"
-                  class="btn btn-sm btn-danger position-absolute top-0 end-0"
-                  style="padding:1px 5px;font-size:11px;"
-                  :disabled="removing"
-                  @click="removeLogo"
-                >✕</button>
-              </div>
-              <div class="flex-grow-1">
-                <input
-                  type="file"
-                  class="form-control"
-                  accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                  @change="onLogoChange"
-                />
-                <div class="form-text">PNG, JPG, SVG or WebP · max 2 MB. Square, min 200×200 px.</div>
-              </div>
+
+            <!-- Current logo thumbnail + delete -->
+            <div v-if="logoPreview" class="d-flex align-items-center gap-2 mb-2">
+              <img
+                :src="logoPreview"
+                alt="Current logo"
+                style="width:64px;height:64px;object-fit:contain;border:1px solid #dee2e6;border-radius:8px;background:#fff;"
+              />
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                :disabled="removing"
+                @click="removeLogo"
+              >
+                <span v-if="removing" class="spinner-border spinner-border-sm me-1"></span>
+                {{ removing ? 'Removing…' : '🗑 Remove logo' }}
+              </button>
             </div>
+
+            <input
+              type="file"
+              class="form-control"
+              accept="image/png,image/jpeg,image/svg+xml,image/webp"
+              @change="onLogoChange"
+            />
+            <div class="form-text">PNG, JPG, SVG or WebP · max 2 MB. Square, min 200×200 px.</div>
           </div>
 
         </div>

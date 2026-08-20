@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\School;
 use App\Models\SystemSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -9,13 +10,29 @@ use Illuminate\Support\Facades\Storage;
 
 class BrandingController extends Controller
 {
-    // ── GET /api/v1/branding ─────────────────────────────────────────────────
-    // Returns the most-specific branding available:
-    //   school branding → system branding → hard defaults
+    // ── GET /api/v1/branding?school_id=X ────────────────────────────────────
+    // Superadmin can pass ?school_id=X to fetch a specific school's branding.
+    // Otherwise resolves the authenticated user's school → system → defaults.
     public function show(Request $request): JsonResponse
     {
+        $user = $request->user();
         $system = SystemSetting::get('branding', []);
-        $school = $request->user()?->school;
+
+        // Superadmin fetching a specific school's branding
+        if ($user->hasRole('superadmin') && $request->filled('school_id')) {
+            $school = School::find($request->school_id);
+            if (! $school) {
+                return response()->json(['message' => 'School not found.'], 404);
+            }
+            $schoolBranding = ($school->settings ?? [])['branding'] ?? [];
+
+            return response()->json(array_merge(
+                $this->resolve($schoolBranding, $system, $school->name),
+                ['school_id' => $school->id, 'school_name' => $school->name]
+            ));
+        }
+
+        $school = $user->school;
 
         if (! $school) {
             return response()->json($this->resolve($system, null));
@@ -27,9 +44,9 @@ class BrandingController extends Controller
     }
 
     // ── POST /api/v1/branding ────────────────────────────────────────────────
-    // Superadmin → writes system-wide defaults (applies to all schools that
-    //   have not overridden their own branding).
-    // Owner      → writes their school's branding only.
+    // Superadmin + school_id  → writes that school's branding
+    // Superadmin (no school)  → writes system-wide defaults
+    // Owner                   → writes their own school's branding
     public function update(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -41,12 +58,19 @@ class BrandingController extends Controller
         );
 
         $validated = $request->validate([
+            'school_id' => 'sometimes|integer|exists:schools,id',
             'app_name' => 'sometimes|string|max:80',
             'app_tagline' => 'sometimes|string|max:80',
             'logo' => 'sometimes|file|mimes:jpg,jpeg,png,svg,webp|max:2048',
         ]);
 
         if ($user->hasRole('superadmin')) {
+            if ($request->filled('school_id')) {
+                $school = School::findOrFail($request->school_id);
+
+                return $this->updateSchool($request, $validated, $school, asSuperadmin: true);
+            }
+
             return $this->updateSystem($request, $validated);
         }
 
@@ -57,6 +81,9 @@ class BrandingController extends Controller
     }
 
     // ── DELETE /api/v1/branding/logo ─────────────────────────────────────────
+    // Superadmin + ?school_id → removes logo for that school
+    // Superadmin (no school)  → removes system logo
+    // Owner                   → removes their school's logo
     public function deleteLogo(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -67,9 +94,16 @@ class BrandingController extends Controller
         );
 
         if ($user->hasRole('superadmin')) {
+            if ($request->filled('school_id')) {
+                $school = School::findOrFail($request->school_id);
+
+                return $this->removeSchoolLogo($school);
+            }
+
+            // Remove system logo
             $branding = SystemSetting::get('branding', []);
             if (isset($branding['logo_path'])) {
-                Storage::delete($branding['logo_path']);
+                Storage::disk('public')->delete($branding['logo_path']);
                 unset($branding['logo_path']);
             }
             SystemSetting::set('branding', $branding);
@@ -80,16 +114,7 @@ class BrandingController extends Controller
         $school = $user->school;
         abort_if(! $school, 422, 'No school is associated with your account.');
 
-        $settings = $school->settings ?? [];
-        $branding = $settings['branding'] ?? [];
-        if (isset($branding['logo_path'])) {
-            Storage::delete($branding['logo_path']);
-            unset($branding['logo_path']);
-        }
-        $settings['branding'] = $branding;
-        $school->update(['settings' => $settings]);
-
-        return response()->json(['message' => 'Logo removed.', 'logo_url' => null]);
+        return $this->removeSchoolLogo($school);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -107,9 +132,9 @@ class BrandingController extends Controller
 
         if ($request->hasFile('logo')) {
             if (isset($branding['logo_path'])) {
-                Storage::delete($branding['logo_path']);
+                Storage::disk('public')->delete($branding['logo_path']);
             }
-            $branding['logo_path'] = $request->file('logo')->store('public/branding/system');
+            $branding['logo_path'] = $request->file('logo')->store('branding/system', 'public');
         }
 
         SystemSetting::set('branding', $branding);
@@ -120,7 +145,7 @@ class BrandingController extends Controller
         ));
     }
 
-    private function updateSchool(Request $request, array $validated, $school): JsonResponse
+    private function updateSchool(Request $request, array $validated, School $school, bool $asSuperadmin = false): JsonResponse
     {
         $settings = $school->settings ?? [];
         $branding = $settings['branding'] ?? [];
@@ -134,25 +159,44 @@ class BrandingController extends Controller
 
         if ($request->hasFile('logo')) {
             if (isset($branding['logo_path'])) {
-                Storage::delete($branding['logo_path']);
+                Storage::disk('public')->delete($branding['logo_path']);
             }
-            $branding['logo_path'] = $request->file('logo')->store("public/branding/{$school->id}");
+            $branding['logo_path'] = $request->file('logo')->store("branding/{$school->id}", 'public');
         }
 
         $settings['branding'] = $branding;
         $school->update(['settings' => $settings]);
 
         $system = SystemSetting::get('branding', []);
-
-        return response()->json(array_merge(
+        $response = array_merge(
             $this->resolve($branding, $system, $school->name),
             ['message' => 'Branding updated successfully.']
-        ));
+        );
+
+        if ($asSuperadmin) {
+            $response['school_id'] = $school->id;
+            $response['school_name'] = $school->name;
+        }
+
+        return response()->json($response);
+    }
+
+    private function removeSchoolLogo(School $school): JsonResponse
+    {
+        $settings = $school->settings ?? [];
+        $branding = $settings['branding'] ?? [];
+        if (isset($branding['logo_path'])) {
+            Storage::disk('public')->delete($branding['logo_path']);
+            unset($branding['logo_path']);
+        }
+        $settings['branding'] = $branding;
+        $school->update(['settings' => $settings]);
+
+        return response()->json(['message' => 'Logo removed.', 'logo_url' => null]);
     }
 
     /**
      * Merge school branding over system branding, falling back to hard defaults.
-     * $school is used only as the fallback app_name when neither layer has one.
      */
     private function resolve(array $specific, ?array $system, ?string $schoolName = null): array
     {
@@ -172,7 +216,7 @@ class BrandingController extends Controller
         return [
             'app_name' => $appName,
             'app_tagline' => $appTagline,
-            'logo_url' => $logoPath ? Storage::url($logoPath) : null,
+            'logo_url' => $logoPath ? Storage::disk('public')->url($logoPath) : null,
         ];
     }
 }
