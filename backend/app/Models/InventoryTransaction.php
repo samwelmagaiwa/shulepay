@@ -9,7 +9,7 @@ class InventoryTransaction extends Model
 {
     protected $fillable = [
         'item_id', 'school_id', 'type', 'quantity', 'notes',
-        'reference', 'transaction_date', 'recorded_by',
+        'reference', 'issued_to', 'transaction_date', 'recorded_by',
     ];
 
     protected $casts = [

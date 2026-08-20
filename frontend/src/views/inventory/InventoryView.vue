@@ -17,7 +17,8 @@ const activeMainTab = ref(0)
 
 onMounted(async () => {
   try { await schoolStore.fetchSchools() } catch {}
-  await Promise.all([store.fetchItems(), store.fetchSummary()])
+  const initSchool = navSchool.activeSchoolId ? { school_id: navSchool.activeSchoolId } : {}
+  await Promise.all([store.fetchItems(initSchool), store.fetchSummary()])
   await loadAssets()
 })
 
@@ -128,12 +129,16 @@ async function recordTransaction() {
 //  FIXED ASSETS TAB
 // ══════════════════════════════════════════════════════════════════════════════
 
+const consumableSchoolId = ref(navSchool.activeSchoolId || '')
+
 const assetFilters = ref({
   school_id: navSchool.activeSchoolId || '',
   category: '', condition: '', status: '', search: '',
 })
 
 watch(() => navSchool.activeSchoolId, (id) => {
+  consumableSchoolId.value = id || ''
+  store.fetchItems(id ? { school_id: id } : {})
   assetFilters.value.school_id = id || ''
   loadAssets(1)
 })
@@ -414,6 +419,11 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
 
       <!-- Consumable filters (only on Stock tab) -->
       <template v-if="activeMainTab === 0">
+        <select v-model="consumableSchoolId" class="form-select form-select-sm flex-shrink-0" style="height:38px; width:auto; max-width:180px;"
+          @change="store.fetchItems(consumableSchoolId ? { school_id: consumableSchoolId } : {})">
+          <option value="">{{ t('common.allSchools') }}</option>
+          <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
+        </select>
         <select v-model="itemStockFilter" class="form-select form-select-sm flex-shrink-0" style="height:38px; width:auto;">
           <option value="">{{ t('common.allStatuses') }}</option>
           <option value="low">{{ t('inventory.statusLow') }}</option>

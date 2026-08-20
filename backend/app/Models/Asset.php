@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Traits\BelongsToSchool;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -81,9 +82,9 @@ class Asset extends Model
         // getRawOriginal() is empty on new records; fall back to attributes array
         $cost = (int) ($this->getRawOriginal('purchase_cost_cents') ?: ($this->attributes['purchase_cost_cents'] ?? 0));
 
-        $purchaseDate = $this->purchase_date instanceof \Carbon\Carbon
+        $purchaseDate = $this->purchase_date instanceof Carbon
             ? $this->purchase_date
-            : \Carbon\Carbon::parse($this->attributes['purchase_date'] ?? null);
+            : Carbon::parse($this->attributes['purchase_date'] ?? null);
 
         if (! $purchaseDate || $cost === 0) {
             return $cost;

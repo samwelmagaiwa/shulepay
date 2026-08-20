@@ -24,7 +24,7 @@ class DemoDataSeeder extends Seeder
     public function run(): void
     {
         $schools = School::orderBy('id')->get();
-        $msingi    = $schools->first();
+        $msingi = $schools->first();
         $sekondari = $schools->count() > 1 ? $schools->get(1) : null;
 
         // ── Admin accounts ─────────────────────────────────────────────────────
@@ -79,11 +79,11 @@ class DemoDataSeeder extends Seeder
             ['name' => 'Kompyuta za Wanafunzi', 'category' => 'technology',  'quantity' => 20, 'purchase_cost_cents' => 120_000_00, 'condition' => 'good',      'status' => 'in_use',      'location' => 'Maabara ya Kompyuta', 'depreciation_method' => 'straight_line',    'useful_life_years' => 5,  'salvage_value_cents' => 10_000_00, 'purchase_date' => '2023-01-15'],
             ['name' => 'Projekta ya Darasa',    'category' => 'technology',  'quantity' => 5,  'purchase_cost_cents' => 85_000_00,  'condition' => 'excellent', 'status' => 'in_use',      'location' => 'Madarasa',            'depreciation_method' => 'straight_line',    'useful_life_years' => 6,  'salvage_value_cents' => 5_000_00,  'purchase_date' => '2023-06-10'],
             ['name' => 'Meza za Walimu',        'category' => 'furniture',   'quantity' => 15, 'purchase_cost_cents' => 18_000_00,  'condition' => 'good',      'status' => 'in_use',      'location' => 'Ofisi ya Walimu',     'depreciation_method' => 'straight_line',    'useful_life_years' => 10, 'salvage_value_cents' => 2_000_00,  'purchase_date' => '2022-03-01'],
-            ['name' => 'Viti vya Wanafunzi',    'category' => 'furniture',   'quantity' => 200,'purchase_cost_cents' => 3_500_00,   'condition' => 'fair',      'status' => 'in_use',      'location' => 'Madarasa',            'depreciation_method' => 'straight_line',    'useful_life_years' => 8,  'salvage_value_cents' => 500_00,    'purchase_date' => '2021-07-20'],
-            ['name' => 'Basi la Shule',         'category' => 'vehicles',    'quantity' => 1,  'purchase_cost_cents' => 4_500_000_00,'condition' => 'good',     'status' => 'in_use',      'location' => 'Gereji',              'depreciation_method' => 'reducing_balance', 'useful_life_years' => 10, 'salvage_value_cents' => 500_000_00,'purchase_date' => '2022-09-05', 'depreciation_rate' => 20],
+            ['name' => 'Viti vya Wanafunzi',    'category' => 'furniture',   'quantity' => 200, 'purchase_cost_cents' => 3_500_00,   'condition' => 'fair',      'status' => 'in_use',      'location' => 'Madarasa',            'depreciation_method' => 'straight_line',    'useful_life_years' => 8,  'salvage_value_cents' => 500_00,    'purchase_date' => '2021-07-20'],
+            ['name' => 'Basi la Shule',         'category' => 'vehicles',    'quantity' => 1,  'purchase_cost_cents' => 4_500_000_00, 'condition' => 'good',     'status' => 'in_use',      'location' => 'Gereji',              'depreciation_method' => 'reducing_balance', 'useful_life_years' => 10, 'salvage_value_cents' => 500_000_00, 'purchase_date' => '2022-09-05', 'depreciation_rate' => 20],
             ['name' => 'Jenereta',              'category' => 'equipment',   'quantity' => 1,  'purchase_cost_cents' => 380_000_00, 'condition' => 'good',      'status' => 'in_use',      'location' => 'Nyumba ya Jenereta',  'depreciation_method' => 'straight_line',    'useful_life_years' => 8,  'salvage_value_cents' => 30_000_00, 'purchase_date' => '2023-02-28'],
             ['name' => 'Vifaa vya Michezo',     'category' => 'sports',      'quantity' => 1,  'purchase_cost_cents' => 45_000_00,  'condition' => 'fair',      'status' => 'in_use',      'location' => 'Stoo ya Michezo',     'depreciation_method' => 'straight_line',    'useful_life_years' => 3,  'salvage_value_cents' => 5_000_00,  'purchase_date' => '2023-08-01'],
-            ['name' => 'Printa ya Ofisi',       'category' => 'technology',  'quantity' => 2,  'purchase_cost_cents' => 65_000_00,  'condition' => 'fair',      'status' => 'under_repair','location' => 'Ofisi Kuu',           'depreciation_method' => 'straight_line',    'useful_life_years' => 5,  'salvage_value_cents' => 5_000_00,  'purchase_date' => '2022-11-15'],
+            ['name' => 'Printa ya Ofisi',       'category' => 'technology',  'quantity' => 2,  'purchase_cost_cents' => 65_000_00,  'condition' => 'fair',      'status' => 'under_repair', 'location' => 'Ofisi Kuu',           'depreciation_method' => 'straight_line',    'useful_life_years' => 5,  'salvage_value_cents' => 5_000_00,  'purchase_date' => '2022-11-15'],
         ];
 
         $prefix = strtoupper($school->code ?? 'AST').'-AST-';
@@ -93,13 +93,13 @@ class DemoDataSeeder extends Seeder
             InventoryItem::firstOrCreate(
                 ['asset_tag' => $tag, 'school_id' => $school->id, 'type' => 'fixed_asset'],
                 array_merge($data, [
-                    'type'           => 'fixed_asset',
-                    'asset_tag'      => $tag,
-                    'school_id'      => $school->id,
-                    'registered_by'  => $accountant->id,
-                    'registered_at'  => now()->subDays(rand(30, 400)),
+                    'type' => 'fixed_asset',
+                    'asset_tag' => $tag,
+                    'school_id' => $school->id,
+                    'registered_by' => $accountant->id,
+                    'registered_at' => now()->subDays(rand(30, 400)),
                     'funding_source' => 'fees',
-                    'is_active'      => true,
+                    'is_active' => true,
                 ])
             );
         }

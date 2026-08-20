@@ -19,11 +19,11 @@ export const useInventoryStore = defineStore('inventory', () => {
 
   // ── Consumable actions ─────────────────────────────────────────────────────
 
-  async function fetchItems() {
+  async function fetchItems(params = {}) {
     loading.value = true
     error.value = ''
     try {
-      const { data } = await api.get('/inventory/items', { params: { type: 'consumable' } })
+      const { data } = await api.get('/inventory/items', { params: { ...params, type: 'consumable' } })
       items.value = data
     } catch (e) {
       error.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia bidhaa'

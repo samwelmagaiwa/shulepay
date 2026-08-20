@@ -29,11 +29,11 @@ class LowStockAlertService
         }
 
         $message = SmsTemplates::lowStockAlert(
-            itemName:    $item->name,
-            currentQty:  (float) $item->quantity,
-            reorderLevel:(float) $item->reorder_level,
-            unit:        $item->unit ?? 'kipande',
-            schoolName:  $school->name,
+            itemName: $item->name,
+            currentQty: (float) $item->quantity,
+            reorderLevel: (float) $item->reorder_level,
+            unit: $item->unit ?? 'kipande',
+            schoolName: $school->name,
         );
 
         // Collect all staff with alert roles for this school + superadmins across all schools
@@ -53,12 +53,12 @@ class LowStockAlertService
                 $ok = $this->sms->send($user->phone, $message);
 
                 SmsLog::create([
-                    'school_id'       => $school->id,
-                    'sender_id'       => auth()->id(),
+                    'school_id' => $school->id,
+                    'sender_id' => auth()->id(),
                     'recipient_phone' => $user->phone,
-                    'message'         => $message,
-                    'status'          => $ok ? 'sent' : 'failed',
-                    'sent_at'         => now(),
+                    'message' => $message,
+                    'status' => $ok ? 'sent' : 'failed',
+                    'sent_at' => now(),
                 ]);
             } catch (\Throwable $e) {
                 Log::warning("[LowStockAlert] SMS failed to {$user->phone}: ".$e->getMessage());

@@ -209,7 +209,7 @@ class SmsTemplates
 
     public static function lowStockAlert(string $itemName, float $currentQty, float $reorderLevel, string $unit, string $schoolName): string
     {
-        $qty   = number_format($currentQty, 0);
+        $qty = number_format($currentQty, 0);
         $level = number_format($reorderLevel, 0);
 
         return "ShulePay ⚠️ Tahadhari: Bidhaa '{$itemName}' shule {$schoolName} imepungua chini ya kiwango cha uagizaji. Iliyobaki: {$qty} {$unit}. Kiwango cha uagizaji upya: {$level} {$unit}. Tafadhali agiza upya kuepuka usumbufu.";

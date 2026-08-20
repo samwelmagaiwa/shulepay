@@ -31,19 +31,19 @@ class SupplierPaymentController extends Controller
         }
 
         $data = $request->validate([
-            'supplier_id'  => 'required|exists:suppliers,id',
+            'supplier_id' => 'required|exists:suppliers,id',
             'amount_cents' => 'required|integer|min:1',
-            'method'       => 'required|in:cash,bank,mpesa,cheque',
-            'reference'    => 'nullable|string|max:255',
+            'method' => 'required|in:cash,bank,mpesa,cheque',
+            'reference' => 'nullable|string|max:255',
             'payment_date' => 'required|date',
-            'notes'        => 'nullable|string',
+            'notes' => 'nullable|string',
         ]);
 
         return DB::transaction(function () use ($data) {
             $supplier = Supplier::lockForUpdate()->findOrFail($data['supplier_id']);
 
             $data['recorded_by'] = auth()->id();
-            $data['school_id']   = $supplier->school_id;
+            $data['school_id'] = $supplier->school_id;
 
             $payment = SupplierPayment::create($data);
 
