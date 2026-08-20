@@ -107,7 +107,11 @@
       "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"echo 'SMS_COUNTRY_CODE=255' >> /www/shulepay/.env && grep SMS_COUNTRY_CODE /www/shulepay/.env\")",
       "Bash(git commit -m 'docs: write comprehensive README with setup, architecture, roles, deployment *)",
       "Bash(git commit -m 'docs: update SSL section — aaPanel handles auto-renewal via nightly cron *)",
-      "Bash(xargs grep -li \"setting\\\\|configuration\\\\|branding\")"
+      "Bash(xargs grep -li \"setting\\\\|configuration\\\\|branding\")",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"cd /www/shulepay && git pull origin master 2>&1\")",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"ls /www/shulepay\")",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"cat /www/shulepay/deploy.sh\")",
+      "Bash(ssh -i /c/Users/MAMC/.ssh/id_ed25519 root@169.58.188.122 \"cd /www/shulepay && bash deploy.sh deploy 2>&1\")"
     ]
   }
 }

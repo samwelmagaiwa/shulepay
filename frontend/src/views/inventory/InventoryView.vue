@@ -101,6 +101,12 @@ async function doDeleteItem() {
   }
 }
 
+// ── Row action reveal ────────────────────────────────────────────────────────
+const expandedItemId = ref(null)
+function toggleItemActions(id) {
+  expandedItemId.value = expandedItemId.value === id ? null : id
+}
+
 // ── Transaction panel ─────────────────────────────────────────────────────────
 const selectedItem     = ref(null)
 const showTxnPanel     = ref(false)
@@ -549,12 +555,13 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
                 <CTableDataCell>{{ Number(item.reorder_level).toLocaleString() }}</CTableDataCell>
                 <CTableDataCell>{{ formatMoney(item.unit_cost_cents) }}</CTableDataCell>
                 <CTableDataCell>{{ formatMoney(item.total_value_cents) }}</CTableDataCell>
-                <CTableDataCell>
-                  <CButtonGroup size="sm">
-                    <CButton color="info" variant="ghost" @click="openItemPanel(item)">📋 {{ t('inventory.btnTransactions') }}</CButton>
-                    <CButton color="primary" variant="ghost" @click.stop="openEditItem(item)">✏️</CButton>
-                    <CButton color="danger" variant="ghost" @click.stop="confirmDeleteItem(item)">🗑️</CButton>
-                  </CButtonGroup>
+                <CTableDataCell style="white-space:nowrap">
+                  <CButton size="sm" color="secondary" variant="ghost" @click.stop="toggleItemActions(item.id)" :title="t('common.actions')">👁️</CButton>
+                  <template v-if="expandedItemId === item.id">
+                    <CButton size="sm" color="info" variant="ghost" class="ms-1" @click.stop="openItemPanel(item)">📋 {{ t('inventory.btnTransactions') }}</CButton>
+                    <CButton size="sm" color="primary" variant="ghost" class="ms-1" @click.stop="openEditItem(item)">✏️</CButton>
+                    <CButton size="sm" color="danger" variant="ghost" class="ms-1" @click.stop="confirmDeleteItem(item)">🗑️</CButton>
+                  </template>
                 </CTableDataCell>
               </CTableRow>
               <CTableRow v-if="filteredItems.length === 0">
