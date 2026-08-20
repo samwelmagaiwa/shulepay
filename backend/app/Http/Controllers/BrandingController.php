@@ -33,13 +33,15 @@ class BrandingController extends Controller
     public function update(Request $request): JsonResponse
     {
         $user = $request->user();
-        $school = $user->school;
 
         abort_unless(
             $user->hasRole('owner') || $user->hasRole('superadmin'),
             403,
             'Only owners and superadmins can update branding.'
         );
+
+        $school = $user->school;
+        abort_if(! $school, 422, 'No school is associated with your account.');
 
         $validated = $request->validate([
             'app_name' => 'sometimes|string|max:80',
@@ -83,12 +85,14 @@ class BrandingController extends Controller
     public function deleteLogo(Request $request): JsonResponse
     {
         $user = $request->user();
-        $school = $user->school;
 
         abort_unless(
             $user->hasRole('owner') || $user->hasRole('superadmin'),
             403
         );
+
+        $school = $user->school;
+        abort_if(! $school, 422, 'No school is associated with your account.');
 
         $settings = $school->settings ?? [];
         $branding = $settings['branding'] ?? [];
