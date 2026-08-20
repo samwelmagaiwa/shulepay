@@ -209,8 +209,14 @@ class SuperadminUserController extends Controller
             'permissions.*' => 'string|exists:permissions,name',
         ]);
 
+        $hadMultiSchool = $user->hasPermissionTo('multi_school');
         $user->syncPermissions($data['permissions']);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        // If multi_school was removed, revoke all explicit school access grants
+        if ($hadMultiSchool && ! in_array('multi_school', $data['permissions'], true)) {
+            $user->accessibleSchools()->detach();
+        }
 
         AuditLogger::log('user_permissions_updated', $user, [
             'permissions' => $data['permissions'],

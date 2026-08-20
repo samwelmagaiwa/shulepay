@@ -27,6 +27,15 @@ const savingUserPerms   = ref(false)
 const userPermSaved     = ref(false)
 const userPermError     = ref('')
 
+// multi-school access panel (inside user modal)
+const allSchools           = ref([])        // all active schools from API
+const userGrantedSchools   = ref([])        // schools this user can already access
+const schoolAccessLoading  = ref(false)
+const schoolGranting       = ref(null)      // schoolId currently being saved
+const showSchoolPanel = computed(() =>
+  userPerms.value.has('multi_school') || userPermsBase.value.has('multi_school')
+)
+
 // create role form
 const showCreate     = ref(false)
 const newRoleName    = ref('')
@@ -116,10 +125,12 @@ async function savePermissions() {
 }
 
 // ── Per-user permission modal ─────────────────────────────────────────────────
-function openUserPerms(user) {
+async function openUserPerms(user) {
   selectedUser.value   = user
   userPermError.value  = ''
   userPermSaved.value  = false
+  userGrantedSchools.value = []
+  allSchools.value     = []
 
   // Role permissions = base (shown as locked-on ticks)
   userPermsBase.value  = new Set(activeRole.value?.permissions ?? [])
@@ -129,15 +140,70 @@ function openUserPerms(user) {
   userPerms.value = new Set(directNames)
 
   userPermModal.value  = true
+
+  // Preload school data in parallel so the panel is ready if multi_school is already on
+  loadSchoolAccessData(user.id)
+}
+
+async function loadSchoolAccessData(userId) {
+  schoolAccessLoading.value = true
+  try {
+    const [schoolsRes, accessRes] = await Promise.all([
+      api.get('/auth/schools'),
+      api.get(`/user-school-access/${userId}`),
+    ])
+    allSchools.value = schoolsRes.data
+    userGrantedSchools.value = accessRes.data.accessible_schools.map(s => s.id)
+  } catch {
+    allSchools.value = []
+    userGrantedSchools.value = []
+  } finally {
+    schoolAccessLoading.value = false
+  }
+}
+
+async function toggleSchoolAccess(school) {
+  if (!selectedUser.value) return
+  const alreadyGranted = userGrantedSchools.value.includes(school.id)
+  schoolGranting.value = school.id
+  try {
+    if (alreadyGranted) {
+      await api.delete(`/user-school-access/${selectedUser.value.id}/${school.id}`)
+      userGrantedSchools.value = userGrantedSchools.value.filter(id => id !== school.id)
+      // If no schools remain, the backend auto-revokes multi_school — reflect in UI
+      if (userGrantedSchools.value.length === 0) {
+        userPerms.value = new Set([...userPerms.value].filter(p => p !== 'multi_school'))
+      }
+    } else {
+      const { data } = await api.post('/user-school-access', {
+        user_id: selectedUser.value.id,
+        school_id: school.id,
+      })
+      userGrantedSchools.value = data.accessible_schools.map(s => s.id)
+      // Backend auto-grants multi_school — reflect in UI
+      if (!userPermsBase.value.has('multi_school')) {
+        userPerms.value = new Set([...userPerms.value, 'multi_school'])
+      }
+    }
+  } catch (e) {
+    userPermError.value = e?.response?.data?.message || 'Failed to update school access'
+  } finally {
+    schoolGranting.value = null
+  }
 }
 
 function toggleUserPerm(perm) {
   // Cannot toggle role-inherited permissions here (those are role-level)
   if (userPermsBase.value.has(perm)) return
   const s = new Set(userPerms.value)
-  s.has(perm) ? s.delete(perm) : s.add(perm)
+  const wasOff = !s.has(perm)
+  wasOff ? s.add(perm) : s.delete(perm)
   userPerms.value    = s
   userPermSaved.value = false
+  // When multi_school is toggled ON, load school data if not yet loaded
+  if (perm === 'multi_school' && wasOff && allSchools.value.length === 0) {
+    loadSchoolAccessData(selectedUser.value.id)
+  }
 }
 
 function userHasPerm(perm) {
@@ -414,7 +480,7 @@ function initials(name) {
                           </svg>
                         </div>
                         <span :class="activePerms.has(perm) ? 'fw-semibold text-dark' : 'text-muted'">
-                          {{ perm.split('.')[1]?.replace(/_/g,' ') }}
+                          {{ perm === 'multi_school' ? 'Multi-School Access' : perm.split('.')[1]?.replace(/_/g,' ') }}
                         </span>
                       </div>
                     </div>
@@ -466,6 +532,67 @@ function initials(name) {
         <CAlert v-if="userPermError" color="danger" class="m-3 py-2 small">{{ userPermError }}</CAlert>
 
         <div style="max-height:60vh; overflow-y:auto;" class="p-3">
+
+          <!-- ── Multi-School Access Panel ───────────────────────────────────── -->
+          <div v-if="showSchoolPanel" class="mb-3 border rounded-3 overflow-hidden">
+            <div class="d-flex align-items-center justify-content-between px-3 py-2" style="background:#0d6efd14;">
+              <div>
+                <span class="fw-semibold small text-primary">🏫 Multi-School Access</span>
+                <span class="text-muted ms-2" style="font-size:.72rem;">
+                  Grant access to specific schools. User can then switch between them after login.
+                </span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <CSpinner v-if="schoolAccessLoading" size="sm" />
+                <span v-else class="badge bg-primary bg-opacity-10 text-primary" style="font-size:.7rem;">
+                  {{ userGrantedSchools.length }} school{{ userGrantedSchools.length !== 1 ? 's' : '' }} granted
+                </span>
+              </div>
+            </div>
+            <div class="p-3">
+              <div v-if="schoolAccessLoading" class="text-center py-2 text-muted small">Loading schools…</div>
+              <div v-else-if="!allSchools.length" class="text-muted small">No active schools found.</div>
+              <div v-else class="d-flex flex-wrap gap-2">
+                <div
+                  v-for="school in allSchools" :key="school.id"
+                  class="d-flex align-items-center gap-2 px-3 py-2 rounded-3 border"
+                  style="cursor:pointer; transition:all .15s; min-width:180px; user-select:none;"
+                  :style="userGrantedSchools.includes(school.id)
+                    ? 'background:#0d6efd12; border-color:#0d6efd66;'
+                    : 'background:#f8f9fa; border-color:#dee2e6;'"
+                  @click="toggleSchoolAccess(school)"
+                >
+                  <CSpinner v-if="schoolGranting === school.id" size="sm" />
+                  <div
+                    v-else
+                    class="rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center"
+                    style="width:18px; height:18px; border:2px solid; transition:all .15s;"
+                    :style="userGrantedSchools.includes(school.id)
+                      ? 'background:#0d6efd; border-color:#0d6efd;'
+                      : 'background:transparent; border-color:#adb5bd;'"
+                  >
+                    <svg v-if="userGrantedSchools.includes(school.id)" viewBox="0 0 12 12" width="10" height="10">
+                      <polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="fw-semibold" style="font-size:.82rem;">{{ school.name }}</div>
+                    <div class="text-muted" style="font-size:.68rem;">{{ school.level ?? '—' }}</div>
+                  </div>
+                  <!-- Primary school marker -->
+                  <span
+                    v-if="school.id === selectedUser?.school_id"
+                    class="ms-auto badge text-muted"
+                    style="background:#e9ecef; font-size:.6rem;"
+                  >primary</span>
+                </div>
+              </div>
+              <div class="text-muted mt-2" style="font-size:.72rem;">
+                ⓘ Primary school ({{ selectedUser?.school?.name ?? '—' }}) is always accessible. Only grant extras here.
+              </div>
+            </div>
+          </div>
+
           <CRow class="g-3">
             <CCol v-for="(perms, module) in allPermissions" :key="module" xs="12" sm="6" lg="4">
               <div class="border rounded-3 overflow-hidden h-100">
@@ -506,7 +633,7 @@ function initials(name) {
                       </svg>
                     </div>
                     <span :class="userHasPerm(perm) ? 'fw-semibold text-dark' : 'text-muted'">
-                      {{ perm.split('.')[1]?.replace(/_/g,' ') }}
+                      {{ perm === 'multi_school' ? 'Multi-School Access' : perm.split('.')[1]?.replace(/_/g,' ') }}
                     </span>
                     <!-- Source tag -->
                     <span

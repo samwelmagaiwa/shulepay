@@ -61,3 +61,14 @@
 [0;36m[18:09:24][0m   ShulePay — Release
 [0;36m[18:09:24][0m ══════════════════════════════════════════
 [0;36m[18:09:24][0m Checking working tree...
+[0;36m[18:09:24][0m Files staged for commit:
+[0;36m[18:09:24][0m Committing: "feat: multi-school switcher — force login school on active, reset stale active, show switcher to all multi-school users, return accessible_school_ids at login"
+[0;32m✔ Committed[0m
+[0;36m[18:09:25][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[18:09:27][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[18:12:54][0m ══════════════════════════════════════════
+[0;36m[18:12:54][0m   ShulePay — Release
+[0;36m[18:12:54][0m ══════════════════════════════════════════
+[0;36m[18:12:54][0m Checking working tree...

@@ -40,6 +40,7 @@ class RolePermissionController extends Controller
             'Users' => ['users.view', 'users.create', 'users.edit', 'users.delete'],
             'Schools' => ['schools.view', 'schools.create', 'schools.edit', 'schools.delete'],
             'Audit Log' => ['audit.view'],
+            'Access' => ['multi_school'],
         ];
     }
 
