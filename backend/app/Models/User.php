@@ -103,7 +103,7 @@ class User extends Authenticatable
         }
         if ($this->hasPermissionTo('multi_school')) {
             $extra = $this->accessibleSchools()->pluck('schools.id')->toArray();
-            $ids   = array_unique(array_merge($ids, $extra));
+            $ids = array_unique(array_merge($ids, $extra));
         }
 
         return array_values($ids);

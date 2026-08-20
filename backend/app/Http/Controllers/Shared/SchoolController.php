@@ -18,7 +18,7 @@ class SchoolController extends Controller
     /** GET /api/schools — returns only schools the authenticated user can access */
     public function index(Request $request): JsonResponse
     {
-        $user  = auth()->user();
+        $user = auth()->user();
         $query = School::withCount('enrollments');
 
         if (! $request->boolean('all')) {

@@ -9,6 +9,7 @@ use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 class UserSchoolAccessController extends Controller
 {
@@ -18,9 +19,9 @@ class UserSchoolAccessController extends Controller
         $schools = $user->accessibleSchools()->select('schools.id', 'schools.name', 'schools.level')->get();
 
         return response()->json([
-            'user_id'           => $user->id,
+            'user_id' => $user->id,
             'primary_school_id' => $user->school_id,
-            'has_multi_school'  => $user->hasPermissionTo('multi_school'),
+            'has_multi_school' => $user->hasPermissionTo('multi_school'),
             'accessible_schools' => $schools,
         ]);
     }
@@ -29,18 +30,18 @@ class UserSchoolAccessController extends Controller
     public function grant(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'user_id'   => 'required|exists:users,id',
+            'user_id' => 'required|exists:users,id',
             'school_id' => 'required|exists:schools,id',
         ]);
 
-        $user   = User::findOrFail($data['user_id']);
+        $user = User::findOrFail($data['user_id']);
         $school = School::findOrFail($data['school_id']);
 
         // Ensure the user has the multi_school permission
         if (! $user->hasPermissionTo('multi_school')) {
             $perm = Permission::firstOrCreate(['name' => 'multi_school', 'guard_name' => 'web']);
             $user->givePermissionTo($perm);
-            app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+            app()[PermissionRegistrar::class]->forgetCachedPermissions();
         }
 
         // Add the school access (ignore if already exists)
@@ -51,8 +52,8 @@ class UserSchoolAccessController extends Controller
         ]);
 
         return response()->json([
-            'message'           => "Ruhusa ya shule '{$school->name}' imepewa {$user->name}.",
-            'has_multi_school'  => true,
+            'message' => "Ruhusa ya shule '{$school->name}' imepewa {$user->name}.",
+            'has_multi_school' => true,
             'accessible_schools' => $user->accessibleSchools()->select('schools.id', 'schools.name', 'schools.level')->get(),
         ]);
     }
@@ -66,7 +67,7 @@ class UserSchoolAccessController extends Controller
         $remaining = $user->accessibleSchools()->count();
         if ($remaining === 0) {
             $user->revokePermissionTo('multi_school');
-            app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+            app()[PermissionRegistrar::class]->forgetCachedPermissions();
         }
 
         AuditLogger::log('user.school_access_revoked', $user, [
@@ -76,8 +77,8 @@ class UserSchoolAccessController extends Controller
         $hasMulti = $remaining > 0;
 
         return response()->json([
-            'message'           => "Ruhusa ya shule '{$school->name}' imeondolewa kwa {$user->name}.",
-            'has_multi_school'  => $hasMulti,
+            'message' => "Ruhusa ya shule '{$school->name}' imeondolewa kwa {$user->name}.",
+            'has_multi_school' => $hasMulti,
             'accessible_schools' => $user->accessibleSchools()->select('schools.id', 'schools.name', 'schools.level')->get(),
         ]);
     }

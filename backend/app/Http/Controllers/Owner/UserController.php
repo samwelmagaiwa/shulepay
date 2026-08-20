@@ -51,7 +51,7 @@ class UserController extends Controller
 
         // Respect the active school from the nav switcher (X-School-Id header)
         $activeSchool = app()->bound('active_school') ? app('active_school') : null;
-        $schoolId     = $activeSchool?->id ?? $authUser->school_id;
+        $schoolId = $activeSchool?->id ?? $authUser->school_id;
 
         // Superadmin with no active school → show all staff across all schools
         if ($authUser->hasRole('superadmin') && ! $activeSchool) {
@@ -72,6 +72,7 @@ class UserController extends Controller
         // Map accessible_schools_count → multi_school_count for clarity
         $users->getCollection()->transform(function ($u) {
             $u->multi_school_count = $u->accessible_schools_count ?? 0;
+
             return $u;
         });
 

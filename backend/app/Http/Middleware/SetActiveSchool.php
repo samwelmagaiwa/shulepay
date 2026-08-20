@@ -19,7 +19,7 @@ class SetActiveSchool
             // Explicit "0" / "" / "all" → "Shule Zote" mode: no active_school, scope is skipped
             if ($val !== null && $val !== '' && $val !== '0' && $val !== 'all' && (int) $val > 0) {
                 $schoolId = (int) $val;
-                $school   = School::find($schoolId);
+                $school = School::find($schoolId);
                 if ($school) {
                     // Enforce access: only allow if user can access this school
                     if ($user = auth('sanctum')->user()) {

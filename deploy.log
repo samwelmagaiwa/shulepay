@@ -20,3 +20,11 @@
 [0;36m[17:57:23][0m   ShulePay — Release
 [0;36m[17:57:23][0m ══════════════════════════════════════════
 [0;36m[17:57:23][0m Checking working tree...
+[0;36m[17:57:28][0m Files staged for commit:
+[0;36m[17:57:28][0m Committing: "feat: multi-school access — user_school_access pivot, canAccessSchool, school access UI"
+[0;32m✔ Committed[0m
+[0;36m[17:57:29][0m Pushing to origin/master...
+[0;36m[17:58:47][0m ══════════════════════════════════════════
+[0;36m[17:58:47][0m   ShulePay — Release
+[0;36m[17:58:47][0m ══════════════════════════════════════════
+[0;36m[17:58:47][0m Checking working tree...

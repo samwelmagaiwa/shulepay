@@ -46,8 +46,8 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email'     => 'required|email',
-            'password'  => 'required|string',
+            'email' => 'required|email',
+            'password' => 'required|string',
             'school_id' => 'nullable|integer|exists:schools,id',
         ]);
 
@@ -125,11 +125,11 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $token,
-            'user'  => [
-                'id'        => $user->id,
-                'name'      => $user->name,
-                'email'     => $user->email,
-                'role'      => $this->primaryRole($user),
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $this->primaryRole($user),
                 'school_id' => $selectedSchoolId,
                 'permissions' => $user->effectivePermissions(),
             ],
@@ -154,8 +154,8 @@ class AuthController extends Controller
             'role' => $user->getRoleNames()->first(),
             'school_id' => $user->school_id,
             'school' => $user->school?->only(['id', 'name', 'level']),
-            'permissions'            => $user->effectivePermissions(),
-            'accessible_school_ids'  => $user->hasRole('superadmin') ? null : $user->allAccessibleSchoolIds(),
+            'permissions' => $user->effectivePermissions(),
+            'accessible_school_ids' => $user->hasRole('superadmin') ? null : $user->allAccessibleSchoolIds(),
         ]);
     }
 }
