@@ -14,7 +14,9 @@ class DashboardController extends Controller
     public function stats(Request $request): JsonResponse
     {
         $user = auth()->user();
-        $schoolId = $request->integer('school_id') ?: $user->school_id;
+        $schoolId = $request->integer('school_id')
+            ?: (int) $request->header('X-School-Id')
+            ?: $user->school_id;
 
         return response()->json($this->service->stats($schoolId ?: null));
     }
