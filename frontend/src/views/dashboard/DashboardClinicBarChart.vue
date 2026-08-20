@@ -1,9 +1,11 @@
 <script setup>
 import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useDashboardStore } from '@/stores/dashboard'
 import { CChart } from '@coreui/vue-chartjs'
 import * as XLSX from 'xlsx'
 
+const { t } = useI18n()
 const dashboard = useDashboardStore()
 const chartRef = ref(null)
 const activeClinicIndex = ref(-1)
@@ -173,7 +175,7 @@ const barData = computed(() => {
     }),
     datasets: [
       {
-        label: 'Makusanyo ya Sasa',
+        label: t('dashboard.currentCollections'),
         data: clinics.map((c) => c.total_visits || 0),
         backgroundColor: clinics.map((_, i) => rgba(BLUE, i === activeClinicIndex.value ? 0.5 : 0.22)),
         borderColor: BLUE,
@@ -185,7 +187,7 @@ const barData = computed(() => {
         hoverBorderWidth: 3,
       },
       {
-        label: 'Makusanyo ya Awali',
+        label: t('dashboard.previousCollections'),
         data: clinics.map((c) => -(c.previous_visits || 0)),
         backgroundColor: clinics.map((_, i) => rgba(ORANGE, i === activeClinicIndex.value ? 0.5 : 0.22)),
         borderColor: ORANGE,
@@ -250,14 +252,13 @@ const chartOptions = computed(() => {
             const lines = []
             
             if (ctx.datasetIndex === 0) {
-              const pendingLabel = dashboard.isTodaySelected ? 'Bado Hawajalipa' : 'Hawajalipiwa'
-              lines.push(`  Yaliyolipwa: ${clinic.consulted || 0}`)
-              lines.push(`  ${pendingLabel}: ${clinic.pending || 0}`)
-              
+              const pLabel = dashboard.isTodaySelected ? t('dashboard.cardNotPaidToday') : t('dashboard.cardUnpaid')
+              lines.push(`  ${t('dashboard.seriesPaid')}: ${clinic.consulted || 0}`)
+              lines.push(`  ${pLabel}: ${clinic.pending || 0}`)
               const sign = (clinic.trend || 0) > 0 ? '+' : ''
               lines.push(`  Change: ${sign}${clinic.trend}% (${clinic.interpretation})`)
             } else {
-              lines.push(`  Hawajalipiwa: ${clinic.previous_pending || 0}`)
+              lines.push(`  ${t('dashboard.cardUnpaid')}: ${clinic.previous_pending || 0}`)
             }
             return lines
           },
@@ -677,7 +678,7 @@ const pendingModalClinicShortName = computed(() =>
 )
 
 const isToday = computed(() => dashboard.isTodaySelected)
-const pendingLabel = computed(() => isToday.value ? 'Bado Hawajalipa' : 'Hawajalipiwa')
+const pendingLabel = computed(() => isToday.value ? t('dashboard.cardNotPaidToday') : t('dashboard.cardUnpaid'))
 
 // Formatting helper for date
 const formatSimpleDate = (dateStr) => {
@@ -1079,7 +1080,7 @@ const exportPendingToExcel = async () => {
       style="height: 54px"
     >
       <h5 class="mb-0 fw-bold text-primary" style="font-size: 18px">
-        Ulinganisho wa Makusanyo ya Shule Zote
+        {{ t('dashboard.allSchoolsComparison') }}
       </h5>
 
       <!-- Legend Pill -->
@@ -1087,7 +1088,7 @@ const exportPendingToExcel = async () => {
         <div class="legend-badge current-visits d-flex align-items-center gap-2">
           <div class="d-flex align-items-center gap-2">
             <span class="badge-icon">▲</span>
-            <span class="badge-text text-nowrap">Makusanyo ya Sasa (Juu)</span>
+            <span class="badge-text text-nowrap">{{ t('dashboard.currentCollectionsUp') }}</span>
           </div>
           <div class="d-flex align-items-center gap-2 ps-2 border-start border-slate-200">
              <span class="fw-black" style="color: #16a34a; font-size: 16px">↑</span>
@@ -1101,7 +1102,7 @@ const exportPendingToExcel = async () => {
           <div class="d-flex align-items-center gap-2">
             <span class="badge-icon">▼</span>
             <span class="badge-text text-nowrap">
-              Makusanyo ya Awali (Chini)
+              {{ t('dashboard.prevCollectionsDown') }}
               <small
                 v-if="sortedClinics[0]?.comparison_dates"
                 class="comparison-tag ms-1 text-secondary opacity-75"
@@ -1210,7 +1211,7 @@ const exportPendingToExcel = async () => {
                 </svg>
               </div>
               <div>
-                <h4 class="pmodal-title">{{ isToday ? 'Bado Hawajalipa' : 'Hawajalipiwa' }} — <span class="pmodal-clinic-name">{{ pendingModalClinicShortName }}</span></h4>
+                <h4 class="pmodal-title">{{ pendingLabel }} — <span class="pmodal-clinic-name">{{ pendingModalClinicShortName }}</span></h4>
                 <p class="pmodal-subtitle">
                   <span class="pmodal-badge-count">{{ pendingModal.pendingCount }}</span> patient{{ pendingModal.pendingCount !== 1 ? 's' : '' }} pending consultation
                 </p>

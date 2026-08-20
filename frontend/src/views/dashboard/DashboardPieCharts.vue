@@ -1,11 +1,13 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { CChart, CChartPie } from '@coreui/vue-chartjs'
 import { useDashboardStore } from '@/stores/dashboard'
 import { Chart as ChartJS, registerables } from 'chart.js'
 
 ChartJS.register(...registerables)
 
+const { t } = useI18n()
 const dashboard = useDashboardStore()
 
 const chartOptions = {
@@ -367,7 +369,7 @@ const polarPlugins = [
       <div class="card h-100 border-0 shadow-sm">
         <div class="card-header bg-transparent border-0 font-weight-bold pb-0 pt-3">
           <h6 class="mb-0 fw-bold text-center text-primary" style="font-size: 20px">
-            Usambazaji wa Wanafunzi kwa Darasa
+            {{ t('dashboard.studentsByClassTitle') }}
           </h6>
         </div>
         <div class="card-body p-0" style="min-height: 450px; height: 450px">
@@ -398,7 +400,7 @@ const polarPlugins = [
       <div class="card h-100 border-0 shadow-sm">
         <div class="card-header bg-transparent border-0 font-weight-bold pb-0 pt-3">
           <h6 class="mb-2 fw-bold text-center text-primary" style="font-size: 20px">
-            Usambazaji wa Jinsia ya Wanafunzi
+            {{ t('dashboard.genderDistTitle') }}
           </h6>
         </div>
         <div class="card-body p-2" style="min-height: 450px; height: 450px">
@@ -424,7 +426,7 @@ const polarPlugins = [
       <div class="card h-100 border-0 shadow-sm">
         <div class="card-header bg-transparent border-0 font-weight-bold pb-0 pt-3">
           <h6 class="mb-2 fw-bold text-center text-primary" style="font-size: 20px">
-            Wanafunzi Wapya vs Wanaorudia
+            {{ t('dashboard.newVsReturningTitle') }}
           </h6>
         </div>
         <div class="card-body p-2" style="min-height: 450px; height: 450px">

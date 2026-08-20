@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch, nextTick, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { CChartBar } from '@coreui/vue-chartjs'
 import { useDashboardStore } from '@/stores/dashboard'
 import { Chart, registerables } from 'chart.js'
@@ -8,6 +9,7 @@ import { cilHospital, cilChart, cilBarChart } from '@coreui/icons'
 
 Chart.register(...registerables)
 
+const { t } = useI18n()
 const dashboard = useDashboardStore()
 
 // Ref for chart scroll container
@@ -248,13 +250,13 @@ const needsScroll = computed(() => {
 })
 
 const metricDetails = computed(() => [
-  { id: 'trend', label: 'Mwelekeo wa Jumla', color: '#1e293b' },
-  { id: 'opd', label: 'Wanafunzi Wote', color: '#3b82f6' },
-  { id: 'emergency', label: 'Madeni Yanayodai', color: '#dc3545' },
-  { id: 'consulted', label: 'Yaliyolipwa', color: '#16a34a' },
-  { id: 'not_consulted', label: dashboard.isTodaySelected ? 'Bado Hawajalipa' : 'Hawajalipiwa', color: '#ec4899' },
-  { id: 'new', label: 'Wanafunzi Wapya', color: '#06b6d4' },
-  { id: 'followup', label: 'Makusanyo ya Leo', color: '#6610f2' },
+  { id: 'trend', label: t('dashboard.seriesOverallTrend'), color: '#1e293b' },
+  { id: 'opd', label: t('dashboard.cardTotalStudents'), color: '#3b82f6' },
+  { id: 'emergency', label: t('dashboard.cardDebt'), color: '#dc3545' },
+  { id: 'consulted', label: t('dashboard.seriesPaid'), color: '#16a34a' },
+  { id: 'not_consulted', label: dashboard.isTodaySelected ? t('dashboard.cardNotPaidToday') : t('dashboard.cardUnpaid'), color: '#ec4899' },
+  { id: 'new', label: t('dashboard.cardNewStudents'), color: '#06b6d4' },
+  { id: 'followup', label: t('dashboard.cardTodayCollect'), color: '#6610f2' },
 ])
 
 const keyReferralMap = {
@@ -454,15 +456,13 @@ const chartOptions = computed(() => {
             let label = context.dataset.label || ''
             const value = context.raw || 0
             
-            // Special handling for Await Consultation / Not Consulted dataset
-            // Usually at index 4, but we check if the label starts with either
-            if (label === 'Bado Hawajalipa' || label === 'Hawajalipiwa') {
+            // Special handling for not_consulted dataset (index 4)
+            if (context.datasetIndex === 4) {
               const xLabel = context.label || ''
-              // If the x-axis label is not 'Today', it should be 'Hawajalipiwa'
               if (xLabel !== 'Today' && !xLabel.toLowerCase().includes('today')) {
-                label = 'Hawajalipiwa'
+                label = t('dashboard.cardUnpaid')
               } else {
-                label = 'Await Consultation'
+                label = t('dashboard.cardNotPaidToday')
               }
             }
             
@@ -521,7 +521,7 @@ const chartOptions = computed(() => {
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
           <h5 class="header-title mb-0 fw-bold text-primary" style="font-size: 16px">
-            Uchambuzi wa Mwelekeo wa Makusanyo
+            {{ t('dashboard.trendAnalysisTitle') }}
           </h5>
         </div>
         <div class="d-flex align-items-center gap-3">
@@ -536,7 +536,7 @@ const chartOptions = computed(() => {
             <span
               class="pill-label bg-primary text-white border-0"
               style="padding: 4px 8px; font-size: 11px"
-              >Jumla ya Ankara</span
+              >{{ t('dashboard.totalInvoices') }}</span
             >
             <span v-if="referralLoading" class="pill-value text-muted fs-6 px-3">...</span>
             <span v-else class="pill-value text-primary fs-6 px-3">{{
@@ -669,7 +669,7 @@ const chartOptions = computed(() => {
               <div class="mb-4">
                 <h6 class="fw-bold text-dark-emphasis mb-0 d-flex align-items-center">
                   <CIcon :icon="cilHospital" class="me-2 text-primary" />
-                  Usambazaji wa Ankara
+                  {{ t('dashboard.invoiceDistTitle') }}
                 </h6>
               </div>
 

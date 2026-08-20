@@ -1,5 +1,6 @@
 <script setup>
 import { defineAsyncComponent, computed, ref, onMounted, watch, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useAuthStore } from '@/stores/auth'
 import { getAutoScrollState } from '@/composables/useAutoScroll'
@@ -17,6 +18,7 @@ import {
   cilSearch,
 } from '@coreui/icons'
 
+const { t } = useI18n()
 const dashboard = useDashboardStore()
 const authStore = useAuthStore()
 const autoScroll = getAutoScrollState()
@@ -238,7 +240,7 @@ const categoryChartData = computed(() => {
     datasets: [
       {
         type: 'bar',
-        label: 'Idadi ya Wanafunzi',
+        label: t('dashboard.seriesStudentCount'),
         backgroundColor: colors,
         borderColor: colors.map((c) => c),
         borderWidth: 1,
@@ -250,7 +252,7 @@ const categoryChartData = computed(() => {
       },
       {
         type: 'line',
-        label: 'Mstari wa Mwelekeo',
+        label: t('dashboard.seriesTrend'),
         borderColor: '#003082',
         backgroundColor: 'rgba(0, 48, 130, 0.1)',
         borderWidth: 2,
@@ -320,7 +322,7 @@ const categoryChartOptions = computed(() => {
         max: yMax,
         title: {
           display: true,
-          text: 'Jumla ya Makusanyo (Kiwango cha Log)',
+          text: t('dashboard.yAxisTotalLog'),
           font: { size: 12, weight: 'bold' },
           color: '#333',
         },
@@ -565,18 +567,18 @@ const formatDate = (dateStr) => {
         <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center gap-2">
             <h4 class="mb-0 fw-bold text-primary" style="font-size: 20px">
-              Muhtasari wa Makusanyo ya Ada Kwa Madarasa
+              {{ t('dashboard.classSummaryTitle') }}
             </h4>
             <button
               v-if="canConfigure"
               class="btn btn-outline-primary btn-sm px-2 py-0 ms-2"
-              title="Sanidi Takwimu za Madarasa"
+              :title="t('dashboard.configClassTitle')"
               @click="openClassConfigModal"
             >
-              ⚙️ Badili Data
+              ⚙️ {{ t('dashboard.changeData') }}
             </button>
           </div>
-          <span class="badge bg-light text-dark border fw-normal">Primary and Secondary</span>
+          <span class="badge bg-light text-dark border fw-normal">{{ t('dashboard.primarySecondary') }}</span>
         </div>
         <div class="card-body p-3">
           <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-xl-7 g-3">
@@ -630,12 +632,10 @@ const formatDate = (dateStr) => {
       <!-- Class Configuration Modal (Superadmin / Accountant / Owner) -->
       <CModal :visible="showClassConfigModal" @close="showClassConfigModal = false">
         <CModalHeader>
-          <CModalTitle class="fw-bold">Sanidi Takwimu za Madarasa</CModalTitle>
+          <CModalTitle class="fw-bold">{{ t('dashboard.configClassTitle') }}</CModalTitle>
         </CModalHeader>
         <CModalBody>
-          <p class="text-muted small mb-3">
-            Weka makusanyo ya ada kwa kila darasa. Takwimu hizi zitaonyeshwa kwenye dashboard mara moja.
-          </p>
+          <p class="text-muted small mb-3">{{ t('dashboard.configClassHint') }}</p>
           <div class="row g-2">
             <div
               v-for="cls in ['PP1', 'PP2', 'STD 1', 'STD 2', 'STD 3', 'STD 4', 'STD 5', 'STD 6', 'STD 7', 'FORM 1', 'FORM 2', 'FORM 3', 'FORM 4']"
@@ -654,10 +654,10 @@ const formatDate = (dateStr) => {
         </CModalBody>
         <CModalFooter>
           <CButton color="secondary" variant="outline" size="sm" @click="resetClassConfig">
-            Rudisha Asili
+            {{ t('dashboard.resetDefault') }}
           </CButton>
           <CButton color="primary" size="sm" @click="saveClassConfig">
-            Hifadhi Mabadiliko
+            {{ t('common.saveChanges') }}
           </CButton>
         </CModalFooter>
       </CModal>
@@ -668,7 +668,7 @@ const formatDate = (dateStr) => {
           <div class="card h-100 border-0 shadow-sm">
             <div class="card-header bg-white border-0 p-3">
               <h5 class="mb-0 fw-bold text-primary" style="font-size: 20px">
-                Chati ya Makusanyo ya Ada
+                {{ t('dashboard.feesChartTitle') }}
               </h5>
             </div>
             <div class="card-body p-0">
@@ -689,7 +689,7 @@ const formatDate = (dateStr) => {
           <div class="card h-100 border-0 shadow-sm">
             <div class="card-header bg-white border-0 py-3">
               <h5 class="mb-0 fw-bold text-primary" style="font-size: 20px">
-                Usambazaji wa Makusanyo ya Ada
+                {{ t('dashboard.feesDistTitle') }}
               </h5>
               <div class="d-flex flex-wrap justify-content-start mt-2 gap-2">
                 <span
