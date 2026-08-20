@@ -42,9 +42,17 @@ class StudentController extends Controller
     {
         $query = Student::query();
 
-        $userSchoolId = auth()->user()->school_id;
-        // Non-superadmin users are always scoped to their own school
-        $schoolId = $userSchoolId ?? ($request->filled('school_id') ? $request->integer('school_id') : null);
+        $user = auth()->user();
+        // Superadmin, owner, and accountant may switch school via request param or X-School-Id header
+        $requestedSchoolId = $request->filled('school_id')
+            ? $request->integer('school_id')
+            : ((int) $request->header('X-School-Id') ?: null);
+
+        if ($user->hasRole('superadmin') || $user->hasRole('owner') || $user->hasRole('accountant')) {
+            $schoolId = $requestedSchoolId ?? $user->school_id;
+        } else {
+            $schoolId = $user->school_id;
+        }
 
         if ($schoolId) {
             $query->whereHas('enrollments', fn ($q) => $q->where('school_id', $schoolId)->where('status', 'active'));

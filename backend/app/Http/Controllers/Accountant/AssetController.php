@@ -19,8 +19,13 @@ class AssetController extends Controller
     {
         $query = Asset::with(['school', 'registeredBy'])->latest('created_at');
 
-        $userSchoolId = auth()->user()->school_id;
-        $schoolId = $userSchoolId ?? ($request->filled('school_id') ? $request->integer('school_id') : null);
+        $user = auth()->user();
+        $requestedSchoolId = $request->filled('school_id')
+            ? $request->integer('school_id')
+            : ((int) $request->header('X-School-Id') ?: null);
+        $schoolId = ($user->hasRole('superadmin') || $user->hasRole('owner') || $user->hasRole('accountant'))
+            ? ($requestedSchoolId ?? $user->school_id)
+            : $user->school_id;
         if ($schoolId) {
             $query->where('school_id', $schoolId);
         }
