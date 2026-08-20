@@ -101,17 +101,14 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
 </script>
 
 <template>
-  <div class="container-fluid px-4 py-4">
-
-    <!-- Page title -->
-    <h4 class="fw-bold mb-3">🎨 {{ t('nav.branding') }}</h4>
+  <div class="container-fluid px-4 py-3">
 
     <!-- Alerts -->
-    <div class="alert alert-success py-2 small mb-3" v-if="success">✅ {{ success }}</div>
-    <div class="alert alert-danger py-2 small mb-3" v-if="error">⚠️ {{ error }}</div>
+    <div class="alert alert-success py-2 small mb-2" v-if="success">✅ {{ success }}</div>
+    <div class="alert alert-danger py-2 small mb-2" v-if="error">⚠️ {{ error }}</div>
 
     <!-- Superadmin: school selector (inline, compact) -->
-    <div v-if="auth.isSuperAdmin" class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+    <div v-if="auth.isSuperAdmin" class="d-flex align-items-center gap-3 mb-2 flex-wrap">
       <span class="fw-semibold text-muted small text-uppercase" style="letter-spacing:.05em;">Configure for</span>
       <select
         v-model="selectedSchoolId"
@@ -170,6 +167,7 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
                       :src="logoPreview"
                       alt="logo"
                       style="width:56px;height:56px;object-fit:contain;border:1px solid #dee2e6;border-radius:8px;background:#fff;"
+                      @error="logoPreview=null"
                     />
                     <button
                       type="button"
@@ -213,7 +211,7 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
             <!-- Header simulation -->
             <div class="rounded-3 border bg-white p-3 shadow-sm d-flex align-items-center gap-3 mb-3">
               <div v-if="logoPreview" style="width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid #007f3e;flex-shrink:0;">
-                <img :src="logoPreview" style="width:100%;height:100%;object-fit:contain;" alt="logo" />
+                <img :src="logoPreview" style="width:100%;height:100%;object-fit:contain;" alt="logo" @error="logoPreview=null" />
               </div>
               <div v-else style="width:44px;height:44px;flex-shrink:0;">
                 <svg viewBox="0 0 40 40" width="44" height="44">
