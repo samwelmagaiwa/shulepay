@@ -555,12 +555,14 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
                 <CTableDataCell>{{ Number(item.reorder_level).toLocaleString() }}</CTableDataCell>
                 <CTableDataCell>{{ formatMoney(item.unit_cost_cents) }}</CTableDataCell>
                 <CTableDataCell>{{ formatMoney(item.total_value_cents) }}</CTableDataCell>
-                <CTableDataCell style="min-width:48px">
+                <CTableDataCell style="min-width:48px; position:relative;">
                   <CButton size="sm" color="secondary" variant="ghost" @click.stop="toggleItemActions(item.id)">👁️</CButton>
-                  <div v-if="expandedItemId === item.id" class="d-flex flex-column gap-1 mt-1">
-                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click.stop="openItemPanel(item)">📋 {{ t('inventory.btnTransactions') }}</CButton>
-                    <CButton size="sm" color="primary" variant="ghost" class="text-start" @click.stop="openEditItem(item)">✏️ {{ t('common.edit') }}</CButton>
-                    <CButton size="sm" color="danger" variant="ghost" class="text-start" @click.stop="confirmDeleteItem(item)">🗑️ {{ t('common.delete') }}</CButton>
+                  <div v-if="expandedItemId === item.id"
+                       style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:10; min-width:160px;"
+                       @click.stop>
+                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openItemPanel(item); expandedItemId=null">📋 {{ t('inventory.btnTransactions') }}</CButton>
+                    <CButton size="sm" color="primary" variant="ghost" class="text-start" @click="openEditItem(item); expandedItemId=null">✏️ {{ t('common.edit') }}</CButton>
+                    <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDeleteItem(item); expandedItemId=null">🗑️ {{ t('common.delete') }}</CButton>
                   </div>
                 </CTableDataCell>
               </CTableRow>
