@@ -10,11 +10,11 @@ class ReceiptPdf
 {
     public function generate(Receipt $receipt): string
     {
-        $school   = $receipt->student?->school ?? $receipt->student?->currentEnrollment?->school;
+        $school = $receipt->student?->school ?? $receipt->student?->currentEnrollment?->school;
         $settings = $school?->settings ?? [];
         $branding = $settings['branding'] ?? [];
 
-        $appName    = $branding['app_name']    ?? ($school?->name ?? 'ShulePay');
+        $appName = $branding['app_name'] ?? ($school?->name ?? 'ShulePay');
         $appTagline = $branding['app_tagline'] ?? 'nexoryaTECH';
         $logoBase64 = null;
 

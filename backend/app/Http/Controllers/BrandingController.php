@@ -21,9 +21,9 @@ class BrandingController extends Controller
         $branding = $settings['branding'] ?? [];
 
         return response()->json([
-            'app_name'   => $branding['app_name']   ?? $school->name,
-            'app_tagline'=> $branding['app_tagline'] ?? 'nexoryaTECH',
-            'logo_url'   => isset($branding['logo_path'])
+            'app_name' => $branding['app_name'] ?? $school->name,
+            'app_tagline' => $branding['app_tagline'] ?? 'nexoryaTECH',
+            'logo_url' => isset($branding['logo_path'])
                 ? Storage::url($branding['logo_path'])
                 : null,
         ]);
@@ -32,7 +32,7 @@ class BrandingController extends Controller
     /** POST /api/v1/branding — update branding (owner or superadmin only) */
     public function update(Request $request): JsonResponse
     {
-        $user   = $request->user();
+        $user = $request->user();
         $school = $user->school;
 
         abort_unless(
@@ -42,9 +42,9 @@ class BrandingController extends Controller
         );
 
         $validated = $request->validate([
-            'app_name'    => 'sometimes|string|max:80',
+            'app_name' => 'sometimes|string|max:80',
             'app_tagline' => 'sometimes|string|max:80',
-            'logo'        => 'sometimes|file|mimes:jpg,jpeg,png,svg,webp|max:2048',
+            'logo' => 'sometimes|file|mimes:jpg,jpeg,png,svg,webp|max:2048',
         ]);
 
         $settings = $school->settings ?? [];
@@ -70,19 +70,19 @@ class BrandingController extends Controller
         $school->update(['settings' => $settings]);
 
         return response()->json([
-            'app_name'    => $branding['app_name']    ?? $school->name,
-            'app_tagline' => $branding['app_tagline']  ?? 'nexoryaTECH',
-            'logo_url'    => isset($branding['logo_path'])
+            'app_name' => $branding['app_name'] ?? $school->name,
+            'app_tagline' => $branding['app_tagline'] ?? 'nexoryaTECH',
+            'logo_url' => isset($branding['logo_path'])
                 ? Storage::url($branding['logo_path'])
                 : null,
-            'message'     => 'Branding updated successfully.',
+            'message' => 'Branding updated successfully.',
         ]);
     }
 
     /** DELETE /api/v1/branding/logo — remove uploaded logo */
     public function deleteLogo(Request $request): JsonResponse
     {
-        $user   = $request->user();
+        $user = $request->user();
         $school = $user->school;
 
         abort_unless(
