@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureParentOwnsStudent;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\SetActiveSchool;
 use Illuminate\Foundation\Application;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'parent.owns_student' => EnsureParentOwnsStudent::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

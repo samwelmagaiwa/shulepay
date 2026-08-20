@@ -207,9 +207,14 @@ class BulkImportController extends Controller
      */
     private function parseFile(UploadedFile $file): array
     {
-        $extension = strtolower($file->getClientOriginalExtension());
+        $mime = $file->getMimeType();
 
-        if (in_array($extension, ['xlsx', 'xls'])) {
+        $xlsxMimes = [
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel',
+        ];
+
+        if (in_array($mime, $xlsxMimes)) {
             return $this->parseXlsx($file->getRealPath());
         }
 

@@ -20,7 +20,10 @@ class RefundController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
+        $schoolId = auth()->user()->school_id;
+
         $query = Refund::with(['invoice', 'student', 'refundedBy'])
+            ->whereHas('invoice', fn ($q) => $q->where('school_id', $schoolId))
             ->latest();
 
         if ($request->filled('student_id')) {
@@ -39,7 +42,8 @@ class RefundController extends Controller
         $data = $request->validated();
 
         /** @var Invoice $invoice */
-        $invoice = Invoice::allSchools()->findOrFail($data['invoice_id']);
+        $invoice = Invoice::where('school_id', auth()->user()->school_id)
+            ->findOrFail($data['invoice_id']);
 
         $paidCents = $invoice->paidCents();
 
@@ -96,6 +100,11 @@ class RefundController extends Controller
 
     public function destroy(Refund $refund): JsonResponse
     {
+        abort_unless(
+            $refund->invoice?->school_id === auth()->user()->school_id,
+            403, 'Forbidden.'
+        );
+
         DB::transaction(function () use ($refund) {
             $invoice = $refund->invoice;
 

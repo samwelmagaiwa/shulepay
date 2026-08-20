@@ -47,7 +47,7 @@ class UserController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $schoolId = $request->input('school_id') ?: auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
 
         $users = User::with('roles')
             ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
@@ -66,10 +66,9 @@ class UserController extends Controller
             'password' => 'required|string|min:8',
             'phone' => 'nullable|string|max:20',
             'role' => 'required|string|in:'.implode(',', $this->allAllowedRoles()),
-            'school_id' => 'nullable|integer|exists:schools,id',
         ]);
 
-        $schoolId = $data['school_id'] ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
 
         $this->validateRoleForSchool($data['role'], $schoolId);
 
@@ -97,13 +96,14 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): JsonResponse
     {
+        abort_unless($user->school_id === auth()->user()->school_id, 403, 'Forbidden.');
+
         $data = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:users,email,'.$user->id,
             'password' => 'sometimes|required|string|min:8',
             'phone' => 'nullable|string|max:20',
             'role' => 'sometimes|required|string|in:'.implode(',', $this->allAllowedRoles()),
-            'school_id' => 'sometimes|nullable|integer|exists:schools,id',
         ]);
 
         $before = $user->only(['name', 'email', 'school_id']);
@@ -120,10 +120,6 @@ class UserController extends Controller
         if (isset($data['phone'])) {
             $user->phone = $data['phone'];
         }
-        if (isset($data['school_id'])) {
-            $user->school_id = $data['school_id'];
-        }
-
         $user->save();
 
         if (isset($data['role'])) {

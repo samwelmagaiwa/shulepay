@@ -48,7 +48,7 @@ use App\Http\Controllers\Transport\TransportController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public ────────────────────────────────────────────────────
-Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 Route::get('/auth/me', [AuthController::class, 'me'])->middleware('auth:sanctum');
 
@@ -298,7 +298,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Parent portal — read-only, own children only
     Route::middleware('role:parent')->prefix('parent')->group(function () {
         Route::get('children', [ChildController::class, 'index']);
-        Route::get('children/{student}', [ChildController::class, 'show']);
+        Route::get('children/{student}', [ChildController::class, 'show'])
+            ->middleware('parent.owns_student');
         Route::get('statement', [StatementController::class, 'index']);
         Route::get('statement/pdf', [StatementController::class, 'download']);
     });
