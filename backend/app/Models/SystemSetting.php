@@ -16,16 +16,24 @@ class SystemSetting extends Model
 
     public static function get(string $key, mixed $default = null): mixed
     {
-        $row = static::find($key);
+        try {
+            $row = static::find($key);
 
-        return $row ? json_decode($row->value, true) : $default;
+            return $row ? json_decode($row->value, true) : $default;
+        } catch (\Throwable) {
+            return $default;
+        }
     }
 
     public static function set(string $key, mixed $value): void
     {
-        static::updateOrCreate(
-            ['key' => $key],
-            ['value' => json_encode($value)]
-        );
+        try {
+            static::updateOrCreate(
+                ['key' => $key],
+                ['value' => json_encode($value)]
+            );
+        } catch (\Throwable) {
+            // Table may not exist yet; silently skip
+        }
     }
 }

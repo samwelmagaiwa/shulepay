@@ -16,11 +16,15 @@ class BrandingController extends Controller
     public function show(Request $request): JsonResponse
     {
         $user = $request->user();
-        $system = SystemSetting::get('branding', []);
+        $system = SystemSetting::get('branding', []) ?? [];
+
+        if (! $user) {
+            return response()->json($this->resolve($system, null));
+        }
 
         // Superadmin fetching a specific school's branding
         if ($user->hasRole('superadmin') && $request->filled('school_id')) {
-            $school = School::find($request->school_id);
+            $school = School::find((int) $request->school_id);
             if (! $school) {
                 return response()->json(['message' => 'School not found.'], 404);
             }
