@@ -68,7 +68,7 @@
               <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
                 <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === e.id ? null : e.id">👁️</CButton>
                 <div v-if="activeRow === e.id"
-                     style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
+                     style="position:absolute; bottom:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                      @click.stop>
                   <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(e); activeRow = null">👁️ {{ t('common.view') }}</CButton>
                   <CButton v-if="e.status === 'pending' && auth.isOwner" size="sm" color="success" variant="ghost" class="text-start" @click="approve(e); activeRow = null">✅ {{ t('common.approve') }}</CButton>
