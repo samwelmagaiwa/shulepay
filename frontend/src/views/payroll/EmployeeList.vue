@@ -109,6 +109,7 @@
                   <div v-if="activeRow === emp.id"
                        style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                        @click.stop>
+                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(emp); activeRow = null">👁️ Angalia</CButton>
                     <CButton size="sm" color="primary" variant="ghost" class="text-start" @click="openEdit(emp); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
                     <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(emp); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                   </div>
@@ -134,6 +135,50 @@
         </CPagination>
       </div>
     </div>
+
+    <!-- View Employee Modal -->
+    <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
+      <CModalHeader>
+        <CModalTitle>👤 Maelezo ya Mfanyakazi</CModalTitle>
+      </CModalHeader>
+      <CModalBody v-if="viewTarget" class="p-3">
+        <div class="d-flex align-items-center gap-3 mb-4 p-3 bg-light rounded">
+          <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold"
+               style="width:56px;height:56px;font-size:1.4rem;flex-shrink:0;">
+            {{ (viewTarget.full_name || '?').charAt(0).toUpperCase() }}
+          </div>
+          <div>
+            <div class="fw-bold fs-5">{{ viewTarget.full_name }}</div>
+            <div class="text-muted small">{{ viewTarget.staff_number }} · {{ viewTarget.role }}</div>
+            <CBadge :color="viewTarget.status === 'active' ? 'success' : 'secondary'" class="mt-1">
+              {{ viewTarget.status === 'active' ? t('employees.working') : t('employees.notWorking') }}
+            </CBadge>
+          </div>
+        </div>
+        <CRow class="g-3">
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('employees.department') }}</div>
+            <div>{{ viewTarget.department || '—' }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('employees.basicSalary') }}</div>
+            <div class="fw-bold text-primary">{{ formatMoney(viewTarget.basic_salary_cents) }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('employees.hireDate') }}</div>
+            <div>{{ viewTarget.hire_date || '—' }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('common.school') }}</div>
+            <div>{{ viewTarget.school?.name || '—' }}</div>
+          </CCol>
+        </CRow>
+      </CModalBody>
+      <CModalFooter class="gap-2">
+        <CButton color="secondary" @click="showViewModal = false" style="min-height:44px;">{{ t('common.close') }}</CButton>
+        <CButton color="primary" @click="openEdit(viewTarget); showViewModal = false" style="min-height:44px;">✏️ {{ t('common.edit') }}</CButton>
+      </CModalFooter>
+    </CModal>
 
     <!-- Add/Edit Modal -->
     <CModal :visible="showModal" @close="showModal = false" size="lg" class="modal-fullscreen-sm-down">
@@ -246,6 +291,8 @@ const visiblePages = computed(() => {
 const showModal       = ref(false)
 const showDeleteModal = ref(false)
 const activeRow       = ref(null)
+const showViewModal   = ref(false)
+const viewTarget      = ref(null)
 const saving          = ref(false)
 const deleting        = ref(false)
 const formError       = ref('')
@@ -283,6 +330,8 @@ function debouncedLoad() {
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => { page.value = 1; load() }, 350)
 }
+
+function openView(emp) { viewTarget.value = emp; showViewModal.value = true }
 
 function openAdd() {
   editEmployee.value = null

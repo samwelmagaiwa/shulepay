@@ -324,3 +324,14 @@
 [0;36m[2026-08-21 22:54:02][0m   ShulePay — Release
 [0;36m[2026-08-21 22:54:02][0m ══════════════════════════════════════════
 [0;36m[2026-08-21 22:54:02][0m Checking working tree...
+[0;36m[2026-08-21 22:54:02][0m Files staged for commit:
+[0;36m[2026-08-21 22:54:02][0m Committing: "feat: consistent eye-button popover action column across all list pages"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-21 22:54:03][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-21 22:54:16][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-21 23:01:32][0m ══════════════════════════════════════════
+[0;36m[2026-08-21 23:01:32][0m   ShulePay — Release
+[0;36m[2026-08-21 23:01:32][0m ══════════════════════════════════════════
+[0;36m[2026-08-21 23:01:32][0m Checking working tree...

@@ -68,6 +68,7 @@
                 <div v-if="activeRow === r.id"
                      style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                      @click.stop>
+                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(r); activeRow = null">👁️ Angalia</CButton>
                   <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(r); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                 </div>
               </CTableDataCell>
@@ -124,6 +125,43 @@
         </CCard>
       </div>
     </div>
+
+    <!-- View Refund Modal -->
+    <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
+      <CModalHeader><CModalTitle>💸 Maelezo ya Malipo Rudia</CModalTitle></CModalHeader>
+      <CModalBody v-if="viewTarget" class="p-3">
+        <CRow class="g-3">
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('common.student') }}</div>
+            <div class="fw-bold">{{ viewTarget.student?.full_name || viewTarget.invoice?.student?.full_name || '—' }}</div>
+            <div class="text-muted small">{{ viewTarget.student?.admission_number || viewTarget.invoice?.student?.admission_number }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('refunds.invoiceNo') }}</div>
+            <div>{{ viewTarget.invoice?.invoice_number || '—' }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('common.amount') }}</div>
+            <div class="fw-bold fs-5 text-warning">{{ formatTZS(viewTarget.amount_cents) }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('common.method') }}</div>
+            <CBadge color="info" shape="rounded-pill">{{ methodLabel(viewTarget.method) }}</CBadge>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('common.date') }}</div>
+            <div>{{ viewTarget.refunded_at?.slice(0,10) || '—' }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('common.reason') }}</div>
+            <div>{{ viewTarget.reason || '—' }}</div>
+          </CCol>
+        </CRow>
+      </CModalBody>
+      <CModalFooter>
+        <CButton color="secondary" @click="showViewModal = false" style="min-height:44px;">{{ t('common.close') }}</CButton>
+      </CModalFooter>
+    </CModal>
 
     <!-- Add Refund Modal -->
     <CModal :visible="showAddModal" @close="showAddModal=false" size="lg" class="modal-fullscreen-sm-down" backdrop="static">
@@ -221,6 +259,8 @@ const { t } = useI18n()
 
 const store = useRefundsStore()
 const activeRow = ref(null)
+const showViewModal = ref(false)
+const viewTarget = ref(null)
 const filters = ref({ search: '', date_from: '', date_to: '' })
 const page = ref(1)
 const meta = ref({ total: 0, last_page: 1, per_page: 20, current_page: 1 })
@@ -271,6 +311,8 @@ function resetFilters() {
   page.value = 1
   loadData()
 }
+
+function openView(refund) { viewTarget.value = refund; showViewModal.value = true }
 
 function openAddModal() {
   addForm.value = { invoice_id: '', amount: '', reason: '', method: 'cash', refunded_at: today }

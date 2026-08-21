@@ -132,6 +132,7 @@
                   <div v-if="activeRow === e.id"
                        style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                        @click.stop>
+                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(e); activeRow = null">👁️ Angalia</CButton>
                     <CButton v-if="e.status !== 'paid'" size="sm" color="primary" variant="ghost" class="text-start" @click="markPaid(e.id); activeRow = null">💵 {{ t('payroll.pay') }}</CButton>
                   </div>
                 </CTableDataCell>
@@ -156,6 +157,48 @@
         </CPagination>
       </div>
     </div>
+
+    <!-- View Payroll Entry Modal -->
+    <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
+      <CModalHeader><CModalTitle>💰 Maelezo ya Mishahara</CModalTitle></CModalHeader>
+      <CModalBody v-if="viewTarget" class="p-3">
+        <div class="d-flex align-items-center gap-3 mb-4 p-3 bg-light rounded">
+          <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center fw-bold"
+               style="width:56px;height:56px;font-size:1.4rem;flex-shrink:0;">
+            {{ (viewTarget.employee?.full_name || '?').charAt(0).toUpperCase() }}
+          </div>
+          <div>
+            <div class="fw-bold fs-5">{{ viewTarget.employee?.full_name }}</div>
+            <div class="text-muted small">{{ viewTarget.employee?.staff_number }} · {{ viewTarget.employee?.role }}</div>
+            <CBadge :color="viewTarget.status === 'paid' ? 'success' : 'warning'" class="mt-1">
+              {{ viewTarget.status === 'paid' ? t('payroll.paid') : t('payroll.pending') }}
+            </CBadge>
+          </div>
+        </div>
+        <CRow class="g-3">
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('payroll.basic') }}</div>
+            <div class="fw-bold">{{ formatMoney(viewTarget.basic_salary_cents) }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('payroll.allowances') }}</div>
+            <div class="fw-bold text-success">+ {{ formatMoney(viewTarget.allowances_cents) }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('payroll.deductions') }}</div>
+            <div class="fw-bold text-danger">- {{ formatMoney(viewTarget.deductions_cents) }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('payroll.net') }}</div>
+            <div class="fw-bold fs-5 text-primary">{{ formatMoney(viewTarget.net_salary_cents) }}</div>
+          </CCol>
+        </CRow>
+      </CModalBody>
+      <CModalFooter class="gap-2">
+        <CButton color="secondary" @click="showViewModal = false" style="min-height:44px;">{{ t('common.close') }}</CButton>
+        <CButton v-if="viewTarget?.status !== 'paid'" color="primary" @click="markPaid(viewTarget.id); showViewModal = false" style="min-height:44px;">💵 {{ t('payroll.pay') }}</CButton>
+      </CModalFooter>
+    </CModal>
 
     <!-- Generate confirm -->
     <CModal :visible="showGenerateModal" @close="showGenerateModal = false" class="modal-fullscreen-sm-down">
@@ -194,6 +237,8 @@ const navSchool    = useSchoolStore()
 const entries  = ref([])
 const loading  = ref(false)
 const activeRow = ref(null)
+const showViewModal = ref(false)
+const viewTarget = ref(null)
 const error    = ref('')
 const generating = ref(false)
 const showGenerateModal = ref(false)
@@ -276,6 +321,8 @@ async function confirmGenerate() {
     generating.value = false
   }
 }
+
+function openView(entry) { viewTarget.value = entry; showViewModal.value = true }
 
 async function markPaid(id) {
   try {

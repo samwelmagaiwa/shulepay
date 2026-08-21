@@ -85,8 +85,9 @@
                   <div v-if="activeRow === sup.id"
                        style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                        @click.stop>
+                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(sup); activeRow = null">👁️ Angalia</CButton>
                     <CButton v-if="(sup.balance_cents || 0) > 0" size="sm" color="primary" variant="ghost" class="text-start" @click="openPayment(sup); activeRow = null">💳 {{ t('suppliers.pay') }}</CButton>
-                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openEdit(sup); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
+                    <CButton size="sm" color="secondary" variant="ghost" class="text-start" @click="openEdit(sup); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
                   </div>
                 </CTableDataCell>
               </CTableRow>
@@ -110,6 +111,44 @@
         </CPagination>
       </div>
     </div>
+
+    <!-- View Supplier Modal -->
+    <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
+      <CModalHeader>
+        <CModalTitle>🏢 Maelezo ya Msambazaji</CModalTitle>
+      </CModalHeader>
+      <CModalBody v-if="viewTarget" class="p-3">
+        <div class="p-3 bg-light rounded mb-4">
+          <div class="fw-bold fs-5">{{ viewTarget.name }}</div>
+          <div v-if="viewTarget.address" class="text-muted small mt-1">{{ viewTarget.address }}</div>
+        </div>
+        <CRow class="g-3">
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('suppliers.contactPerson') }}</div>
+            <div>{{ viewTarget.contact_name || '—' }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('suppliers.phone') }}</div>
+            <div>{{ viewTarget.phone || '—' }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('suppliers.email') }}</div>
+            <div>{{ viewTarget.email || '—' }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('suppliers.debt') }}</div>
+            <div class="fw-bold" :class="(viewTarget.balance_cents || 0) > 0 ? 'text-danger' : 'text-success'">
+              {{ formatMoney(viewTarget.balance_cents) }}
+            </div>
+          </CCol>
+        </CRow>
+      </CModalBody>
+      <CModalFooter class="gap-2">
+        <CButton color="secondary" @click="showViewModal = false" style="min-height:44px;">{{ t('common.close') }}</CButton>
+        <CButton v-if="(viewTarget?.balance_cents || 0) > 0" color="primary" @click="openPayment(viewTarget); showViewModal = false" style="min-height:44px;">💳 {{ t('suppliers.pay') }}</CButton>
+        <CButton color="info" variant="outline" @click="openEdit(viewTarget); showViewModal = false" style="min-height:44px;">✏️ {{ t('common.edit') }}</CButton>
+      </CModalFooter>
+    </CModal>
 
     <!-- Add/Edit Modal -->
     <CModal :visible="showModal" @close="showModal = false" size="lg" class="modal-fullscreen-sm-down">
@@ -255,6 +294,8 @@ const visiblePages = computed(() => {
 const showModal    = ref(false)
 const showPayModal = ref(false)
 const activeRow    = ref(null)
+const showViewModal = ref(false)
+const viewTarget    = ref(null)
 const saving      = ref(false)
 const paying      = ref(false)
 const formError   = ref('')
@@ -325,6 +366,8 @@ async function load() {
     meta.value = store.pagination || meta.value
   } catch {} finally { loading.value = false }
 }
+
+function openView(sup) { viewTarget.value = sup; showViewModal.value = true }
 
 function openAdd() {
   editSupplier.value = null

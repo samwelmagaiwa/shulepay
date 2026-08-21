@@ -60,7 +60,8 @@
                 <div v-if="activeRow === g.id"
                      style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                      @click.stop>
-                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openEdit(g); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
+                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(g); activeRow = null">👁️ Angalia</CButton>
+                  <CButton size="sm" color="secondary" variant="ghost" class="text-start" @click="openEdit(g); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
                   <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="remove(g); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                 </div>
               </CTableDataCell>
@@ -86,6 +87,46 @@
         <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; loadData()">{{ t('common.next') }}</CPaginationItem>
       </CPagination>
     </div>
+
+    <!-- View Guardian Modal -->
+    <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
+      <CModalHeader><CModalTitle>👨‍👩‍👧 Maelezo ya Mlezi</CModalTitle></CModalHeader>
+      <CModalBody v-if="viewTarget" class="p-3">
+        <div class="d-flex align-items-center gap-3 mb-4 p-3 bg-light rounded">
+          <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center fw-bold"
+               style="width:56px;height:56px;font-size:1.4rem;flex-shrink:0;">
+            {{ (viewTarget.full_name || viewTarget.user?.name || '?').charAt(0).toUpperCase() }}
+          </div>
+          <div>
+            <div class="fw-bold fs-5">{{ viewTarget.full_name || viewTarget.user?.name || '—' }}</div>
+            <div class="text-muted small">{{ viewTarget.relation || '—' }}</div>
+          </div>
+        </div>
+        <CRow class="g-3">
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('guardians.phone') }}</div>
+            <div>{{ viewTarget.phone || viewTarget.user?.phone || '—' }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('common.email') }}</div>
+            <div>{{ viewTarget.email || viewTarget.user?.email || '—' }}</div>
+          </CCol>
+          <CCol xs="12">
+            <div class="text-muted small fw-semibold mb-2">{{ t('guardians.children') }}</div>
+            <div v-if="viewTarget.students?.length" class="d-flex flex-wrap gap-2">
+              <CBadge v-for="s in viewTarget.students" :key="s.id" color="info" shape="rounded-pill" class="px-3 py-2">
+                {{ s.full_name }} <span class="ms-1 opacity-75">{{ s.school_class?.name }}</span>
+              </CBadge>
+            </div>
+            <div v-else class="text-muted">—</div>
+          </CCol>
+        </CRow>
+      </CModalBody>
+      <CModalFooter class="gap-2">
+        <CButton color="secondary" @click="showViewModal = false" style="min-height:44px;">{{ t('common.close') }}</CButton>
+        <CButton color="primary" @click="openEdit(viewTarget); showViewModal = false" style="min-height:44px;">✏️ {{ t('common.edit') }}</CButton>
+      </CModalFooter>
+    </CModal>
 
     <!-- Add/Edit Modal -->
     <CModal :visible="showModal" @close="closeModal" size="lg">
@@ -154,6 +195,8 @@ const studentsStore = useStudentsStore()
 
 const search      = ref('')
 const activeRow   = ref(null)
+const showViewModal = ref(false)
+const viewTarget  = ref(null)
 const showModal   = ref(false)
 const editing     = ref(null)
 const saving      = ref(false)
@@ -174,6 +217,8 @@ const visiblePages = computed(() => {
 
 const emptyForm = () => ({ name:'', phone:'', email:'', relation:'', student_ids:[] })
 const form = ref(emptyForm())
+
+function openView(guardian) { viewTarget.value = guardian; showViewModal.value = true }
 
 async function loadData() {
   const params = { page: page.value }

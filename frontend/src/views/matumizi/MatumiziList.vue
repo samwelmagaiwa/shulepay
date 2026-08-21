@@ -70,6 +70,7 @@
                 <div v-if="activeRow === e.id"
                      style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                      @click.stop>
+                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(e); activeRow = null">👁️ Angalia</CButton>
                   <CButton v-if="e.status === 'pending' && auth.isOwner" size="sm" color="success" variant="ghost" class="text-start" @click="approve(e); activeRow = null">✅ Idhinisha</CButton>
                   <CButton v-if="e.status === 'pending'" size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(e); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                 </div>
@@ -136,6 +137,49 @@
         <span class="fw-bold fs-5 text-success">{{ formatTZS(monthlyApprovedTotal) }}</span>
       </CCardBody>
     </CCard>
+
+    <!-- View Expense Modal -->
+    <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
+      <CModalHeader>
+        <CModalTitle>📋 Maelezo ya Matumizi</CModalTitle>
+      </CModalHeader>
+      <CModalBody v-if="viewTarget" class="p-3">
+        <CRow class="g-3">
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('expenses.description') }}</div>
+            <div class="fw-bold">{{ viewTarget.description }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('expenses.category') }}</div>
+            <CBadge color="info" shape="rounded-pill">{{ viewTarget.category?.name || '—' }}</CBadge>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('common.amount') }}</div>
+            <div class="fw-bold fs-5 text-primary">{{ formatTZS(viewTarget.amount_cents) }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('common.status') }}</div>
+            <CBadge :color="statusColor(viewTarget.status)" shape="rounded-pill">{{ statusLabel(viewTarget.status) }}</CBadge>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('common.date') }}</div>
+            <div>{{ viewTarget.expense_date?.slice(0,10) || '—' }}</div>
+          </CCol>
+          <CCol xs="12" sm="6">
+            <div class="text-muted small fw-semibold mb-1">{{ t('expenses.vendorName') }}</div>
+            <div>{{ viewTarget.vendor_name || '—' }}</div>
+          </CCol>
+          <CCol v-if="viewTarget.notes" xs="12">
+            <div class="text-muted small fw-semibold mb-1">{{ t('expenses.additionalNotes') }}</div>
+            <div class="p-2 bg-light rounded">{{ viewTarget.notes }}</div>
+          </CCol>
+        </CRow>
+      </CModalBody>
+      <CModalFooter>
+        <CButton color="secondary" @click="showViewModal = false" style="min-height:44px;">{{ t('common.close') }}</CButton>
+        <CButton v-if="viewTarget?.status === 'pending' && auth.isOwner" color="success" @click="approve(viewTarget); showViewModal = false" style="min-height:44px;">✅ Idhinisha</CButton>
+      </CModalFooter>
+    </CModal>
 
     <!-- Add Modal -->
     <CModal :visible="showAddModal" @close="showAddModal=false" size="lg" class="modal-fullscreen-sm-down" backdrop="static">
@@ -219,6 +263,8 @@ const visiblePages = computed(() => {
 const showAddModal = ref(false)
 const showDeleteModal = ref(false)
 const activeRow = ref(null)
+const showViewModal = ref(false)
+const viewTarget = ref(null)
 const saving = ref(false)
 const addError = ref('')
 const deleteTarget = ref(null)
@@ -256,6 +302,8 @@ async function loadData() {
   meta.value = store.pagination || meta.value
 }
 function resetFilters() { filters.value = { category_id: '', status: '', date_from: '', date_to: '' }; page.value = 1; loadData() }
+
+function openView(expense) { viewTarget.value = expense; showViewModal.value = true }
 
 function openAddModal() {
   addForm.value = { description: '', category_id: '', amount: '', vendor_name: '', expense_date: today, notes: '' }
