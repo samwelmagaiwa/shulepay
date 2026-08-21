@@ -104,16 +104,13 @@
                     {{ emp.status === 'active' ? t('employees.working') : t('employees.notWorking') }}
                   </CBadge>
                 </CTableDataCell>
-                <CTableDataCell>
-                  <div class="d-flex gap-1">
-                    <CButton size="sm" color="primary" variant="outline" @click="openEdit(emp)"
-                             style="min-height:36px; min-width:36px;">
-                      <CIcon icon="cilPencil" />
-                    </CButton>
-                    <CButton size="sm" color="danger" variant="ghost" @click="confirmDelete(emp)"
-                             style="min-height:36px; min-width:36px;">
-                      <CIcon icon="cilTrash" />
-                    </CButton>
+                <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
+                  <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === emp.id ? null : emp.id">👁️</CButton>
+                  <div v-if="activeRow === emp.id"
+                       style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
+                       @click.stop>
+                    <CButton size="sm" color="primary" variant="ghost" class="text-start" @click="openEdit(emp); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
+                    <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(emp); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                   </div>
                 </CTableDataCell>
               </CTableRow>
@@ -248,6 +245,7 @@ const visiblePages = computed(() => {
 
 const showModal       = ref(false)
 const showDeleteModal = ref(false)
+const activeRow       = ref(null)
 const saving          = ref(false)
 const deleting        = ref(false)
 const formError       = ref('')

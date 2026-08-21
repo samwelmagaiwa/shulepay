@@ -102,11 +102,13 @@
                     {{ plan.status === 'completed' || plan.status === 'paid' ? t('installments.completed', 'Paid') : (plan.status === 'partial' ? 'Partial' : t('installments.ongoing', 'Ongoing')) }}
                   </CBadge>
                 </CTableDataCell>
-                <CTableDataCell>
-                  <CButton v-if="plan.status !== 'completed' && plan.status !== 'paid'" size="sm" color="primary"
-                           @click="recordPayment(plan)" style="min-height:36px;">
-                    {{ t('installments.recordPayment') }}
-                  </CButton>
+                <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
+                  <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === plan.id ? null : plan.id">👁️</CButton>
+                  <div v-if="activeRow === plan.id"
+                       style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
+                       @click.stop>
+                    <CButton v-if="plan.status !== 'completed' && plan.status !== 'paid'" size="sm" color="primary" variant="ghost" class="text-start" @click="recordPayment(plan); activeRow = null">💳 {{ t('installments.recordPayment') }}</CButton>
+                  </div>
                 </CTableDataCell>
               </CTableRow>
               <CTableRow v-if="!installments.length">
@@ -224,6 +226,7 @@ const { t } = useI18n()
 const store = useInstallmentsStore()
 const installments = ref([])
 const loading = ref(false)
+const activeRow = ref(null)
 const filters = ref({ status: '', search: '' })
 const page = ref(1)
 const meta = ref({ total: 0, last_page: 1, per_page: 20, current_page: 1 })

@@ -79,7 +79,7 @@
               <CTableHeaderCell>{{ t('students.gender') }}</CTableHeaderCell>
               <CTableHeaderCell>{{ t('common.status') }}</CTableHeaderCell>
               <CTableHeaderCell>{{ t('students.debt') }}</CTableHeaderCell>
-              <CTableHeaderCell></CTableHeaderCell>
+              <CTableHeaderCell class="text-center" style="width:56px;">Vitendo</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
           <CTableBody>
@@ -104,10 +104,14 @@
                   {{ formatMoney(s.outstanding_balance_cents) }}
                 </span>
               </CTableDataCell>
-              <CTableDataCell>
-                <CButton size="sm" color="info" variant="ghost" @click.stop="openDetail(s)">
-                  <CIcon icon="cilInfo" />
-                </CButton>
+              <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
+                <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === s.id ? null : s.id">👁️</CButton>
+                <div v-if="activeRow === s.id"
+                     style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
+                     @click.stop>
+                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openDetail(s); activeRow = null">👁️ Angalia</CButton>
+                  <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(s); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
+                </div>
               </CTableDataCell>
             </CTableRow>
             <CTableRow v-if="!studentsStore.loading && studentsStore.students.length === 0">
@@ -123,6 +127,18 @@
 
     <!-- Student Detail Drawer -->
     <MwanafunziDrawer v-if="selectedStudent" :student="selectedStudent" @close="selectedStudent = null" />
+
+    <!-- Delete Confirm -->
+    <CModal :visible="showDeleteModal" @close="showDeleteModal = false" size="sm" class="modal-fullscreen-sm-down">
+      <CModalHeader><CModalTitle>Futa Mwanafunzi</CModalTitle></CModalHeader>
+      <CModalBody>Una uhakika unataka kufuta <strong>{{ deleteTarget?.full_name }}</strong>?</CModalBody>
+      <CModalFooter class="gap-2">
+        <CButton color="secondary" @click="showDeleteModal = false" style="min-height:44px;">{{ t('common.cancel') }}</CButton>
+        <CButton color="danger" :disabled="deleting" @click="doDelete" style="min-height:44px;">
+          <CSpinner v-if="deleting" size="sm" class="me-1" />{{ t('common.delete') }}
+        </CButton>
+      </CModalFooter>
+    </CModal>
 
     <!-- Add Student Modal -->
     <AddStudentModal
@@ -151,8 +167,12 @@ const schoolsStore  = useSchoolsStore()
 const schoolStore   = useSchoolStore()
 
 const filters        = ref({ search: '', school_id: schoolStore.activeSchoolId ? String(schoolStore.activeSchoolId) : '', status: '', has_debt: '' })
-const selectedStudent = ref(null)
-const showAddModal    = ref(false)
+const selectedStudent  = ref(null)
+const showAddModal     = ref(false)
+const activeRow        = ref(null)
+const showDeleteModal  = ref(false)
+const deleteTarget     = ref(null)
+const deleting         = ref(false)
 const page            = ref(1)
 const perPage         = ref('20')
 const meta            = ref({ total: 0, last_page: 1, per_page: 20, current_page: 1 })
@@ -208,6 +228,24 @@ function resetFilters() {
 
 function openDetail(student) {
   selectedStudent.value = student
+}
+
+function confirmDelete(student) {
+  deleteTarget.value = student
+  showDeleteModal.value = true
+}
+
+async function doDelete() {
+  deleting.value = true
+  try {
+    await studentsStore.deleteStudent(deleteTarget.value.id)
+    showDeleteModal.value = false
+    fetchData()
+  } catch (e) {
+    alert(e?.response?.data?.message || 'Imeshindwa kufuta.')
+  } finally {
+    deleting.value = false
+  }
 }
 
 function onStudentSaved() {

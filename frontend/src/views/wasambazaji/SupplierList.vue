@@ -80,16 +80,13 @@
                     {{ formatMoney(sup.balance_cents) }}
                   </span>
                 </CTableDataCell>
-                <CTableDataCell>
-                  <div class="d-flex gap-1">
-                    <CButton v-if="(sup.balance_cents || 0) > 0" size="sm" color="primary"
-                             @click="openPayment(sup)" style="min-height:36px;">
-                      {{ t('suppliers.pay') }}
-                    </CButton>
-                    <CButton size="sm" color="secondary" variant="outline" @click="openEdit(sup)"
-                             style="min-height:36px; min-width:36px;">
-                      <CIcon icon="cilPencil" />
-                    </CButton>
+                <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
+                  <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === sup.id ? null : sup.id">👁️</CButton>
+                  <div v-if="activeRow === sup.id"
+                       style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
+                       @click.stop>
+                    <CButton v-if="(sup.balance_cents || 0) > 0" size="sm" color="primary" variant="ghost" class="text-start" @click="openPayment(sup); activeRow = null">💳 {{ t('suppliers.pay') }}</CButton>
+                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openEdit(sup); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
                   </div>
                 </CTableDataCell>
               </CTableRow>
@@ -255,8 +252,9 @@ const visiblePages = computed(() => {
   return Array.from({ length: end - start + 1 }, (_, i) => start + i)
 })
 
-const showModal   = ref(false)
+const showModal    = ref(false)
 const showPayModal = ref(false)
+const activeRow    = ref(null)
 const saving      = ref(false)
 const paying      = ref(false)
 const formError   = ref('')

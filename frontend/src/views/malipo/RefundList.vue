@@ -49,7 +49,7 @@
               <CTableHeaderCell>{{ t('common.method') }}</CTableHeaderCell>
               <CTableHeaderCell>{{ t('common.amount') }}</CTableHeaderCell>
               <CTableHeaderCell>{{ t('common.date') }}</CTableHeaderCell>
-              <CTableHeaderCell></CTableHeaderCell>
+              <CTableHeaderCell class="text-center" style="width:56px;">Vitendo</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
           <CTableBody>
@@ -63,10 +63,13 @@
               <CTableDataCell><CBadge color="info" shape="rounded-pill">{{ methodLabel(r.method) }}</CBadge></CTableDataCell>
               <CTableDataCell class="fw-bold text-warning">{{ formatTZS(r.amount_cents) }}</CTableDataCell>
               <CTableDataCell class="small">{{ r.refunded_at?.slice(0,10) }}</CTableDataCell>
-              <CTableDataCell>
-                <CButton size="sm" color="danger" variant="ghost" @click="confirmDelete(r)" :title="t('common.delete')">
-                  <CIcon icon="cilTrash" />
-                </CButton>
+              <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
+                <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === r.id ? null : r.id">👁️</CButton>
+                <div v-if="activeRow === r.id"
+                     style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
+                     @click.stop>
+                  <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(r); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
+                </div>
               </CTableDataCell>
             </CTableRow>
             <CTableRow v-if="!store.refunds.length">
@@ -217,6 +220,7 @@ import api from '@/services/api'
 const { t } = useI18n()
 
 const store = useRefundsStore()
+const activeRow = ref(null)
 const filters = ref({ search: '', date_from: '', date_to: '' })
 const page = ref(1)
 const meta = ref({ total: 0, last_page: 1, per_page: 20, current_page: 1 })

@@ -51,7 +51,7 @@
               <CTableHeaderCell>{{ t('expenses.category') }}</CTableHeaderCell>
               <CTableHeaderCell>{{ t('common.amount') }}</CTableHeaderCell>
               <CTableHeaderCell>{{ t('common.status') }}</CTableHeaderCell>
-              <CTableHeaderCell></CTableHeaderCell>
+              <CTableHeaderCell class="text-center" style="width:56px;">Vitendo</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
           <CTableBody>
@@ -65,12 +65,13 @@
               <CTableDataCell><CBadge color="info" shape="rounded-pill">{{ e.category?.name || '—' }}</CBadge></CTableDataCell>
               <CTableDataCell class="fw-bold">{{ formatTZS(e.amount_cents) }}</CTableDataCell>
               <CTableDataCell><CBadge :color="statusColor(e.status)" shape="rounded-pill">{{ statusLabel(e.status) }}</CBadge></CTableDataCell>
-              <CTableDataCell>
-                <div class="d-flex gap-1">
-                  <CButton v-if="e.status === 'pending' && auth.isOwner" size="sm" color="success" variant="ghost"
-                           @click="approve(e)" title="Idhinisha"><CIcon icon="cilCheck" /></CButton>
-                  <CButton v-if="e.status === 'pending'" size="sm" color="danger" variant="ghost"
-                           @click="confirmDelete(e)" title="Futa"><CIcon icon="cilTrash" /></CButton>
+              <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
+                <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === e.id ? null : e.id">👁️</CButton>
+                <div v-if="activeRow === e.id"
+                     style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
+                     @click.stop>
+                  <CButton v-if="e.status === 'pending' && auth.isOwner" size="sm" color="success" variant="ghost" class="text-start" @click="approve(e); activeRow = null">✅ Idhinisha</CButton>
+                  <CButton v-if="e.status === 'pending'" size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(e); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                 </div>
               </CTableDataCell>
             </CTableRow>
@@ -217,6 +218,7 @@ const visiblePages = computed(() => {
 })
 const showAddModal = ref(false)
 const showDeleteModal = ref(false)
+const activeRow = ref(null)
 const saving = ref(false)
 const addError = ref('')
 const deleteTarget = ref(null)

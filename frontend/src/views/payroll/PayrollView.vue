@@ -127,11 +127,13 @@
                     {{ e.status === 'paid' ? t('payroll.paid') : t('payroll.pending') }}
                   </CBadge>
                 </CTableDataCell>
-                <CTableDataCell>
-                  <CButton v-if="e.status !== 'paid'" size="sm" color="primary"
-                           @click="markPaid(e.id)" style="min-height:36px;">
-                    {{ t('payroll.pay') }}
-                  </CButton>
+                <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
+                  <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === e.id ? null : e.id">👁️</CButton>
+                  <div v-if="activeRow === e.id"
+                       style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
+                       @click.stop>
+                    <CButton v-if="e.status !== 'paid'" size="sm" color="primary" variant="ghost" class="text-start" @click="markPaid(e.id); activeRow = null">💵 {{ t('payroll.pay') }}</CButton>
+                  </div>
                 </CTableDataCell>
               </CTableRow>
               <CTableRow v-if="!entries.length">
@@ -191,6 +193,7 @@ const navSchool    = useSchoolStore()
 
 const entries  = ref([])
 const loading  = ref(false)
+const activeRow = ref(null)
 const error    = ref('')
 const generating = ref(false)
 const showGenerateModal = ref(false)

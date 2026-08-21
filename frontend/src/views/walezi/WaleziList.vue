@@ -41,7 +41,7 @@
               <CTableHeaderCell>{{ t('guardians.phone') }}</CTableHeaderCell>
               <CTableHeaderCell>{{ t('guardians.relation') }}</CTableHeaderCell>
               <CTableHeaderCell>{{ t('guardians.children') }}</CTableHeaderCell>
-              <CTableHeaderCell></CTableHeaderCell>
+              <CTableHeaderCell class="text-center" style="width:56px;">Vitendo</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
           <CTableBody>
@@ -55,13 +55,14 @@
                   color="info" shape="rounded-pill" class="me-1"
                 >{{ s.full_name }}</CBadge>
               </CTableDataCell>
-              <CTableDataCell class="text-end">
-                <CButton size="sm" color="warning" variant="ghost" class="me-1" @click="openEdit(g)">
-                  <CIcon icon="cilPencil" />
-                </CButton>
-                <CButton size="sm" color="danger" variant="ghost" @click="remove(g)">
-                  <CIcon icon="cilTrash" />
-                </CButton>
+              <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
+                <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === g.id ? null : g.id">👁️</CButton>
+                <div v-if="activeRow === g.id"
+                     style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
+                     @click.stop>
+                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openEdit(g); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
+                  <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="remove(g); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
+                </div>
               </CTableDataCell>
             </CTableRow>
           </CTableBody>
@@ -152,6 +153,7 @@ const store        = useGuardiansStore()
 const studentsStore = useStudentsStore()
 
 const search      = ref('')
+const activeRow   = ref(null)
 const showModal   = ref(false)
 const editing     = ref(null)
 const saving      = ref(false)
