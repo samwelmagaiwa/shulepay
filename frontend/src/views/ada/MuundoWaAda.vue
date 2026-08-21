@@ -105,7 +105,7 @@
 
         <!-- Fee Mode Toggle (add only) -->
         <div v-if="!editing" class="d-flex align-items-center gap-3 mb-4 p-3 rounded" style="background:#f8f9fa; border:1px solid #dee2e6;">
-          <span class="fw-semibold" :class="feeMode === 'per_term' ? 'text-primary' : 'text-muted'">Ada za Muhula</span>
+          <span class="fw-semibold" :class="feeMode === 'per_term' ? 'text-primary' : 'text-muted'">{{ t('fees.modePerTerm') }}</span>
           <div class="form-check form-switch mb-0">
             <input
               class="form-check-input"
@@ -117,7 +117,7 @@
               @change="feeMode = $event.target.checked ? 'full_tuition' : 'per_term'"
             />
           </div>
-          <span class="fw-semibold" :class="feeMode === 'full_tuition' ? 'text-primary' : 'text-muted'">Ada Kamili ya Mwaka</span>
+          <span class="fw-semibold" :class="feeMode === 'full_tuition' ? 'text-primary' : 'text-muted'">{{ t('fees.modeFullYear') }}</span>
         </div>
 
         <!-- School / Class / Year selectors (always shown in add mode) -->
@@ -133,7 +133,7 @@
             <label class="form-label">{{ t('common.class') }} *</label>
             <CFormSelect v-model="form.school_class_id" :disabled="!form.school_id || loadingModalClasses">
               <option value="">
-                {{ loadingModalClasses ? 'Inapakia...' : (form.school_id ? t('common.select') : '— Chagua shule kwanza —') }}
+                {{ loadingModalClasses ? t('fees.loadingClasses') : (form.school_id ? t('common.select') : t('fees.selectSchoolFirst')) }}
               </option>
               <option v-for="c in modalClasses" :key="c.id" :value="c.id">{{ c.name }}</option>
             </CFormSelect>
@@ -159,10 +159,10 @@
         <!-- ── FULL TUITION MODE ─────────────────────────────────────── -->
         <template v-if="feeMode === 'full_tuition' && !editing">
           <div class="border rounded p-3 mb-3" style="background:#f0f7ff;">
-            <div class="fw-bold mb-3 text-primary">Ada Kamili ya Mwaka</div>
+            <div class="fw-bold mb-3 text-primary">{{ t('fees.fullTuitionSection') }}</div>
             <CRow class="g-3">
               <CCol sm="6">
-                <label class="form-label">Ada Kamili ya Mwaka (TZS) *</label>
+                <label class="form-label">{{ t('fees.fullTuitionAmount') }} *</label>
                 <CFormInput
                   v-model.number="fullTuitionAmount"
                   type="number"
@@ -170,34 +170,34 @@
                   step="100"
                   placeholder="Mfano: 1200000"
                 />
-                <div class="form-text">Kiasi chote cha ada kwa mwaka mzima</div>
+                <div class="form-text">{{ t('fees.fullTuitionAmountHint') }}</div>
               </CCol>
               <CCol sm="6">
-                <label class="form-label">Idadi ya Malipo (Awamu) *</label>
+                <label class="form-label">{{ t('fees.installmentsCount') }} *</label>
                 <CFormSelect v-model.number="installmentsCount">
                   <option v-for="n in validInstallments" :key="n" :value="n">
-                    {{ n }} — kila miezi {{ 12 / n }}
+                    {{ t('fees.installmentEvery', { n, months: 12 / n }) }}
                   </option>
                 </CFormSelect>
-                <div class="form-text">Lazima igawanye miezi 12 sawasawa</div>
+                <div class="form-text">{{ t('fees.installmentsDivisor') }}</div>
               </CCol>
             </CRow>
 
             <!-- Installment preview -->
             <div v-if="fullTuitionAmount > 0" class="mt-3 p-3 rounded" style="background:#fff; border:1px solid #cce5ff;">
-              <div class="fw-semibold mb-2 text-primary">Muhtasari wa Malipo</div>
+              <div class="fw-semibold mb-2 text-primary">{{ t('fees.installmentSummary') }}</div>
               <CRow class="g-2">
                 <CCol sm="4" class="text-center">
-                  <div class="small text-muted">Ada ya kila awamu</div>
+                  <div class="small text-muted">{{ t('fees.perInstallment') }}</div>
                   <div class="fw-bold fs-5 text-success">{{ formatMoney(perInstallmentCents) }}</div>
                 </CCol>
                 <CCol sm="4" class="text-center">
-                  <div class="small text-muted">Idadi ya awamu</div>
+                  <div class="small text-muted">{{ t('fees.installmentCount') }}</div>
                   <div class="fw-bold fs-5">{{ installmentsCount }}</div>
                 </CCol>
                 <CCol sm="4" class="text-center">
-                  <div class="small text-muted">Muda kati ya awamu</div>
-                  <div class="fw-bold fs-5">Miezi {{ 12 / installmentsCount }}</div>
+                  <div class="small text-muted">{{ t('fees.intervalMonths') }}</div>
+                  <div class="fw-bold fs-5">{{ t('fees.everyNMonths', { n: 12 / installmentsCount }) }}</div>
                 </CCol>
               </CRow>
               <hr class="my-2" />
@@ -208,27 +208,25 @@
                   class="badge text-bg-primary py-2 px-3"
                   style="font-size:0.85rem;"
                 >
-                  Awamu {{ i }}: {{ formatMoney(perInstallmentCents) }}
+                  {{ t('fees.installmentN', { n: i }) }}: {{ formatMoney(perInstallmentCents) }}
                 </div>
               </div>
               <div class="mt-2 small text-muted">
-                Jumla ya mwaka: <strong>{{ formatMoney(perInstallmentCents * installmentsCount) }}</strong>
+                {{ t('fees.annualTotal') }}: <strong>{{ formatMoney(perInstallmentCents * installmentsCount) }}</strong>
                 <span v-if="perInstallmentCents * installmentsCount !== fullTuitionAmount * 100" class="text-warning ms-2">
-                  (Tofauti ya usawazishaji: {{ formatMoney(fullTuitionAmount * 100 - perInstallmentCents * installmentsCount) }})
+                  ({{ t('fees.roundingDiff', { amount: formatMoney(fullTuitionAmount * 100 - perInstallmentCents * installmentsCount) }) }})
                 </span>
               </div>
             </div>
 
             <CAlert v-if="!form.academic_year_id" color="warning" class="mt-3 mb-0 py-2">
-              Chagua mwaka wa masomo kwanza ili kuona mihula inayopatikana.
+              {{ t('fees.selectYearFirst') }}
             </CAlert>
             <CAlert v-else-if="modalTerms.length < installmentsCount" color="danger" class="mt-3 mb-0 py-2">
-              Mwaka huu una mihula {{ modalTerms.length }} tu, lakini malipo {{ installmentsCount }} yanahitajika.
-              Punguza idadi ya malipo au ongeza mihula kwanza.
+              {{ t('fees.notEnoughTerms', { count: modalTerms.length, needed: installmentsCount }) }}
             </CAlert>
             <div v-else-if="modalTerms.length > 0" class="mt-3 small text-muted">
-              Awamu {{ installmentsCount }} zitaundwa kwa mihula:
-              <strong>{{ modalTerms.slice(0, installmentsCount).map(t => t.name).join(', ') }}</strong>
+              {{ t('fees.installmentsForTerms', { count: installmentsCount, terms: modalTerms.slice(0, installmentsCount).map(tm => tm.name).join(', ') }) }}
             </div>
           </div>
         </template>
