@@ -151,10 +151,10 @@
       <!-- ═══════════════ STEP 2: Health & Address ═══════════════ -->
       <div v-if="step === 2">
         <!-- Health -->
-        <div class="fw-semibold text-muted small mb-3 text-uppercase" style="letter-spacing:.05em;">🩺 {{ t('students.healthSection') }}</div>
-        <CRow class="g-3 mb-2">
+        <div class="fw-semibold text-muted small mb-2 text-uppercase" style="letter-spacing:.05em;">🩺 {{ t('students.healthSection') }}</div>
+        <CRow class="g-2">
           <CCol xs="12" sm="4">
-            <label class="form-label fw-semibold">{{ t('students.bloodGroup') }}</label>
+            <label class="form-label fw-semibold mb-1">{{ t('students.bloodGroup') }}</label>
             <CFormSelect v-model="form.blood_group">
               <option value="">— {{ t('students.unknown') }} —</option>
               <option value="A+">A+ (A Positive)</option>
@@ -168,26 +168,23 @@
             </CFormSelect>
           </CCol>
           <CCol xs="12" sm="4">
-            <label class="form-label">{{ t('students.allergies') }}</label>
+            <label class="form-label mb-1">{{ t('students.allergies') }}</label>
             <CFormInput v-model="form.allergies" :placeholder="t('students.allergiesPlaceholder')" />
           </CCol>
           <CCol xs="12" sm="4">
-            <label class="form-label">{{ t('students.medicalConditions') }}</label>
+            <label class="form-label mb-1">{{ t('students.medicalConditions') }}</label>
             <CFormInput v-model="form.medical_conditions" :placeholder="t('students.medicalConditionsPlaceholder')" />
           </CCol>
         </CRow>
 
-        <hr class="my-3" />
+        <hr class="my-2" />
 
         <!-- Address -->
-        <div class="fw-semibold text-muted small mb-3 text-uppercase" style="letter-spacing:.05em;">📍 {{ t('students.addressSection') }}</div>
-        <CRow class="g-3">
+        <div class="fw-semibold text-muted small mb-2 text-uppercase" style="letter-spacing:.05em;">📍 {{ t('students.addressSection') }}</div>
+        <CRow class="g-2">
+          <!-- Row 1: Region · District · Ward (all selects — same height) -->
           <CCol xs="12" sm="4">
-            <label class="form-label">{{ t('students.address') }}</label>
-            <CFormTextarea v-model="form.address" rows="2" :placeholder="t('students.addressPlaceholder')" />
-          </CCol>
-          <CCol xs="12" sm="4">
-            <label class="form-label">{{ t('students.region') }}</label>
+            <label class="form-label mb-1">{{ t('students.region') }}</label>
             <CFormSelect v-model="form.region"
               @update:modelValue="onRegionChange"
               :disabled="loadingRegions">
@@ -196,7 +193,7 @@
             </CFormSelect>
           </CCol>
           <CCol xs="12" sm="4">
-            <label class="form-label d-flex align-items-center gap-1">
+            <label class="form-label mb-1 d-flex align-items-center gap-1">
               {{ t('students.district') }}
               <CSpinner v-if="loadingDistricts" size="sm" style="width:12px;height:12px;" />
             </label>
@@ -208,7 +205,7 @@
             </CFormSelect>
           </CCol>
           <CCol xs="12" sm="4">
-            <label class="form-label d-flex align-items-center gap-1">
+            <label class="form-label mb-1 d-flex align-items-center gap-1">
               {{ t('students.ward') }}
               <CSpinner v-if="loadingWards" size="sm" style="width:12px;height:12px;" />
             </label>
@@ -219,12 +216,13 @@
               <option v-for="w in wards" :key="w.id" :value="w.name">{{ w.name }}</option>
             </CFormSelect>
           </CCol>
+
+          <!-- Row 2: Street · Place · Full Address (all single-line) -->
           <CCol xs="12" sm="4">
-            <label class="form-label d-flex align-items-center gap-1">
+            <label class="form-label mb-1 d-flex align-items-center gap-1">
               {{ t('students.street') }}
               <CSpinner v-if="loadingStreets" size="sm" style="width:12px;height:12px;" />
             </label>
-            <!-- Dropdown when streets exist; free-text when ward has no street data -->
             <CFormSelect v-if="streets.length > 0 || loadingStreets"
               v-model="form.street" :disabled="!form.ward || loadingStreets"
               @update:modelValue="onStreetChange">
@@ -234,7 +232,7 @@
             <CFormInput v-else
               v-model="form.street"
               :disabled="!form.ward"
-              placeholder="Andika jina la mtaa / kijiji"
+              :placeholder="t('students.selectStreet')"
               @input="form.place = ''; places = []"
             />
             <div v-if="form.ward && !loadingStreets && streets.length === 0" class="text-muted mt-1" style="font-size:.72rem;">
@@ -242,25 +240,29 @@
             </div>
           </CCol>
           <CCol xs="12" sm="4">
-            <label class="form-label d-flex align-items-center gap-1">
-              Mtaa / Kijiji (Place)
+            <label class="form-label mb-1 d-flex align-items-center gap-1">
+              {{ t('students.place') }}
               <CSpinner v-if="loadingPlaces" size="sm" style="width:12px;height:12px;" />
             </label>
-            <!-- Dropdown when places loaded from DB -->
             <CFormSelect v-if="places.length > 0 || (form.street && loadingPlaces)"
               v-model="form.place" :disabled="!form.street || loadingPlaces">
-              <option value="">{{ loadingPlaces ? t('common.loading') : '— Chagua mtaa / sehemu —' }}</option>
+              <option value="">{{ loadingPlaces ? t('common.loading') : `— ${t('students.place')} —` }}</option>
               <option v-for="pl in places" :key="pl.id" :value="pl.name">{{ pl.name }}</option>
             </CFormSelect>
-            <!-- Always show input; disabled until street is chosen -->
             <CFormInput v-else
               v-model="form.place"
               :disabled="!form.street || loadingPlaces"
-              placeholder="Andika jina la sehemu (optional)"
+              :placeholder="t('students.place')"
             />
           </CCol>
           <CCol xs="12" sm="4">
-            <label class="form-label">{{ t('students.notes') }}</label>
+            <label class="form-label mb-1">{{ t('students.address') }}</label>
+            <CFormInput v-model="form.address" :placeholder="t('students.addressPlaceholder')" />
+          </CCol>
+
+          <!-- Row 3: Notes — full width -->
+          <CCol xs="12">
+            <label class="form-label mb-1">{{ t('students.notes') }}</label>
             <CFormTextarea v-model="form.notes" rows="2" :placeholder="t('students.notesPlaceholder')" />
           </CCol>
         </CRow>
