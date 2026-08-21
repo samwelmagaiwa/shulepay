@@ -3,53 +3,55 @@
     <div v-if="loading" class="text-center py-5"><CSpinner color="primary" /></div>
 
     <div v-else-if="student">
-      <!-- Header -->
-      <CRow class="align-items-start mb-3 g-2">
-        <CCol xs="12" md="">
-          <CButton color="secondary" variant="ghost" size="sm" @click="$router.back()" class="mb-2">
-            &larr; {{ t('common.back') }}
-          </CButton>
-          <h4 class="fw-bold mb-0 fs-5 fs-md-4">{{ student.full_name }}</h4>
+      <!-- Back button -->
+      <CButton color="secondary" variant="ghost" size="sm" @click="$router.back()" class="mb-2">
+        &larr; {{ t('common.back') }}
+      </CButton>
+
+      <!-- Summary cards (top row) -->
+      <CRow class="g-2 mb-2">
+        <CCol xs="4">
+          <CCard class="border-0 bg-body-secondary h-100">
+            <CCardBody class="p-2">
+              <div class="small text-muted" style="font-size:.72rem;">{{ t('students.totalInvoiced') }}</div>
+              <div class="fw-bold" style="font-size:.95rem;">{{ formatMoney(totalInvoiced) }}</div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+        <CCol xs="4">
+          <CCard class="border-0 h-100" style="background:rgba(25,135,84,0.08);">
+            <CCardBody class="p-2">
+              <div class="small text-muted" style="font-size:.72rem;">{{ t('students.totalPaid') }}</div>
+              <div class="fw-bold text-success" style="font-size:.95rem;">{{ formatMoney(totalPaid) }}</div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+        <CCol xs="4">
+          <CCard class="border-0 h-100" style="background:rgba(220,53,69,0.08);">
+            <CCardBody class="p-2">
+              <div class="small text-muted" style="font-size:.72rem;">{{ t('invoices.debt') }}</div>
+              <div class="fw-bold text-danger" style="font-size:.95rem;">{{ formatMoney(totalOutstanding) }}</div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+      </CRow>
+
+      <!-- Student identity (below cards) -->
+      <CRow class="align-items-center mb-3 g-2">
+        <CCol>
+          <h4 class="fw-bold mb-0 fs-5">{{ student.full_name }}</h4>
           <div class="text-muted small">
             {{ student.admission_number }}
             <span v-if="student.school_class"> &middot; {{ student.school_class?.name }}</span>
             <span v-if="student.school"> &middot; {{ student.school?.name }}</span>
           </div>
         </CCol>
-        <CCol xs="12" md="auto">
+        <CCol xs="auto">
           <CBadge
             :color="student.status === 'active' ? 'success' : student.status === 'graduated' ? 'info' : 'secondary'"
             class="p-2 fs-6">
             {{ statusLabel(student.status) }}
           </CBadge>
-        </CCol>
-      </CRow>
-
-      <!-- Summary cards -->
-      <CRow class="g-2 g-md-3 mb-3">
-        <CCol xs="6" md="4">
-          <CCard class="border-0 bg-body-secondary h-100">
-            <CCardBody class="p-2 p-md-3">
-              <div class="small text-muted">{{ t('students.totalInvoiced') }}</div>
-              <div class="fw-bold fs-5">{{ formatMoney(totalInvoiced) }}</div>
-            </CCardBody>
-          </CCard>
-        </CCol>
-        <CCol xs="6" md="4">
-          <CCard class="border-0 h-100" style="background:rgba(25,135,84,0.08);">
-            <CCardBody class="p-2 p-md-3">
-              <div class="small text-muted">{{ t('students.totalPaid') }}</div>
-              <div class="fw-bold fs-5 text-success">{{ formatMoney(totalPaid) }}</div>
-            </CCardBody>
-          </CCard>
-        </CCol>
-        <CCol xs="12" md="4">
-          <CCard class="border-0 h-100" style="background:rgba(220,53,69,0.08);">
-            <CCardBody class="p-2 p-md-3">
-              <div class="small text-muted">{{ t('invoices.debt') }}</div>
-              <div class="fw-bold fs-5 text-danger">{{ formatMoney(totalOutstanding) }}</div>
-            </CCardBody>
-          </CCard>
         </CCol>
       </CRow>
 
@@ -156,6 +158,9 @@
                     </CButton>
                     <CButton color="success" variant="outline" size="sm" @click="activeTab = 'malipo'" style="min-height:40px;">
                       💰 {{ t('students.summary.paymentHistory') }}
+                    </CButton>
+                    <CButton color="warning" size="sm" @click="activeTab = 'ahadi'; $nextTick(() => scrollToPromiseForm())" style="min-height:40px;">
+                      🤝 Weka Ahadi
                     </CButton>
                     <RouterLink :to="`/wanafunzi/clearance?student_id=${student.id}`"
                                 class="btn btn-info btn-sm" style="min-height:40px;display:flex;align-items:center;">
@@ -513,10 +518,10 @@
               <div class="px-3 py-2" style="background:linear-gradient(135deg,#f8fffe,#e8f5ee); border-bottom:1px solid #c3e6cb;">
                 <span class="fw-bold small" style="color:#007f3e;">🤝 Rekodi Ahadi Mpya</span>
               </div>
-              <div class="p-3" style="background:#fff;">
+              <div class="p-3" style="background:#fff;" ref="promiseFormRef">
                 <CAlert v-if="promiseError" color="danger" class="py-2 mb-2 small">{{ promiseError }}</CAlert>
                 <div class="row g-2 mb-2">
-                  <!-- Invoice -->
+                  <!-- Invoice — full width -->
                   <div class="col-12">
                     <label class="form-label small fw-semibold mb-1">Chagua Ankara (yenye deni)</label>
                     <select class="form-select form-select-sm" v-model="newPromise.invoice_id">
@@ -526,8 +531,8 @@
                       </option>
                     </select>
                   </div>
-                  <!-- Guardian -->
-                  <div class="col-12 col-sm-6">
+                  <!-- 3-column row: Guardian | Amount | Date -->
+                  <div class="col-12 col-md-4">
                     <label class="form-label small fw-semibold mb-1">Mlezi (aliyeahidi)</label>
                     <select class="form-select form-select-sm" v-model="newPromise.guardian_id">
                       <option value="">— Mlezi Mwovote —</option>
@@ -536,20 +541,18 @@
                       </option>
                     </select>
                   </div>
-                  <!-- Amount -->
-                  <div class="col-12 col-sm-6">
+                  <div class="col-12 col-md-4">
                     <label class="form-label small fw-semibold mb-1">Kiasi Kilichoahidiwa (TZS)</label>
                     <input type="number" class="form-control form-control-sm" v-model.number="newPromise.amount"
                            min="1" placeholder="0" />
                   </div>
-                  <!-- Date -->
-                  <div class="col-12 col-sm-6">
+                  <div class="col-12 col-md-4">
                     <label class="form-label small fw-semibold mb-1">Tarehe ya Ahadi</label>
                     <input type="date" class="form-control form-control-sm" v-model="newPromise.promised_date"
                            :min="today" />
                   </div>
-                  <!-- Notes -->
-                  <div class="col-12 col-sm-6">
+                  <!-- Notes — full width -->
+                  <div class="col-12">
                     <label class="form-label small fw-semibold mb-1">Maelezo (hiari)</label>
                     <input type="text" class="form-control form-control-sm" v-model="newPromise.notes"
                            placeholder="e.g. Anakuja Ijumaa..." />
@@ -709,6 +712,11 @@ const promisesLoading   = ref(false)
 const promiseError      = ref('')
 const savingPromise     = ref(false)
 const newPromise        = ref({ invoice_id: '', guardian_id: '', amount: '', promised_date: '', notes: '' })
+const promiseFormRef    = ref(null)
+
+function scrollToPromiseForm() {
+  promiseFormRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 const pendingPromisesCount = computed(() => promises.value.filter(p => p.status === 'pending').length)
 const overdueInvoices = computed(() => (student.value?.invoices || []).filter(inv => (inv.balance_due_cents || 0) > 0))
