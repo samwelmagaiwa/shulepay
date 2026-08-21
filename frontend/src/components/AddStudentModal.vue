@@ -224,21 +224,39 @@
               {{ t('students.street') }}
               <CSpinner v-if="loadingStreets" size="sm" style="width:12px;height:12px;" />
             </label>
-            <CFormSelect v-model="form.street" :disabled="!form.ward || loadingStreets"
+            <!-- Dropdown when streets exist; free-text when ward has no street data -->
+            <CFormSelect v-if="streets.length > 0 || loadingStreets"
+              v-model="form.street" :disabled="!form.ward || loadingStreets"
               @update:modelValue="onStreetChange">
               <option value="">{{ loadingStreets ? t('common.loading') : `— ${t('students.selectStreet')} —` }}</option>
               <option v-for="st in streets" :key="st.id" :value="st.name">{{ st.name }}</option>
             </CFormSelect>
+            <CFormInput v-else
+              v-model="form.street"
+              :disabled="!form.ward"
+              placeholder="Andika jina la mtaa / kijiji"
+              @input="form.place = ''; places = []"
+            />
+            <div v-if="form.ward && !loadingStreets && streets.length === 0" class="text-muted mt-1" style="font-size:.72rem;">
+              Hakuna data — andika mwenyewe
+            </div>
           </CCol>
           <CCol xs="12" sm="4">
             <label class="form-label d-flex align-items-center gap-1">
               Mtaa / Kijiji (Place)
               <CSpinner v-if="loadingPlaces" size="sm" style="width:12px;height:12px;" />
             </label>
-            <CFormSelect v-model="form.place" :disabled="!form.street || loadingPlaces">
+            <!-- Show place dropdown only when streets dropdown was used (places loaded from DB) -->
+            <CFormSelect v-if="places.length > 0 || (streets.length > 0 && form.street && loadingPlaces)"
+              v-model="form.place" :disabled="!form.street || loadingPlaces">
               <option value="">{{ loadingPlaces ? t('common.loading') : '— Chagua mtaa / sehemu —' }}</option>
               <option v-for="pl in places" :key="pl.id" :value="pl.name">{{ pl.name }}</option>
             </CFormSelect>
+            <CFormInput v-else-if="form.street && streets.length > 0 && !loadingPlaces && places.length === 0"
+              v-model="form.place"
+              placeholder="Andika jina la sehemu (optional)"
+            />
+            <div v-else-if="!form.street" class="text-muted small mt-1" style="font-size:.72rem;">Chagua mtaa kwanza</div>
           </CCol>
           <CCol xs="12" sm="4">
             <label class="form-label">{{ t('students.notes') }}</label>
