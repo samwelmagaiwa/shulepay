@@ -37,8 +37,15 @@ class UserSchoolAccessController extends Controller
         $user = User::findOrFail($data['user_id']);
         $school = School::findOrFail($data['school_id']);
 
+        // Ensure multi_school is not in forbidden_permissions (would block the permission check)
+        $forbidden = $user->forbidden_permissions ?? [];
+        if (in_array('multi_school', $forbidden, true)) {
+            $user->forbidden_permissions = array_values(array_diff($forbidden, ['multi_school']));
+            $user->save();
+        }
+
         // Ensure the user has the multi_school permission
-        if (! $user->hasPermissionTo('multi_school')) {
+        if (! $user->spatieHasPermissionTo('multi_school')) {
             $perm = Permission::firstOrCreate(['name' => 'multi_school', 'guard_name' => 'web']);
             $user->givePermissionTo($perm);
             app()[PermissionRegistrar::class]->forgetCachedPermissions();

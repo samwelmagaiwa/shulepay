@@ -80,36 +80,41 @@ class User extends Authenticatable
     /**
      * True if the user may act on the given school.
      * Superadmins always pass. Others must match their primary school
-     * OR have an explicit grant in user_school_access (requires multi_school permission).
+     * OR have an explicit row in user_school_access for that school.
+     *
+     * Intentionally queries the pivot table directly so that forbidden_permissions
+     * or stale Spatie caches cannot block a legitimately-granted school access.
      */
     public function canAccessSchool(int $schoolId): bool
     {
         if ($this->hasRole('superadmin')) {
             return true;
         }
-        if ($this->school_id === $schoolId) {
+        if ((int) $this->school_id === $schoolId) {
             return true;
         }
-        if ($this->hasPermissionTo('multi_school')) {
-            return $this->accessibleSchools()->where('school_id', $schoolId)->exists();
-        }
 
-        return false;
+        return \DB::table('user_school_access')
+            ->where('user_id', $this->id)
+            ->where('school_id', $schoolId)
+            ->exists();
     }
 
     /** IDs of all schools this user can act on (primary + granted extras) */
     public function allAccessibleSchoolIds(): array
     {
-        $ids = $this->school_id ? [$this->school_id] : [];
         if ($this->hasRole('superadmin')) {
             return [];  // empty = "all schools" for superadmin callers
         }
-        if ($this->hasPermissionTo('multi_school')) {
-            $extra = $this->accessibleSchools()->pluck('schools.id')->toArray();
-            $ids = array_unique(array_merge($ids, $extra));
-        }
+        $ids = $this->school_id ? [(int) $this->school_id] : [];
 
-        return array_values($ids);
+        $extra = \DB::table('user_school_access')
+            ->where('user_id', $this->id)
+            ->pluck('school_id')
+            ->map(fn ($id) => (int) $id)
+            ->toArray();
+
+        return array_values(array_unique(array_merge($ids, $extra)));
     }
 
     public function guardian(): HasOne
