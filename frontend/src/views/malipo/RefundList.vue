@@ -68,7 +68,7 @@
                 <div v-if="activeRow === r.id"
                      style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                      @click.stop>
-                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(r); activeRow = null">👁️ Angalia</CButton>
+                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(r); activeRow = null">👁️ {{ t('common.view') }}</CButton>
                   <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(r); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                 </div>
               </CTableDataCell>
@@ -128,7 +128,7 @@
 
     <!-- View Refund Modal -->
     <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
-      <CModalHeader><CModalTitle>💸 Maelezo ya Malipo Rudia</CModalTitle></CModalHeader>
+      <CModalHeader><CModalTitle>💸 {{ t('refunds.viewTitle') }}</CModalTitle></CModalHeader>
       <CModalBody v-if="viewTarget" class="p-3">
         <CRow class="g-3">
           <CCol xs="12" sm="6">

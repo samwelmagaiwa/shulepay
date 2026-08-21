@@ -60,7 +60,7 @@
                 <div v-if="activeRow === g.id"
                      style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                      @click.stop>
-                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(g); activeRow = null">👁️ Angalia</CButton>
+                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(g); activeRow = null">👁️ {{ t('common.view') }}</CButton>
                   <CButton size="sm" color="secondary" variant="ghost" class="text-start" @click="openEdit(g); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
                   <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="remove(g); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                 </div>
@@ -90,7 +90,7 @@
 
     <!-- View Guardian Modal -->
     <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
-      <CModalHeader><CModalTitle>👨‍👩‍👧 Maelezo ya Mlezi</CModalTitle></CModalHeader>
+      <CModalHeader><CModalTitle>👨‍👩‍👧 {{ t('guardians.viewTitle') }}</CModalTitle></CModalHeader>
       <CModalBody v-if="viewTarget" class="p-3">
         <div class="d-flex align-items-center gap-3 mb-4 p-3 bg-light rounded">
           <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center fw-bold"

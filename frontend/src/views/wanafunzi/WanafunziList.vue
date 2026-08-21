@@ -109,7 +109,7 @@
                 <div v-if="activeRow === s.id"
                      style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                      @click.stop>
-                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openDetail(s); activeRow = null">👁️ Angalia</CButton>
+                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openDetail(s); activeRow = null">👁️ {{ t('common.view') }}</CButton>
                   <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(s); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                 </div>
               </CTableDataCell>
@@ -130,8 +130,8 @@
 
     <!-- Delete Confirm -->
     <CModal :visible="showDeleteModal" @close="showDeleteModal = false" size="sm" class="modal-fullscreen-sm-down">
-      <CModalHeader><CModalTitle>Futa Mwanafunzi</CModalTitle></CModalHeader>
-      <CModalBody>Una uhakika unataka kufuta <strong>{{ deleteTarget?.full_name }}</strong>?</CModalBody>
+      <CModalHeader><CModalTitle>{{ t('students.deleteTitle') }}</CModalTitle></CModalHeader>
+      <CModalBody>{{ t('students.confirmDeleteMsg', { name: deleteTarget?.full_name }) }}</CModalBody>
       <CModalFooter class="gap-2">
         <CButton color="secondary" @click="showDeleteModal = false" style="min-height:44px;">{{ t('common.cancel') }}</CButton>
         <CButton color="danger" :disabled="deleting" @click="doDelete" style="min-height:44px;">

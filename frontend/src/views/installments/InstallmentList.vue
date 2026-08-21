@@ -107,7 +107,7 @@
                   <div v-if="activeRow === plan.id"
                        style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                        @click.stop>
-                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(plan); activeRow = null">👁️ Angalia</CButton>
+                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(plan); activeRow = null">👁️ {{ t('common.view') }}</CButton>
                     <CButton v-if="plan.status !== 'completed' && plan.status !== 'paid'" size="sm" color="primary" variant="ghost" class="text-start" @click="recordPayment(plan); activeRow = null">💳 {{ t('installments.recordPayment') }}</CButton>
                   </div>
                 </CTableDataCell>
@@ -135,7 +135,7 @@
 
     <!-- View Installment Plan Modal -->
     <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
-      <CModalHeader><CModalTitle>📋 Maelezo ya Mpango wa Malipo</CModalTitle></CModalHeader>
+      <CModalHeader><CModalTitle>📋 {{ t('installments.viewTitle') }}</CModalTitle></CModalHeader>
       <CModalBody v-if="viewTarget" class="p-3">
         <div class="p-3 bg-light rounded mb-4">
           <div class="fw-bold fs-5">{{ viewTarget.student?.full_name }}</div>
@@ -153,7 +153,7 @@
             </CBadge>
           </CCol>
           <CCol xs="12" sm="6">
-            <div class="text-muted small fw-semibold mb-1">Awamu Zilizolipwa / Zote</div>
+            <div class="text-muted small fw-semibold mb-1">{{ t('installments.installmentsPaidOf') }}</div>
             <div class="fw-bold">{{ viewTarget.installments_paid || 0 }} / {{ viewTarget.total_installments }}</div>
           </CCol>
           <CCol xs="12" sm="6">
@@ -161,15 +161,15 @@
             <div>{{ viewTarget.next_due_date || '—' }}</div>
           </CCol>
           <CCol xs="12" sm="6">
-            <div class="text-muted small fw-semibold mb-1">Kiasi Kilicholipwa</div>
+            <div class="text-muted small fw-semibold mb-1">{{ t('installments.amountPaid') }}</div>
             <div class="fw-bold text-success">{{ formatAmount(viewTarget.paid_amount_cents || 0) }}</div>
           </CCol>
           <CCol xs="12" sm="6">
-            <div class="text-muted small fw-semibold mb-1">Kiasi Kilichobaki</div>
+            <div class="text-muted small fw-semibold mb-1">{{ t('installments.amountRemaining') }}</div>
             <div class="fw-bold text-danger">{{ formatAmount(viewTarget.installment_amount_cents - (viewTarget.paid_amount_cents || 0)) }}</div>
           </CCol>
           <CCol xs="12">
-            <div class="text-muted small fw-semibold mb-1">Jumla ya Deni (Ankara)</div>
+            <div class="text-muted small fw-semibold mb-1">{{ t('installments.totalAmount') }}</div>
             <div class="fw-bold">{{ formatAmount(viewTarget.installment_amount_cents) }}</div>
           </CCol>
         </CRow>

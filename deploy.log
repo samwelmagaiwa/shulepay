@@ -335,3 +335,14 @@
 [0;36m[2026-08-21 23:01:32][0m   ShulePay — Release
 [0;36m[2026-08-21 23:01:32][0m ══════════════════════════════════════════
 [0;36m[2026-08-21 23:01:32][0m Checking working tree...
+[0;36m[2026-08-21 23:01:32][0m Files staged for commit:
+[0;36m[2026-08-21 23:01:33][0m Committing: "feat: add full detail view modals on all list pages with consistent eye-button popover"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-21 23:01:33][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-21 23:01:37][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-21 23:29:27][0m ══════════════════════════════════════════
+[0;36m[2026-08-21 23:29:27][0m   ShulePay — Release
+[0;36m[2026-08-21 23:29:27][0m ══════════════════════════════════════════
+[0;36m[2026-08-21 23:29:27][0m Checking working tree...

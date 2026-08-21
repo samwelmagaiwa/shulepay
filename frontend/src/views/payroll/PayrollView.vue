@@ -132,7 +132,7 @@
                   <div v-if="activeRow === e.id"
                        style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                        @click.stop>
-                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(e); activeRow = null">👁️ Angalia</CButton>
+                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(e); activeRow = null">👁️ {{ t('common.view') }}</CButton>
                     <CButton v-if="e.status !== 'paid'" size="sm" color="primary" variant="ghost" class="text-start" @click="markPaid(e.id); activeRow = null">💵 {{ t('payroll.pay') }}</CButton>
                   </div>
                 </CTableDataCell>
@@ -160,7 +160,7 @@
 
     <!-- View Payroll Entry Modal -->
     <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
-      <CModalHeader><CModalTitle>💰 Maelezo ya Mishahara</CModalTitle></CModalHeader>
+      <CModalHeader><CModalTitle>💰 {{ t('payroll.viewTitle') }}</CModalTitle></CModalHeader>
       <CModalBody v-if="viewTarget" class="p-3">
         <div class="d-flex align-items-center gap-3 mb-4 p-3 bg-light rounded">
           <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center fw-bold"

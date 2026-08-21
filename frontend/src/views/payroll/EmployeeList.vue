@@ -109,7 +109,7 @@
                   <div v-if="activeRow === emp.id"
                        style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                        @click.stop>
-                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(emp); activeRow = null">👁️ Angalia</CButton>
+                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(emp); activeRow = null">👁️ {{ t('common.view') }}</CButton>
                     <CButton size="sm" color="primary" variant="ghost" class="text-start" @click="openEdit(emp); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
                     <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(emp); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                   </div>
@@ -139,7 +139,7 @@
     <!-- View Employee Modal -->
     <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
       <CModalHeader>
-        <CModalTitle>👤 Maelezo ya Mfanyakazi</CModalTitle>
+        <CModalTitle>👤 {{ t('employees.viewTitle') }}</CModalTitle>
       </CModalHeader>
       <CModalBody v-if="viewTarget" class="p-3">
         <div class="d-flex align-items-center gap-3 mb-4 p-3 bg-light rounded">

@@ -70,8 +70,8 @@
                 <div v-if="activeRow === e.id"
                      style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                      @click.stop>
-                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(e); activeRow = null">👁️ Angalia</CButton>
-                  <CButton v-if="e.status === 'pending' && auth.isOwner" size="sm" color="success" variant="ghost" class="text-start" @click="approve(e); activeRow = null">✅ Idhinisha</CButton>
+                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(e); activeRow = null">👁️ {{ t('common.view') }}</CButton>
+                  <CButton v-if="e.status === 'pending' && auth.isOwner" size="sm" color="success" variant="ghost" class="text-start" @click="approve(e); activeRow = null">✅ {{ t('common.approve') }}</CButton>
                   <CButton v-if="e.status === 'pending'" size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(e); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                 </div>
               </CTableDataCell>
@@ -141,7 +141,7 @@
     <!-- View Expense Modal -->
     <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
       <CModalHeader>
-        <CModalTitle>📋 Maelezo ya Matumizi</CModalTitle>
+        <CModalTitle>📋 {{ t('expenses.viewTitle') }}</CModalTitle>
       </CModalHeader>
       <CModalBody v-if="viewTarget" class="p-3">
         <CRow class="g-3">
@@ -177,7 +177,7 @@
       </CModalBody>
       <CModalFooter>
         <CButton color="secondary" @click="showViewModal = false" style="min-height:44px;">{{ t('common.close') }}</CButton>
-        <CButton v-if="viewTarget?.status === 'pending' && auth.isOwner" color="success" @click="approve(viewTarget); showViewModal = false" style="min-height:44px;">✅ Idhinisha</CButton>
+        <CButton v-if="viewTarget?.status === 'pending' && auth.isOwner" color="success" @click="approve(viewTarget); showViewModal = false" style="min-height:44px;">✅ {{ t('common.approve') }}</CButton>
       </CModalFooter>
     </CModal>
 
