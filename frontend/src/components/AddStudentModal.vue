@@ -416,50 +416,122 @@
           </CCol>
         </CRow>
 
-        <!-- Summary card -->
+        <!-- Summary card — full review before submit -->
         <CCard class="mt-4" style="border:1.5px solid #007f3e;">
-          <CCardHeader style="background:#007f3e;color:#fff;">
-            <strong>📋 {{ t('students.registrationSummary') }}</strong>
+          <CCardHeader class="d-flex align-items-center gap-2" style="background:#007f3e;color:#fff;">
+            <img v-if="photoPreview" :src="photoPreview"
+              style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.5);" />
+            <div v-else style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;">👤</div>
+            <div>
+              <div class="fw-bold" style="font-size:1rem;">{{ fullName || '—' }}</div>
+              <div style="font-size:.72rem;opacity:.85;">📋 {{ t('students.registrationSummary') }}</div>
+            </div>
           </CCardHeader>
-          <CCardBody>
-            <CRow class="g-2 small">
-              <CCol xs="6">
-                <strong>Jina:</strong> {{ fullName || '—' }}
-              </CCol>
-              <CCol xs="6">
-                <strong>Jinsia:</strong> {{ form.gender === 'male' ? 'Kiume' : form.gender === 'female' ? 'Kike' : '—' }}
-              </CCol>
-              <CCol xs="6">
-                <strong>Nambari ya Usajili:</strong> {{ form.admission_no || '(Auto)' }}
-              </CCol>
-              <CCol xs="6">
-                <strong>Kundi la Damu:</strong> {{ form.blood_group || '—' }}
-              </CCol>
-              <CCol xs="6">
-                <strong>{{ t('students.school') }}:</strong> {{ selectedSchoolName }}
-              </CCol>
-              <CCol xs="6">
-                <strong>{{ t('students.class') }}:</strong> {{ selectedClassName }}
-              </CCol>
-              <CCol xs="6">
-                <strong>Walezi:</strong> {{ form.guardians.length }}
-              </CCol>
-              <CCol xs="6">
-                <strong>Picha:</strong>
-                <CBadge :color="photoFile ? 'success' : 'secondary'" class="ms-1">
-                  {{ photoFile ? 'Imepakiwa' : 'Hakuna' }}
-                </CBadge>
-              </CCol>
-              <CCol xs="6">
-                <strong>{{ t('students.invoice') }}:</strong>
-                <CBadge :color="form.generate_first_invoice ? 'success' : 'secondary'" class="ms-1">
-                  {{ form.generate_first_invoice ? t('common.yes') : t('common.no') }}
-                </CBadge>
-              </CCol>
-              <CCol v-if="form.discount_type" xs="6">
-                <strong>Punguzo:</strong> TZS {{ (form.discount_amount || 0).toLocaleString() }}
-              </CCol>
-            </CRow>
+          <CCardBody class="p-0">
+
+            <!-- Personal -->
+            <div class="px-3 pt-3 pb-2">
+              <div class="text-uppercase fw-bold mb-2" style="font-size:.65rem;letter-spacing:.08em;color:#007f3e;">👤 Taarifa za Mwanafunzi</div>
+              <CRow class="g-1 small">
+                <CCol xs="6" sm="4"><span class="text-muted">Jina Kamili:</span><br><strong>{{ fullName || '—' }}</strong></CCol>
+                <CCol xs="6" sm="4"><span class="text-muted">Jinsia:</span><br><strong>{{ form.gender === 'male' ? 'Kiume' : form.gender === 'female' ? 'Kike' : '—' }}</strong></CCol>
+                <CCol xs="6" sm="4"><span class="text-muted">Tarehe ya Kuzaliwa:</span><br><strong>{{ form.date_of_birth || '—' }}</strong></CCol>
+                <CCol xs="6" sm="4"><span class="text-muted">Nambari ya Usajili:</span><br><strong>{{ form.admission_no || '(Auto)' }}</strong></CCol>
+                <CCol xs="6" sm="4"><span class="text-muted">Uraia:</span><br><strong>{{ form.nationality || '—' }}</strong></CCol>
+                <CCol xs="6" sm="4"><span class="text-muted">Dini:</span><br><strong>{{ form.religion || '—' }}</strong></CCol>
+                <CCol xs="6" sm="4"><span class="text-muted">Hali:</span><br>
+                  <CBadge :color="form.status === 'active' ? 'success' : form.status === 'sponsored' ? 'info' : form.status === 'orphaned' ? 'warning' : 'secondary'" style="font-size:.72rem;">
+                    {{ form.status || '—' }}
+                  </CBadge>
+                </CCol>
+                <CCol xs="6" sm="4"><span class="text-muted">Namba ya Cheti:</span><br><strong>{{ form.birth_certificate_no || '—' }}</strong></CCol>
+                <CCol xs="6" sm="4"><span class="text-muted">Picha:</span><br>
+                  <CBadge :color="photoFile ? 'success' : 'secondary'" style="font-size:.72rem;">
+                    {{ photoFile ? 'Imepakiwa' : 'Hakuna' }}
+                  </CBadge>
+                </CCol>
+              </CRow>
+            </div>
+
+            <hr class="my-0" />
+
+            <!-- Academic -->
+            <div class="px-3 py-2">
+              <div class="text-uppercase fw-bold mb-2" style="font-size:.65rem;letter-spacing:.08em;color:#007f3e;">🎓 Taarifa za Shule</div>
+              <CRow class="g-1 small">
+                <CCol xs="6" sm="4"><span class="text-muted">Shule:</span><br><strong>{{ selectedSchoolName }}</strong></CCol>
+                <CCol xs="6" sm="4"><span class="text-muted">Darasa:</span><br><strong>{{ selectedClassName }}</strong></CCol>
+                <CCol xs="6" sm="4"><span class="text-muted">Mwaka wa Masomo:</span><br>
+                  <strong>{{ academicYears.find(y => String(y.id) === String(form.academic_year_id))?.name || '—' }}</strong>
+                </CCol>
+                <CCol xs="6" sm="4"><span class="text-muted">Muhula:</span><br>
+                  <strong>{{ terms.find(t => String(t.id) === String(form.term_id))?.name || '—' }}</strong>
+                </CCol>
+                <CCol xs="6" sm="4"><span class="text-muted">Tarehe ya Kuandikishwa:</span><br><strong>{{ form.enrollment_date || '—' }}</strong></CCol>
+                <CCol xs="6" sm="4" v-if="form.previous_school"><span class="text-muted">Shule ya Awali:</span><br><strong>{{ form.previous_school }}</strong></CCol>
+              </CRow>
+            </div>
+
+            <hr class="my-0" />
+
+            <!-- Health -->
+            <div class="px-3 py-2">
+              <div class="text-uppercase fw-bold mb-2" style="font-size:.65rem;letter-spacing:.08em;color:#007f3e;">🩺 Afya</div>
+              <CRow class="g-1 small">
+                <CCol xs="6" sm="4"><span class="text-muted">Kundi la Damu:</span><br><strong>{{ form.blood_group || '—' }}</strong></CCol>
+                <CCol xs="6" sm="4" v-if="form.allergies"><span class="text-muted">Mzio:</span><br><strong>{{ form.allergies }}</strong></CCol>
+                <CCol xs="6" sm="4" v-if="form.medical_conditions"><span class="text-muted">Hali ya Kiafya:</span><br><strong>{{ form.medical_conditions }}</strong></CCol>
+              </CRow>
+            </div>
+
+            <!-- Address (only if filled) -->
+            <template v-if="form.region || form.district || form.ward">
+              <hr class="my-0" />
+              <div class="px-3 py-2">
+                <div class="text-uppercase fw-bold mb-2" style="font-size:.65rem;letter-spacing:.08em;color:#007f3e;">📍 Makazi</div>
+                <CRow class="g-1 small">
+                  <CCol xs="6" sm="4" v-if="form.region"><span class="text-muted">Mkoa:</span><br><strong>{{ form.region }}</strong></CCol>
+                  <CCol xs="6" sm="4" v-if="form.district"><span class="text-muted">Wilaya:</span><br><strong>{{ form.district }}</strong></CCol>
+                  <CCol xs="6" sm="4" v-if="form.ward"><span class="text-muted">Kata:</span><br><strong>{{ form.ward }}</strong></CCol>
+                  <CCol xs="6" sm="4" v-if="form.street"><span class="text-muted">Mtaa:</span><br><strong>{{ form.street }}</strong></CCol>
+                  <CCol xs="6" sm="4" v-if="form.place"><span class="text-muted">Sehemu:</span><br><strong>{{ form.place }}</strong></CCol>
+                  <CCol xs="12" v-if="form.address"><span class="text-muted">Anwani:</span> <strong>{{ form.address }}</strong></CCol>
+                </CRow>
+              </div>
+            </template>
+
+            <hr class="my-0" />
+
+            <!-- Guardians -->
+            <div class="px-3 py-2">
+              <div class="text-uppercase fw-bold mb-2" style="font-size:.65rem;letter-spacing:.08em;color:#007f3e;">👪 Walezi ({{ form.guardians.length }})</div>
+              <div v-for="(g, gi) in form.guardians" :key="gi" class="mb-1 small d-flex align-items-start gap-2">
+                <span class="text-muted" style="min-width:18px;">{{ gi+1 }}.</span>
+                <div>
+                  <strong>{{ g.full_name || '—' }}</strong>
+                  <span v-if="g.relationship" class="text-muted ms-1">({{ g.relationship }})</span>
+                  <span v-if="g.phone" class="ms-2">📞 {{ g.phone }}</span>
+                  <CBadge v-if="g.is_primary_contact" color="success" class="ms-1" style="font-size:.65rem;">Mkuu</CBadge>
+                </div>
+              </div>
+            </div>
+
+            <hr class="my-0" />
+
+            <!-- Financial -->
+            <div class="px-3 py-2">
+              <div class="text-uppercase fw-bold mb-2" style="font-size:.65rem;letter-spacing:.08em;color:#007f3e;">💰 Fedha</div>
+              <CRow class="g-1 small">
+                <CCol xs="6" sm="4"><span class="text-muted">Ankara ya Kwanza:</span><br>
+                  <CBadge :color="form.generate_first_invoice ? 'success' : 'secondary'" style="font-size:.72rem;">
+                    {{ form.generate_first_invoice ? t('common.yes') : t('common.no') }}
+                  </CBadge>
+                </CCol>
+                <CCol xs="6" sm="4" v-if="form.opening_balance > 0"><span class="text-muted">Salio la Awali:</span><br><strong>TZS {{ (form.opening_balance || 0).toLocaleString() }}</strong></CCol>
+                <CCol xs="6" sm="4" v-if="form.discount_type"><span class="text-muted">Punguzo:</span><br><strong>{{ form.discount_type }} — TZS {{ (form.discount_amount || 0).toLocaleString() }}</strong></CCol>
+              </CRow>
+            </div>
+
           </CCardBody>
         </CCard>
       </div>
