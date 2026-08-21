@@ -6,7 +6,7 @@
 
     <CModalBody class="p-0">
       <!-- Config row -->
-      <div class="p-3 p-md-4 border-bottom" style="background:#f8fffe;">
+      <div class="px-3 px-md-4 pt-3 pb-3 border-bottom" style="background:#f8fffe;">
         <CRow class="g-3 align-items-end">
 
           <!-- School -->
@@ -118,19 +118,19 @@
           <div class="mt-2">Chagua darasa na muhula ili kuona wanafunzi wanaostahili</div>
         </div>
 
-        <!-- No eligible students -->
-        <div v-else-if="preview.length === 0 && !previewLoading"
+        <!-- No student records at all for this class+term -->
+        <div v-else-if="preview.length === 0 && readOnlyRows.length === 0 && !previewLoading"
              class="rounded p-4 text-center"
-             style="background:rgba(255,193,7,.08); border:1px dashed #ffc107;">
-          <div style="font-size:2rem;">✅</div>
-          <div class="fw-semibold mt-2">Hakuna wanafunzi wanaostahili</div>
+             style="background:rgba(108,117,125,.06); border:1px dashed #adb5bd;">
+          <div style="font-size:2rem;">📭</div>
+          <div class="fw-semibold mt-2">Hakuna rekodi za wanafunzi</div>
           <div class="small text-muted mt-1">
-            Wanafunzi wote wa darasa hili tayari wana mipango ya malipo, au ankara zao zimeshalipwa.
+            Hakuna ankara zilizoundwa kwa darasa hili katika muhula huu. Unda ankara kwanza.
           </div>
         </div>
 
-        <!-- Preview table -->
-        <div v-else>
+        <!-- Preview table (eligible students only) or read-only-only view -->
+        <div v-else-if="preview.length > 0 || readOnlyRows.length > 0">
           <!-- Summary bar -->
           <div class="d-flex gap-3 flex-wrap mb-3">
             <div class="rounded px-3 py-2 d-flex flex-column align-items-center"
@@ -217,7 +217,7 @@
           </div>
 
           <!-- Due dates schedule -->
-          <div class="mt-3 p-3 rounded" style="background:#f8fffe; border:1px solid #e0f2ec;">
+          <div v-if="preview.length > 0" class="mt-3 p-3 rounded" style="background:#f8fffe; border:1px solid #e0f2ec;">
             <div class="fw-semibold small mb-2" style="color:#007f3e;">📅 Ratiba ya Malipo</div>
             <div class="d-flex flex-wrap gap-2">
               <div v-for="(date, idx) in scheduleDates" :key="idx"
@@ -227,6 +227,51 @@
                 <span class="text-muted ms-1">{{ date }}</span>
               </div>
             </div>
+          </div>
+
+          <!-- Read-only: students with paid/no-balance invoices -->
+          <div v-if="readOnlyRows.length > 0" class="mt-3 border rounded overflow-hidden">
+            <div class="d-flex justify-content-between align-items-center px-3 py-2"
+                 style="background:#f8f9fa; border-bottom:1px solid #dee2e6;">
+              <span class="fw-semibold small text-muted">Wanafunzi (Ankara Zimeshalipwa / Hana Deni)</span>
+              <span class="badge bg-secondary">{{ readOnlyRows.length }}</span>
+            </div>
+            <table class="table table-sm mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="small">#</th>
+                  <th class="small">Mwanafunzi</th>
+                  <th class="small">Ankara</th>
+                  <th class="small text-end">Jumla Ada</th>
+                  <th class="small text-end">Deni Linalobaki</th>
+                  <th class="small">Hali</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, idx) in readOnlyRows" :key="row.invoice_id" class="text-muted">
+                  <td class="small">{{ idx + 1 }}</td>
+                  <td>
+                    <div class="small">{{ row.student_name }}</div>
+                    <div style="font-size:.7rem;">{{ row.admission_number }}</div>
+                  </td>
+                  <td class="small">{{ row.invoice_number }}</td>
+                  <td class="small text-end">{{ formatMoney(row.total_amount_cents) }}</td>
+                  <td class="small text-end">{{ formatMoney(row.balance_due_cents) }}</td>
+                  <td class="small">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">Amelipa</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- No eligible students but some exist (all paid) -->
+          <div v-if="preview.length === 0 && readOnlyRows.length > 0"
+               class="mt-3 rounded p-3 text-center"
+               style="background:rgba(25,135,84,.06); border:1px dashed #198754;">
+            <div style="font-size:1.5rem;">✅</div>
+            <div class="fw-semibold mt-1 text-success">Wanafunzi wote wameshalipa</div>
+            <div class="small text-muted">Hakuna ankara zenye deni kwa darasa hili katika muhula huu.</div>
           </div>
         </div>
 
@@ -282,7 +327,8 @@ const saving        = ref(false)
 const error         = ref('')
 const successMsg    = ref('')
 const previewLoading= ref(false)
-const preview       = ref([])
+const preview       = ref([])      // eligible: balance_due > 0
+const readOnlyRows  = ref([])      // paid / zero-balance invoices
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatMoney(cents) {
@@ -388,6 +434,7 @@ async function onSchoolChange() {
   filteredClasses.value      = []
   filteredTerms.value        = []
   preview.value              = []
+  readOnlyRows.value         = []
   error.value                = ''
   successMsg.value           = ''
 
@@ -430,6 +477,7 @@ function buildPreviewRows(invoices) {
 async function loadPreview() {
   if (!form.value.school_class_id || !form.value.term_id) {
     preview.value = []
+    readOnlyRows.value = []
     return
   }
   previewLoading.value = true
@@ -440,14 +488,24 @@ async function loadPreview() {
         school_id:       form.value.school_id || undefined,
         school_class_id: form.value.school_class_id,
         term_id:         form.value.term_id,
-        status:          'unpaid,partial',
-        per_page:        200,
+        per_page:        500,
       },
     })
-    const invoices = (data.data || []).filter(inv => (inv.balance_due_cents || 0) > 0)
-    preview.value = buildPreviewRows(invoices)
+    const all = data.data || []
+    const eligible = all.filter(inv => (inv.balance_due_cents || 0) > 0)
+    const paid     = all.filter(inv => (inv.balance_due_cents || 0) <= 0)
+    preview.value = buildPreviewRows(eligible)
+    readOnlyRows.value = paid.map(inv => ({
+      invoice_id:         inv.id,
+      invoice_number:     inv.invoice_number,
+      student_name:       inv.student?.full_name || '—',
+      admission_number:   inv.student?.admission_number || '',
+      total_amount_cents: inv.total_amount_cents,
+      balance_due_cents:  inv.balance_due_cents || 0,
+    }))
   } catch {
     preview.value = []
+    readOnlyRows.value = []
   } finally {
     previewLoading.value = false
   }
@@ -479,6 +537,7 @@ watch(() => props.visible, async (v) => {
   filteredClasses.value = []
   filteredTerms.value   = []
   preview.value         = []
+  readOnlyRows.value    = []
   error.value           = ''
   successMsg.value      = ''
   await loadSchools()

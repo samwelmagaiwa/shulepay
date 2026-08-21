@@ -1,17 +1,5 @@
 <template>
   <CContainer fluid class="p-2 p-md-3">
-    <!-- Header with actions -->
-    <CRow class="align-items-center mb-3 g-2">
-      <CCol>
-        <h4 class="fw-bold mb-0">{{ t('installments.title', 'Installment Plans') }}</h4>
-      </CCol>
-      <CCol xs="auto">
-        <CButton color="primary" @click="showBulkModal = true" style="min-height:40px;">
-          📋 {{ t('installments.bulkByClass') }}
-        </CButton>
-      </CCol>
-    </CRow>
-
     <!-- Filters -->
     <CCard class="mb-3">
       <CCardBody class="p-2 p-md-3">
@@ -25,6 +13,11 @@
           </CCol>
           <CCol xs="12" sm="6" md="4">
             <CFormInput v-model="filters.search" :placeholder="t('installments.searchPlaceholder')" @input="debouncedLoad" style="min-height:40px;" />
+          </CCol>
+          <CCol xs="12" sm="auto" class="ms-sm-auto">
+            <CButton color="primary" @click="showBulkModal = true" style="min-height:40px; white-space:nowrap;">
+              📋 {{ t('installments.bulkByClass') }}
+            </CButton>
           </CCol>
         </CRow>
       </CCardBody>
