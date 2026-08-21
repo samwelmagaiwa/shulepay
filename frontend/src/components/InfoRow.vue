@@ -17,19 +17,19 @@ defineProps({ label: String, value: [String, Number] })
   font-size: .85rem;
 }
 .info-label {
-  color: #6c757d;
+  color: #6c757d !important;
   flex-shrink: 0;
   max-width: 50%;
 }
 .info-value {
-  color: #1a1a1a;
+  color: #111827 !important;
   font-weight: 600;
   text-align: right;
   word-break: break-word;
   min-width: 0;
 }
 @media (prefers-color-scheme: dark) {
-  .info-label { color: #9ca3af; }
-  .info-value { color: #f3f4f6; }
+  .info-label { color: #9ca3af !important; }
+  .info-value { color: #f9fafb !important; }
 }
 </style>
