@@ -136,7 +136,7 @@
           <CCol xs="12" sm="4">
             <label class="form-label">{{ t('students.admissionNo') }}</label>
             <div class="input-group">
-              <CFormInput v-model="form.admission_no" placeholder="Auto" :class="{'is-invalid': errors.admission_no}" />
+              <CFormInput v-model="form.admission_no" placeholder="Auto" maxlength="30" :class="{'is-invalid': errors.admission_no}" />
               <CButton color="secondary" variant="outline" size="sm"
                        @click="fetchAdmissionNo()" :disabled="!form.school_id || fetchingAdmNo">
                 <CSpinner v-if="fetchingAdmNo" size="sm" />

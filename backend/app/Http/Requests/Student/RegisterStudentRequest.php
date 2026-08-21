@@ -18,7 +18,7 @@ class RegisterStudentRequest extends FormRequest
             'first_name' => 'required|string|max:100',
             'middle_name' => 'nullable|string|max:100',
             'last_name' => 'required|string|max:100',
-            'admission_no' => 'nullable|string|max:20',
+            'admission_no' => 'nullable|string|max:30',
             'gender' => 'required|in:male,female',
             'date_of_birth' => 'required|date|before:today',
             'birth_certificate_no' => 'nullable|string|max:50',
