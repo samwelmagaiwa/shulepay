@@ -60,10 +60,9 @@ export const useAuthStore = defineStore('auth', () => {
     const schoolStore = useSchoolStore()
     if (u.school_id) schoolStore.setActive(u.school_id)
 
-    // Start reactive branding watcher then load for the active school
+    // Set active school first, then start watcher (immediate:true fires for it)
     const brandingStore = useBrandingStore()
-    brandingStore.watchSchool()
-    brandingStore.fetchBranding(u.school_id || null)
+    brandingStore.watchSchool()   // installs once; immediate watcher fires for activeSchoolId
     schoolStore.fetchSchools()
 
     return { token: t, user: u }

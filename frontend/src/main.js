@@ -30,8 +30,7 @@ if (auth.token && !auth.user) {
 }
 // Load branding and school list if logged in (non-blocking)
 if (auth.token) {
-  branding.watchSchool()          // start reactive watcher immediately
-  branding.fetchBranding()        // load branding for current active school
+  branding.watchSchool()          // installs watcher; fires immediately for current activeSchoolId
   school.fetchSchools(auth.user?.school_id)
 }
 
