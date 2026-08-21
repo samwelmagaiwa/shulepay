@@ -129,3 +129,14 @@
 [0;36m[12:57:59][0m   ShulePay — Release
 [0;36m[12:57:59][0m ══════════════════════════════════════════
 [0;36m[12:57:59][0m Checking working tree...
+[0;36m[12:58:00][0m Files staged for commit:
+[0;36m[12:58:00][0m Committing: "fix: userForbidden.value.has template bug"
+[0;32m✔ Committed[0m
+[0;36m[12:58:00][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[12:58:04][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[13:10:40][0m ══════════════════════════════════════════
+[0;36m[13:10:40][0m   ShulePay — Release
+[0;36m[13:10:40][0m ══════════════════════════════════════════
+[0;36m[13:10:40][0m Checking working tree...

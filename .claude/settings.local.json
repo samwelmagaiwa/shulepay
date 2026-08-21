@@ -153,7 +153,8 @@
       "Bash(ssh root@169.58.188.122 \"docker ps --format '{{.Names}}'\")",
       "PowerShell(docker exec shulepay_db bash -c \"mysql -uroot -p'Samwel123@' shulepay -e 'SHOW TABLES LIKE \\\\\"%state%\\\\\"; SHOW TABLES LIKE \\\\\"%ward%\\\\\"; SHOW TABLES LIKE \\\\\"%lga%\\\\\"; SHOW TABLES LIKE \\\\\"%village%\\\\\";'\" 2>&1)",
       "Bash(curl -s http://localhost/api/locations/states)",
-      "Bash(xargs cat)"
+      "Bash(xargs cat)",
+      "PowerShell(docker exec shulepay_db bash -c 'mysql -uroot -p\"Samwel123@\" shulepay -e \"SELECT id, name, code, short_name FROM schools;\"' 2>&1)"
     ]
   }
 }
