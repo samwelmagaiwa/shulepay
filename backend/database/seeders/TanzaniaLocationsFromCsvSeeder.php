@@ -2,118 +2,212 @@
 
 namespace Database\Seeders;
 
-use App\Models\Lga;
-use App\Models\Place;
-use App\Models\State;
-use App\Models\Village;
-use App\Models\Ward;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class TanzaniaLocationsFromCsvSeeder extends Seeder
 {
-    /**
-     * Seed Tanzania regions, districts, wards and villages from CSV files
-     * located in the "location-files" directory at the project root.
-     *
-     * This seeder is idempotent and can be safely re-run; it uses
-     * firstOrCreate so it will not create duplicates even when
-     * migrate:fresh --seed is executed multiple times.
-     */
-    public function run()
+    public function run(): void
     {
         $directory = base_path('location-files');
 
         if (! is_dir($directory)) {
+            $this->command->warn('location-files directory not found — skipping.');
+
             return;
         }
 
-        foreach (glob($directory.DIRECTORY_SEPARATOR.'*.csv') as $path) {
-            $this->importFile($path);
-        }
-    }
+        $this->command->info('Truncating location tables…');
 
-    /**
-     * Import a single CSV file.
-     */
-    protected function importFile(string $path): void
-    {
-        if (! is_readable($path)) {
+        DB::unprepared('SET FOREIGN_KEY_CHECKS=0');
+        DB::unprepared('TRUNCATE TABLE places');
+        DB::unprepared('TRUNCATE TABLE villages');
+        DB::unprepared('TRUNCATE TABLE wards');
+        DB::unprepared('TRUNCATE TABLE districts');
+        DB::unprepared('TRUNCATE TABLE states');
+        DB::unprepared('SET FOREIGN_KEY_CHECKS=1');
+
+        // Verify truncate worked
+        $remaining = DB::table('wards')->count();
+        if ($remaining > 0) {
+            $this->command->error("Truncate failed — {$remaining} wards still in DB. Aborting.");
             return;
         }
 
-        if (($handle = fopen($path, 'r')) === false) {
-            return;
-        }
+        // In-memory lookup maps so we avoid redundant DB reads per row
+        $states = [];   // name => id
+        $districts = [];   // "state_id:name" => id
+        $wards = [];   // "district_id:name" => id
+        $villages = [];   // "ward_id:name" => id
 
-        // Skip header row
-        fgetcsv($handle);
+        $now = now()->toDateTimeString();
 
-        while (($row = fgetcsv($handle)) !== false) {
-            // region,regioncode,district,districtcode,ward,wardcode,street,places
-            $row = array_pad($row, 8, null);
-            [$region, $regionCode, $district, $districtCode, $ward, $wardCode, $street, $places] = $row;
+        // Bulk-insert buffers
+        $stateBuf = [];
+        $districtBuf = [];
+        $wardBuf = [];
+        $villageBuf = [];
+        $placeBuf = [];
 
-            $regionName = $this->normalizeName($region);
-            $districtName = $this->normalizeName($district);
-            $wardName = $this->normalizeName($ward);
-            $streetName = $this->normalizeName($street);
-            $placeName = $this->normalizeName($places);
+        $files = glob($directory.DIRECTORY_SEPARATOR.'*.csv');
+        sort($files);
 
-            // We need at least region + district + ward to build the hierarchy
-            if (! $regionName || ! $districtName || ! $wardName) {
+        $this->command->info('Parsing '.count($files).' CSV files…');
+
+        foreach ($files as $path) {
+            if (! is_readable($path)) {
                 continue;
             }
 
-            // State/Region
-            $state = State::firstOrCreate([
-                'name' => $regionName,
-                'country_code' => 'TZ',
-            ]);
+            $handle = fopen($path, 'r');
+            if ($handle === false) {
+                continue;
+            }
 
-            // District (LGA model is mapped to the "districts" table)
-            $districtModel = Lga::firstOrCreate([
-                'name' => $districtName,
-                'state_id' => $state->id,
-            ]);
+            fgetcsv($handle); // skip header
 
-            // Ward
-            $wardModel = Ward::firstOrCreate([
-                'name' => $wardName,
-                'lga_id' => $districtModel->id,
-            ]);
+            while (($row = fgetcsv($handle)) !== false) {
+                $row = array_pad($row, 8, null);
 
-            // Village / Street (optional)
-            $villageModel = null;
-            if ($streetName) {
-                // Normal case: street name provided — create village, then place under it
-                $villageModel = Village::firstOrCreate([
-                    'name' => $streetName,
-                    'ward_id' => $wardModel->id,
-                ]);
+                [$region, , $district, , $ward, , $street, $place] = $row;
 
-                if ($placeName) {
-                    Place::firstOrCreate([
-                        'village_id' => $villageModel->id,
-                        'name' => $placeName,
-                    ]);
+                $regionName = $this->normalize($region);
+                $districtName = $this->normalize($district);
+                $wardName = $this->normalize($ward);
+                $streetName = $this->normalize($street);
+                $placeName = $this->normalize($place);
+
+                if (! $regionName || ! $districtName || ! $wardName) {
+                    continue;
                 }
-            } elseif ($placeName) {
-                // Urban-ward case: street column empty but place exists.
-                // Seed the place directly as the village (street level) — no sub-place.
-                Village::firstOrCreate([
-                    'name' => $placeName,
-                    'ward_id' => $wardModel->id,
-                ]);
+
+                // ── State ────────────────────────────────────────────────────
+                if (! array_key_exists($regionName, $states)) {
+                    $stateBuf[] = ['name' => $regionName, 'country_code' => 'TZ', 'created_at' => $now, 'updated_at' => $now];
+                    $states[$regionName] = null; // placeholder; real id assigned after flush
+                }
+
+                // ── District ─────────────────────────────────────────────────
+                $dKey = $regionName.':'.$districtName;
+                if (! array_key_exists($dKey, $districts)) {
+                    $districtBuf[] = ['_region' => $regionName, 'name' => $districtName, 'created_at' => $now, 'updated_at' => $now];
+                    $districts[$dKey] = null;
+                }
+
+                // ── Ward ─────────────────────────────────────────────────────
+                $wKey = $dKey.':'.$wardName;
+                if (! array_key_exists($wKey, $wards)) {
+                    $wardBuf[] = ['_dkey' => $dKey, 'name' => $wardName, 'created_at' => $now, 'updated_at' => $now];
+                    $wards[$wKey] = null;
+                }
+
+                // ── Village / Street ──────────────────────────────────────────
+                if ($streetName) {
+                    $vKey = $wKey.':'.$streetName;
+                    if (! array_key_exists($vKey, $villages)) {
+                        $villageBuf[] = ['_wkey' => $wKey, 'name' => $streetName, 'created_at' => $now, 'updated_at' => $now];
+                        $villages[$vKey] = null;
+                    }
+                    // Place under village
+                    if ($placeName) {
+                        $placeBuf[] = ['_vkey' => $vKey, 'name' => $placeName, 'created_at' => $now, 'updated_at' => $now];
+                    }
+                } elseif ($placeName) {
+                    // Urban ward: place IS the village
+                    $vKey = $wKey.':'.$placeName;
+                    if (! array_key_exists($vKey, $villages)) {
+                        $villageBuf[] = ['_wkey' => $wKey, 'name' => $placeName, 'created_at' => $now, 'updated_at' => $now];
+                        $villages[$vKey] = null;
+                    }
+                }
+            }
+
+            fclose($handle);
+        }
+
+        // ── Flush states ──────────────────────────────────────────────────────
+        $this->command->info('Inserting states…');
+        foreach (array_chunk($stateBuf, 500) as $chunk) {
+            DB::table('states')->insert($chunk);
+        }
+        foreach (DB::table('states')->where('country_code', 'TZ')->get(['id', 'name']) as $s) {
+            $states[$s->name] = $s->id;
+        }
+
+        // ── Flush districts ───────────────────────────────────────────────────
+        $this->command->info('Inserting districts…');
+        $distRows = [];
+        foreach ($districtBuf as $d) {
+            $stateId = $states[$d['_region']] ?? null;
+            if (! $stateId) {
+                continue;
+            }
+            $distRows[] = ['state_id' => $stateId, 'name' => $d['name'], 'created_at' => $now, 'updated_at' => $now];
+        }
+        foreach (array_chunk($distRows, 500) as $chunk) {
+            DB::table('districts')->insert($chunk);
+        }
+        foreach (DB::table('districts')->get(['id', 'state_id', 'name']) as $d) {
+            $regionName = array_search($d->state_id, $states);
+            $districts[$regionName.':'.$d->name] = $d->id;
+        }
+
+        // ── Flush wards ───────────────────────────────────────────────────────
+        $this->command->info('Inserting wards…');
+        $wardRows = [];
+        foreach ($wardBuf as $w) {
+            $districtId = $districts[$w['_dkey']] ?? null;
+            if (! $districtId) {
+                continue;
+            }
+            $wardRows[] = ['lga_id' => $districtId, 'name' => $w['name'], 'created_at' => $now, 'updated_at' => $now];
+        }
+        foreach (array_chunk($wardRows, 500) as $chunk) {
+            DB::table('wards')->insert($chunk);
+        }
+        foreach (DB::table('wards')->get(['id', 'lga_id', 'name']) as $w) {
+            $dKey = array_search($w->lga_id, $districts);
+            $wards[$dKey.':'.$w->name] = $w->id;
+        }
+
+        // ── Flush villages ────────────────────────────────────────────────────
+        $this->command->info('Inserting villages…');
+        $villageRows = [];
+        foreach ($villageBuf as $v) {
+            $wardId = $wards[$v['_wkey']] ?? null;
+            if (! $wardId) {
+                continue;
+            }
+            $villageRows[] = ['ward_id' => $wardId, 'name' => $v['name'], 'created_at' => $now, 'updated_at' => $now];
+        }
+        foreach (array_chunk($villageRows, 500) as $chunk) {
+            DB::table('villages')->insert($chunk);
+        }
+        foreach (DB::table('villages')->get(['id', 'ward_id', 'name']) as $v) {
+            $wKey = array_search($v->ward_id, $wards);
+            $villages[$wKey.':'.$v->name] = $v->id;
+        }
+
+        // ── Flush places ──────────────────────────────────────────────────────
+        if (! empty($placeBuf)) {
+            $this->command->info('Inserting places…');
+            $placeRows = [];
+            foreach ($placeBuf as $p) {
+                $villageId = $villages[$p['_vkey']] ?? null;
+                if (! $villageId) {
+                    continue;
+                }
+                $placeRows[] = ['village_id' => $villageId, 'name' => $p['name'], 'created_at' => $now, 'updated_at' => $now];
+            }
+            foreach (array_chunk($placeRows, 500) as $chunk) {
+                DB::table('places')->insert($chunk);
             }
         }
 
-        fclose($handle);
+        $this->command->info('Done. States: '.count($states).', Districts: '.count($districts).', Wards: '.count($wards).', Villages: '.count($villages).'.');
     }
 
-    /**
-     * Normalize names from CSV into a consistent format.
-     */
-    protected function normalizeName(?string $value): ?string
+    private function normalize(?string $value): ?string
     {
         $value = trim((string) $value);
 
@@ -121,13 +215,6 @@ class TanzaniaLocationsFromCsvSeeder extends Seeder
             return null;
         }
 
-        // Use mbstring to safely normalize mixed-case UTF-8 names
-        if (function_exists('mb_strtolower')) {
-            $value = mb_strtolower($value, 'UTF-8');
-        } else {
-            $value = strtolower($value);
-        }
-
-        return ucwords($value);
+        return ucwords(mb_strtolower($value, 'UTF-8'));
     }
 }

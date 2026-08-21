@@ -246,17 +246,18 @@
               Mtaa / Kijiji (Place)
               <CSpinner v-if="loadingPlaces" size="sm" style="width:12px;height:12px;" />
             </label>
-            <!-- Show place dropdown only when streets dropdown was used (places loaded from DB) -->
-            <CFormSelect v-if="places.length > 0 || (streets.length > 0 && form.street && loadingPlaces)"
+            <!-- Dropdown when places loaded from DB -->
+            <CFormSelect v-if="places.length > 0 || (form.street && loadingPlaces)"
               v-model="form.place" :disabled="!form.street || loadingPlaces">
               <option value="">{{ loadingPlaces ? t('common.loading') : '— Chagua mtaa / sehemu —' }}</option>
               <option v-for="pl in places" :key="pl.id" :value="pl.name">{{ pl.name }}</option>
             </CFormSelect>
-            <CFormInput v-else-if="form.street && streets.length > 0 && !loadingPlaces && places.length === 0"
+            <!-- Always show input; disabled until street is chosen -->
+            <CFormInput v-else
               v-model="form.place"
+              :disabled="!form.street || loadingPlaces"
               placeholder="Andika jina la sehemu (optional)"
             />
-            <div v-else-if="!form.street" class="text-muted small mt-1" style="font-size:.72rem;">Chagua mtaa kwanza</div>
           </CCol>
           <CCol xs="12" sm="4">
             <label class="form-label">{{ t('students.notes') }}</label>
@@ -824,7 +825,13 @@ function resetForm() {
   form.value = blankForm()
 }
 
-watch(() => props.visible, (v) => { if (v) resetForm() })
+watch(() => props.visible, async (v) => {
+  if (v) {
+    resetForm()
+    // Re-fetch regions each time the modal opens so IDs are always fresh
+    try { await fetchRegions() } catch {}
+  }
+})
 
 onMounted(async () => {
   try { await schoolsStore.fetchSchools() } catch {}

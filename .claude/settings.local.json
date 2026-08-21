@@ -155,7 +155,8 @@
       "Bash(curl -s http://localhost/api/locations/states)",
       "Bash(xargs cat)",
       "PowerShell(docker exec shulepay_db bash -c 'mysql -uroot -p\"Samwel123@\" shulepay -e \"SELECT id, name, code, short_name FROM schools;\"' 2>&1)",
-      "Bash(gh run *)"
+      "Bash(gh run *)",
+      "Bash(ssh root@169.58.188.122 \"tail -5 /www/shulepay/deploy.log\")"
     ]
   }
 }
