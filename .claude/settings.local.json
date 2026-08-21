@@ -163,7 +163,11 @@
       "Bash(git -C D:/Projects/shulepay add backend/app/Http/Resources/SchoolResource.php frontend/src/stores/school.js frontend/src/stores/branding.js)",
       "Bash(git -C D:/Projects/shulepay commit -m ' *)",
       "Bash(git -C D:/Projects/shulepay push origin master)",
-      "Bash(D:/Projects/shulepay/backend/vendor/bin/pint D:/Projects/shulepay/backend/app/Http/Resources/SchoolResource.php)"
+      "Bash(D:/Projects/shulepay/backend/vendor/bin/pint D:/Projects/shulepay/backend/app/Http/Resources/SchoolResource.php)",
+      "Bash(vendor/bin/pint --test app/Http/Controllers/Superadmin/SuperadminUserController.php)",
+      "Bash(xargs grep -l -i \"branding\\\\|brand\")",
+      "Bash(vendor/bin/pint --test app/Http/Controllers/Auth/AuthController.php)",
+      "Bash(vendor/bin/pint app/Http/Controllers/Auth/AuthController.php)"
     ]
   }
 }
