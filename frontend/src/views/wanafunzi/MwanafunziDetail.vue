@@ -104,7 +104,7 @@
                     👤 Taarifa za Mwanafunzi
                   </CCardHeader>
                   <CCardBody class="p-2">
-                    <InfoRow :label="t('students.gender')" :value="(student.gender === 'me' || student.gender === 'male') ? t('students.male') : t('students.female')" />
+                    <InfoRow :label="t('students.gender')" :value="(student.gender === 'me' || student.gender === 'male') ? t('students.male') : (student.gender === 'ke' || student.gender === 'female') ? t('students.female') : '—'" />
                     <InfoRow :label="t('students.dob')" :value="student.date_of_birth || '—'" />
                     <InfoRow :label="t('students.admitDate')" :value="student.admitted_at || student.admission_date || '—'" />
                     <InfoRow :label="t('common.status')" :value="statusLabel(student.status)" />
