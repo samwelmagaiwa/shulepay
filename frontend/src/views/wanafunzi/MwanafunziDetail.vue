@@ -472,6 +472,104 @@
 
             </div>
           </div>
+          <!-- ── Tab: Ahadi za Malipo ────────────────────────────────────────── -->
+          <div v-if="activeTab === 'ahadi'">
+
+            <!-- Existing promises list -->
+            <div v-if="promisesLoading" class="text-center py-4"><CSpinner size="sm" /></div>
+            <div v-else>
+              <div v-if="promises.length" class="mb-3">
+                <div v-for="p in promises" :key="p.id"
+                     class="d-flex align-items-start gap-2 p-2 mb-2 rounded border"
+                     :style="promiseRowStyle(p)">
+                  <div style="flex:1; min-width:0;">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                      <span class="fw-semibold small">{{ p.invoice?.invoice_number || '—' }}</span>
+                      <CBadge :color="p.status === 'kept' ? 'success' : p.status === 'broken' ? 'danger' : isPromiseOverdue(p) ? 'warning' : 'info'" style="font-size:.65rem;">
+                        {{ p.status === 'kept' ? '✓ Imelipwa' : p.status === 'broken' ? '✗ Haikulipwa' : isPromiseOverdue(p) ? '⚠ Imechelewa' : '⏳ Inasubiri' }}
+                      </CBadge>
+                    </div>
+                    <div class="small text-muted mt-1">
+                      📅 {{ p.promised_date }} &nbsp;·&nbsp; 💰 {{ formatMoney(p.amount_cents) }}
+                      <span v-if="p.guardian"> &nbsp;·&nbsp; 👤 {{ p.guardian.first_name }}</span>
+                    </div>
+                    <div v-if="p.notes" class="small text-muted fst-italic mt-1">{{ p.notes }}</div>
+                  </div>
+                  <div class="d-flex gap-1 flex-shrink-0" v-if="p.status === 'pending'">
+                    <CButton size="sm" color="success" variant="outline" style="font-size:.7rem; padding:2px 6px;"
+                             @click="markPromise(p.id, 'kept')">✓ Imelipwa</CButton>
+                    <CButton size="sm" color="danger"  variant="outline" style="font-size:.7rem; padding:2px 6px;"
+                             @click="markPromise(p.id, 'broken')">✗ Haikulipwa</CButton>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="text-muted small mb-2 d-flex align-items-center gap-2">
+                <span>🤝</span> Hakuna ahadi zilizorekodiwa.
+              </div>
+            </div>
+
+            <!-- Record new promise form -->
+            <div class="rounded overflow-hidden" style="border:1px solid #c3e6cb;">
+              <div class="px-3 py-2" style="background:linear-gradient(135deg,#f8fffe,#e8f5ee); border-bottom:1px solid #c3e6cb;">
+                <span class="fw-bold small" style="color:#007f3e;">🤝 Rekodi Ahadi Mpya</span>
+              </div>
+              <div class="p-3" style="background:#fff;">
+                <CAlert v-if="promiseError" color="danger" class="py-2 mb-2 small">{{ promiseError }}</CAlert>
+                <div class="row g-2 mb-2">
+                  <!-- Invoice -->
+                  <div class="col-12">
+                    <label class="form-label small fw-semibold mb-1">Chagua Ankara (yenye deni)</label>
+                    <select class="form-select form-select-sm" v-model="newPromise.invoice_id">
+                      <option value="">— Chagua Ankara —</option>
+                      <option v-for="inv in overdueInvoices" :key="inv.id" :value="inv.id">
+                        {{ inv.invoice_number }} · Deni: {{ formatMoney(inv.balance_due_cents) }}
+                      </option>
+                    </select>
+                  </div>
+                  <!-- Guardian -->
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label small fw-semibold mb-1">Mlezi (aliyeahidi)</label>
+                    <select class="form-select form-select-sm" v-model="newPromise.guardian_id">
+                      <option value="">— Mlezi Mwovote —</option>
+                      <option v-for="g in studentGuardians" :key="g.id" :value="g.id">
+                        {{ g.full_name }} {{ g.phone ? `(${g.phone})` : '' }}
+                      </option>
+                    </select>
+                  </div>
+                  <!-- Amount -->
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label small fw-semibold mb-1">Kiasi Kilichoahidiwa (TZS)</label>
+                    <input type="number" class="form-control form-control-sm" v-model.number="newPromise.amount"
+                           min="1" placeholder="0" />
+                  </div>
+                  <!-- Date -->
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label small fw-semibold mb-1">Tarehe ya Ahadi</label>
+                    <input type="date" class="form-control form-control-sm" v-model="newPromise.promised_date"
+                           :min="today" />
+                  </div>
+                  <!-- Notes -->
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label small fw-semibold mb-1">Maelezo (hiari)</label>
+                    <input type="text" class="form-control form-control-sm" v-model="newPromise.notes"
+                           placeholder="e.g. Anakuja Ijumaa..." />
+                  </div>
+                </div>
+                <!-- SMS notice -->
+                <div class="small text-muted mb-2" style="font-size:.72rem;">
+                  📱 SMS itatumwa kwa mlezi siku moja kabla ya tarehe · SMS kwa muhasibu siku hiyo hiyo (saa 7:00)
+                </div>
+                <CButton color="success" size="sm"
+                         :disabled="savingPromise || !newPromise.invoice_id || !newPromise.amount || !newPromise.promised_date"
+                         @click="savePromise"
+                         style="background:#007f3e; border-color:#007f3e; min-height:36px;">
+                  <CSpinner v-if="savingPromise" size="sm" class="me-1" />
+                  Hifadhi Ahadi
+                </CButton>
+              </div>
+            </div>
+          </div>
+
         </CCardBody>
       </CCard>
     </div>
@@ -584,6 +682,7 @@ const tabs = computed(() => [
   { key: 'malipo',       label: t('students.tabs.payments') },
   { key: 'walezi',       label: t('students.tabs.guardians') },
   { key: 'installments', label: t('students.tabs.installments') },
+  { key: 'ahadi',        label: '🤝 Ahadi za Malipo', badge: pendingPromisesCount.value || null },
 ])
 
 const payments            = ref([])
@@ -603,6 +702,68 @@ const instCustomAmount  = ref('')
 
 // Installment plan creation
 const today = new Date().toISOString().slice(0, 10)
+
+// ── Payment Promises ─────────────────────────────────────────────────────────
+const promises          = ref([])
+const promisesLoading   = ref(false)
+const promiseError      = ref('')
+const savingPromise     = ref(false)
+const newPromise        = ref({ invoice_id: '', guardian_id: '', amount: '', promised_date: '', notes: '' })
+
+const pendingPromisesCount = computed(() => promises.value.filter(p => p.status === 'pending').length)
+const overdueInvoices = computed(() => (student.value?.invoices || []).filter(inv => (inv.balance_due_cents || 0) > 0))
+const studentGuardians = computed(() => student.value?.guardians || [])
+
+function isPromiseOverdue(p) {
+  return p.status === 'pending' && new Date(p.promised_date) < new Date(today)
+}
+function promiseRowStyle(p) {
+  if (p.status === 'kept')    return 'background:rgba(25,135,84,.05); border-color:#c3e6cb!important;'
+  if (p.status === 'broken')  return 'background:rgba(220,53,69,.05); border-color:#f5c2c7!important;'
+  if (isPromiseOverdue(p))    return 'background:rgba(255,193,7,.08); border-color:#ffc107!important;'
+  return 'border-color:#e0f2ec!important;'
+}
+
+async function loadPromises() {
+  if (!student.value?.id) return
+  promisesLoading.value = true
+  try {
+    const { data } = await api.get('/payment-promises', { params: { student_id: student.value.id, per_page: 100 } })
+    promises.value = data.data || data
+  } catch { promises.value = [] }
+  finally { promisesLoading.value = false }
+}
+
+async function savePromise() {
+  promiseError.value = ''
+  if (!newPromise.value.invoice_id || !newPromise.value.amount || !newPromise.value.promised_date) {
+    promiseError.value = 'Tafadhali jaza Ankara, Kiasi, na Tarehe ya Ahadi.'
+    return
+  }
+  savingPromise.value = true
+  try {
+    await api.post('/payment-promises', {
+      student_id:    student.value.id,
+      invoice_id:    newPromise.value.invoice_id,
+      guardian_id:   newPromise.value.guardian_id || null,
+      promised_date: newPromise.value.promised_date,
+      amount_cents:  Math.round(newPromise.value.amount * 100),
+      notes:         newPromise.value.notes || null,
+    })
+    newPromise.value = { invoice_id: '', guardian_id: '', amount: '', promised_date: '', notes: '' }
+    await loadPromises()
+  } catch (e) {
+    promiseError.value = e?.response?.data?.message || 'Imeshindwa kuhifadhi.'
+  } finally { savingPromise.value = false }
+}
+
+async function markPromise(id, status) {
+  try {
+    await api.put(`/payment-promises/${id}`, { status })
+    await loadPromises()
+  } catch {}
+}
+
 const newPlan = ref({ invoice_id: '', total_installments: 3, interval_days: 30, start_date: today })
 const creatingPlan  = ref(false)
 const createPlanError = ref('')
@@ -786,6 +947,7 @@ onMounted(async () => {
     await store.fetchStudent(route.params.id)
     await loadPayments()
     await loadInstallments()
+    await loadPromises()
   } catch (e) {
     console.error('MwanafunziDetail error', e)
   }

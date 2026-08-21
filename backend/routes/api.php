@@ -10,6 +10,7 @@ use App\Http\Controllers\Accountant\ExpenseController;
 use App\Http\Controllers\Accountant\FeeStructureController;
 use App\Http\Controllers\Accountant\GuardianController;
 use App\Http\Controllers\Accountant\InstallmentController;
+use App\Http\Controllers\Accountant\PaymentPromiseController;
 use App\Http\Controllers\Accountant\InvoiceController;
 use App\Http\Controllers\Accountant\PaymentController;
 use App\Http\Controllers\Accountant\PayrollController;
@@ -133,6 +134,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('installments/bulk-by-class', [InstallmentController::class, 'bulkByClass']);
         Route::apiResource('installments', InstallmentController::class)->only(['index', 'store', 'show']);
         Route::post('installments/{installment}/mark-paid', [InstallmentController::class, 'markPaid']);
+
+        // Payment promises (debt management)
+        Route::apiResource('payment-promises', PaymentPromiseController::class)
+            ->only(['index', 'store', 'update', 'destroy']);
 
         // Fee clearance
         Route::post('clearance/issue', [ClearanceController::class, 'issue']);

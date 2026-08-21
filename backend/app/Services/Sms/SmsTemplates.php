@@ -4,6 +4,7 @@ namespace App\Services\Sms;
 
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\PaymentPromise;
 use App\Models\Refund;
 use App\Models\Student;
 use Carbon\Carbon;
@@ -270,5 +271,34 @@ class SmsTemplates
         }
 
         return $parts;
+    }
+
+    // ── PAYMENT PROMISE REMINDERS ────────────────────────────────────────────
+
+    /**
+     * SMS to guardian the day BEFORE the promised date.
+     * ~155 chars
+     */
+    public static function promiseReminderGuardian(PaymentPromise $promise): string
+    {
+        $student = $promise->student;
+        $amount  = number_format($promise->amount_cents / 100, 0, '.', ',');
+        $date    = $promise->promised_date->format('d/m/Y');
+
+        return "ShulePay: Kumbusho - Uliahidi kulipa TZS {$amount} kwa ada za {$student->first_name} kesho ({$date}). Tafadhali kumbuka kulipa kwa wakati. Maswali: piga simu shuleni.";
+    }
+
+    /**
+     * SMS to accountant on the exact promised date.
+     * ~155 chars
+     */
+    public static function promiseReminderAccountant(PaymentPromise $promise, string $schoolName): string
+    {
+        $student = $promise->student;
+        $amount  = number_format($promise->amount_cents / 100, 0, '.', ',');
+        $date    = $promise->promised_date->format('d/m/Y');
+        $guardian = $promise->guardian?->first_name ?? 'Mlezi';
+
+        return "ShulePay [{$schoolName}]: Leo ({$date}) ni siku ya ahadi ya malipo. {$guardian} aliahidi TZS {$amount} kwa {$student->full_name()}. Angalia kama amelipa.";
     }
 }
