@@ -329,13 +329,13 @@
             </CButton>
           </div>
           <CRow class="g-2">
-            <CCol xs="12" sm="6">
-              <label class="form-label fw-semibold">{{ t('guardians.fullName') }} <span class="text-danger">*</span></label>
+            <CCol xs="12" sm="4">
+              <label class="form-label fw-semibold mb-1">{{ t('guardians.fullName') }} <span class="text-danger">*</span></label>
               <CFormInput v-model="g.full_name" :class="{'is-invalid': errors[`guardians.${gi}.full_name`]}" />
               <div class="invalid-feedback">{{ errors[`guardians.${gi}.full_name`] }}</div>
             </CCol>
-            <CCol xs="12" sm="6">
-              <label class="form-label fw-semibold">{{ t('guardians.relationship') }} <span class="text-danger">*</span></label>
+            <CCol xs="12" sm="4">
+              <label class="form-label fw-semibold mb-1">{{ t('guardians.relationship') }} <span class="text-danger">*</span></label>
               <CFormSelect v-model="g.relationship" :class="{'is-invalid': errors[`guardians.${gi}.relationship`]}">
                 <option value="">{{ t('common.select') }}</option>
                 <option value="father">{{ t('guardians.father') }}</option>
@@ -344,31 +344,31 @@
               </CFormSelect>
               <div class="invalid-feedback">{{ errors[`guardians.${gi}.relationship`] }}</div>
             </CCol>
-            <CCol xs="12" sm="6">
-              <label class="form-label fw-semibold">{{ t('guardians.phone') }} <span class="text-danger">*</span></label>
+            <CCol xs="12" sm="4">
+              <label class="form-label fw-semibold mb-1">{{ t('guardians.phone') }} <span class="text-danger">*</span></label>
               <CFormInput v-model="g.phone" type="tel" placeholder="0712345678"
                           :class="{'is-invalid': errors[`guardians.${gi}.phone`]}"
                           @blur="checkGuardianExists(gi)" />
               <div class="invalid-feedback">{{ errors[`guardians.${gi}.phone`] }}</div>
               <div v-if="g._exists" class="text-warning small mt-1">⚠ Nambari hii tayari ipo kwenye mfumo</div>
             </CCol>
-            <CCol xs="12" sm="6">
-              <label class="form-label">{{ t('guardians.altPhone') }}</label>
-              <CFormInput v-model="g.alt_phone" type="tel" placeholder="Nambari mbadala" />
+            <CCol xs="12" sm="4">
+              <label class="form-label mb-1">{{ t('guardians.altPhone') }}</label>
+              <CFormInput v-model="g.alt_phone" type="tel" :placeholder="t('guardians.altPhone')" />
             </CCol>
-            <CCol xs="12" sm="6">
-              <label class="form-label">{{ t('common.email') }}</label>
+            <CCol xs="12" sm="4">
+              <label class="form-label mb-1">{{ t('common.email') }}</label>
               <CFormInput v-model="g.email" type="email" placeholder="barua@mfano.com" />
             </CCol>
-            <CCol xs="12" sm="6">
-              <label class="form-label">{{ t('guardians.nationalId') }}</label>
-              <CFormInput v-model="g.national_id" placeholder="Nambari ya kitambulisho" />
+            <CCol xs="12" sm="4">
+              <label class="form-label mb-1">{{ t('guardians.nationalId') }}</label>
+              <CFormInput v-model="g.national_id" :placeholder="t('guardians.nationalId')" />
             </CCol>
-            <CCol xs="12">
-              <label class="form-label">{{ t('common.address') }}</label>
-              <CFormTextarea v-model="g.address" rows="2" placeholder="Anwani ya mlezi" />
+            <CCol xs="12" sm="8">
+              <label class="form-label mb-1">{{ t('common.address') }}</label>
+              <CFormInput v-model="g.address" :placeholder="t('common.address')" />
             </CCol>
-            <CCol xs="12">
+            <CCol xs="12" sm="4" class="d-flex align-items-end pb-1">
               <CFormCheck v-model="g.is_primary_contact" :label="t('guardians.primaryContact')" @change="setPrimary(gi)" />
             </CCol>
           </CRow>
