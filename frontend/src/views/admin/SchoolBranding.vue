@@ -2,12 +2,14 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useBrandingStore } from '@/stores/branding'
+import { useSchoolStore } from '@/stores/school'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
 
 const { t } = useI18n()
-const branding = useBrandingStore()
-const auth = useAuthStore()
+const branding    = useBrandingStore()
+const schoolStore = useSchoolStore()
+const auth        = useAuthStore()
 
 // ── Schools list (superadmin only) ──────────────────────────────────────────
 const schools = ref([])
@@ -22,21 +24,23 @@ if (auth.isSuperAdmin) {
 }
 
 // ── Form state ───────────────────────────────────────────────────────────────
-const appName        = ref('')
-const appTagline     = ref('')
-const logoFile       = ref(null)
-const logoPreview    = ref(null)
-const saving         = ref(false)
-const removing       = ref(false)
+const appName         = ref('')
+const appTagline      = ref('')
+const logoFile        = ref(null)
+const logoPreview     = ref(null)
+const logoLoadError   = ref(false)   // true when server URL failed to render — does NOT clear logoPreview
+const saving          = ref(false)
+const removing        = ref(false)
 const loadingBranding = ref(false)
-const success        = ref('')
-const error          = ref('')
-const fileInputKey   = ref(0)   // increment to reset <input type="file">
+const success         = ref('')
+const error           = ref('')
+const fileInputKey    = ref(0)       // increment to reset <input type="file">
 
 async function fetchBranding(id) {
   loadingBranding.value = true
-  error.value = ''
-  logoFile.value = null
+  logoLoadError.value   = false
+  error.value           = ''
+  logoFile.value        = null
   fileInputKey.value++
   try {
     const params = id ? { school_id: id } : {}
@@ -66,27 +70,29 @@ async function save() {
     if (auth.isSuperAdmin && selectedSchoolId.value) {
       fd.append('school_id', selectedSchoolId.value)
     }
-    // Use the store's updateBranding only when editing the ACTIVE school's branding
-    // (or system branding for superadmin with no school selected).
-    // Editing a different school should not touch the header's branding.
-    const { useSchoolStore } = await import('@/stores/school')
-    const schoolStore = useSchoolStore()
-    const editedSchoolId = auth.isSuperAdmin && selectedSchoolId.value ? Number(selectedSchoolId.value) : null
-    const isActiveSchool = !editedSchoolId || editedSchoolId === schoolStore.activeSchoolId
 
-    let res
-    if (isActiveSchool) {
-      res = await branding.updateBranding(fd)
-    } else {
-      const { default: api } = await import('@/services/api')
-      const r = await api.post('/branding', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-      res = r.data
-    }
+    const { data } = await api.post('/branding', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
 
     logoFile.value    = null
-    logoPreview.value = res.logo_url || logoPreview.value
-    success.value     = res.message || 'Branding saved!'
+    logoLoadError.value = false
+    // Always update the preview from the server response — this confirms the saved logo URL.
+    logoPreview.value = data.logo_url ?? logoPreview.value
+    success.value     = data.message || 'Branding saved!'
     setTimeout(() => { success.value = '' }, 3000)
+
+    // If the saved school is the active school, refresh the header/sidebar branding immediately.
+    const editedId = auth.isSuperAdmin && selectedSchoolId.value
+      ? Number(selectedSchoolId.value)
+      : schoolStore.activeSchoolId
+    if (!editedId || editedId === schoolStore.activeSchoolId) {
+      branding.applyFromSchool({
+        app_name:    data.app_name    || null,
+        app_tagline: data.app_tagline || null,
+        logo_url:    data.logo_url    || null,
+      })
+    }
   } catch (e) {
     error.value = e.response?.data?.message || 'Failed to save.'
   } finally {
@@ -102,19 +108,15 @@ async function removeLogo() {
       ? { school_id: selectedSchoolId.value }
       : {}
     await api.delete('/branding/logo', { params })
-    logoPreview.value = null
-    logoFile.value    = null
-    // If we deleted the ACTIVE school's logo, update the store so header/sidebar
-    // reflect the change immediately without a page refresh.
-    const { useSchoolStore } = await import('@/stores/school')
-    const schoolStore = useSchoolStore()
-    const deletedSchoolId = auth.isSuperAdmin && selectedSchoolId.value
+    logoPreview.value   = null
+    logoFile.value      = null
+    logoLoadError.value = false
+
+    const deletedId = auth.isSuperAdmin && selectedSchoolId.value
       ? Number(selectedSchoolId.value)
-      : null
-    const isActiveSchool = !deletedSchoolId || deletedSchoolId === schoolStore.activeSchoolId
-    if (isActiveSchool) {
-      branding.logoUrl = null
-      localStorage.removeItem('branding_logo')
+      : schoolStore.activeSchoolId
+    if (!deletedId || deletedId === schoolStore.activeSchoolId) {
+      branding.applyFromSchool({ app_name: null, app_tagline: null, logo_url: null })
     }
   } catch (e) {
     error.value = e.response?.data?.message || 'Failed to remove logo.'
@@ -210,12 +212,12 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
                 <label class="form-label fw-semibold mb-1">Logo</label>
 
                 <!-- Current saved logo -->
-                <div v-if="logoPreview" class="d-flex align-items-center gap-3 mb-2 p-2 rounded-2 border bg-light">
+                <div v-if="logoPreview && !logoLoadError" class="d-flex align-items-center gap-3 mb-2 p-2 rounded-2 border bg-light">
                   <img
                     :src="logoPreview"
                     alt="Current logo"
                     style="width:64px;height:64px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid #dee2e6;"
-                    @error="logoPreview=null"
+                    @error="logoLoadError=true"
                   />
                   <div class="flex-grow-1">
                     <div class="small fw-semibold text-success mb-1">✓ Logo uploaded</div>
@@ -232,7 +234,7 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
                 </div>
 
                 <!-- No logo placeholder -->
-                <div v-else class="d-flex align-items-center gap-2 mb-2 p-2 rounded-2 border bg-light text-muted small">
+                <div v-if="!logoPreview || logoLoadError" class="d-flex align-items-center gap-2 mb-2 p-2 rounded-2 border bg-light text-muted small">
                   <div style="width:48px;height:48px;border:2px dashed #ced4da;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🖼</div>
                   <span>No logo set — upload one below</span>
                 </div>
@@ -270,8 +272,8 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
 
             <!-- Header simulation -->
             <div class="rounded-3 border bg-white p-3 shadow-sm d-flex align-items-center gap-3 mb-3">
-              <div v-if="logoPreview" style="width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid #007f3e;flex-shrink:0;">
-                <img :src="logoPreview" style="width:100%;height:100%;object-fit:contain;" alt="logo" @error="logoPreview=null" />
+              <div v-if="logoPreview && !logoLoadError" style="width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid #007f3e;flex-shrink:0;">
+                <img :src="logoPreview" style="width:100%;height:100%;object-fit:contain;" alt="logo" @error="logoLoadError=true" />
               </div>
               <div v-else style="width:44px;height:44px;flex-shrink:0;">
                 <svg viewBox="0 0 40 40" width="44" height="44">

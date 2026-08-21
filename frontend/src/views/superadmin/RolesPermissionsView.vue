@@ -465,14 +465,14 @@ function initials(name) {
     <CRow v-else class="g-3 flex-grow-1 overflow-hidden">
 
       <!-- Left: Roles list + Users in role — independently scrollable -->
-      <CCol md="4" lg="3" class="d-flex flex-column h-100" style="overflow-y:auto;">
+      <CCol md="4" lg="3" class="d-flex flex-column h-100" style="overflow:hidden;">
 
-        <!-- Roles list -->
-        <CCard class="border-0 shadow-sm mb-3 flex-shrink-0">
-          <CCardHeader class="fw-bold bg-transparent border-bottom">
+        <!-- Roles list — scrolls internally, shrinks to make room for users card -->
+        <CCard class="border-0 shadow-sm mb-3 d-flex flex-column" style="flex:1 1 0; min-height:0; overflow:hidden;">
+          <CCardHeader class="fw-bold bg-transparent border-bottom flex-shrink-0">
             Roles <CBadge color="secondary" class="ms-1">{{ roles.length }}</CBadge>
           </CCardHeader>
-          <CCardBody class="p-0">
+          <CCardBody class="p-0" style="overflow-y:auto; flex:1 1 0;">
             <div
               v-for="role in roles" :key="role.id"
               class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom"
@@ -505,14 +505,14 @@ function initials(name) {
           </CCardBody>
         </CCard>
 
-        <!-- Users in selected role -->
-        <CCard v-if="activeRole" class="border-0 shadow-sm">
+        <!-- Users in selected role — always visible at bottom, scrolls internally -->
+        <CCard v-if="activeRole" class="border-0 shadow-sm flex-shrink-0" style="max-height:45%; overflow:hidden;">
           <CCardHeader class="bg-transparent border-bottom d-flex align-items-center justify-content-between">
             <span class="fw-bold small">Users with <code>{{ activeRole.name }}</code></span>
             <CSpinner v-if="roleUsersLoading" size="sm" />
             <CBadge v-else color="secondary">{{ roleUsers.length }}</CBadge>
           </CCardHeader>
-          <CCardBody class="p-0">
+          <CCardBody class="p-0" style="overflow-y:auto; max-height:calc(45vh - 60px);">
             <div v-if="!roleUsersLoading && !roleUsers.length" class="text-center text-muted py-3 small">
               No users with this role
             </div>
