@@ -40,9 +40,9 @@ class SchoolResource extends JsonResource
             'settings' => $this->settings,
             // Resolved branding — merged name/tagline/logo ready for the header
             'branding' => [
-                'app_name'    => $branding['app_name']    ?? $this->name,
+                'app_name' => $branding['app_name'] ?? $this->name,
                 'app_tagline' => $branding['app_tagline'] ?? null,
-                'logo_url'    => $brandingLogoPath ? '/storage/'.$brandingLogoPath : null,
+                'logo_url' => $brandingLogoPath ? '/storage/'.$brandingLogoPath : null,
             ],
             'students_count' => $this->whenCounted('enrollments'),
             'created_at' => $this->created_at?->toDateString(),
