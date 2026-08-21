@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Superadmin;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
@@ -85,6 +86,11 @@ class RolePermissionController extends Controller
 
         $role = Role::create(['name' => $data['name'], 'guard_name' => 'web']);
 
+        AuditLogger::log('role_created', null, [
+            'role' => $role->name,
+            'created_by' => auth()->user()->name,
+        ]);
+
         return response()->json([
             'id' => $role->id,
             'name' => $role->name,
@@ -101,6 +107,11 @@ class RolePermissionController extends Controller
         if (in_array($role->name, $protected)) {
             return response()->json(['message' => "Role '{$role->name}' is a system role and cannot be deleted."], 422);
         }
+
+        AuditLogger::log('role_deleted', null, [
+            'role' => $role->name,
+            'deleted_by' => auth()->user()->name,
+        ]);
 
         $role->delete();
 
@@ -121,13 +132,22 @@ class RolePermissionController extends Controller
         $valid = collect(self::allPermissions())->flatten()->all();
         $toSync = array_intersect($data['permissions'], $valid);
 
+        $before = $role->permissions->pluck('name')->sort()->values()->toArray();
         $role->syncPermissions($toSync);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $after = $role->fresh()->permissions->pluck('name')->sort()->values()->toArray();
+        AuditLogger::log('role_permissions_updated', null, [
+            'role' => $role->name,
+            'added' => array_values(array_diff($after, $before)),
+            'removed' => array_values(array_diff($before, $after)),
+            'updated_by' => auth()->user()->name,
+        ]);
 
         return response()->json([
             'id' => $role->id,
             'name' => $role->name,
-            'permissions' => $role->fresh()->permissions->pluck('name'),
+            'permissions' => $after,
         ]);
     }
 

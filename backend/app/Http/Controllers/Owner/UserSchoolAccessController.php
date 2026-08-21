@@ -37,6 +37,12 @@ class UserSchoolAccessController extends Controller
         $user = User::findOrFail($data['user_id']);
         $school = School::findOrFail($data['school_id']);
 
+        // Owners may only grant access to schools they themselves can access
+        $actor = auth()->user();
+        if (! $actor->hasRole('superadmin') && ! $actor->canAccessSchool($school->id)) {
+            return response()->json(['message' => 'Huna ruhusa ya kutoa ufikiaji wa shule hii.'], 403);
+        }
+
         // Ensure multi_school is not in forbidden_permissions (would block the permission check)
         $forbidden = $user->forbidden_permissions ?? [];
         if (in_array('multi_school', $forbidden, true)) {

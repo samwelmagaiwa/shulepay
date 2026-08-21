@@ -25,6 +25,7 @@ const userPerms             = ref(new Set())   // direct permissions on this use
 const userPermsBase         = ref(new Set())   // permissions inherited from role
 const userForbidden         = ref(new Set())   // role-granted perms explicitly denied for this user
 const userForbiddenSnapshot = ref(new Set())
+const userPermsSnapshot     = ref(new Set())   // snapshot at modal open for dirty-detection
 const savingUserPerms   = ref(false)
 const userPermSaved     = ref(false)
 const userPermError     = ref('')
@@ -275,9 +276,6 @@ function resetToRoleDefaults() {
   userForbidden.value = new Set()
   userPermSaved.value = false
 }
-
-// Snapshot of direct perms at modal open — used for dirty-detection
-const userPermsSnapshot = ref(new Set())
 
 const userPermsChanged = computed(() => {
   const curPerms   = [...userPerms.value].sort().join(',')
@@ -583,7 +581,7 @@ function initials(name) {
                   <div
                     class="d-flex align-items-center gap-2 px-3 py-2 rounded-3"
                     style="cursor:pointer; border:2px solid #0d6efd; transition:all .15s; min-width:180px;"
-                    :style="activePerms.value?.has('multi_school') || activePerms.has('multi_school')
+                    :style="activePerms.has('multi_school')
                       ? 'background:#0d6efd; color:#fff;'
                       : 'background:#fff; color:#0d6efd;'"
                     @click="togglePerm('multi_school')"

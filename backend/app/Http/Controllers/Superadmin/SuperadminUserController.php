@@ -126,6 +126,10 @@ class SuperadminUserController extends Controller
         $user->save();
 
         if (isset($data['role'])) {
+            // Prevent demoting another superadmin (their role can only be managed by themselves)
+            if ($user->hasRole('superadmin') && $data['role'] !== 'superadmin') {
+                abort(422, 'Superadmin role cannot be changed through this interface.');
+            }
             $user->syncRoles([$data['role']]);
         }
 
@@ -319,8 +323,14 @@ class SuperadminUserController extends Controller
         $user->update(['forbidden_permissions' => $forbidList]);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
+        // If multi_school is now forbidden, clean up the school access pivot too
+        if (in_array('multi_school', $forbidList, true)) {
+            $user->accessibleSchools()->detach();
+        }
+
         AuditLogger::log('user_permissions_restricted', $user, [
             'forbidden_permissions' => $forbidList,
+            'schools_detached' => in_array('multi_school', $forbidList, true),
             'restricted_by' => auth()->user()->name,
         ]);
 
