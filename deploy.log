@@ -91,3 +91,22 @@
 [0;36m[18:41:32][0m   ShulePay — Release
 [0;36m[18:41:32][0m ══════════════════════════════════════════
 [0;36m[18:41:32][0m Checking working tree...
+[0;36m[18:41:33][0m Files staged for commit:
+[0;36m[18:41:33][0m Committing: "fix: solidify Save User Permissions — dirty detection, race guard, role-perm filter, unknown-perm validation, school cleanup on multi_school revoke"
+[0;32m✔ Committed[0m
+[0;36m[18:41:33][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[18:41:36][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[18:45:27][0m ══════════════════════════════════════════
+[0;36m[18:45:27][0m   ShulePay — Starting Deployment
+[0;36m[18:45:27][0m ══════════════════════════════════════════
+[0;36m[18:45:28][0m Previous tag saved for rollback: none
+[0;36m[18:45:28][0m Logging in to Docker Hub...
+[1;33m⚠ Docker Hub login skipped (may already be authenticated)[0m
+[0;36m[18:45:28][0m Pulling latest images from Docker Hub...
+[0;31m✖ Failed to pull images from Docker Hub[0m
+[0;36m[09:45:38][0m ══════════════════════════════════════════
+[0;36m[09:45:38][0m   ShulePay — Release
+[0;36m[09:45:38][0m ══════════════════════════════════════════
+[0;36m[09:45:38][0m Checking working tree...

@@ -115,7 +115,12 @@
       "Bash(ssh root@169.58.188.122 \"cd /opt/shulepay && git pull origin master && docker compose exec backend php artisan migrate --force && docker compose restart backend frontend\")",
       "Bash(ssh root@169.58.188.122 \"ls /opt/\")",
       "Bash(ssh root@169.58.188.122 \"ls /opt/shulepay/\")",
-      "Bash(ssh root@169.58.188.122 \"ls -la /opt/shulepay/ && docker ps --format 'table {{.Names}}\\\\t{{.Status}}'\")"
+      "Bash(ssh root@169.58.188.122 \"ls -la /opt/shulepay/ && docker ps --format 'table {{.Names}}\\\\t{{.Status}}'\")",
+      "PowerShell(docker exec shulepay_backend php artisan config:show database 2>&1)",
+      "PowerShell(docker exec shulepay_backend php artisan --version 2>&1)",
+      "PowerShell(docker exec shulepay_backend rm -f bootstrap/cache/services.php bootstrap/cache/packages.php 2>&1)",
+      "PowerShell(docker exec shulepay_backend php artisan migrate --force 2>&1)",
+      "PowerShell(docker exec shulepay_backend php artisan migrate:status 2>&1)"
     ]
   }
 }
