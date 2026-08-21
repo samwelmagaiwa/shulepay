@@ -94,7 +94,7 @@ function go(path) {
         <RouterLink class="btn btn-ghost-secondary text-start" to="/wanafunzi" @click="mobileNavOpen=false">{{ t('nav.studentList') }}</RouterLink>
         <RouterLink class="btn btn-ghost-secondary text-start" to="/walezi" @click="mobileNavOpen=false">{{ t('nav.guardians') }}</RouterLink>
         <RouterLink class="btn btn-ghost-secondary text-start" to="/wanafunzi/clearance" @click="mobileNavOpen=false">{{ t('nav.clearance') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/admin/bulk-import" @click="mobileNavOpen=false">{{ t('nav.bulkImport') }}</RouterLink>
+        <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/bulk-import" @click="mobileNavOpen=false">{{ t('nav.bulkImport') }}</RouterLink>
 
         <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.finance') }}</div>
         <RouterLink class="btn btn-ghost-secondary text-start" to="/ada-madeni" @click="mobileNavOpen=false">{{ t('nav.invoices') }}</RouterLink>
@@ -193,7 +193,7 @@ function go(path) {
             <CDropdownItem @click="router.push('/wanafunzi/clearance')" style="cursor:pointer;">
               <CIcon icon="cilCheckAlt" class="me-2" /> {{ t('nav.clearance') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/admin/bulk-import')" style="cursor:pointer;">
+            <CDropdownItem v-if="auth.isOwner" @click="router.push('/admin/bulk-import')" style="cursor:pointer;">
               <CIcon icon="cilCloudDownload" class="me-2" /> {{ t('nav.bulkImport') }}
             </CDropdownItem>
           </CDropdownMenu>

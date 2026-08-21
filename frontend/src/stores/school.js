@@ -66,11 +66,11 @@ export const useSchoolStore = defineStore('school', () => {
     if (id) {
       import('@/stores/branding').then(({ useBrandingStore }) => {
         const brandingStore = useBrandingStore()
-        // Apply branding instantly from the already-loaded school object (no API round-trip)
+        // Apply branding instantly from the already-loaded school object (no API round-trip).
+        // Always call — even when the school has no branding — so stale branding from the
+        // previous school is cleared immediately instead of persisting until fetchBranding returns.
         const school = schools.value.find((s) => s.id === Number(id))
-        if (school?.branding) {
-          brandingStore.applyFromSchool(school.branding)
-        }
+        brandingStore.applyFromSchool(school?.branding ?? {})
         // Then refresh from the API in the background to pick up any recent changes
         brandingStore.fetchBranding(Number(id))
       })
