@@ -389,42 +389,107 @@
 
       <!-- ═══════════════ STEP 5: Financial ═══════════════ -->
       <div v-if="step === 5">
-        <CRow class="g-3">
-          <CCol xs="12" sm="6">
-            <label class="form-label">{{ t('students.openingBalance') }}</label>
-            <CFormInput
-              type="text"
-              inputmode="numeric"
-              :value="formatAmount(form.opening_balance)"
-              @input="form.opening_balance = parseAmount($event.target.value)"
-              placeholder="0"
-            />
-            <div class="text-muted small">{{ t('students.openingBalanceHint') }}</div>
-          </CCol>
-          <CCol xs="12" sm="6">
-            <label class="form-label">{{ t('students.discountType') }}</label>
-            <CFormSelect v-model="form.discount_type">
-              <option value="">{{ t('students.noDiscount') }}</option>
-              <option value="sibling">{{ t('students.discountSibling') }}</option>
-              <option value="staff">{{ t('students.discountStaff') }}</option>
-              <option value="sponsor">{{ t('students.discountSponsor') }}</option>
-              <option value="other">{{ t('common.other') }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol xs="12" sm="6" v-if="form.discount_type">
-            <label class="form-label">{{ t('students.discountAmount') }} (TZS)</label>
-            <CFormInput type="number" v-model.number="form.discount_amount" min="0" placeholder="0" />
-          </CCol>
-          <CCol xs="12">
-            <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#f8f9fa;">
-              <CFormSwitch v-model="form.generate_first_invoice" id="genInvoice" size="xl" />
+
+        <!-- ── Fee structure preview ──────────────────────────────────── -->
+        <div class="fw-semibold text-muted small mb-2 text-uppercase" style="letter-spacing:.05em;">💰 {{ t('fees.title') }}</div>
+
+        <div v-if="loadingFeePreview" class="text-center py-3 text-muted small">
+          <CSpinner size="sm" class="me-1" /> {{ t('common.loading') }}
+        </div>
+
+        <div v-else-if="feePreview" class="border rounded-3 p-3 mb-3" style="border-color:#007f3e!important;background:#f8fff8;">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-semibold text-success small">✓ {{ t('fees.title') }}</span>
+            <span class="fw-bold text-success fs-6">{{ formatMoney(feePreview.total_cents) }}</span>
+          </div>
+          <div v-for="item in feePreview.items" :key="item.id"
+               class="d-flex justify-content-between align-items-center small py-1"
+               style="border-bottom:1px solid rgba(0,127,62,.12);">
+            <span>
+              {{ item.name }}
+              <CBadge v-if="item.is_optional" color="secondary" class="ms-1" style="font-size:.65rem;">{{ t('fees.optional') }}</CBadge>
+            </span>
+            <span class="fw-semibold">{{ formatMoney(item.amount_cents) }}</span>
+          </div>
+          <div v-if="hasOpeningBalance && form.opening_balance > 0"
+               class="d-flex justify-content-between small py-1 text-warning" style="border-bottom:1px solid rgba(0,127,62,.12);">
+            <span>{{ t('students.openingBalance') }}</span>
+            <span class="fw-semibold">+ {{ formatMoney(form.opening_balance * 100) }}</span>
+          </div>
+          <div v-if="form.discount_type && form.discount_amount > 0"
+               class="d-flex justify-content-between small py-1 text-danger" style="border-bottom:1px solid rgba(0,127,62,.12);">
+            <span>{{ t('students.discount') }} ({{ form.discount_type }})</span>
+            <span class="fw-semibold">− {{ formatMoney(form.discount_amount * 100) }}</span>
+          </div>
+          <div class="d-flex justify-content-between small pt-2 fw-bold text-success">
+            <span>{{ t('fees.total') }}</span>
+            <span>{{ formatMoney(
+              feePreview.total_cents
+              + (hasOpeningBalance ? form.opening_balance * 100 : 0)
+              - (form.discount_amount ? form.discount_amount * 100 : 0)
+            ) }}</span>
+          </div>
+        </div>
+
+        <CAlert v-else color="warning" class="py-2 mb-3 small">
+          ⚠ {{ t('fees.noFees') }} — {{ t('students.generateFirstInvoiceHint') }}
+        </CAlert>
+
+        <!-- ── Controls ──────────────────────────────────────────────── -->
+        <div class="d-flex flex-column gap-2">
+
+          <!-- Opening balance toggle -->
+          <div class="p-3 rounded-3 border" style="background:#f8f9fa;">
+            <div class="d-flex align-items-center gap-3">
+              <CFormSwitch v-model="hasOpeningBalance" id="openingBalanceToggle"
+                           @change="!hasOpeningBalance && (form.opening_balance = 0)" />
               <div>
-                <div class="fw-semibold">{{ t('students.generateFirstInvoice') }}</div>
-                <div class="text-muted small">{{ t('students.generateFirstInvoiceHint') }}</div>
+                <div class="fw-semibold small">{{ t('students.openingBalance') }}</div>
+                <div class="text-muted" style="font-size:.75rem;">{{ t('students.openingBalanceHint') }}</div>
               </div>
             </div>
-          </CCol>
-        </CRow>
+            <div v-if="hasOpeningBalance" class="mt-2">
+              <CFormInput
+                type="text"
+                inputmode="numeric"
+                :value="formatAmount(form.opening_balance)"
+                @input="form.opening_balance = parseAmount($event.target.value)"
+                placeholder="0"
+                autofocus
+              />
+            </div>
+          </div>
+
+          <!-- Discount -->
+          <div class="p-3 rounded-3 border" style="background:#f8f9fa;">
+            <div class="row g-2">
+              <div class="col-12 col-sm-6">
+                <label class="form-label fw-semibold small mb-1">{{ t('students.discountType') }}</label>
+                <CFormSelect v-model="form.discount_type">
+                  <option value="">{{ t('students.noDiscount') }}</option>
+                  <option value="sibling">{{ t('students.discountSibling') }}</option>
+                  <option value="staff">{{ t('students.discountStaff') }}</option>
+                  <option value="sponsor">{{ t('students.discountSponsor') }}</option>
+                  <option value="other">{{ t('common.other') }}</option>
+                </CFormSelect>
+              </div>
+              <div v-if="form.discount_type" class="col-12 col-sm-6">
+                <label class="form-label small mb-1">{{ t('students.discountAmount') }} (TZS)</label>
+                <CFormInput type="number" v-model.number="form.discount_amount" min="0" placeholder="0" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Generate invoice toggle -->
+          <div class="d-flex align-items-center gap-3 p-3 rounded-3 border" style="background:#f8f9fa;">
+            <CFormSwitch v-model="form.generate_first_invoice" id="genInvoice" size="xl" />
+            <div>
+              <div class="fw-semibold small">{{ t('students.generateFirstInvoice') }}</div>
+              <div class="text-muted" style="font-size:.75rem;">{{ t('students.generateFirstInvoiceHint') }}</div>
+            </div>
+          </div>
+
+        </div>
 
         <!-- Summary card — full review before submit -->
         <CCard class="mt-4" style="border:1.5px solid #007f3e;">
@@ -597,6 +662,46 @@ const photoInput    = ref(null)
 const academicYears = ref([])
 const terms         = ref([])
 const allClasses    = ref([])
+
+// Fee preview (Step 5)
+const feePreview          = ref(null)   // { items, total_cents } or null
+const loadingFeePreview   = ref(false)
+const hasOpeningBalance   = ref(false)
+
+async function fetchFeePreview() {
+  const f = form.value
+  if (!f.school_id || !f.school_class_id || !f.academic_year_id || !f.term_id) {
+    feePreview.value = null
+    return
+  }
+  loadingFeePreview.value = true
+  try {
+    const res = await api.get('/fee-structures', {
+      params: {
+        school_id:        f.school_id,
+        school_class_id:  f.school_class_id,
+        academic_year_id: f.academic_year_id,
+        term_id:          f.term_id,
+      },
+    })
+    const structures = res.data.data ?? res.data
+    if (structures.length) {
+      const items = structures.flatMap(s => s.fee_items ?? s.feeItems ?? [])
+      const totalCents = items.reduce((sum, i) => sum + (i.amount_cents ?? 0), 0)
+      feePreview.value = { items, total_cents: totalCents }
+    } else {
+      feePreview.value = null
+    }
+  } catch {
+    feePreview.value = null
+  } finally {
+    loadingFeePreview.value = false
+  }
+}
+
+function formatMoney(cents) {
+  return 'TZS ' + Math.round((cents || 0) / 100).toLocaleString('sw-TZ')
+}
 
 // Location lists
 const regions        = ref([])
@@ -812,6 +917,11 @@ function validateStep() {
 function nextStep() {
   if (!validateStep()) return
   step.value++
+  if (step.value === 5) {
+    hasOpeningBalance.value = false
+    form.value.opening_balance = 0
+    fetchFeePreview()
+  }
 }
 
 // ── Submit ────────────────────────────────────────────────────────────────────
