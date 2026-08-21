@@ -8,11 +8,25 @@ use Illuminate\Http\Request;
 
 class SetActiveSchool
 {
+    /**
+     * Routes that may read any school's data without the school-access gate.
+     * Branding (name, tagline, logo) is display-only and not sensitive.
+     */
+    private const OPEN_READ_PATHS = [
+        'api/branding',
+    ];
+
     public function handle(Request $request, Closure $next): mixed
     {
         // Priority: explicit header/param > user's own school
         $hasExplicit = $request->hasHeader('X-School-Id') || $request->has('school_id');
         $schoolId = $request->header('X-School-Id') ?? $request->query('school_id');
+
+        // Check whether this path is exempt from the school-access gate
+        $isOpenRead = $request->isMethod('GET')
+            && collect(self::OPEN_READ_PATHS)->contains(
+                fn ($p) => str_starts_with(ltrim($request->path(), '/'), $p)
+            );
 
         if ($hasExplicit) {
             $val = $request->header('X-School-Id') ?? $request->query('school_id');
@@ -21,8 +35,8 @@ class SetActiveSchool
                 $schoolId = (int) $val;
                 $school = School::find($schoolId);
                 if ($school) {
-                    // Enforce access: only allow if user can access this school
-                    if ($user = auth('sanctum')->user()) {
+                    // Enforce access gate — unless the path is an open-read route
+                    if (! $isOpenRead && ($user = auth('sanctum')->user())) {
                         if (! $user->canAccessSchool($schoolId)) {
                             return response()->json(['message' => 'Huna ruhusa ya kufikia shule hii.'], 403);
                         }
