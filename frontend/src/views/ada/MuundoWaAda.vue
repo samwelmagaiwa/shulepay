@@ -59,7 +59,7 @@
               <CTableHeaderCell>{{ t('common.term') }}</CTableHeaderCell>
               <CTableHeaderCell>{{ t('fees.itemName') }} ({{ t('common.amount') }})</CTableHeaderCell>
               <CTableHeaderCell class="text-end">{{ t('fees.total') }}</CTableHeaderCell>
-              <CTableHeaderCell></CTableHeaderCell>
+              <CTableHeaderCell class="text-center">{{ t('common.actions') }}</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
           <CTableBody>
@@ -82,12 +82,14 @@
               <CTableDataCell class="text-end fw-bold">
                 {{ formatMoney(s.items?.reduce((sum, i) => sum + i.amount_cents, 0) || 0) }}
               </CTableDataCell>
-              <CTableDataCell class="text-end">
-                <CButton size="sm" color="warning" variant="ghost" class="me-1" @click="openEdit(s)">
-                  <CIcon icon="cilPencil" />
-                </CButton>
-                <CButton size="sm" color="danger" variant="ghost" @click="confirmDelete(s)">
-                  <CIcon icon="cilTrash" />
+              <CTableDataCell class="text-center">
+                <CButton
+                  size="sm"
+                  :color="activeRow?.id === s.id ? 'primary' : 'secondary'"
+                  variant="ghost"
+                  @click="activeRow = activeRow?.id === s.id ? null : s"
+                >
+                  <CIcon icon="cilOptions" />
                 </CButton>
               </CTableDataCell>
             </CTableRow>
@@ -95,6 +97,27 @@
         </CTable>
       </CCardBody>
     </CCard>
+
+    <!-- Floating action bar — teleported to body to avoid z-index clipping inside table -->
+    <Teleport to="body">
+      <Transition name="fee-actions">
+        <div
+          v-if="activeRow"
+          style="position:fixed;top:68px;right:24px;z-index:9000;background:#fff;border:1px solid #dee2e6;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.15);padding:10px 14px;display:flex;align-items:center;gap:10px;"
+        >
+          <span class="small fw-semibold text-muted" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {{ activeRow.school_class?.name }} — {{ activeRow.term?.name }}
+          </span>
+          <CButton size="sm" color="warning" @click="openEdit(activeRow); activeRow = null">
+            <CIcon icon="cilPencil" class="me-1" />{{ t('common.edit') }}
+          </CButton>
+          <CButton size="sm" color="danger" @click="confirmDelete(activeRow); activeRow = null">
+            <CIcon icon="cilTrash" class="me-1" />{{ t('common.delete') }}
+          </CButton>
+          <CButton size="sm" color="secondary" variant="ghost" style="padding:2px 8px;" @click="activeRow = null">✕</CButton>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- Add/Edit Modal -->
     <CModal :visible="showModal" @close="closeModal" size="lg">
@@ -280,6 +303,7 @@ const schoolStore  = useSchoolStore()
 const filters      = ref({ school_id: schoolStore.activeSchoolId || '', academic_year_id: '', term_id: '', school_class_id: '' })
 const showModal    = ref(false)
 const editing      = ref(null)
+const activeRow    = ref(null)
 const saving       = ref(false)
 const modalError   = ref('')
 const academicYears    = ref([])
@@ -448,3 +472,15 @@ onMounted(async () => {
   await loadData()
 })
 </script>
+
+<style scoped>
+.fee-actions-enter-active,
+.fee-actions-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.fee-actions-enter-from,
+.fee-actions-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+</style>
