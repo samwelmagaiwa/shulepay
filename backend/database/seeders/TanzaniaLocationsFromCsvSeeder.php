@@ -85,17 +85,24 @@ class TanzaniaLocationsFromCsvSeeder extends Seeder
             // Village / Street (optional)
             $villageModel = null;
             if ($streetName) {
+                // Normal case: street name provided — create village, then place under it
                 $villageModel = Village::firstOrCreate([
                     'name' => $streetName,
                     'ward_id' => $wardModel->id,
                 ]);
-            }
 
-            // Place (optional, tied to village)
-            if ($placeName && $villageModel) {
-                Place::firstOrCreate([
-                    'village_id' => $villageModel->id,
+                if ($placeName) {
+                    Place::firstOrCreate([
+                        'village_id' => $villageModel->id,
+                        'name' => $placeName,
+                    ]);
+                }
+            } elseif ($placeName) {
+                // Urban-ward case: street column empty but place exists.
+                // Seed the place directly as the village (street level) — no sub-place.
+                Village::firstOrCreate([
                     'name' => $placeName,
+                    'ward_id' => $wardModel->id,
                 ]);
             }
         }
