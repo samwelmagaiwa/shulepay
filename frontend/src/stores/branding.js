@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/services/api'
+import { useSchoolStore } from '@/stores/school'
 
 export const useBrandingStore = defineStore('branding', () => {
   const appName    = ref(localStorage.getItem('branding_name')    || 'ShulePay')
@@ -8,9 +9,18 @@ export const useBrandingStore = defineStore('branding', () => {
   const logoUrl    = ref(localStorage.getItem('branding_logo')    || null)
   const loaded     = ref(false)
 
-  async function fetchBranding() {
+  async function fetchBranding(schoolId) {
     try {
-      const res = await api.get('/branding')
+      // If no schoolId given, try to read from the active school switcher
+      if (!schoolId) {
+        try {
+          const schoolStore = useSchoolStore()
+          schoolId = schoolStore.activeSchoolId || null
+        } catch { /* store may not be ready */ }
+      }
+
+      const params = schoolId ? { school_id: schoolId } : {}
+      const res = await api.get('/branding', { params })
       appName.value    = res.data.app_name    || 'ShulePay'
       appTagline.value = res.data.app_tagline || 'nexoryaTECH'
       logoUrl.value    = res.data.logo_url    || null
