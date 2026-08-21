@@ -32,7 +32,7 @@ class SchoolSeeder extends Seeder
             ]);
 
         $secondary = School::firstOrCreate(
-            ['code' => 'MMS'],
+            ['code' => 'MGRTHMR'],
             [
                 'name' => 'Magrethmary Secondary School',
                 'slug' => 'magrethmary-secondary',
@@ -41,18 +41,19 @@ class SchoolSeeder extends Seeder
             ]
         );
 
-        // Also update existing SEK record if it still has the old demo name
+        // Migrate old MMS code to MGRTHMR
+        School::where('code', 'MMS')->update(['code' => 'MGRTHMR']);
         School::where('code', 'SEK')
             ->where('name', 'Shule ya Sekondari Demo')
             ->update([
                 'name' => 'Margaret Mary Secondary School',
-                'code' => 'MMS',
+                'code' => 'MGRTHMR',
                 'slug' => 'margaret-mary-secondary',
             ]);
 
         // Reload after potential updates
         $primary = School::where('slug', 'like', '%magreth-primary%')->orWhere('code', 'SMP')->first() ?? $primary;
-        $secondary = School::where('slug', 'like', '%margaret-mary%')->orWhere('code', 'MMS')->first() ?? $secondary;
+        $secondary = School::where('slug', 'like', '%magrethmary-secondary%')->orWhere('code', 'MGRTHMR')->first() ?? $secondary;
 
         foreach ([$primary, $secondary] as $school) {
             $year = AcademicYear::firstOrCreate(
