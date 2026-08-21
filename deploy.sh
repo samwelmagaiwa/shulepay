@@ -103,11 +103,17 @@ cmd_deploy() {
     log "Using external database — skipping container health check"
   fi
 
-  # 6. Run migrations
-  log "Running database migrations..."
-  docker exec shulepay_backend php artisan migrate --force \
-    || error "Migrations failed. Run: ./deploy.sh rollback"
-  success "Migrations complete"
+  # 6. Run migrations only if there are pending ones
+  log "Checking for pending migrations..."
+  PENDING=$(docker exec shulepay_backend php artisan migrate:status 2>/dev/null | grep -c "Pending" || true)
+  if [[ "$PENDING" -gt 0 ]]; then
+    log "Found $PENDING pending migration(s) — running..."
+    docker exec shulepay_backend php artisan migrate --force \
+      || error "Migrations failed. Run: ./deploy.sh rollback"
+    success "Migrations complete ($PENDING applied)"
+  else
+    success "No pending migrations — skipped"
+  fi
 
   # 7. Artisan optimisation
   log "Optimising Laravel..."
