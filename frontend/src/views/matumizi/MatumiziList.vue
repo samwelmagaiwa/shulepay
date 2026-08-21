@@ -51,7 +51,7 @@
               <CTableHeaderCell>{{ t('expenses.category') }}</CTableHeaderCell>
               <CTableHeaderCell>{{ t('common.amount') }}</CTableHeaderCell>
               <CTableHeaderCell>{{ t('common.status') }}</CTableHeaderCell>
-              <CTableHeaderCell class="text-center" style="width:56px;">Vitendo</CTableHeaderCell>
+              <CTableHeaderCell class="text-center" style="width:56px;">{{ t('common.actions') }}</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
           <CTableBody>
@@ -354,4 +354,5 @@ onMounted(async () => {
 
 <style scoped>
 :deep(.table-responsive) { overflow: visible; }
+:deep(.card) { overflow: visible; }
 </style>

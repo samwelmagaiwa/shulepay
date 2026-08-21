@@ -410,4 +410,5 @@ onMounted(async () => {
 
 <style scoped>
 :deep(.table-responsive) { overflow: visible; }
+:deep(.card) { overflow: visible; }
 </style>

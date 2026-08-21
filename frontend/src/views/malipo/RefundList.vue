@@ -49,7 +49,7 @@
               <CTableHeaderCell>{{ t('common.method') }}</CTableHeaderCell>
               <CTableHeaderCell>{{ t('common.amount') }}</CTableHeaderCell>
               <CTableHeaderCell>{{ t('common.date') }}</CTableHeaderCell>
-              <CTableHeaderCell class="text-center" style="width:56px;">Vitendo</CTableHeaderCell>
+              <CTableHeaderCell class="text-center" style="width:56px;">{{ t('common.actions') }}</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
           <CTableBody>
@@ -381,4 +381,5 @@ onMounted(async () => { try { await loadData() } catch {} })
 
 <style scoped>
 :deep(.table-responsive) { overflow: visible; }
+:deep(.card) { overflow: visible; }
 </style>

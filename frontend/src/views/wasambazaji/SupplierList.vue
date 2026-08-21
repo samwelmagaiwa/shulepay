@@ -457,4 +457,5 @@ onMounted(() => { try { load() } catch {} })
 
 <style scoped>
 :deep(.table-responsive) { overflow: visible; }
+:deep(.card) { overflow: visible; }
 </style>
