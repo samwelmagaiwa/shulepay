@@ -31,6 +31,7 @@ class TanzaniaLocationsFromCsvSeeder extends Seeder
         $remaining = DB::table('wards')->count();
         if ($remaining > 0) {
             $this->command->error("Truncate failed — {$remaining} wards still in DB. Aborting.");
+
             return;
         }
 
