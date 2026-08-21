@@ -137,53 +137,13 @@
           </CCol>
           <CCol xs="12" sm="4">
             <label class="form-label">{{ t('students.admissionNo') }}</label>
-            <div class="input-group">
-              <CFormInput v-model="form.admission_no" placeholder="Auto" maxlength="30" :class="{'is-invalid': errors.admission_no}" />
-              <CButton color="secondary" variant="outline" size="sm"
-                       @click="fetchAdmissionNo()" :disabled="!form.school_id || fetchingAdmNo">
-                <CSpinner v-if="fetchingAdmNo" size="sm" />
-                <span v-else>Auto</span>
-              </CButton>
-            </div>
+            <CFormInput readonly :value="form.admission_no || t('students.admissionAuto')"
+                        class="bg-light text-muted"
+                        :class="{'is-invalid': errors.admission_no}" />
+            <div class="text-muted" style="font-size:.72rem;">{{ t('students.admissionAutoHint') }}</div>
             <div class="invalid-feedback d-block" v-if="errors.admission_no">{{ errors.admission_no }}</div>
           </CCol>
         </CRow>
-
-        <!-- Identifications -->
-        <div class="fw-semibold text-muted small mt-3 mb-2 text-uppercase" style="letter-spacing:.05em;">🪪 {{ t('students.identifications') }}</div>
-        <div v-for="(id, ii) in form.identifications" :key="ii"
-             style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.5rem .75rem;align-items:end;"
-             class="mb-2">
-          <div>
-            <label class="form-label small mb-1">{{ t('students.idType') }} <span class="text-danger">*</span></label>
-            <CFormSelect v-model="id.type" :class="{'is-invalid': errors[`id_type_${ii}`]}">
-              <option value="">— {{ t('common.select') }} —</option>
-              <option v-for="(label, key) in idTypes" :key="key" :value="key">{{ label }}</option>
-            </CFormSelect>
-            <div class="invalid-feedback">{{ errors[`id_type_${ii}`] }}</div>
-          </div>
-          <div>
-            <label class="form-label small mb-1">
-              {{ t('students.idNumber') }}
-              <span v-if="id.type === 'nida'" class="text-danger">*</span>
-            </label>
-            <CFormInput v-model="id.number" placeholder="ID number"
-                        :class="{'is-invalid': errors[`id_number_${ii}`]}" />
-            <div class="invalid-feedback">{{ errors[`id_number_${ii}`] }}</div>
-          </div>
-          <div>
-            <label class="form-label small mb-1">{{ t('students.idExpiresAt') }}</label>
-            <CFormInput type="date" v-model="id.expires_at" />
-          </div>
-          <div class="pb-1">
-            <CButton color="danger" variant="ghost" size="sm" @click="removeIdentification(ii)">
-              <CIcon icon="cilTrash" />
-            </CButton>
-          </div>
-        </div>
-        <CButton color="success" variant="outline" size="sm" @click="addIdentification">
-          <CIcon icon="cilPlus" class="me-1" /> {{ t('students.addIdentification') }}
-        </CButton>
       </div>
 
       <!-- ═══════════════ STEP 2: Health & Address ═══════════════ -->
@@ -556,7 +516,10 @@
                 <CCol xs="6" sm="4"><span class="text-muted">{{ t('guardians.fullName') }}:</span><br><strong>{{ fullName || '—' }}</strong></CCol>
                 <CCol xs="6" sm="4"><span class="text-muted">{{ t('students.gender') }}:</span><br><strong>{{ form.gender === 'male' ? t('students.genderMale') : form.gender === 'female' ? t('students.genderFemale') : '—' }}</strong></CCol>
                 <CCol xs="6" sm="4"><span class="text-muted">{{ t('students.dateOfBirth') }}:</span><br><strong>{{ form.date_of_birth || '—' }}</strong></CCol>
-                <CCol xs="6" sm="4"><span class="text-muted">{{ t('students.admissionNo') }}:</span><br><strong>{{ form.admission_no || t('students.admissionAuto') }}</strong></CCol>
+                <CCol xs="6" sm="4"><span class="text-muted">{{ t('students.admissionNo') }}:</span><br>
+                  <strong v-if="form.admission_no">{{ form.admission_no }}</strong>
+                  <span v-else class="text-muted small fst-italic">{{ t('students.admissionAuto') }}</span>
+                </CCol>
                 <CCol xs="6" sm="4"><span class="text-muted">{{ t('students.nationality') }}:</span><br><strong>{{ form.nationality || '—' }}</strong></CCol>
                 <CCol xs="6" sm="4"><span class="text-muted">{{ t('students.religion') }}:</span><br><strong>{{ form.religion || '—' }}</strong></CCol>
                 <CCol xs="6" sm="4"><span class="text-muted">{{ t('students.status') }}:</span><br>
@@ -711,21 +674,14 @@ const allClasses    = ref([])
 // Allergies toggle (Step 2)
 const hasAllergies = ref(false)
 
-// Identification types map
+// Guardian document types (adults only — no Student ID Card)
 const idTypes = {
   nida:             t('students.idTypes.nida'),
   driving_license:  t('students.idTypes.driving_license'),
   voter_id:         t('students.idTypes.voter_id'),
   passport:         t('students.idTypes.passport'),
   birth_certificate:t('students.idTypes.birth_certificate'),
-  student_id:       t('students.idTypes.student_id'),
   other:            t('students.idTypes.other'),
-}
-function addIdentification() {
-  form.value.identifications.push({ type: '', number: '', expires_at: '' })
-}
-function removeIdentification(i) {
-  form.value.identifications.splice(i, 1)
 }
 
 // Phone normalize: any TZ format → 255XXXXXXXXX
@@ -813,7 +769,6 @@ function blankForm() {
     status: 'active',
     // Health
     blood_group: '', allergies: '', medical_conditions: '',
-    identifications: [],
     // Address
     address: '', region: '', district: '', ward: '', street: '', place: '',
     notes: '',
@@ -976,11 +931,6 @@ function validateStep() {
     if (!form.value.gender)             errors.value.gender              = t('students.errors.genderRequired')
     if (!form.value.date_of_birth)      errors.value.date_of_birth       = t('students.errors.dobRequired')
     if (!form.value.birth_certificate_no) errors.value.birth_certificate_no = t('students.errors.birthCertRequired')
-    form.value.identifications.forEach((id, ii) => {
-      if (!id.type) errors.value[`id_type_${ii}`] = t('students.errors.idTypeRequired')
-      if (id.type === 'nida' && !id.number) errors.value[`id_number_${ii}`] = t('students.errors.idNumberRequired')
-      else if (id.type && !id.number) errors.value[`id_number_${ii}`] = t('students.errors.idNumberRequired')
-    })
   }
   if (step.value === 3) {
     if (!form.value.school_id)        errors.value.school_id        = t('students.errors.schoolRequired')
@@ -1059,11 +1009,6 @@ async function submit() {
       })
     })
     if (photoFile.value) fd.append('photo', photoFile.value)
-    f.identifications.forEach((id, i) => {
-      fd.append(`identifications[${i}][type]`, id.type)
-      fd.append(`identifications[${i}][number]`, id.number)
-      if (id.expires_at) fd.append(`identifications[${i}][expires_at]`, id.expires_at)
-    })
 
     await api.post('/students/register', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
 
