@@ -57,6 +57,16 @@ export const useBrandingStore = defineStore('branding', () => {
     })
   }
 
+  // ── Instant apply from school object (no API call) ────────────────────────
+  // Used by setActive() to switch branding immediately from already-loaded data.
+  function applyFromSchool(schoolBranding) {
+    _apply({
+      app_name:    schoolBranding.app_name    || null,
+      app_tagline: schoolBranding.app_tagline || null,
+      logo_url:    schoolBranding.logo_url    || null,
+    })
+  }
+
   // ── Update branding (owner / superadmin save) ──────────────────────────────
   async function updateBranding(formData) {
     const res = await api.post('/branding', formData, {
@@ -75,6 +85,6 @@ export const useBrandingStore = defineStore('branding', () => {
 
   return {
     appName, appTagline, logoUrl, loaded,
-    fetchBranding, watchSchool, updateBranding, deleteLogo,
+    fetchBranding, applyFromSchool, watchSchool, updateBranding, deleteLogo,
   }
 })

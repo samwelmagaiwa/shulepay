@@ -43,10 +43,17 @@ export const useSchoolStore = defineStore('school', () => {
     } else {
       localStorage.removeItem('active_school_id')
     }
-    // Always sync branding immediately on school change (belt-and-suspenders)
+
     if (id) {
       import('@/stores/branding').then(({ useBrandingStore }) => {
-        useBrandingStore().fetchBranding(Number(id))
+        const brandingStore = useBrandingStore()
+        // Apply branding instantly from the already-loaded school object (no API round-trip)
+        const school = schools.value.find((s) => s.id === Number(id))
+        if (school?.branding) {
+          brandingStore.applyFromSchool(school.branding)
+        }
+        // Then refresh from the API in the background to pick up any recent changes
+        brandingStore.fetchBranding(Number(id))
       })
     }
   }
