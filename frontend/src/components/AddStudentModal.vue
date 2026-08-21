@@ -203,7 +203,7 @@
             <label class="form-label mb-1">{{ t('students.allergies') }}</label>
             <div class="d-flex align-items-center gap-2 mb-1">
               <CFormSwitch v-model="hasAllergies" id="allergiesToggle"
-                           @change="!hasAllergies && (form.allergies = '')" />
+                           @update:modelValue="v => { if (!v) form.allergies = '' }" />
               <span class="small text-muted">{{ t('students.allergiesToggle') }}</span>
             </div>
             <CFormInput v-if="hasAllergies" v-model="form.allergies"
