@@ -95,10 +95,10 @@ class AcademicYearController extends Controller
     public function destroy(AcademicYear $academicYear): JsonResponse
     {
         if ($academicYear->terms()->exists()) {
-            return response()->json(['message' => 'Mwaka wenye muhula hauwezi kufutwa. Kwanza futa muhula zake.'], 422);
+            return response()->json(['message' => 'An academic year with terms cannot be deleted. Please delete its terms first.'], 422);
         }
         $academicYear->delete();
 
-        return response()->json(['message' => 'Mwaka wa masomo umefutwa.']);
+        return response()->json(['message' => 'Academic year deleted.']);
     }
 }

@@ -196,6 +196,6 @@ class StudentController extends Controller
         AuditLog::record('student_deleted', $student, $student->toArray(), []);
         $student->delete();
 
-        return response()->json(['message' => 'Mwanafunzi amefutwa.']);
+        return response()->json(['message' => 'Student deleted.']);
     }
 }

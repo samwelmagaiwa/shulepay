@@ -8,7 +8,7 @@ class CarryForwardArrears extends Command
 {
     protected $signature = 'arrears:carry-forward';
 
-    protected $description = 'Beba madeni ya nyuma';
+    protected $description = 'Carry forward unpaid balances from the previous term as arrears';
 
     public function handle(): void
     {

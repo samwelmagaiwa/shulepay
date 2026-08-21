@@ -81,7 +81,7 @@ class InvoiceGenerator
             if ($arrearsCents > 0) {
                 $invoice->lines()->create([
                     'fee_item_id' => null,
-                    'description' => 'Madeni ya muhula uliopita (arrears)',
+                    'description' => 'Previous term balance (arrears)',
                     'amount_cents' => $arrearsCents,
                 ]);
             }

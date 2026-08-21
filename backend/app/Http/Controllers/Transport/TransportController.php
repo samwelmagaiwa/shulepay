@@ -70,7 +70,7 @@ class TransportController extends Controller
             ?? (app()->bound('active_school') ? app('active_school')->id : auth()->user()->school_id);
 
         if (! $validated['school_id']) {
-            return response()->json(['message' => 'Tafadhali chagua shule.'], 422);
+            return response()->json(['message' => 'Please select a school.'], 422);
         }
 
         $vehicle = Vehicle::create($validated);
@@ -138,7 +138,7 @@ class TransportController extends Controller
             ?? (app()->bound('active_school') ? app('active_school')->id : auth()->user()->school_id);
 
         if (! $validated['school_id']) {
-            return response()->json(['message' => 'Tafadhali chagua shule.'], 422);
+            return response()->json(['message' => 'Please select a school.'], 422);
         }
 
         $route = VehicleRoute::create($validated);
@@ -282,7 +282,7 @@ class TransportController extends Controller
             : $user->school_id;
 
         if ($userSchoolId !== $schoolId) {
-            abort(403, 'Huna ruhusa ya kufikia rasilimali hii.');
+            abort(403, 'You do not have access to this resource.');
         }
     }
 }

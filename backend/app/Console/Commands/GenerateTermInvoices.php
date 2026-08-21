@@ -8,7 +8,7 @@ class GenerateTermInvoices extends Command
 {
     protected $signature = 'invoices:generate-term';
 
-    protected $description = 'Tengeneza ankara mwanzoni mwa muhula';
+    protected $description = 'Generate term invoices for all active students at the start of a term';
 
     public function handle(): void
     {

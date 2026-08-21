@@ -115,9 +115,9 @@ class AuthController extends Controller
                     'status' => 'failed',
                     'attempted_at' => now(),
                 ]);
-                $schoolName = School::find($schoolId)?->name ?? 'hiyo shule';
+                $schoolName = School::find($schoolId)?->name ?? 'that school';
                 throw ValidationException::withMessages([
-                    'school_id' => ["Huna ruhusa ya kuingia {$schoolName}. Wasiliana na msimamizi."],
+                    'school_id' => ["You do not have access to {$schoolName}. Please contact your administrator."],
                 ]);
             }
         }

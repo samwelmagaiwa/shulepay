@@ -8,7 +8,7 @@ class SendFeeReminders extends Command
 {
     protected $signature = 'fees:send-reminders';
 
-    protected $description = 'Tuma SMS za vikumbusho vya deni';
+    protected $description = 'Send SMS fee reminders to guardians with outstanding balances';
 
     public function handle(): void
     {

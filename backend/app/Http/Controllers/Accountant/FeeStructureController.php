@@ -52,7 +52,7 @@ class FeeStructureController extends Controller
         ])->first();
 
         if ($existing) {
-            return response()->json(['message' => 'Muundo wa ada tayari upo kwa darasa hili na muhula huu.'], 422);
+            return response()->json(['message' => 'A fee structure already exists for this class and term.'], 422);
         }
 
         $structure = FeeStructure::create([
@@ -89,7 +89,7 @@ class FeeStructureController extends Controller
 
         if ($terms->count() < $data['installments_count']) {
             return response()->json([
-                'message' => "Mwaka huu una mihula {$terms->count()} tu, lakini malipo {$data['installments_count']} yanahitajika. Ongeza mihula kwanza.",
+                'message' => "This academic year only has {$terms->count()} term(s), but {$data['installments_count']} installments are required. Please add more terms first.",
             ], 422);
         }
 
@@ -109,7 +109,7 @@ class FeeStructureController extends Controller
 
             if ($existing) {
                 return response()->json([
-                    'message' => "Muundo wa ada tayari upo kwa darasa hili na muhula '{$term->name}'. Futa kwanza kabla ya kuunda upya.",
+                    'message' => "A fee structure already exists for this class and term '{$term->name}'. Delete it first before creating a new one.",
                 ], 422);
             }
 
@@ -134,7 +134,7 @@ class FeeStructureController extends Controller
         }
 
         return response()->json([
-            'message' => "Muundo wa ada kamili umeundwa kwa awamu {$data['installments_count']} (kila miezi {$monthsPerInstallment}).",
+            'message' => "Full tuition fee structure created with {$data['installments_count']} installments (every {$monthsPerInstallment} months).",
             'structures' => $created,
         ], 201);
     }

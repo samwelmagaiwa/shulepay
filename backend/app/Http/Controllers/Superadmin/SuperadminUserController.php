@@ -220,7 +220,7 @@ class SuperadminUserController extends Controller
         $unknown = array_diff($data['permissions'], $known);
         if (! empty($unknown)) {
             return response()->json([
-                'message' => 'Ruhusa zisizojulikana: '.implode(', ', $unknown),
+                'message' => 'Unknown permissions: '.implode(', ', $unknown),
             ], 422);
         }
 
@@ -230,7 +230,7 @@ class SuperadminUserController extends Controller
         $unknownForbid = array_diff($forbidList, $known);
         if (! empty($unknownForbid)) {
             return response()->json([
-                'message' => 'Ruhusa zisizojulikana katika orodha ya kukatazwa: '.implode(', ', $unknownForbid),
+                'message' => 'Unknown permissions in the forbidden list: '.implode(', ', $unknownForbid),
             ], 422);
         }
 
@@ -238,7 +238,7 @@ class SuperadminUserController extends Controller
         $conflict = array_intersect($data['permissions'], $forbidList);
         if (! empty($conflict)) {
             return response()->json([
-                'message' => 'Mgongano: ruhusa moja haiwezi kupewa na kukatazwa kwa wakati mmoja: '.implode(', ', $conflict),
+                'message' => 'Conflict: a permission cannot be both granted and forbidden at the same time: '.implode(', ', $conflict),
             ], 422);
         }
 
@@ -307,7 +307,7 @@ class SuperadminUserController extends Controller
         $unknown = array_diff($forbidList, $known);
         if (! empty($unknown)) {
             return response()->json([
-                'message' => 'Ruhusa zisizojulikana: '.implode(', ', $unknown),
+                'message' => 'Unknown permissions: '.implode(', ', $unknown),
             ], 422);
         }
 
@@ -316,7 +316,7 @@ class SuperadminUserController extends Controller
         $conflict = array_intersect($forbidList, $directPerms);
         if (! empty($conflict)) {
             return response()->json([
-                'message' => 'Mgongano: ruhusa hizi zimepewa moja kwa moja, ziondoe kwanza kabla ya kukataza: '.implode(', ', $conflict),
+                'message' => 'Conflict: these permissions are directly granted — remove them first before forbidding: '.implode(', ', $conflict),
             ], 422);
         }
 

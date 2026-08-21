@@ -361,7 +361,7 @@ class InventoryController extends Controller
 
         $user = auth()->user();
         if ($request->input('type') === 'adjustment' && ! $user->hasRole('superadmin') && ! $user->hasPermissionTo('inventory.adjustment')) {
-            return response()->json(['message' => 'Huna ruhusa ya kufanya marekebisho ya stoo. Wasiliana na Superadmin.'], 403);
+            return response()->json(['message' => 'You do not have permission to make inventory adjustments. Please contact your Superadmin.'], 403);
         }
 
         $validated = $request->validate([

@@ -40,7 +40,7 @@ class SetActiveSchool
                     // Enforce access gate — unless the path is an open-read route
                     if (! $isOpenRead && ($user = auth('sanctum')->user())) {
                         if (! $user->canAccessSchool($schoolId)) {
-                            return response()->json(['message' => 'Huna ruhusa ya kufikia shule hii.'], 403);
+                            return response()->json(['message' => 'You do not have access to this school.'], 403);
                         }
                     }
                     app()->instance('active_school', $school);
