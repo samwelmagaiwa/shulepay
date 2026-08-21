@@ -9,11 +9,13 @@ use Illuminate\Http\Request;
 class SetActiveSchool
 {
     /**
-     * Routes that may read any school's data without the school-access gate.
+     * Route segments that may read any school's data without the school-access gate.
+     * Matched against the last segment(s) of the path — works whether nginx
+     * preserves or strips the /api/ prefix before forwarding to PHP.
      * Branding (name, tagline, logo) is display-only and not sensitive.
      */
-    private const OPEN_READ_PATHS = [
-        'api/branding',
+    private const OPEN_READ_SEGMENTS = [
+        'branding',
     ];
 
     public function handle(Request $request, Closure $next): mixed
@@ -22,11 +24,11 @@ class SetActiveSchool
         $hasExplicit = $request->hasHeader('X-School-Id') || $request->has('school_id');
         $schoolId = $request->header('X-School-Id') ?? $request->query('school_id');
 
-        // Check whether this path is exempt from the school-access gate
+        // Check whether this path is exempt from the school-access gate.
+        // Match the last path segment(s) so it works with or without the /api/ prefix.
+        $pathEnd = basename(strtok($request->path(), '?'));
         $isOpenRead = $request->isMethod('GET')
-            && collect(self::OPEN_READ_PATHS)->contains(
-                fn ($p) => str_starts_with(ltrim($request->path(), '/'), $p)
-            );
+            && in_array($pathEnd, self::OPEN_READ_SEGMENTS, true);
 
         if ($hasExplicit) {
             $val = $request->header('X-School-Id') ?? $request->query('school_id');

@@ -29,8 +29,9 @@ export const useBrandingStore = defineStore('branding', () => {
       const params = schoolId ? { school_id: Number(schoolId) } : {}
       const res    = await api.get('/branding', { params })
       _apply(res.data)
-    } catch {
-      // fallback: keep cached localStorage values
+    } catch (err) {
+      // Log so the browser console shows branding failures — helps diagnose 403 etc.
+      console.warn('[branding] fetch failed for school', schoolId, err?.response?.status, err?.message)
     } finally {
       loaded.value = true
     }
