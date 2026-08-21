@@ -159,7 +159,7 @@ class AuthController extends Controller
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'role' => $user->getRoleNames()->first(),
+            'role' => $this->primaryRole($user),
             'school_id' => $user->school_id,
             'school' => $user->school?->only(['id', 'name', 'level']),
             'permissions' => $user->effectivePermissions(),

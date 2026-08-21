@@ -8,8 +8,6 @@ use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -222,6 +220,14 @@ class SuperadminUserController extends Controller
 
         $forbidList = array_values(array_unique($data['forbidden_permissions'] ?? []));
 
+        // Guard forbidden perms against the known application set (same as direct perms)
+        $unknownForbid = array_diff($forbidList, $known);
+        if (! empty($unknownForbid)) {
+            return response()->json([
+                'message' => 'Ruhusa zisizojulikana katika orodha ya kukatazwa: '.implode(', ', $unknownForbid),
+            ], 422);
+        }
+
         // Conflict check: same perm cannot be granted and forbidden simultaneously
         $conflict = array_intersect($data['permissions'], $forbidList);
         if (! empty($conflict)) {
@@ -283,17 +289,36 @@ class SuperadminUserController extends Controller
         $this->guardSelf($user);
         $this->guardSuperadmin($user);
 
-        $allPerms = Permission::pluck('name')->toArray();
-
         $data = $request->validate([
             'forbidden_permissions' => 'required|array',
-            'forbidden_permissions.*' => ['string', Rule::in($allPerms)],
+            'forbidden_permissions.*' => 'string|exists:permissions,name',
         ]);
 
-        $user->update(['forbidden_permissions' => array_values(array_unique($data['forbidden_permissions']))]);
+        $known = collect(RolePermissionController::allPermissions())->flatten()->all();
+        $forbidList = array_values(array_unique($data['forbidden_permissions']));
+
+        // Guard against unknown permissions
+        $unknown = array_diff($forbidList, $known);
+        if (! empty($unknown)) {
+            return response()->json([
+                'message' => 'Ruhusa zisizojulikana: '.implode(', ', $unknown),
+            ], 422);
+        }
+
+        // Conflict check: cannot forbid a perm the user is directly granted
+        $directPerms = $user->getDirectPermissions()->pluck('name')->toArray();
+        $conflict = array_intersect($forbidList, $directPerms);
+        if (! empty($conflict)) {
+            return response()->json([
+                'message' => 'Mgongano: ruhusa hizi zimepewa moja kwa moja, ziondoe kwanza kabla ya kukataza: '.implode(', ', $conflict),
+            ], 422);
+        }
+
+        $user->update(['forbidden_permissions' => $forbidList]);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         AuditLogger::log('user_permissions_restricted', $user, [
-            'forbidden_permissions' => $data['forbidden_permissions'],
+            'forbidden_permissions' => $forbidList,
             'restricted_by' => auth()->user()->name,
         ]);
 
