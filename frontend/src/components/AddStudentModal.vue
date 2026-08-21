@@ -403,9 +403,17 @@
               <label class="form-label mb-1">{{ t('common.email') }}</label>
               <CFormInput v-model="g.email" type="email" placeholder="barua@mfano.com" />
             </div>
-            <!-- National ID -->
+            <!-- ID Type -->
             <div>
-              <label class="form-label mb-1">{{ t('guardians.nationalId') }}</label>
+              <label class="form-label mb-1">{{ t('students.idType') }}</label>
+              <CFormSelect v-model="g.id_type">
+                <option value="">— {{ t('common.select') }} —</option>
+                <option v-for="(label, key) in idTypes" :key="key" :value="key">{{ label }}</option>
+              </CFormSelect>
+            </div>
+            <!-- ID Number -->
+            <div>
+              <label class="form-label mb-1">{{ t('students.idNumber') }}</label>
               <CFormInput v-model="g.national_id" :placeholder="t('guardians.nationalId')" />
             </div>
             <!-- Address — spans 2 cols -->
@@ -785,7 +793,7 @@ const steps = computed(() => [
 
 const defaultGuardian = () => ({
   full_name: '', relationship: '', phone: '', alt_phone: '',
-  email: '', national_id: '', address: '', is_primary_contact: false, _exists: false,
+  email: '', id_type: '', national_id: '', address: '', is_primary_contact: false, _exists: false,
 })
 
 const today = new Date().toISOString().slice(0, 10)
