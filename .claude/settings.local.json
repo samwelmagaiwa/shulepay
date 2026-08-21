@@ -169,7 +169,10 @@
       "Bash(vendor/bin/pint --test app/Http/Controllers/Auth/AuthController.php)",
       "Bash(vendor/bin/pint app/Http/Controllers/Auth/AuthController.php)",
       "Bash(git commit -m 'fix: translate Registration Summary card and step labels in AddStudentModal *)",
-      "Bash(git commit -m 'fix: translate MuundoWaAda \\(fee structures\\) full-tuition section *)"
+      "Bash(git commit -m 'fix: translate MuundoWaAda \\(fee structures\\) full-tuition section *)",
+      "Bash(git commit -m 'refactor: fee structures — remove title, merge toolbar, inline action dropdown *)",
+      "Bash(git commit -m 'fix: guardian form to 3-column layout \\(sm=4 per field\\) *)",
+      "Bash(php -r \"echo date\\('Y_m_d_His'\\);\")"
     ]
   }
 }

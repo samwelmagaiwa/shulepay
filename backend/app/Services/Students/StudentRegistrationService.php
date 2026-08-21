@@ -71,7 +71,22 @@ class StudentRegistrationService
                 'status' => 'active',
             ]);
 
-            // 5. Link/create guardians
+            // 5. Save identifications
+            if (!empty($data['identifications'])) {
+                $hasPrimary = false;
+                foreach ($data['identifications'] as $idx => $idData) {
+                    $isPrimary = !$hasPrimary && (!isset($idData['is_primary']) || $idData['is_primary']);
+                    if ($isPrimary) $hasPrimary = true;
+                    $student->identifications()->create([
+                        'type'       => $idData['type'],
+                        'number'     => $idData['number'],
+                        'expires_at' => $idData['expires_at'] ?? null,
+                        'is_primary' => $isPrimary,
+                    ]);
+                }
+            }
+
+            // 6. Link/create guardians
             foreach ($data['guardians'] as $gData) {
                 $guardian = $this->resolveGuardian($gData);
 
@@ -119,6 +134,10 @@ class StudentRegistrationService
 
     private function resolveGuardian(array $gData): Guardian
     {
+        $gData['phone']     = self::normalizePhone($gData['phone']);
+        $gData['alt_phone'] = isset($gData['alt_phone']) && $gData['alt_phone']
+            ? self::normalizePhone($gData['alt_phone']) : null;
+
         // Find existing user by phone — reuse guardian if found
         $existingUser = User::where('phone', $gData['phone'])->first();
 
@@ -166,6 +185,25 @@ class StudentRegistrationService
             'national_id' => $gData['national_id'] ?? null,
             'address' => $gData['address'] ?? null,
         ]);
+    }
+
+    /**
+     * Normalize phone to E.164 Tanzania format (255XXXXXXXXX, 12 digits).
+     * Accepts: 07XXXXXXXX, +255XXXXXXXXX, 255XXXXXXXXX, 7XXXXXXXX, 6XXXXXXXX.
+     */
+    public static function normalizePhone(string $raw): string
+    {
+        $digits = preg_replace('/\D/', '', $raw);
+        if (str_starts_with($digits, '0') && strlen($digits) === 10) {
+            return '255' . substr($digits, 1);
+        }
+        if (str_starts_with($digits, '255') && strlen($digits) === 12) {
+            return $digits;
+        }
+        if ((str_starts_with($digits, '7') || str_starts_with($digits, '6')) && strlen($digits) === 9) {
+            return '255' . $digits;
+        }
+        return $digits; // return as-is if unrecognized
     }
 
     private function firstName(string $fullName): string

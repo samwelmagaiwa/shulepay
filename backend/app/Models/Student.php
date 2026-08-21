@@ -38,6 +38,11 @@ class Student extends Model
 
     protected $casts = ['date_of_birth' => 'date'];
 
+    public function identifications(): HasMany
+    {
+        return $this->hasMany(StudentIdentification::class);
+    }
+
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);

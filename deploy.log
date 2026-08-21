@@ -313,3 +313,10 @@
 [0;36m[2026-08-21 21:01:17][0m   ShulePay — Release
 [0;36m[2026-08-21 21:01:17][0m ══════════════════════════════════════════
 [0;36m[2026-08-21 21:01:17][0m Checking working tree...
+[0;36m[2026-08-21 21:01:17][0m Files staged for commit:
+[0;36m[2026-08-21 21:01:17][0m Committing: "feat: installments — remove title, bulk btn inline with filters, show all students (paid read-only + no records state)"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-21 21:01:17][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-21 21:01:21][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions

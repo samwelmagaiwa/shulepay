@@ -150,11 +150,11 @@ const studentsStore = useStudentsStore()
 const schoolsStore  = useSchoolsStore()
 const schoolStore   = useSchoolStore()
 
-const filters        = ref({ search: '', school_id: schoolStore.activeSchoolId || '', status: '', has_debt: '' })
+const filters        = ref({ search: '', school_id: schoolStore.activeSchoolId ? String(schoolStore.activeSchoolId) : '', status: '', has_debt: '' })
 const selectedStudent = ref(null)
 const showAddModal    = ref(false)
 const page            = ref(1)
-const perPage         = ref(20)
+const perPage         = ref('20')
 const meta            = ref({ total: 0, last_page: 1, per_page: 20, current_page: 1 })
 let   debounceTimer   = null
 
@@ -171,7 +171,7 @@ const schools = computed(() => schoolsStore.schools)
 
 // Sync with nav school switcher
 watch(() => schoolStore.activeSchoolId, (id) => {
-  filters.value.school_id = id || ''
+  filters.value.school_id = id ? String(id) : ''
   page.value = 1
   fetchData()
 })
@@ -201,7 +201,7 @@ function debouncedFetch() {
 }
 
 function resetFilters() {
-  filters.value = { search: '', school_id: schoolStore.activeSchoolId || '', status: '', has_debt: '' }
+  filters.value = { search: '', school_id: schoolStore.activeSchoolId ? String(schoolStore.activeSchoolId) : '', status: '', has_debt: '' }
   page.value = 1
   fetchData()
 }

@@ -21,7 +21,7 @@ class RegisterStudentRequest extends FormRequest
             'admission_no' => 'nullable|string|max:30',
             'gender' => 'required|in:male,female',
             'date_of_birth' => 'required|date|before:today',
-            'birth_certificate_no' => 'nullable|string|max:50',
+            'birth_certificate_no' => 'required|string|max:50',
             'nationality' => 'nullable|string|max:50',
             'photo' => 'nullable|image|max:2048',
             'blood_group' => 'nullable|string|max:10',
@@ -43,6 +43,13 @@ class RegisterStudentRequest extends FormRequest
             'term_id' => 'required|exists:terms,id',
             'enrollment_date' => 'required|date',
             'previous_school' => 'nullable|string|max:200',
+
+            // Identifications
+            'identifications'            => 'nullable|array',
+            'identifications.*.type'     => 'required_with:identifications|string|in:nida,driving_license,voter_id,passport,birth_certificate,student_id,other',
+            'identifications.*.number'   => 'required_with:identifications|string|max:100',
+            'identifications.*.expires_at' => 'nullable|date|after:today',
+            'identifications.*.is_primary' => 'nullable|boolean',
 
             // Guardians
             'guardians' => 'required|array|min:1',
@@ -98,6 +105,12 @@ class RegisterStudentRequest extends FormRequest
             'guardians.*.full_name.required' => 'Jina kamili la mlezi linahitajika.',
             'guardians.*.relationship.required' => 'Uhusiano wa mlezi na mwanafunzi unahitajika.',
             'guardians.*.relationship.in' => 'Uhusiano lazima uwe: baba, mama, au mlezi.',
+            'birth_certificate_no.required' => 'Nambari ya cheti cha kuzaliwa inahitajika.',
+            'identifications.*.type.required_with' => 'Aina ya utambulisho inahitajika.',
+            'identifications.*.type.in' => 'Aina ya utambulisho si sahihi.',
+            'identifications.*.number.required_with' => 'Nambari ya utambulisho inahitajika.',
+            'identifications.*.expires_at.date' => 'Tarehe ya mwisho si sahihi.',
+            'identifications.*.expires_at.after' => 'Tarehe ya mwisho lazima iwe baadaye ya leo.',
             'guardians.*.phone.required' => 'Nambari ya simu ya mlezi inahitajika.',
             'guardians.*.email.email' => 'Barua pepe ya mlezi si sahihi.',
             // Financial

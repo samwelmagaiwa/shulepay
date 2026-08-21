@@ -120,8 +120,10 @@
         <div class="fw-semibold text-muted small mb-2 text-uppercase" style="letter-spacing:.05em;">📄 {{ t('students.docsSection') }}</div>
         <CRow class="g-3">
           <CCol xs="12" sm="4">
-            <label class="form-label">{{ t('students.birthCertNo') }}</label>
-            <CFormInput v-model="form.birth_certificate_no" placeholder="Nambari ya cheti cha kuzaliwa" />
+            <label class="form-label">{{ t('students.birthCertNo') }} <span class="text-danger">*</span></label>
+            <CFormInput v-model="form.birth_certificate_no" placeholder="Nambari ya cheti cha kuzaliwa"
+                        :class="{'is-invalid': errors.birth_certificate_no}" />
+            <div class="invalid-feedback">{{ errors.birth_certificate_no }}</div>
           </CCol>
           <CCol xs="12" sm="4">
             <label class="form-label">{{ t('students.religion') }}</label>
@@ -146,6 +148,36 @@
             <div class="invalid-feedback d-block" v-if="errors.admission_no">{{ errors.admission_no }}</div>
           </CCol>
         </CRow>
+
+        <!-- Identifications -->
+        <div class="fw-semibold text-muted small mt-3 mb-2 text-uppercase" style="letter-spacing:.05em;">🪪 {{ t('students.identifications') }}</div>
+        <div v-for="(id, ii) in form.identifications" :key="ii"
+             style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.5rem .75rem;align-items:end;"
+             class="mb-2">
+          <div>
+            <label class="form-label small mb-1">{{ t('students.idType') }} <span class="text-danger">*</span></label>
+            <CFormSelect v-model="id.type">
+              <option value="">— {{ t('common.select') }} —</option>
+              <option v-for="(label, key) in idTypes" :key="key" :value="key">{{ label }}</option>
+            </CFormSelect>
+          </div>
+          <div>
+            <label class="form-label small mb-1">{{ t('students.idNumber') }} <span class="text-danger">*</span></label>
+            <CFormInput v-model="id.number" placeholder="ID number" />
+          </div>
+          <div>
+            <label class="form-label small mb-1">{{ t('students.idExpiresAt') }}</label>
+            <CFormInput type="date" v-model="id.expires_at" />
+          </div>
+          <div class="pb-1">
+            <CButton color="danger" variant="ghost" size="sm" @click="removeIdentification(ii)">
+              <CIcon icon="cilTrash" />
+            </CButton>
+          </div>
+        </div>
+        <CButton color="success" variant="outline" size="sm" @click="addIdentification">
+          <CIcon icon="cilPlus" class="me-1" /> {{ t('students.addIdentification') }}
+        </CButton>
       </div>
 
       <!-- ═══════════════ STEP 2: Health & Address ═══════════════ -->
@@ -169,7 +201,13 @@
           </CCol>
           <CCol xs="12" sm="4">
             <label class="form-label mb-1">{{ t('students.allergies') }}</label>
-            <CFormInput v-model="form.allergies" :placeholder="t('students.allergiesPlaceholder')" />
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <CFormSwitch v-model="hasAllergies" id="allergiesToggle"
+                           @change="!hasAllergies && (form.allergies = '')" />
+              <span class="small text-muted">{{ t('students.allergiesToggle') }}</span>
+            </div>
+            <CFormInput v-if="hasAllergies" v-model="form.allergies"
+                        :placeholder="t('students.allergiesPlaceholder')" autofocus />
           </CCol>
           <CCol xs="12" sm="4">
             <label class="form-label mb-1">{{ t('students.medicalConditions') }}</label>
@@ -656,6 +694,35 @@ const academicYears = ref([])
 const terms         = ref([])
 const allClasses    = ref([])
 
+// Allergies toggle (Step 2)
+const hasAllergies = ref(false)
+
+// Identification types map
+const idTypes = {
+  nida:             t('students.idTypes.nida'),
+  driving_license:  t('students.idTypes.driving_license'),
+  voter_id:         t('students.idTypes.voter_id'),
+  passport:         t('students.idTypes.passport'),
+  birth_certificate:t('students.idTypes.birth_certificate'),
+  student_id:       t('students.idTypes.student_id'),
+  other:            t('students.idTypes.other'),
+}
+function addIdentification() {
+  form.value.identifications.push({ type: '', number: '', expires_at: '' })
+}
+function removeIdentification(i) {
+  form.value.identifications.splice(i, 1)
+}
+
+// Phone normalize: any TZ format → 255XXXXXXXXX
+function normalizePhone(raw) {
+  const d = (raw || '').replace(/\D/g, '')
+  if (d.startsWith('0') && d.length === 10) return '255' + d.slice(1)
+  if (d.startsWith('255') && d.length === 12) return d
+  if ((d.startsWith('7') || d.startsWith('6')) && d.length === 9) return '255' + d
+  return d
+}
+
 // Fee preview (Step 5)
 const feePreview          = ref(null)   // { items, total_cents } or null
 const loadingFeePreview   = ref(false)
@@ -732,6 +799,7 @@ function blankForm() {
     status: 'active',
     // Health
     blood_group: '', allergies: '', medical_conditions: '',
+    identifications: [],
     // Address
     address: '', region: '', district: '', ward: '', street: '', place: '',
     notes: '',
@@ -873,6 +941,9 @@ function removeGuardian(i) { form.value.guardians.splice(i, 1) }
 function setPrimary(idx)   { form.value.guardians.forEach((g, i) => { if (i !== idx) g.is_primary_contact = false }) }
 
 async function checkGuardianExists(idx) {
+  // Normalize phone to 255 format on blur
+  const raw = form.value.guardians[idx].phone
+  form.value.guardians[idx].phone = normalizePhone(raw)
   const phone = form.value.guardians[idx].phone
   if (!phone || phone.length < 9) return
   try {
@@ -886,10 +957,11 @@ async function checkGuardianExists(idx) {
 function validateStep() {
   errors.value = {}
   if (step.value === 1) {
-    if (!form.value.first_name)   errors.value.first_name   = t('students.errors.firstNameRequired')
-    if (!form.value.last_name)    errors.value.last_name    = t('students.errors.lastNameRequired')
-    if (!form.value.gender)       errors.value.gender       = t('students.errors.genderRequired')
-    if (!form.value.date_of_birth) errors.value.date_of_birth = t('students.errors.dobRequired')
+    if (!form.value.first_name)         errors.value.first_name          = t('students.errors.firstNameRequired')
+    if (!form.value.last_name)          errors.value.last_name           = t('students.errors.lastNameRequired')
+    if (!form.value.gender)             errors.value.gender              = t('students.errors.genderRequired')
+    if (!form.value.date_of_birth)      errors.value.date_of_birth       = t('students.errors.dobRequired')
+    if (!form.value.birth_certificate_no) errors.value.birth_certificate_no = t('students.errors.birthCertRequired')
   }
   if (step.value === 3) {
     if (!form.value.school_id)        errors.value.school_id        = t('students.errors.schoolRequired')
@@ -968,6 +1040,11 @@ async function submit() {
       })
     })
     if (photoFile.value) fd.append('photo', photoFile.value)
+    f.identifications.forEach((id, i) => {
+      fd.append(`identifications[${i}][type]`, id.type)
+      fd.append(`identifications[${i}][number]`, id.number)
+      if (id.expires_at) fd.append(`identifications[${i}][expires_at]`, id.expires_at)
+    })
 
     await api.post('/students/register', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
 
@@ -1007,7 +1084,8 @@ function resetForm() {
   wards.value        = []
   streets.value      = []
   places.value       = []
-  form.value = blankForm()
+  form.value    = blankForm()
+  hasAllergies.value = false
 }
 
 watch(() => props.visible, async (v) => {
