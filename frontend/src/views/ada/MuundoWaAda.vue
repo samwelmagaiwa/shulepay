@@ -1,47 +1,28 @@
 <template>
   <CContainer fluid>
-    <CRow class="align-items-center mb-3">
-      <CCol>
-        <h4 class="fw-bold mb-0">{{ t('fees.title') }}</h4>
-      </CCol>
-      <CCol xs="auto">
-        <CButton color="primary" @click="openAdd">
-          <CIcon icon="cilPlus" class="me-1" /> {{ t('fees.add') }}
-        </CButton>
-      </CCol>
-    </CRow>
 
-    <!-- Filters -->
-    <CCard class="mb-3">
-      <CCardBody>
-        <CRow class="g-2">
-          <CCol sm="3">
-            <CFormSelect v-model="filters.school_id" @update:modelValue="loadData">
-              <option value="">{{ t('common.all') }} {{ t('common.school') }}</option>
-              <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol sm="3">
-            <CFormSelect v-model="filters.academic_year_id" @update:modelValue="loadData">
-              <option value="">{{ t('common.all') }} {{ t('common.year') }}</option>
-              <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol sm="3">
-            <CFormSelect v-model="filters.term_id" @update:modelValue="loadData">
-              <option value="">{{ t('common.all') }} {{ t('common.term') }}</option>
-              <option v-for="term in terms" :key="term.id" :value="term.id">{{ term.name }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol sm="3">
-            <CFormSelect v-model="filters.school_class_id" @update:modelValue="loadData">
-              <option value="">{{ t('common.all') }} {{ t('common.class') }}</option>
-              <option v-for="c in schoolClasses" :key="c.id" :value="c.id">{{ c.name }}</option>
-            </CFormSelect>
-          </CCol>
-        </CRow>
-      </CCardBody>
-    </CCard>
+    <!-- Toolbar: filters + add button in one row -->
+    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+      <CFormSelect v-model="filters.school_id" @update:modelValue="loadData" style="max-width:200px;">
+        <option value="">{{ t('common.all') }} {{ t('common.school') }}</option>
+        <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
+      </CFormSelect>
+      <CFormSelect v-model="filters.academic_year_id" @update:modelValue="loadData" style="max-width:160px;">
+        <option value="">{{ t('common.all') }} {{ t('common.year') }}</option>
+        <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
+      </CFormSelect>
+      <CFormSelect v-model="filters.term_id" @update:modelValue="loadData" style="max-width:160px;">
+        <option value="">{{ t('common.all') }} {{ t('common.term') }}</option>
+        <option v-for="term in terms" :key="term.id" :value="term.id">{{ term.name }}</option>
+      </CFormSelect>
+      <CFormSelect v-model="filters.school_class_id" @update:modelValue="loadData" style="max-width:160px;">
+        <option value="">{{ t('common.all') }} {{ t('common.class') }}</option>
+        <option v-for="c in schoolClasses" :key="c.id" :value="c.id">{{ c.name }}</option>
+      </CFormSelect>
+      <CButton color="primary" class="ms-auto flex-shrink-0" @click="openAdd">
+        <CIcon icon="cilPlus" class="me-1" /> {{ t('fees.add') }}
+      </CButton>
+    </div>
 
     <!-- Table -->
     <CCard>
@@ -82,42 +63,26 @@
               <CTableDataCell class="text-end fw-bold">
                 {{ formatMoney(s.items?.reduce((sum, i) => sum + i.amount_cents, 0) || 0) }}
               </CTableDataCell>
-              <CTableDataCell class="text-center">
-                <CButton
-                  size="sm"
-                  :color="activeRow?.id === s.id ? 'primary' : 'secondary'"
-                  variant="ghost"
-                  @click="activeRow = activeRow?.id === s.id ? null : s"
+              <CTableDataCell style="position:relative; min-width:56px;">
+                <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow?.id === s.id ? null : s">👁️</CButton>
+                <div
+                  v-if="activeRow?.id === s.id"
+                  style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:10; min-width:140px;"
+                  @click.stop
                 >
-                  <CIcon icon="cilOptions" />
-                </CButton>
+                  <CButton size="sm" color="primary" variant="ghost" class="text-start" @click="openEdit(s); activeRow = null">
+                    ✏️ {{ t('common.edit') }}
+                  </CButton>
+                  <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(s); activeRow = null">
+                    🗑️ {{ t('common.delete') }}
+                  </CButton>
+                </div>
               </CTableDataCell>
             </CTableRow>
           </CTableBody>
         </CTable>
       </CCardBody>
     </CCard>
-
-    <!-- Floating action bar — teleported to body to avoid z-index clipping inside table -->
-    <Teleport to="body">
-      <Transition name="fee-actions">
-        <div
-          v-if="activeRow"
-          style="position:fixed;top:68px;right:24px;z-index:9000;background:#fff;border:1px solid #dee2e6;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.15);padding:10px 14px;display:flex;align-items:center;gap:10px;"
-        >
-          <span class="small fw-semibold text-muted" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-            {{ activeRow.school_class?.name }} — {{ activeRow.term?.name }}
-          </span>
-          <CButton size="sm" color="warning" @click="openEdit(activeRow); activeRow = null">
-            <CIcon icon="cilPencil" class="me-1" />{{ t('common.edit') }}
-          </CButton>
-          <CButton size="sm" color="danger" @click="confirmDelete(activeRow); activeRow = null">
-            <CIcon icon="cilTrash" class="me-1" />{{ t('common.delete') }}
-          </CButton>
-          <CButton size="sm" color="secondary" variant="ghost" style="padding:2px 8px;" @click="activeRow = null">✕</CButton>
-        </div>
-      </Transition>
-    </Teleport>
 
     <!-- Add/Edit Modal -->
     <CModal :visible="showModal" @close="closeModal" size="lg">
@@ -288,7 +253,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useFeeStructuresStore } from '@/stores/feeStructures'
 import { useSchoolsStore }       from '@/stores/schools'
@@ -304,6 +269,10 @@ const filters      = ref({ school_id: schoolStore.activeSchoolId || '', academic
 const showModal    = ref(false)
 const editing      = ref(null)
 const activeRow    = ref(null)
+
+function closeActions() { activeRow.value = null }
+onMounted(() => document.addEventListener('click', closeActions))
+onUnmounted(() => document.removeEventListener('click', closeActions))
 const saving       = ref(false)
 const modalError   = ref('')
 const academicYears    = ref([])
@@ -474,13 +443,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.fee-actions-enter-active,
-.fee-actions-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-.fee-actions-enter-from,
-.fee-actions-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
-}
+:deep(.table-responsive) { overflow: visible !important; }
+:deep(.card) { overflow: visible !important; }
 </style>
