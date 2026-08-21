@@ -224,9 +224,20 @@
               {{ t('students.street') }}
               <CSpinner v-if="loadingStreets" size="sm" style="width:12px;height:12px;" />
             </label>
-            <CFormSelect v-model="form.street" :disabled="!form.ward || loadingStreets">
+            <CFormSelect v-model="form.street" :disabled="!form.ward || loadingStreets"
+              @update:modelValue="onStreetChange">
               <option value="">{{ loadingStreets ? t('common.loading') : `— ${t('students.selectStreet')} —` }}</option>
               <option v-for="st in streets" :key="st.id" :value="st.name">{{ st.name }}</option>
+            </CFormSelect>
+          </CCol>
+          <CCol xs="12" sm="4">
+            <label class="form-label d-flex align-items-center gap-1">
+              Mtaa / Kijiji (Place)
+              <CSpinner v-if="loadingPlaces" size="sm" style="width:12px;height:12px;" />
+            </label>
+            <CFormSelect v-model="form.place" :disabled="!form.street || loadingPlaces">
+              <option value="">{{ loadingPlaces ? t('common.loading') : '— Chagua mtaa / sehemu —' }}</option>
+              <option v-for="pl in places" :key="pl.id" :value="pl.name">{{ pl.name }}</option>
             </CFormSelect>
           </CCol>
           <CCol xs="12" sm="4">
@@ -491,10 +502,12 @@ const regions        = ref([])
 const districts      = ref([])
 const wards          = ref([])
 const streets        = ref([])
+const places         = ref([])
 const loadingRegions  = ref(false)
 const loadingDistricts= ref(false)
 const loadingWards    = ref(false)
 const loadingStreets  = ref(false)
+const loadingPlaces   = ref(false)
 
 const steps = computed(() => [
   'Taarifa za Mwanafunzi',
@@ -521,7 +534,7 @@ function blankForm() {
     // Health
     blood_group: '', allergies: '', medical_conditions: '',
     // Address
-    address: '', region: '', district: '', ward: '', street: '',
+    address: '', region: '', district: '', ward: '', street: '', place: '',
     notes: '',
     // Enrollment
     school_id: '', school_class_id: '', academic_year_id: '', term_id: '',
@@ -607,8 +620,8 @@ async function fetchRegions() {
 
 async function onRegionChange(newVal) {
   form.value.region = newVal
-  form.value.district = ''; form.value.ward = ''; form.value.street = ''
-  districts.value = []; wards.value = []; streets.value = []
+  form.value.district = ''; form.value.ward = ''; form.value.street = ''; form.value.place = ''
+  districts.value = []; wards.value = []; streets.value = []; places.value = []
   const r = regions.value.find(r => r.name === newVal)
   if (!r) return
   loadingDistricts.value = true
@@ -620,8 +633,8 @@ async function onRegionChange(newVal) {
 
 async function onDistrictChange(newVal) {
   form.value.district = newVal
-  form.value.ward = ''; form.value.street = ''
-  wards.value = []; streets.value = []
+  form.value.ward = ''; form.value.street = ''; form.value.place = ''
+  wards.value = []; streets.value = []; places.value = []
   const d = districts.value.find(d => d.name === newVal)
   if (!d) return
   loadingWards.value = true
@@ -633,7 +646,7 @@ async function onDistrictChange(newVal) {
 
 async function onWardChange(newVal) {
   form.value.ward = newVal
-  form.value.street = ''; streets.value = []
+  form.value.street = ''; form.value.place = ''; streets.value = []; places.value = []
   const w = wards.value.find(w => w.name === newVal)
   if (!w) return
   loadingStreets.value = true
@@ -641,6 +654,18 @@ async function onWardChange(newVal) {
     const { data } = await api.get('/locations/streets', { params: { ward_id: w.id } })
     streets.value = data.data || []
   } catch {} finally { loadingStreets.value = false }
+}
+
+async function onStreetChange(newVal) {
+  form.value.street = newVal
+  form.value.place = ''; places.value = []
+  const s = streets.value.find(s => s.name === newVal)
+  if (!s) return
+  loadingPlaces.value = true
+  try {
+    const { data } = await api.get('/locations/places', { params: { village_id: s.id } })
+    places.value = data.data || []
+  } catch {} finally { loadingPlaces.value = false }
 }
 
 // ── Guardians ─────────────────────────────────────────────────────────────────
@@ -717,6 +742,7 @@ async function submit() {
       district:               f.district,
       ward:                   f.ward,
       street:                 f.street,
+      place:                  f.place,
       status:                 f.status,
       notes:                  f.notes,
       school_id:              f.school_id,
@@ -776,6 +802,7 @@ function resetForm() {
   districts.value    = []
   wards.value        = []
   streets.value      = []
+  places.value       = []
   form.value = blankForm()
 }
 

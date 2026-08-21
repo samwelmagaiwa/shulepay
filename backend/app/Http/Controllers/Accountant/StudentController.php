@@ -169,7 +169,7 @@ class StudentController extends Controller
             'first_name', 'middle_name', 'last_name', 'date_of_birth', 'gender', 'status',
             'birth_certificate_no', 'nationality', 'religion',
             'blood_group', 'allergies', 'medical_conditions',
-            'address', 'region', 'district', 'ward', 'street',
+            'address', 'region', 'district', 'ward', 'street', 'place',
             'photo', 'notes',
         ];
         $studentData = array_filter(

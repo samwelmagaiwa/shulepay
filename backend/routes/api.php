@@ -72,6 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('locations/districts', [LocationController::class, 'districts']);
     Route::get('locations/wards', [LocationController::class, 'wards']);
     Route::get('locations/streets', [LocationController::class, 'streets']);
+    Route::get('locations/places', [LocationController::class, 'places']);
 
     // Branding (read: all authenticated; write: owner/superadmin only)
     Route::get('branding', [BrandingController::class, 'show']);

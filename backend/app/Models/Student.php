@@ -33,6 +33,7 @@ class Student extends Model
         'district',
         'ward',
         'street',
+        'place',
     ];
 
     protected $casts = ['date_of_birth' => 'date'];

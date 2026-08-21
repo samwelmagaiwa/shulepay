@@ -43,6 +43,7 @@ class UpdateStudentRequest extends FormRequest
             'district' => 'nullable|string|max:100',
             'ward' => 'nullable|string|max:100',
             'street' => 'nullable|string|max:100',
+            'place' => 'nullable|string|max:100',
             // Photo
             'photo' => 'nullable|image|max:2048',
             // Notes

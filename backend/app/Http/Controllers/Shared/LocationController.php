@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Shared;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lga;
+use App\Models\Place;
 use App\Models\State;
 use App\Models\Village;
 use App\Models\Ward;
@@ -97,5 +98,29 @@ class LocationController extends Controller
         });
 
         return response()->json(['data' => $streets]);
+    }
+
+    /**
+     * Get places for a given village/street (village_id).
+     */
+    public function places(Request $request): JsonResponse
+    {
+        $villageId = $request->village_id;
+
+        if (! $villageId) {
+            return response()->json(['data' => []]);
+        }
+
+        $cacheKey = "locations.places.{$villageId}";
+
+        $places = Cache::remember($cacheKey, 86400, function () use ($villageId) {
+            return Place::query()
+                ->select('id', 'name', 'village_id')
+                ->where('village_id', $villageId)
+                ->orderBy('name')
+                ->get();
+        });
+
+        return response()->json(['data' => $places]);
     }
 }
