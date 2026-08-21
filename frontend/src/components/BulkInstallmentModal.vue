@@ -15,7 +15,7 @@
               Shule <span class="text-danger">*</span>
             </label>
             <CFormSelect v-model="form.school_id" :disabled="saving || loadingSchools" size="sm"
-                         @change="onSchoolChange">
+                         @update:modelValue="onSchoolChange">
               <option value="">— Chagua Shule —</option>
               <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
             </CFormSelect>
@@ -30,7 +30,7 @@
               {{ t('common.class') }} <span class="text-danger">*</span>
             </label>
             <CFormSelect v-model="form.school_class_id" :disabled="saving || !form.school_id || loadingClasses"
-                         size="sm" @change="onClassOrTermChange">
+                         size="sm" @update:modelValue="onClassOrTermChange">
               <option value="">{{ loadingClasses ? 'Inapakia...' : t('installments.selectClass') }}</option>
               <option v-for="c in filteredClasses" :key="c.id" :value="c.id">{{ c.name }}</option>
             </CFormSelect>
@@ -46,7 +46,7 @@
               {{ t('invoices.term') }} <span class="text-danger">*</span>
             </label>
             <CFormSelect v-model="form.term_id" :disabled="saving || !form.school_id || loadingTerms"
-                         size="sm" @change="onClassOrTermChange">
+                         size="sm" @update:modelValue="onClassOrTermChange">
               <option value="">{{ loadingTerms ? 'Inapakia...' : t('installments.selectTerm') }}</option>
               <option v-for="term in filteredTerms" :key="term.id" :value="term.id">{{ term.name }}</option>
             </CFormSelect>

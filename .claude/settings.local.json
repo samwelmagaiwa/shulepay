@@ -168,7 +168,8 @@
       "Bash(xargs grep -l -i \"branding\\\\|brand\")",
       "Bash(vendor/bin/pint --test app/Http/Controllers/Auth/AuthController.php)",
       "Bash(vendor/bin/pint app/Http/Controllers/Auth/AuthController.php)",
-      "Bash(git commit -m 'fix: translate Registration Summary card and step labels in AddStudentModal *)"
+      "Bash(git commit -m 'fix: translate Registration Summary card and step labels in AddStudentModal *)",
+      "Bash(git commit -m 'fix: translate MuundoWaAda \\(fee structures\\) full-tuition section *)"
     ]
   }
 }
