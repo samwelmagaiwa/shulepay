@@ -280,3 +280,14 @@
 [0;36m[20:32:01][0m   ShulePay — Release
 [0;36m[20:32:01][0m ══════════════════════════════════════════
 [0;36m[20:32:01][0m Checking working tree...
+[0;36m[20:32:01][0m Files staged for commit:
+[0;36m[20:32:01][0m Committing: "perf: skip migrations when none pending — check migrate:status before running"
+[0;32m✔ Committed[0m
+[0;36m[20:32:02][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[20:32:05][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-21 20:37:34][0m ══════════════════════════════════════════
+[0;36m[2026-08-21 20:37:34][0m   ShulePay — Release
+[0;36m[2026-08-21 20:37:34][0m ══════════════════════════════════════════
+[0;36m[2026-08-21 20:37:34][0m Checking working tree...

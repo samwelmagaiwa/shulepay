@@ -34,10 +34,20 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-log()     { echo -e "${CYAN}[$(date '+%H:%M:%S')]${NC} $*" | tee -a "$LOG_FILE"; }
+log()     { echo -e "${CYAN}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $*" | tee -a "$LOG_FILE"; }
 success() { echo -e "${GREEN}✔ $*${NC}" | tee -a "$LOG_FILE"; }
 warn()    { echo -e "${YELLOW}⚠ $*${NC}" | tee -a "$LOG_FILE"; }
 error()   { echo -e "${RED}✖ $*${NC}" | tee -a "$LOG_FILE"; exit 1; }
+
+rotate_log() {
+  # Keep deploy.log under 2 MB — truncate oldest half when exceeded
+  local max_bytes=2097152
+  if [[ -f "$LOG_FILE" ]] && [[ $(wc -c < "$LOG_FILE") -gt $max_bytes ]]; then
+    local lines; lines=$(wc -l < "$LOG_FILE")
+    tail -n $((lines / 2)) "$LOG_FILE" > "${LOG_FILE}.tmp" && mv "${LOG_FILE}.tmp" "$LOG_FILE"
+    echo "[log rotated]" >> "$LOG_FILE"
+  fi
+}
 
 require_env() {
   [[ -f "$ENV_FILE" ]] || error ".env file not found at $ENV_FILE"
@@ -65,6 +75,8 @@ health_check() {
 # ── Commands ──────────────────────────────────────────────────────────────────
 
 cmd_deploy() {
+  rotate_log
+
   log "══════════════════════════════════════════"
   log "  ShulePay — Starting Deployment"
   log "══════════════════════════════════════════"
@@ -72,29 +84,24 @@ cmd_deploy() {
   require_env
   require_docker
 
-  # 1. Save current image tag for potential rollback
-  CURRENT_TAG=$(docker inspect --format='{{index .RepoTags 0}}' "${DOCKERHUB_USERNAME}/shulepay-backend:latest" 2>/dev/null | grep -oP ':\K.*' || echo "none")
+  # 1. Save current image tag for rollback (use IMAGE_TAG from .env written by CI)
+  CURRENT_TAG="${IMAGE_TAG:-none}"
   echo "$CURRENT_TAG" > "$BACKUP_TAG_FILE"
   log "Previous tag saved for rollback: $CURRENT_TAG"
 
-  # 2. Log in to Docker Hub
-  log "Logging in to Docker Hub..."
-  echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin 2>/dev/null \
-    || warn "Docker Hub login skipped (may already be authenticated)"
-
-  # 3. Pull latest images
+  # 2. Pull latest images (images are public — no Docker Hub login needed on server)
   log "Pulling latest images from Docker Hub..."
   docker compose -f "$COMPOSE_FILE" pull \
     || error "Failed to pull images from Docker Hub"
   success "Images pulled successfully"
 
-  # 4. Start / recreate containers
+  # 3. Recreate only app containers (backend + frontend); leave DB untouched unless its image changed
   log "Starting containers..."
-  docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --force-recreate \
+  docker compose -f "$COMPOSE_FILE" up -d --remove-orphans \
     || error "Failed to start containers"
   success "Containers started"
 
-  # 5. Wait for DB health (skip if using external DB — no shulepay_db container)
+  # 4. Wait for DB health (skip if using external DB — no shulepay_db container)
   if docker ps --filter "name=shulepay_db" --format '{{.Names}}' | grep -q shulepay_db; then
     log "Waiting for database..."
     health_check shulepay_db 90 \
@@ -102,6 +109,9 @@ cmd_deploy() {
   else
     log "Using external database — skipping container health check"
   fi
+
+  # 5. Brief wait to ensure backend PHP-FPM is fully up before running artisan
+  sleep 3
 
   # 6. Run migrations only if there are pending ones
   log "Checking for pending migrations..."
@@ -115,15 +125,13 @@ cmd_deploy() {
     success "No pending migrations — skipped"
   fi
 
-  # 7. Artisan optimisation
+  # 7. Artisan optimisation — single optimize call (config + route + view + event cache)
   log "Optimising Laravel..."
-  docker exec shulepay_backend php artisan config:cache
-  docker exec shulepay_backend php artisan route:cache
-  docker exec shulepay_backend php artisan view:cache
-  docker exec shulepay_backend php artisan event:cache
+  docker exec shulepay_backend php artisan optimize \
+    || warn "artisan optimize had warnings — continuing"
   success "Laravel cache warmed"
 
-  # 8. Storage link
+  # 8. Storage link (idempotent — safe to always run)
   docker exec shulepay_backend php artisan storage:link 2>/dev/null || true
 
   # 9. Queue restart (picks up new code)
@@ -151,22 +159,25 @@ cmd_rollback() {
   PREV_TAG=$(cat "$BACKUP_TAG_FILE")
   [[ "$PREV_TAG" == "none" ]] && error "Previous tag is 'none'. Cannot rollback."
 
+  # Resolve actual image names from env (set by CI) or fall back to defaults
+  BACKEND_IMG="${BACKEND_IMAGE:-magaiwa/magreth-backend}"
+  FRONTEND_IMG="${FRONTEND_IMAGE:-magaiwa/magreth-frontend}"
+
   warn "Rolling back to tag: $PREV_TAG"
 
-  # Pull the previous image
-  docker pull "${DOCKERHUB_USERNAME}/shulepay-backend:${PREV_TAG}" \
-    || error "Could not pull previous backend image"
-  docker pull "${DOCKERHUB_USERNAME}/shulepay-frontend:${PREV_TAG}" \
-    || error "Could not pull previous frontend image"
+  # Pull the previous images
+  docker pull "${BACKEND_IMG}:${PREV_TAG}"  || error "Could not pull previous backend image"
+  docker pull "${FRONTEND_IMG}:${PREV_TAG}" || error "Could not pull previous frontend image"
 
-  # Re-tag as latest
-  docker tag "${DOCKERHUB_USERNAME}/shulepay-backend:${PREV_TAG}"  "${DOCKERHUB_USERNAME}/shulepay-backend:latest"
-  docker tag "${DOCKERHUB_USERNAME}/shulepay-frontend:${PREV_TAG}" "${DOCKERHUB_USERNAME}/shulepay-frontend:latest"
+  # Re-tag as latest so compose picks them up
+  docker tag "${BACKEND_IMG}:${PREV_TAG}"  "${BACKEND_IMG}:latest"
+  docker tag "${FRONTEND_IMG}:${PREV_TAG}" "${FRONTEND_IMG}:latest"
 
-  # Restart
-  docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --force-recreate
+  # Restart app containers only (leave DB running)
+  docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
 
   success "Rolled back to $PREV_TAG"
+  warn "Note: DB schema is NOT rolled back. Run 'php artisan migrate:rollback' manually if needed."
 }
 
 cmd_status() {
@@ -198,9 +209,15 @@ cmd_restart() {
 }
 
 cmd_migrate() {
-  log "Running migrations..."
-  docker exec shulepay_backend php artisan migrate --force
-  success "Migrations done"
+  log "Checking for pending migrations..."
+  PENDING=$(docker exec shulepay_backend php artisan migrate:status 2>/dev/null | grep -c "Pending" || true)
+  if [[ "$PENDING" -gt 0 ]]; then
+    log "Found $PENDING pending migration(s) — running..."
+    docker exec shulepay_backend php artisan migrate --force
+    success "Migrations done ($PENDING applied)"
+  else
+    success "No pending migrations — nothing to do"
+  fi
 }
 
 cmd_release() {
