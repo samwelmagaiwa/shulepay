@@ -454,3 +454,7 @@ async function submitPayment() {
 
 onMounted(() => { try { load() } catch {} })
 </script>
+
+<style scoped>
+:deep(.table-responsive) { overflow: visible; }
+</style>

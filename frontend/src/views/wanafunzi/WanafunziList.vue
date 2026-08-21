@@ -258,3 +258,7 @@ onMounted(async () => {
   try { await fetchData() } catch {}
 })
 </script>
+
+<style scoped>
+:deep(.table-responsive) { overflow: visible; }
+</style>

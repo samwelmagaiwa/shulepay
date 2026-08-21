@@ -378,3 +378,7 @@ async function doDelete() {
 
 onMounted(async () => { try { await loadData() } catch {} })
 </script>
+
+<style scoped>
+:deep(.table-responsive) { overflow: visible; }
+</style>

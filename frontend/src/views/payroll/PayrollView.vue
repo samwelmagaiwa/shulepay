@@ -340,3 +340,7 @@ onMounted(async () => {
   } catch {}
 })
 </script>
+
+<style scoped>
+:deep(.table-responsive) { overflow: visible; }
+</style>

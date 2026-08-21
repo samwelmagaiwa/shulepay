@@ -408,6 +408,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+:deep(.table-responsive) { overflow: visible; }
 /* Smooth reveal animation for the custom amount input */
 .slide-fade-enter-active {
   transition: all 0.2s ease-out;
