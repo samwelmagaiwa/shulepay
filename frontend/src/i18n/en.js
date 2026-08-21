@@ -420,6 +420,8 @@ export default {
       genderRequired:         'Select gender',
       dobRequired:            'Date of birth is required',
       birthCertRequired:      'Birth Certificate No. is required',
+      idTypeRequired:         'Select document type',
+      idNumberRequired:       'ID number is required',
       schoolRequired:         'Select school',
       classRequired:          'Select class',
       yearRequired:           'Select academic year',

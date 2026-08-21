@@ -156,14 +156,20 @@
              class="mb-2">
           <div>
             <label class="form-label small mb-1">{{ t('students.idType') }} <span class="text-danger">*</span></label>
-            <CFormSelect v-model="id.type">
+            <CFormSelect v-model="id.type" :class="{'is-invalid': errors[`id_type_${ii}`]}">
               <option value="">— {{ t('common.select') }} —</option>
               <option v-for="(label, key) in idTypes" :key="key" :value="key">{{ label }}</option>
             </CFormSelect>
+            <div class="invalid-feedback">{{ errors[`id_type_${ii}`] }}</div>
           </div>
           <div>
-            <label class="form-label small mb-1">{{ t('students.idNumber') }} <span class="text-danger">*</span></label>
-            <CFormInput v-model="id.number" placeholder="ID number" />
+            <label class="form-label small mb-1">
+              {{ t('students.idNumber') }}
+              <span v-if="id.type === 'nida'" class="text-danger">*</span>
+            </label>
+            <CFormInput v-model="id.number" placeholder="ID number"
+                        :class="{'is-invalid': errors[`id_number_${ii}`]}" />
+            <div class="invalid-feedback">{{ errors[`id_number_${ii}`] }}</div>
           </div>
           <div>
             <label class="form-label small mb-1">{{ t('students.idExpiresAt') }}</label>
@@ -970,6 +976,11 @@ function validateStep() {
     if (!form.value.gender)             errors.value.gender              = t('students.errors.genderRequired')
     if (!form.value.date_of_birth)      errors.value.date_of_birth       = t('students.errors.dobRequired')
     if (!form.value.birth_certificate_no) errors.value.birth_certificate_no = t('students.errors.birthCertRequired')
+    form.value.identifications.forEach((id, ii) => {
+      if (!id.type) errors.value[`id_type_${ii}`] = t('students.errors.idTypeRequired')
+      if (id.type === 'nida' && !id.number) errors.value[`id_number_${ii}`] = t('students.errors.idNumberRequired')
+      else if (id.type && !id.number) errors.value[`id_number_${ii}`] = t('students.errors.idNumberRequired')
+    })
   }
   if (step.value === 3) {
     if (!form.value.school_id)        errors.value.school_id        = t('students.errors.schoolRequired')

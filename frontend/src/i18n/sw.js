@@ -420,6 +420,8 @@ export default {
       genderRequired:         'Chagua jinsia',
       dobRequired:            'Tarehe ya kuzaliwa inahitajika',
       birthCertRequired:      'Nambari ya cheti cha kuzaliwa inahitajika',
+      idTypeRequired:         'Chagua aina ya hati',
+      idNumberRequired:       'Nambari ya kitambulisho inahitajika',
       schoolRequired:         'Chagua shule',
       classRequired:          'Chagua darasa',
       yearRequired:           'Chagua mwaka wa masomo',
