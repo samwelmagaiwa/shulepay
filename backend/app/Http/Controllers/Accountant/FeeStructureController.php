@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accountant;
 
 use App\Http\Controllers\Controller;
+use App\Models\AcademicYear;
 use App\Models\FeeStructure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,8 +23,16 @@ class FeeStructureController extends Controller
         return response()->json($structures);
     }
 
+    private const VALID_INSTALLMENTS = [1, 2, 3, 4, 6, 12];
+
     public function store(Request $request): JsonResponse
     {
+        $feeMode = $request->input('fee_mode', 'per_term');
+
+        if ($feeMode === 'full_tuition') {
+            return $this->storeFullTuition($request);
+        }
+
         $data = $request->validate([
             'school_id' => 'required|exists:schools,id',
             'school_class_id' => 'required|exists:school_classes,id',
@@ -51,6 +60,7 @@ class FeeStructureController extends Controller
             'school_class_id' => $data['school_class_id'],
             'academic_year_id' => $data['academic_year_id'],
             'term_id' => $data['term_id'],
+            'fee_mode' => 'per_term',
         ]);
 
         foreach ($data['items'] as $item) {
@@ -62,6 +72,71 @@ class FeeStructureController extends Controller
         }
 
         return response()->json($structure->load('feeItems'), 201);
+    }
+
+    private function storeFullTuition(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'school_id' => 'required|exists:schools,id',
+            'school_class_id' => 'required|exists:school_classes,id',
+            'academic_year_id' => 'required|exists:academic_years,id',
+            'full_tuition_cents' => 'required|integer|min:100',
+            'installments_count' => ['required', 'integer', 'in:' . implode(',', self::VALID_INSTALLMENTS)],
+        ]);
+
+        $year = AcademicYear::with(['terms' => fn ($q) => $q->orderBy('id')])->findOrFail($data['academic_year_id']);
+        $terms = $year->terms;
+
+        if ($terms->count() < $data['installments_count']) {
+            return response()->json([
+                'message' => "Mwaka huu una mihula {$terms->count()} tu, lakini malipo {$data['installments_count']} yanahitajika. Ongeza mihula kwanza.",
+            ], 422);
+        }
+
+        $perInstallmentCents = (int) round($data['full_tuition_cents'] / $data['installments_count']);
+        $monthsPerInstallment = 12 / $data['installments_count'];
+
+        $created = [];
+        for ($i = 0; $i < $data['installments_count']; $i++) {
+            $term = $terms[$i];
+
+            $existing = FeeStructure::where([
+                'school_id' => $data['school_id'],
+                'school_class_id' => $data['school_class_id'],
+                'academic_year_id' => $data['academic_year_id'],
+                'term_id' => $term->id,
+            ])->first();
+
+            if ($existing) {
+                return response()->json([
+                    'message' => "Muundo wa ada tayari upo kwa darasa hili na muhula '{$term->name}'. Futa kwanza kabla ya kuunda upya.",
+                ], 422);
+            }
+
+            $structure = FeeStructure::create([
+                'school_id' => $data['school_id'],
+                'school_class_id' => $data['school_class_id'],
+                'academic_year_id' => $data['academic_year_id'],
+                'term_id' => $term->id,
+                'fee_mode' => 'full_tuition',
+                'full_tuition_cents' => $data['full_tuition_cents'],
+                'installments_count' => $data['installments_count'],
+                'installment_number' => $i + 1,
+            ]);
+
+            $structure->feeItems()->create([
+                'name' => "Ada ya Masomo — Awamu " . ($i + 1) . " ya " . $data['installments_count'],
+                'amount_cents' => $perInstallmentCents,
+                'is_optional' => false,
+            ]);
+
+            $created[] = $structure->load(['term', 'feeItems']);
+        }
+
+        return response()->json([
+            'message' => "Muundo wa ada kamili umeundwa kwa awamu {$data['installments_count']} (kila miezi {$monthsPerInstallment}).",
+            'structures' => $created,
+        ], 201);
     }
 
     public function show(FeeStructure $feeStructure): JsonResponse

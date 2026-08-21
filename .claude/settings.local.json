@@ -167,7 +167,8 @@
       "Bash(vendor/bin/pint --test app/Http/Controllers/Superadmin/SuperadminUserController.php)",
       "Bash(xargs grep -l -i \"branding\\\\|brand\")",
       "Bash(vendor/bin/pint --test app/Http/Controllers/Auth/AuthController.php)",
-      "Bash(vendor/bin/pint app/Http/Controllers/Auth/AuthController.php)"
+      "Bash(vendor/bin/pint app/Http/Controllers/Auth/AuthController.php)",
+      "Bash(git commit -m 'fix: translate Registration Summary card and step labels in AddStudentModal *)"
     ]
   }
 }

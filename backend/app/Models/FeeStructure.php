@@ -8,7 +8,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FeeStructure extends Model
 {
-    protected $fillable = ['school_id', 'school_class_id', 'academic_year_id', 'term_id', 'name', 'is_active'];
+    protected $fillable = [
+        'school_id', 'school_class_id', 'academic_year_id', 'term_id', 'name', 'is_active',
+        'fee_mode', 'full_tuition_cents', 'installments_count', 'installment_number',
+    ];
 
     protected $casts = ['is_active' => 'boolean'];
 
