@@ -174,7 +174,9 @@
       "Bash(git commit -m 'fix: guardian form to 3-column layout \\(sm=4 per field\\) *)",
       "Bash(php -r \"echo date\\('Y_m_d_His'\\);\")",
       "Bash(xargs grep -l \"SmsService\\\\|schedule\\\\|Console\\\\|Command\")",
-      "Bash(bash deploy.sh release \"fix: translate all backend API/error messages from Swahili to English\")"
+      "Bash(bash deploy.sh release \"fix: translate all backend API/error messages from Swahili to English\")",
+      "Bash(bash deploy.sh release)",
+      "Bash(bash deploy.sh release \"feat: student detail — cards on top, 3-col promise form, Weka Ahadi quick action\")"
     ]
   }
 }
