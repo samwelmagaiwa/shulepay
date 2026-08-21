@@ -435,58 +435,51 @@
           ⚠ {{ t('fees.noFees') }} — {{ t('students.generateFirstInvoiceHint') }}
         </CAlert>
 
-        <!-- ── Controls ──────────────────────────────────────────────── -->
-        <div class="d-flex flex-column gap-2">
+        <!-- ── Controls: 3-column grid ───────────────────────────────── -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;">
 
-          <!-- Opening balance toggle -->
+          <!-- Col 1: Opening balance toggle -->
           <div class="p-3 rounded-3 border" style="background:#f8f9fa;">
-            <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2 mb-1">
               <CFormSwitch v-model="hasOpeningBalance" id="openingBalanceToggle"
                            @change="!hasOpeningBalance && (form.opening_balance = 0)" />
-              <div>
-                <div class="fw-semibold small">{{ t('students.openingBalance') }}</div>
-                <div class="text-muted" style="font-size:.75rem;">{{ t('students.openingBalanceHint') }}</div>
-              </div>
+              <div class="fw-semibold small">{{ t('students.openingBalance') }}</div>
             </div>
-            <div v-if="hasOpeningBalance" class="mt-2">
-              <CFormInput
-                type="text"
-                inputmode="numeric"
-                :value="formatAmount(form.opening_balance)"
-                @input="form.opening_balance = parseAmount($event.target.value)"
-                placeholder="0"
-                autofocus
-              />
-            </div>
+            <div class="text-muted mb-2" style="font-size:.72rem;">{{ t('students.openingBalanceHint') }}</div>
+            <CFormInput
+              v-if="hasOpeningBalance"
+              type="text"
+              inputmode="numeric"
+              :value="formatAmount(form.opening_balance)"
+              @input="form.opening_balance = parseAmount($event.target.value)"
+              placeholder="0"
+              autofocus
+            />
           </div>
 
-          <!-- Discount -->
+          <!-- Col 2: Discount -->
           <div class="p-3 rounded-3 border" style="background:#f8f9fa;">
-            <div class="row g-2">
-              <div class="col-12 col-sm-6">
-                <label class="form-label fw-semibold small mb-1">{{ t('students.discountType') }}</label>
-                <CFormSelect v-model="form.discount_type">
-                  <option value="">{{ t('students.noDiscount') }}</option>
-                  <option value="sibling">{{ t('students.discountSibling') }}</option>
-                  <option value="staff">{{ t('students.discountStaff') }}</option>
-                  <option value="sponsor">{{ t('students.discountSponsor') }}</option>
-                  <option value="other">{{ t('common.other') }}</option>
-                </CFormSelect>
-              </div>
-              <div v-if="form.discount_type" class="col-12 col-sm-6">
-                <label class="form-label small mb-1">{{ t('students.discountAmount') }} (TZS)</label>
-                <CFormInput type="number" v-model.number="form.discount_amount" min="0" placeholder="0" />
-              </div>
+            <label class="form-label fw-semibold small mb-1">{{ t('students.discountType') }}</label>
+            <CFormSelect v-model="form.discount_type" class="mb-2">
+              <option value="">{{ t('students.noDiscount') }}</option>
+              <option value="sibling">{{ t('students.discountSibling') }}</option>
+              <option value="staff">{{ t('students.discountStaff') }}</option>
+              <option value="sponsor">{{ t('students.discountSponsor') }}</option>
+              <option value="other">{{ t('common.other') }}</option>
+            </CFormSelect>
+            <div v-if="form.discount_type">
+              <label class="form-label small mb-1">{{ t('students.discountAmount') }} (TZS)</label>
+              <CFormInput type="number" v-model.number="form.discount_amount" min="0" placeholder="0" />
             </div>
           </div>
 
-          <!-- Generate invoice toggle -->
-          <div class="d-flex align-items-center gap-3 p-3 rounded-3 border" style="background:#f8f9fa;">
-            <CFormSwitch v-model="form.generate_first_invoice" id="genInvoice" size="xl" />
-            <div>
+          <!-- Col 3: Generate invoice toggle -->
+          <div class="p-3 rounded-3 border d-flex flex-column justify-content-center gap-2" style="background:#f8f9fa;">
+            <div class="d-flex align-items-center gap-2">
+              <CFormSwitch v-model="form.generate_first_invoice" id="genInvoice" size="xl" />
               <div class="fw-semibold small">{{ t('students.generateFirstInvoice') }}</div>
-              <div class="text-muted" style="font-size:.75rem;">{{ t('students.generateFirstInvoiceHint') }}</div>
             </div>
+            <div class="text-muted" style="font-size:.72rem;">{{ t('students.generateFirstInvoiceHint') }}</div>
           </div>
 
         </div>
