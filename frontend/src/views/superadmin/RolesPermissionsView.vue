@@ -429,25 +429,40 @@ function initials(name) {
 </script>
 
 <template>
-  <CContainer fluid class="pt-2 pb-3">
+  <!-- Full-height layout: header row + two-column body, each column scrolls independently -->
+  <div class="d-flex flex-column" style="height:calc(100vh - 56px); padding:0.5rem 1rem 0.5rem;">
 
-    <!-- Header -->
-    <div class="d-flex align-items-center justify-content-end mb-3">
-      <CButton color="success" @click="showCreate = true; newRoleName = ''; createError = ''">
-        + Create Role
-      </CButton>
+    <!-- Header row: title + both action buttons -->
+    <div class="d-flex align-items-center justify-content-between mb-2 flex-shrink-0">
+      <h6 class="mb-0 fw-bold">Roles &amp; Permissions</h6>
+      <div class="d-flex align-items-center gap-2">
+        <CAlert v-if="error" color="danger" class="mb-0 py-1 px-3 small" dismissible @close="error = ''">{{ error }}</CAlert>
+        <CButton color="success" size="sm" @click="showCreate = true; newRoleName = ''; createError = ''">
+          + Create Role
+        </CButton>
+        <CButton
+          v-if="activeRole"
+          color="success" size="sm"
+          :disabled="savingPerms"
+          @click="savePermissions"
+          style="min-width:140px;"
+        >
+          <CSpinner v-if="savingPerms" size="sm" class="me-1" />
+          Save Permissions
+        </CButton>
+        <CAlert v-if="permSaved" color="success" class="mb-0 py-1 px-3 small">Saved ✓</CAlert>
+      </div>
     </div>
 
-    <CAlert v-if="error" color="danger" dismissible @close="error = ''">{{ error }}</CAlert>
-    <div v-if="loading" class="text-center py-5"><CSpinner /></div>
+    <div v-if="loading" class="text-center py-5 flex-grow-1"><CSpinner /></div>
 
-    <CRow v-else class="g-3">
+    <CRow v-else class="g-3 flex-grow-1 overflow-hidden">
 
-      <!-- Left: Roles list + Users in role -->
-      <CCol md="4" lg="3">
+      <!-- Left: Roles list + Users in role — independently scrollable -->
+      <CCol md="4" lg="3" class="d-flex flex-column h-100" style="overflow-y:auto;">
 
         <!-- Roles list -->
-        <CCard class="border-0 shadow-sm mb-3">
+        <CCard class="border-0 shadow-sm mb-3 flex-shrink-0">
           <CCardHeader class="fw-bold bg-transparent border-bottom">
             Roles <CBadge color="secondary" class="ms-1">{{ roles.length }}</CBadge>
           </CCardHeader>
@@ -528,9 +543,9 @@ function initials(name) {
 
       </CCol>
 
-      <!-- Right: Role Permissions editor -->
-      <CCol md="8" lg="9">
-        <CCard class="border-0 shadow-sm">
+      <!-- Right: Role Permissions editor — independently scrollable -->
+      <CCol md="8" lg="9" class="h-100 d-flex flex-column" style="overflow:hidden;">
+        <CCard class="border-0 shadow-sm h-100 d-flex flex-column" style="overflow:hidden;">
           <template v-if="!activeRole">
             <CCardBody class="text-center text-muted py-5">
               <div class="display-6 mb-2">🔐</div>
@@ -539,23 +554,12 @@ function initials(name) {
           </template>
 
           <template v-else>
-            <CCardHeader class="bg-transparent d-flex align-items-center justify-content-between flex-wrap gap-2">
-              <div>
-                <span class="fw-bold">{{ activeRole.name }}</span>
-                <span class="text-muted ms-2 small">
-                  {{ activePermCount }} / {{ totalPermCount }} permissions selected
-                </span>
-              </div>
-              <div class="d-flex align-items-center gap-2">
-                <CAlert v-if="permSaved" color="success" class="mb-0 py-1 px-3 small">Saved ✓</CAlert>
-                <CButton color="success" size="sm" :disabled="savingPerms" @click="savePermissions" style="min-width:140px;">
-                  <CSpinner v-if="savingPerms" size="sm" class="me-1" />
-                  Save Permissions
-                </CButton>
-              </div>
+            <CCardHeader class="bg-transparent border-bottom flex-shrink-0">
+              <span class="fw-bold">{{ activeRole.name }}</span>
+              <span class="text-muted ms-2 small">{{ activePermCount }} / {{ totalPermCount }} permissions selected</span>
             </CCardHeader>
 
-            <CCardBody style="max-height:72vh; overflow-y:auto;">
+            <CCardBody style="overflow-y:auto; flex:1 1 0;">
 
               <!-- Multi-School Access — always pinned first, full-width, prominent -->
               <div class="mb-3 rounded-3 overflow-hidden" style="border:2px solid #0d6efd;">
@@ -904,5 +908,5 @@ function initials(name) {
       </CModalFooter>
     </CModal>
 
-  </CContainer>
+  </div>
 </template>

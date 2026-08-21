@@ -156,7 +156,14 @@
       "Bash(xargs cat)",
       "PowerShell(docker exec shulepay_db bash -c 'mysql -uroot -p\"Samwel123@\" shulepay -e \"SELECT id, name, code, short_name FROM schools;\"' 2>&1)",
       "Bash(gh run *)",
-      "Bash(ssh root@169.58.188.122 \"tail -5 /www/shulepay/deploy.log\")"
+      "Bash(ssh root@169.58.188.122 \"tail -5 /www/shulepay/deploy.log\")",
+      "Bash(xargs grep -l \"school_access\\\\|SchoolAccess\\\\|accessible_schools\\\\|user-school\")",
+      "Bash(vendor/bin/pint database/seeders/TanzaniaLocationsFromCsvSeeder.php)",
+      "Bash(git -C backend add database/seeders/TanzaniaLocationsFromCsvSeeder.php)",
+      "Bash(git -C D:/Projects/shulepay add backend/app/Http/Resources/SchoolResource.php frontend/src/stores/school.js frontend/src/stores/branding.js)",
+      "Bash(git -C D:/Projects/shulepay commit -m ' *)",
+      "Bash(git -C D:/Projects/shulepay push origin master)",
+      "Bash(D:/Projects/shulepay/backend/vendor/bin/pint D:/Projects/shulepay/backend/app/Http/Resources/SchoolResource.php)"
     ]
   }
 }
