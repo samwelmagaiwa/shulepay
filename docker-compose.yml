@@ -61,7 +61,7 @@ services:
       - backend
     environment:
       FRONTEND_SERVER_NAME: localhost
-      BACKEND_UPSTREAM: http://backend:9000
+      BACKEND_UPSTREAM: http://backend:80
     ports:
       - "80:80"
 

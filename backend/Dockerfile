@@ -40,6 +40,10 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-script
 # Copy application
 COPY . .
 
+# Remove any locally-generated bootstrap cache (built without dev packages, so
+# stale service/package discovery files cause "class not found" on boot)
+RUN rm -f bootstrap/cache/services.php bootstrap/cache/packages.php
+
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
  && chmod -R 755 /var/www/html/storage \
