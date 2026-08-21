@@ -60,8 +60,10 @@ export const useAuthStore = defineStore('auth', () => {
     const schoolStore = useSchoolStore()
     if (u.school_id) schoolStore.setActive(u.school_id)
 
-    // Load branding and full accessible school list (non-blocking)
-    useBrandingStore().fetchBranding()
+    // Start reactive branding watcher then load for the active school
+    const brandingStore = useBrandingStore()
+    brandingStore.watchSchool()
+    brandingStore.fetchBranding(u.school_id || null)
     schoolStore.fetchSchools()
 
     return { token: t, user: u }

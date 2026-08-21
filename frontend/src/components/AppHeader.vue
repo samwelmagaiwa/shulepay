@@ -45,9 +45,8 @@ const showSchoolSwitcher = computed(
 )
 
 function switchSchool(id) {
-  schoolStore.setActive(id)
+  schoolStore.setActive(id)   // branding watcher fires automatically
   dashboard.fetchStats()
-  branding.fetchBranding(id)
 }
 
 function switchLang(lang) {
