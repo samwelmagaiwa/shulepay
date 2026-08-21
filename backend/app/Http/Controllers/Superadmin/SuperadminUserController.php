@@ -35,7 +35,9 @@ class SuperadminUserController extends Controller
             $query->where(fn ($qb) => $qb->where('name', 'like', "%{$q}%")->orWhere('email', 'like', "%{$q}%"));
         }
 
-        return response()->json($query->paginate(25));
+        $perPage = min((int) $request->input('per_page', 25), 200);
+
+        return response()->json($query->paginate($perPage));
     }
 
     // ── Create user (superadmin can assign any role + direct permissions) ────

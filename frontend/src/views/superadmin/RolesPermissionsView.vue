@@ -126,25 +126,31 @@ async function savePermissions() {
 }
 
 // ── Per-user permission modal ─────────────────────────────────────────────────
-async function openUserPerms(user) {
-  selectedUser.value        = user
-  userPermError.value       = ''
-  userPermSaved.value       = false
-  userGrantedSchools.value  = []
-  allSchools.value          = []
+function openUserPerms(user) {
+  try {
+    selectedUser.value        = user
+    userPermError.value       = ''
+    userPermSaved.value       = false
+    userGrantedSchools.value  = []
+    allSchools.value          = []
 
-  userPermsBase.value = new Set(activeRole.value?.permissions ?? [])
+    userPermsBase.value = new Set(activeRole.value?.permissions ?? [])
 
-  const directNames  = (user.permissions ?? []).map(p => typeof p === 'string' ? p : p.name)
-  const forbidNames  = (user.forbidden_permissions ?? [])
+    const directNames  = (user.permissions ?? []).map(p => typeof p === 'string' ? p : p.name)
+    const forbidNames  = (user.forbidden_permissions ?? [])
 
-  userPerms.value             = new Set(directNames)
-  userForbidden.value         = new Set(forbidNames)
-  userPermsSnapshot.value     = new Set(directNames)
-  userForbiddenSnapshot.value = new Set(forbidNames)
+    userPerms.value             = new Set(directNames)
+    userForbidden.value         = new Set(forbidNames)
+    userPermsSnapshot.value     = new Set(directNames)
+    userForbiddenSnapshot.value = new Set(forbidNames)
 
-  userPermModal.value = true
-  loadSchoolAccessData(user.id)
+    userPermModal.value = true
+    loadSchoolAccessData(user.id)
+  } catch (e) {
+    console.error('[openUserPerms] error:', e)
+    userPermError.value = 'Imeshindwa kufungua dirisha. Jaribu tena.'
+    userPermModal.value = true
+  }
 }
 
 async function loadSchoolAccessData(userId) {
@@ -506,7 +512,7 @@ function initials(name) {
             <CSpinner v-if="roleUsersLoading" size="sm" />
             <CBadge v-else color="secondary">{{ roleUsers.length }}</CBadge>
           </CCardHeader>
-          <CCardBody class="p-0" style="max-height:340px; overflow-y:auto;">
+          <CCardBody class="p-0">
             <div v-if="!roleUsersLoading && !roleUsers.length" class="text-center text-muted py-3 small">
               No users with this role
             </div>
@@ -648,7 +654,7 @@ function initials(name) {
     </CRow>
 
     <!-- ══ User Permission Override Modal ══════════════════════════════════════ -->
-    <CModal :visible="userPermModal" @close="userPermModal = false" size="xl" backdrop="static" scrollable>
+    <CModal :visible="userPermModal" @close="userPermModal = false" size="xl" backdrop="static">
       <CModalHeader class="border-bottom">
         <CModalTitle>
           <div class="d-flex align-items-center gap-2">
