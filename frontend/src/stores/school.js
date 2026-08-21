@@ -35,11 +35,16 @@ export const useSchoolStore = defineStore('school', () => {
 
       // Active school is in the list — apply its branding now that we have the data.
       // This covers login (setActive fired before fetchSchools completed) and page refresh.
+      // Skip if fetchBranding already returned successfully — API data is authoritative and
+      // already includes system-level fallbacks that applyFromSchool cannot provide.
       if (activeSchoolId.value) {
         const active = list.find((s) => s.id === activeSchoolId.value)
         if (active?.branding) {
           import('@/stores/branding').then(({ useBrandingStore }) => {
-            useBrandingStore().applyFromSchool(active.branding)
+            const brandingStore = useBrandingStore()
+            if (!brandingStore.apiLoaded) {
+              brandingStore.applyFromSchool(active.branding)
+            }
           })
         }
       }

@@ -18,22 +18,34 @@ const branding = useBrandingStore()
     @visible-change="(value) => sidebar.toggleVisible(value)"
   >
     <CSidebarHeader class="border-bottom">
-      <RouterLink custom to="/" v-slot="{ href, navigate }">
-        <CSidebarBrand v-bind="$attrs" as="a" :href="href" @click="navigate">
+      <RouterLink custom to="/dashibodi" v-slot="{ href, navigate }">
+        <CSidebarBrand v-bind="$attrs" as="a" :href="href" @click="navigate"
+          class="d-flex align-items-center justify-content-center gap-2 py-2 text-decoration-none"
+          style="min-height:64px;">
+          <!-- Logo — full sidebar shows image + text; narrow shows image only -->
           <img
-            :src="branding.logoUrl || new URL('@/assets/images/muhilogo.jpg', import.meta.url).href"
-            class="sidebar-brand-full flip-logo"
-            height="60"
-            width="100"
-            style="object-fit:contain;"
+            v-if="branding.logoUrl"
+            :src="branding.logoUrl"
+            alt="Logo"
+            class="sidebar-brand-logo"
+            @error="branding.logoUrl = null"
           />
-          <img
-            :src="branding.logoUrl || new URL('@/assets/images/muhilogo.jpg', import.meta.url).href"
-            class="sidebar-brand-narrow flip-logo"
-            height="60"
-            width="100"
-            style="object-fit:contain;"
-          />
+          <svg v-else viewBox="0 0 40 40" width="40" height="40" class="sidebar-brand-logo flex-shrink-0">
+            <circle cx="20" cy="20" r="19" fill="rgba(255,255,255,0.15)"/>
+            <rect x="8"  y="13" width="11" height="16" rx="2" fill="white" opacity=".9"/>
+            <rect x="21" y="13" width="11" height="16" rx="2" fill="white" opacity=".9"/>
+            <rect x="18" y="11" width="4"  height="20" rx="1" fill="#fcd116"/>
+            <circle cx="29" cy="11" r="5" fill="#fcd116"/>
+            <text x="29" y="14.5" text-anchor="middle" font-size="6" font-weight="bold" fill="#007f3e">$</text>
+          </svg>
+          <div class="sidebar-brand-full d-flex flex-column lh-1 overflow-hidden">
+            <span class="fw-bold text-white" style="font-size:.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              {{ branding.appName }}
+            </span>
+            <span style="font-size:.6rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,.55);">
+              {{ branding.appTagline }}
+            </span>
+          </div>
         </CSidebarBrand>
       </RouterLink>
       <CCloseButton class="d-lg-none" dark @click="sidebar.toggleVisible()" />
@@ -46,20 +58,12 @@ const branding = useBrandingStore()
 </template>
 
 <style scoped>
-.flip-logo {
-  animation: flip 2s infinite linear;
-}
-
-@keyframes flip {
-  0% {
-    transform: rotateY(0deg);
-  }
-  50% {
-    transform: rotateY(180deg);
-  }
-  100% {
-    transform: rotateY(360deg);
-  }
+.sidebar-brand-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .sidebar-custom {

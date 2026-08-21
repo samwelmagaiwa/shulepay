@@ -10,6 +10,9 @@ export const useBrandingStore = defineStore('branding', () => {
   const appTagline = ref(localStorage.getItem('branding_tagline') || 'nexoryaTECH')
   const logoUrl    = ref(localStorage.getItem('branding_logo')    || null)
   const loaded     = ref(false)
+  // true only after fetchBranding succeeds — used to avoid overwriting API data with
+  // stale school-list data when fetchSchools and fetchBranding race on initial load.
+  const apiLoaded  = ref(false)
 
   // ── Internal apply ─────────────────────────────────────────────────────────
   function _apply(data) {
@@ -25,10 +28,12 @@ export const useBrandingStore = defineStore('branding', () => {
 
   // ── Core fetch ─────────────────────────────────────────────────────────────
   async function fetchBranding(schoolId) {
+    apiLoaded.value = false
     try {
       const params = schoolId ? { school_id: Number(schoolId) } : {}
       const res    = await api.get('/branding', { params })
       _apply(res.data)
+      apiLoaded.value = true
     } catch (err) {
       // Log so the browser console shows branding failures — helps diagnose 403 etc.
       console.warn('[branding] fetch failed for school', schoolId, err?.response?.status, err?.message)
@@ -84,7 +89,7 @@ export const useBrandingStore = defineStore('branding', () => {
   }
 
   return {
-    appName, appTagline, logoUrl, loaded,
+    appName, appTagline, logoUrl, loaded, apiLoaded,
     fetchBranding, applyFromSchool, watchSchool, updateBranding, deleteLogo,
   }
 })

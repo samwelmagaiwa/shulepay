@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
@@ -15,6 +15,19 @@ const schoolError  = ref('')
 
 const schools      = ref([])
 const schoolsLoaded = ref(false)
+
+// ── Dynamic branding for login page ──────────────────────────────────────────
+// Derived directly from the selected school's branding data (included in /auth/schools).
+// Keeps the login page lightweight — no store, no extra API call.
+const loginBranding = computed(() => {
+  const selected = schoolId.value
+    ? schools.value.find((s) => s.id == schoolId.value)
+    : schools.value.length === 1 ? schools.value[0] : null
+  return selected?.branding ?? { app_name: 'ShulePay', app_tagline: 'nexoryaTECH', logo_url: null }
+})
+
+const loginLogoError = ref(false)
+watch(loginBranding, () => { loginLogoError.value = false })
 
 onMounted(async () => {
   try {
@@ -322,7 +335,16 @@ async function handleLogin() {
       <div class="login-card">
         <div class="login-header">
           <div class="logo-wrapper">
-            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="brand-logo" aria-label="ShulePay logo">
+            <!-- Dynamic logo: school-specific image if available, fallback to SVG -->
+            <img
+              v-if="loginBranding.logo_url && !loginLogoError"
+              :src="loginBranding.logo_url"
+              class="brand-logo"
+              :alt="loginBranding.app_name"
+              style="border-radius:50%; object-fit:contain; background:rgba(255,255,255,.12);"
+              @error="loginLogoError = true"
+            />
+            <svg v-else viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="brand-logo" aria-label="ShulePay logo">
               <circle cx="50" cy="50" r="48" fill="#007f3e"/>
               <rect x="22" y="35" width="26" height="34" rx="3" fill="white" opacity="0.95"/>
               <rect x="25" y="38" width="20" height="2" rx="1" fill="#007f3e"/>
@@ -338,7 +360,10 @@ async function handleLogin() {
               <text x="50" y="82" text-anchor="middle" font-size="9" font-weight="700" fill="white" letter-spacing="1">SHULEPAY</text>
             </svg>
           </div>
-          <h2 class="brand-name">ShulePay — nexoryaTECH</h2>
+          <h2 class="brand-name">
+            {{ loginBranding.app_name }}
+            <span v-if="loginBranding.app_tagline" class="brand-tagline">— {{ loginBranding.app_tagline }}</span>
+          </h2>
           <h1 class="welcome-text">{{ t('auth.title') }}</h1>
           <p class="subtitle">{{ t('auth.subtitle') }}</p>
         </div>
@@ -453,9 +478,10 @@ async function handleLogin() {
 }
 .brand-logo { width: 90px; height: 90px; }
 .brand-name {
-  color: #fcd116; font-size: .85rem; font-weight: 700;
-  letter-spacing: 2px; text-transform: uppercase; margin-bottom: .4rem;
+  color: #fcd116; font-size: 1rem; font-weight: 700;
+  margin-bottom: .4rem; word-break: break-word;
 }
+.brand-tagline { font-size: .75rem; opacity: .8; font-weight: 600; }
 .welcome-text { color: white; font-size: 1.6rem; font-weight: 700; margin-bottom: .5rem; }
 .subtitle { color: rgba(255,255,255,.7); font-size: .9rem; }
 .form-label { color: white; font-weight: 500; font-size: .9rem; margin-bottom: .4rem; display: block; }

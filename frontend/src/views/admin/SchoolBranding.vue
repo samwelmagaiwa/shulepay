@@ -66,7 +66,23 @@ async function save() {
     if (auth.isSuperAdmin && selectedSchoolId.value) {
       fd.append('school_id', selectedSchoolId.value)
     }
-    const res = await branding.updateBranding(fd)
+    // Use the store's updateBranding only when editing the ACTIVE school's branding
+    // (or system branding for superadmin with no school selected).
+    // Editing a different school should not touch the header's branding.
+    const { useSchoolStore } = await import('@/stores/school')
+    const schoolStore = useSchoolStore()
+    const editedSchoolId = auth.isSuperAdmin && selectedSchoolId.value ? Number(selectedSchoolId.value) : null
+    const isActiveSchool = !editedSchoolId || editedSchoolId === schoolStore.activeSchoolId
+
+    let res
+    if (isActiveSchool) {
+      res = await branding.updateBranding(fd)
+    } else {
+      const { default: api } = await import('@/services/api')
+      const r = await api.post('/branding', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      res = r.data
+    }
+
     logoFile.value    = null
     logoPreview.value = res.logo_url || logoPreview.value
     success.value     = res.message || 'Branding saved!'
@@ -88,8 +104,18 @@ async function removeLogo() {
     await api.delete('/branding/logo', { params })
     logoPreview.value = null
     logoFile.value    = null
-    branding.logoUrl  = null
-    localStorage.removeItem('branding_logo')
+    // If we deleted the ACTIVE school's logo, update the store so header/sidebar
+    // reflect the change immediately without a page refresh.
+    const { useSchoolStore } = await import('@/stores/school')
+    const schoolStore = useSchoolStore()
+    const deletedSchoolId = auth.isSuperAdmin && selectedSchoolId.value
+      ? Number(selectedSchoolId.value)
+      : null
+    const isActiveSchool = !deletedSchoolId || deletedSchoolId === schoolStore.activeSchoolId
+    if (isActiveSchool) {
+      branding.logoUrl = null
+      localStorage.removeItem('branding_logo')
+    }
   } catch (e) {
     error.value = e.response?.data?.message || 'Failed to remove logo.'
   } finally {

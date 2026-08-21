@@ -38,9 +38,26 @@ class AuthController extends Controller
     {
         $schools = School::where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'level']);
+            ->get(['id', 'name', 'level', 'settings']);
 
-        return response()->json($schools);
+        return response()->json($schools->map(function ($school) {
+            $branding = ($school->settings ?? [])['branding'] ?? [];
+            $logoPath = $branding['logo_path'] ?? null;
+            if ($logoPath) {
+                $logoPath = preg_replace('#^public/#', '', $logoPath);
+            }
+
+            return [
+                'id' => $school->id,
+                'name' => $school->name,
+                'level' => $school->level instanceof \BackedEnum ? $school->level->value : $school->level,
+                'branding' => [
+                    'app_name' => $branding['app_name'] ?? $school->name,
+                    'app_tagline' => $branding['app_tagline'] ?? null,
+                    'logo_url' => $logoPath ? '/storage/'.$logoPath : null,
+                ],
+            ];
+        }));
     }
 
     public function login(Request $request): JsonResponse
