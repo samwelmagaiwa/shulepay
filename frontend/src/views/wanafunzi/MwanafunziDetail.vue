@@ -413,14 +413,13 @@
                 </div>
               </div>
 
-              <!-- Empty state -->
-              <div v-if="!installments.length" class="text-center py-4 rounded" style="background:#f8f9fa; border:1px dashed #dee2e6;">
-                <div style="font-size:2rem; margin-bottom:8px;">📋</div>
-                <div class="fw-semibold text-muted small">Hakuna mipango ya awamu.</div>
+              <!-- Empty state — compact, no gap before form -->
+              <div v-if="!installments.length" class="text-muted small mb-2 d-flex align-items-center gap-2">
+                <span style="font-size:1rem;">📋</span> Hakuna mipango ya awamu.
               </div>
 
               <!-- Create new plan (only shows when invoice has balance and no existing plan) -->
-              <div v-if="unpaidInvoices.length" class="mt-3 rounded overflow-hidden"
+              <div v-if="unpaidInvoices.length" class="rounded overflow-hidden"
                    style="border:1px solid #c3e6cb;">
                 <div class="px-3 py-2" style="background:linear-gradient(135deg,#f8fffe,#e8f5ee); border-bottom:1px solid #c3e6cb;">
                   <span class="fw-bold small" style="color:#007f3e;">➕ Unda Mpango Mpya wa Awamu</span>
