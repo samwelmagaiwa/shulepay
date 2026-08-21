@@ -22,16 +22,17 @@ class BrandingController extends Controller
             return response()->json($this->resolve($system, null));
         }
 
-        // Any authenticated user can fetch branding for a school they have access to
+        // Any authenticated user can READ branding for any active school.
+        // Branding (name, tagline, logo) is not sensitive — it's displayed publicly.
         if ($request->filled('school_id')) {
-            $school = School::find((int) $request->school_id);
+            $school = School::where('id', (int) $request->school_id)
+                ->where('is_active', true)
+                ->first();
+
             if (! $school) {
                 return response()->json(['message' => 'School not found.'], 404);
             }
-            // Gate: user must have access to this school
-            if (! $user->hasRole('superadmin') && ! $user->canAccessSchool($school->id)) {
-                return response()->json(['message' => 'Forbidden.'], 403);
-            }
+
             $schoolBranding = ($school->settings ?? [])['branding'] ?? [];
 
             return response()->json(array_merge(
