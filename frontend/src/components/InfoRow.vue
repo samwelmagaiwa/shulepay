@@ -11,25 +11,28 @@ defineProps({ label: String, value: [String, Number] })
 .info-row {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
-  padding: 5px 0;
-  font-size: .85rem;
+  padding: 7px 0;
+  font-size: .875rem;
+  line-height: 1.4;
 }
 .info-label {
   color: #6c757d !important;
   flex-shrink: 0;
-  max-width: 50%;
+  max-width: 55%;
+  font-weight: 400;
 }
 .info-value {
-  color: #111827 !important;
-  font-weight: 600;
+  color: #0d0d0d !important;
+  font-weight: 700;
   text-align: right;
   word-break: break-word;
   min-width: 0;
+  font-size: .875rem;
 }
 @media (prefers-color-scheme: dark) {
   .info-label { color: #9ca3af !important; }
-  .info-value { color: #f9fafb !important; }
+  .info-value { color: #ffffff !important; }
 }
 </style>

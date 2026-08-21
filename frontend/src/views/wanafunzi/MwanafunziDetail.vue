@@ -490,7 +490,7 @@
     <CModal :visible="showInstPayModal" @close="closeInstPay" backdrop="static" class="modal-fullscreen-sm-down">
       <CModalHeader style="border-bottom:2px solid #007f3e;">
         <CModalTitle class="fw-bold" style="font-size:1rem;">
-          Lipa Awamu #{{ selectedInstallment?.installment_number }}
+          {{ t('installments.payInstallmentTitle', { n: selectedInstallment?.installment_number }) }}
         </CModalTitle>
       </CModalHeader>
       <CModalBody v-if="selectedInstallment" class="p-3 p-md-4">
@@ -499,24 +499,24 @@
         <!-- Info card -->
         <div class="rounded p-3 mb-3" style="background:#f8fffe; border:1px solid #e0f2ec;">
           <div class="d-flex justify-content-between mb-1 small">
-            <span class="text-muted">Awamu</span>
+            <span class="text-muted">{{ t('installments.installmentLabel') }}</span>
             <strong>#{{ selectedInstallment.installment_number }} / {{ selectedInstallment.total_installments }}</strong>
           </div>
           <div class="d-flex justify-content-between mb-1 small">
-            <span class="text-muted">Tarehe ya Malipo</span>
+            <span class="text-muted">{{ t('installments.paymentDueDate') }}</span>
             <span>{{ selectedInstallment.due_date }}</span>
           </div>
           <div class="d-flex justify-content-between mb-1 small">
-            <span class="text-muted">Kiasi Kinachohitajika</span>
+            <span class="text-muted">{{ t('installments.amountRequired') }}</span>
             <span class="fw-semibold">{{ formatMoney(selectedInstallment.installment_amount_cents) }}</span>
           </div>
           <div v-if="selectedInstallment.paid_amount_cents > 0" class="d-flex justify-content-between mb-1 small">
-            <span class="text-muted">Kilicholipwa</span>
+            <span class="text-muted">{{ t('installments.amountAlreadyPaid') }}</span>
             <span class="text-success">{{ formatMoney(selectedInstallment.paid_amount_cents) }}</span>
           </div>
           <hr class="my-2">
           <div class="d-flex justify-content-between">
-            <span class="fw-bold">Kinachobaki</span>
+            <span class="fw-bold">{{ t('installments.balanceRemaining') }}</span>
             <span class="fw-bold fs-6 text-danger">
               {{ formatMoney(selectedInstallment.installment_amount_cents - selectedInstallment.paid_amount_cents) }}
             </span>
@@ -525,7 +525,7 @@
 
         <!-- Custom amount toggle -->
         <div class="mb-2 d-flex justify-content-between align-items-center">
-          <label class="form-label small fw-semibold mb-0">Lipa kiasi tofauti</label>
+          <label class="form-label small fw-semibold mb-0">{{ t('installments.payCustomAmount') }}</label>
           <div class="form-check form-switch mb-0">
             <input class="form-check-input" type="checkbox" role="switch" v-model="instCustomize"
                    style="width:2em; height:1.2em; cursor:pointer;" @change="instCustomAmount = ''" />
@@ -539,7 +539,7 @@
                         :placeholder="`Max: ${formatMoney(selectedInstallment.installment_amount_cents - selectedInstallment.paid_amount_cents)}`"
                         style="font-size:1rem;" />
             <div v-if="instCustomAmount > 0" class="small text-success mt-1">
-              ✔ Kuthibitisha TZS {{ Number(instCustomAmount).toLocaleString() }}
+              ✔ {{ t('installments.confirmAmountBtn', { amount: Number(instCustomAmount).toLocaleString() }) }}
             </div>
           </div>
         </Transition>
@@ -550,7 +550,7 @@
                  @click="confirmInstPay"
                  style="min-width:120px; background:#007f3e; border-color:#007f3e;">
           <CSpinner v-if="instPaying" size="sm" class="me-1" />
-          <span v-else>{{ instCustomize && instCustomAmount ? `Lipa TZS ${Number(instCustomAmount).toLocaleString()}` : 'Thibitisha Malipo' }}</span>
+          <span v-else>{{ instCustomize && instCustomAmount ? t('installments.confirmAmountBtn', { amount: Number(instCustomAmount).toLocaleString() }) : t('installments.confirmPayBtn') }}</span>
         </CButton>
       </CModalFooter>
     </CModal>
