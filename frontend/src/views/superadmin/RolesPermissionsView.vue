@@ -778,8 +778,8 @@ function initials(name) {
                   <div class="d-flex align-items-center gap-2">
                     <small class="opacity-75">
                       {{ perms.filter(p => userHasPerm(p)).length }}/{{ perms.length }}
-                      <span v-if="perms.some(p => userForbidden.has(p))" class="text-danger ms-1">
-                        ({{ perms.filter(p => userForbidden.has(p)).length }} denied)
+                      <span v-if="perms.some(p => userForbidden.value.has(p))" class="text-danger ms-1">
+                        ({{ perms.filter(p => userForbidden.value.has(p)).length }} denied)
                       </span>
                     </small>
                   </div>
