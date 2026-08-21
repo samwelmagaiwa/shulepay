@@ -110,3 +110,11 @@
 [0;36m[09:45:38][0m   ShulePay — Release
 [0;36m[09:45:38][0m ══════════════════════════════════════════
 [0;36m[09:45:38][0m Checking working tree...
+[0;36m[09:45:41][0m Files staged for commit:
+[0;36m[09:47:10][0m Committing: "fixing docker issue"
+[0;32m✔ Committed[0m
+[0;36m[09:47:11][0m Pushing to origin/master...
+[0;36m[12:47:33][0m ══════════════════════════════════════════
+[0;36m[12:47:33][0m   ShulePay — Release
+[0;36m[12:47:33][0m ══════════════════════════════════════════
+[0;36m[12:47:33][0m Checking working tree...

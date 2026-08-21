@@ -66,6 +66,21 @@ services:
     ports:
       - "80:80"
 
+  # ── phpMyAdmin ────────────────────────────────────────────────────────────────
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: shulepay_phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: ${DB_USERNAME:-shulepay}
+      PMA_PASSWORD: ${DB_PASSWORD:-secret}
+    ports:
+      - "8080:80"
+
 volumes:
   db_data:
   backend_storage:

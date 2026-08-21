@@ -21,8 +21,10 @@ const roleUsersLoading  = ref(false)
 // per-user permission override modal
 const userPermModal     = ref(false)
 const selectedUser      = ref(null)
-const userPerms         = ref(new Set())   // direct permissions on this user
-const userPermsBase     = ref(new Set())   // permissions inherited from role
+const userPerms             = ref(new Set())   // direct permissions on this user
+const userPermsBase         = ref(new Set())   // permissions inherited from role
+const userForbidden         = ref(new Set())   // role-granted perms explicitly denied for this user
+const userForbiddenSnapshot = ref(new Set())
 const savingUserPerms   = ref(false)
 const userPermSaved     = ref(false)
 const userPermError     = ref('')
@@ -125,23 +127,23 @@ async function savePermissions() {
 
 // ── Per-user permission modal ─────────────────────────────────────────────────
 async function openUserPerms(user) {
-  selectedUser.value   = user
-  userPermError.value  = ''
-  userPermSaved.value  = false
-  userGrantedSchools.value = []
-  allSchools.value     = []
+  selectedUser.value        = user
+  userPermError.value       = ''
+  userPermSaved.value       = false
+  userGrantedSchools.value  = []
+  allSchools.value          = []
 
-  // Role permissions = base (shown as locked-on ticks)
-  userPermsBase.value  = new Set(activeRole.value?.permissions ?? [])
+  userPermsBase.value = new Set(activeRole.value?.permissions ?? [])
 
-  // Direct permissions on this user (extras beyond the role)
-  const directNames = (user.permissions ?? []).map(p => (typeof p === 'string' ? p : p.name))
-  userPerms.value         = new Set(directNames)
-  userPermsSnapshot.value = new Set(directNames)  // baseline for dirty-detection
+  const directNames  = (user.permissions ?? []).map(p => typeof p === 'string' ? p : p.name)
+  const forbidNames  = (user.forbidden_permissions ?? [])
 
-  userPermModal.value  = true
+  userPerms.value             = new Set(directNames)
+  userForbidden.value         = new Set(forbidNames)
+  userPermsSnapshot.value     = new Set(directNames)
+  userForbiddenSnapshot.value = new Set(forbidNames)
 
-  // Preload school data in parallel so the panel is ready if multi_school is already on
+  userPermModal.value = true
   loadSchoolAccessData(user.id)
 }
 
@@ -192,50 +194,95 @@ async function toggleSchoolAccess(school) {
   }
 }
 
-function toggleUserPerm(perm) {
-  // Cannot toggle role-inherited permissions here (those are role-level)
-  if (userPermsBase.value.has(perm)) return
-  const s = new Set(userPerms.value)
-  const wasOff = !s.has(perm)
-  wasOff ? s.add(perm) : s.delete(perm)
-  userPerms.value    = s
-  userPermSaved.value = false
-  // When multi_school is toggled ON, load school data if not yet loaded
-  if (perm === 'multi_school' && wasOff && allSchools.value.length === 0) {
-    loadSchoolAccessData(selectedUser.value.id)
-  }
-}
-
 function userHasPerm(perm) {
+  if (userForbidden.value.has(perm)) return false
   return userPermsBase.value.has(perm) || userPerms.value.has(perm)
 }
 
+// Four states: 'role' | 'direct' | 'forbidden' | 'none'
 function permSource(perm) {
-  if (userPermsBase.value.has(perm)) return 'role'
-  if (userPerms.value.has(perm))     return 'direct'
+  if (userForbidden.value.has(perm))   return 'forbidden'
+  if (userPermsBase.value.has(perm))   return 'role'
+  if (userPerms.value.has(perm))       return 'direct'
   return 'none'
 }
 
+function toggleUserPerm(perm) {
+  const source = permSource(perm)
+  if (source === 'role') {
+    userForbidden.value = new Set([...userForbidden.value, perm])
+  } else if (source === 'forbidden') {
+    userForbidden.value = new Set([...userForbidden.value].filter(p => p !== perm))
+  } else if (source === 'direct') {
+    userPerms.value = new Set([...userPerms.value].filter(p => p !== perm))
+    if (perm === 'multi_school' && allSchools.value.length === 0) {
+      loadSchoolAccessData(selectedUser.value.id)
+    }
+  } else {
+    userPerms.value = new Set([...userPerms.value, perm])
+    if (perm === 'multi_school' && allSchools.value.length === 0) {
+      loadSchoolAccessData(selectedUser.value.id)
+    }
+  }
+  userPermSaved.value = false
+}
+
 function userModuleState(perms) {
-  const count = perms.filter(p => userHasPerm(p)).length
-  if (count === 0) return 'none'
-  if (count === perms.length) return 'all'
+  const active = perms.filter(p => userHasPerm(p)).length
+  const forbidden = perms.filter(p => userForbidden.value.has(p)).length
+  if (forbidden > 0 && forbidden === perms.length) return 'all-forbidden'
+  if (forbidden > 0) return 'partial-forbidden'
+  if (active === 0) return 'none'
+  if (active === perms.length) return 'all'
   return 'partial'
+}
+
+function toggleUserModule(perms) {
+  const anyForbidden = perms.some(p => userForbidden.value.has(p))
+  if (anyForbidden) {
+    userForbidden.value = new Set([...userForbidden.value].filter(p => !perms.includes(p)))
+    userPermSaved.value = false
+    return
+  }
+  const allActive = perms.every(p => userHasPerm(p))
+  if (allActive) {
+    const newForbid = new Set(userForbidden.value)
+    const newDirect = new Set(userPerms.value)
+    perms.forEach(p => {
+      if (userPermsBase.value.has(p)) newForbid.add(p)
+      else newDirect.delete(p)
+    })
+    userForbidden.value = newForbid
+    userPerms.value = newDirect
+  } else {
+    const newForbid = new Set([...userForbidden.value].filter(p => !perms.includes(p)))
+    const newDirect = new Set(userPerms.value)
+    perms.forEach(p => { if (!userPermsBase.value.has(p)) newDirect.add(p) })
+    userForbidden.value = newForbid
+    userPerms.value = newDirect
+  }
+  userPermSaved.value = false
+}
+
+function resetToRoleDefaults() {
+  userPerms.value     = new Set()
+  userForbidden.value = new Set()
+  userPermSaved.value = false
 }
 
 // Snapshot of direct perms at modal open — used for dirty-detection
 const userPermsSnapshot = ref(new Set())
 
 const userPermsChanged = computed(() => {
-  const current = [...userPerms.value].sort().join(',')
-  const original = [...userPermsSnapshot.value].sort().join(',')
-  return current !== original
+  const curPerms   = [...userPerms.value].sort().join(',')
+  const origPerms  = [...userPermsSnapshot.value].sort().join(',')
+  const curForbid  = [...userForbidden.value].sort().join(',')
+  const origForbid = [...userForbiddenSnapshot.value].sort().join(',')
+  return curPerms !== origPerms || curForbid !== origForbid
 })
 
 // Only the truly direct (non-role-inherited) perms — what we actually send
-const directPermsToSave = computed(() =>
-  [...userPerms.value].filter(p => !userPermsBase.value.has(p))
-)
+const directPermsToSave = computed(() => [...userPerms.value].filter(p => !userPermsBase.value.has(p)))
 
 async function saveUserPermissions() {
   if (!selectedUser.value) return
@@ -243,33 +290,48 @@ async function saveUserPermissions() {
     userPermError.value = 'Subiri operesheni ya shule ikamilike kwanza.'
     return
   }
+  if (!userPermsChanged.value) return
 
   savingUserPerms.value = true
   userPermError.value   = ''
   try {
-    const removingMultiSchool = userPermsSnapshot.value.has('multi_school')
-      && !userPerms.value.has('multi_school')
-      && !userPermsBase.value.has('multi_school')
+    const directToSave = [...userPerms.value].filter(p => !userPermsBase.value.has(p))
+    const forbidToSave = [...userForbidden.value]
 
-    const { data } = await api.put(`/superadmin/users/${selectedUser.value.id}/permissions`, {
-      permissions: directPermsToSave.value,
-    })
-
-    // If multi_school was removed, backend detached schools — clear the panel
-    if (removingMultiSchool) {
-      userGrantedSchools.value = []
+    // Conflict check: cannot grant and deny the same perm
+    const conflict = directToSave.filter(p => forbidToSave.includes(p))
+    if (conflict.length) {
+      userPermError.value = `Mgongano: ruhusa moja haiwezi kupewa na kukatazwa kwa wakati mmoja: ${conflict.join(', ')}`
+      return
     }
 
-    // Refresh local user record in the list
-    const freshDirectNames = (data.permissions ?? []).map(p => (typeof p === 'string' ? p : p.name))
-    const idx = roleUsers.value.findIndex(u => u.id === selectedUser.value.id)
-    if (idx >= 0) roleUsers.value[idx].permissions = data.permissions
-    selectedUser.value = { ...selectedUser.value, permissions: data.permissions }
+    const removingMultiSchool =
+      ((userPermsSnapshot.value.has('multi_school') || userPermsBase.value.has('multi_school'))
+        && !directToSave.includes('multi_school')
+        && !userPermsBase.value.has('multi_school'))
+      || (userPermsBase.value.has('multi_school') && forbidToSave.includes('multi_school'))
 
-    // Sync userPerms to server truth (direct perms only from response)
-    userPerms.value = new Set(freshDirectNames)
-    // Update snapshot so dirty-detection resets
-    userPermsSnapshot.value = new Set(freshDirectNames)
+    const { data } = await api.put(`/superadmin/users/${selectedUser.value.id}/permissions`, {
+      permissions: directToSave,
+      forbidden_permissions: forbidToSave,
+    })
+
+    if (removingMultiSchool) userGrantedSchools.value = []
+
+    const freshDirect = (data.permissions ?? []).map(p => typeof p === 'string' ? p : p.name)
+    const freshForbid = data.forbidden_permissions ?? []
+
+    const idx = roleUsers.value.findIndex(u => u.id === selectedUser.value.id)
+    if (idx >= 0) {
+      roleUsers.value[idx].permissions           = data.permissions
+      roleUsers.value[idx].forbidden_permissions = freshForbid
+    }
+    selectedUser.value = { ...selectedUser.value, permissions: data.permissions, forbidden_permissions: freshForbid }
+
+    userPerms.value             = new Set(freshDirect)
+    userForbidden.value         = new Set(freshForbid)
+    userPermsSnapshot.value     = new Set(freshDirect)
+    userForbiddenSnapshot.value = new Set(freshForbid)
 
     userPermSaved.value = true
   } catch (e) {
@@ -281,11 +343,8 @@ async function saveUserPermissions() {
   }
 }
 
-// Extra permissions this user has beyond the role
-const userExtraCount = computed(() => {
-  if (!selectedUser.value) return 0
-  return [...userPerms.value].filter(p => !userPermsBase.value.has(p)).length
-})
+const userExtraCount     = computed(() => directPermsToSave.value.length)
+const userForbiddenCount = computed(() => userForbidden.value.size)
 
 const allPermsFlat = computed(() => Object.values(allPermissions.value).flat())
 const activePermCount = computed(() => activePerms.value.size)
@@ -608,15 +667,25 @@ function initials(name) {
         <!-- Legend -->
         <div class="d-flex align-items-center gap-3 px-4 py-2 border-bottom bg-light flex-wrap" style="font-size:.78rem;">
           <div class="d-flex align-items-center gap-1">
-            <div style="width:14px; height:14px; background:#007f3e; border-radius:50%;"></div>
-            <span class="text-muted">Inherited from role (cannot change here)</span>
+            <div style="width:14px;height:14px;background:#007f3e;border-radius:50%;"></div>
+            <span class="text-muted">Role permission</span>
           </div>
           <div class="d-flex align-items-center gap-1">
-            <div style="width:14px; height:14px; background:#0d6efd; border-radius:50%;"></div>
-            <span class="text-muted">Extra permission granted to this user</span>
+            <div style="width:14px;height:14px;background:#0d6efd;border-radius:50%;"></div>
+            <span class="text-muted">Extra (user only)</span>
           </div>
-          <div class="ms-auto fw-semibold text-primary">
-            {{ userExtraCount }} extra permission{{ userExtraCount !== 1 ? 's' : '' }} assigned to this user
+          <div class="d-flex align-items-center gap-1">
+            <div style="width:14px;height:14px;background:#dc3545;border-radius:50%;"></div>
+            <span class="text-muted">Denied (overrides role)</span>
+          </div>
+          <div class="ms-auto d-flex align-items-center gap-3">
+            <span v-if="userExtraCount > 0" class="fw-semibold text-primary">+{{ userExtraCount }} extra</span>
+            <span v-if="userForbiddenCount > 0" class="fw-semibold text-danger">{{ userForbiddenCount }} denied</span>
+            <CButton size="sm" color="secondary" variant="ghost"
+              style="font-size:.72rem; padding:2px 10px; white-space:nowrap;"
+              :disabled="userExtraCount === 0 && userForbiddenCount === 0"
+              @click="resetToRoleDefaults"
+            >↺ Reset to role defaults</CButton>
           </div>
         </div>
 
@@ -697,50 +766,65 @@ function initials(name) {
                 <!-- Module header -->
                 <div
                   class="d-flex align-items-center justify-content-between px-3 py-2"
+                  style="cursor:pointer;"
                   :style="userModuleState(perms) === 'all'
                     ? 'background:#007f3e; color:#fff;'
-                    : userModuleState(perms) === 'partial'
-                      ? 'background:#e9f5ee; color:#007f3e;'
+                    : userModuleState(perms).startsWith('partial') || userModuleState(perms) === 'all-forbidden'
+                      ? 'background:#fef3f2; color:#dc3545;'
                       : 'background:#f8f9fa;'"
+                  @click="toggleUserModule(perms)"
                 >
                   <span class="fw-semibold small">{{ module }}</span>
-                  <small class="opacity-75">{{ perms.filter(p => userHasPerm(p)).length }}/{{ perms.length }}</small>
+                  <div class="d-flex align-items-center gap-2">
+                    <small class="opacity-75">
+                      {{ perms.filter(p => userHasPerm(p)).length }}/{{ perms.length }}
+                      <span v-if="perms.some(p => userForbidden.has(p))" class="text-danger ms-1">
+                        ({{ perms.filter(p => userForbidden.has(p)).length }} denied)
+                      </span>
+                    </small>
+                  </div>
                 </div>
                 <!-- Permissions -->
                 <div class="p-2">
                   <div
                     v-for="perm in perms" :key="perm"
                     class="d-flex align-items-center gap-2 px-2 py-1 rounded mb-1"
-                    :style="[
-                      'font-size:.82rem; transition:background .1s;',
-                      userPermsBase.has(perm) ? 'opacity:.75;' : 'cursor:pointer;',
-                      permSource(perm) === 'direct' ? 'background:rgba(13,110,253,.08);' :
-                      permSource(perm) === 'role'   ? 'background:rgba(0,127,62,.06);' : '',
-                    ]"
+                    style="cursor:pointer; font-size:.82rem; transition:background .1s; user-select:none;"
+                    :style="permSource(perm) === 'forbidden' ? 'background:rgba(220,53,69,.08);' :
+                            permSource(perm) === 'direct'    ? 'background:rgba(13,110,253,.08);' :
+                            permSource(perm) === 'role'      ? 'background:rgba(0,127,62,.06);' : ''"
                     @click="toggleUserPerm(perm)"
                   >
-                    <!-- Indicator dot -->
+                    <!-- Indicator circle -->
                     <div
                       class="rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center"
-                      style="width:16px; height:16px; border:2px solid #dee2e6; transition:all .15s;"
-                      :style="permSource(perm) === 'role'   ? 'background:#007f3e; border-color:#007f3e;' :
-                               permSource(perm) === 'direct' ? 'background:#0d6efd; border-color:#0d6efd;' : ''"
+                      style="width:16px; height:16px; border:2px solid; transition:all .15s;"
+                      :style="permSource(perm) === 'forbidden' ? 'background:#dc3545; border-color:#dc3545;' :
+                              permSource(perm) === 'direct'    ? 'background:#0d6efd; border-color:#0d6efd;' :
+                              permSource(perm) === 'role'      ? 'background:#007f3e; border-color:#007f3e;' :
+                                                                 'background:transparent; border-color:#dee2e6;'"
                     >
-                      <svg v-if="userHasPerm(perm)" viewBox="0 0 12 12" width="10" height="10">
+                      <!-- X for forbidden -->
+                      <svg v-if="permSource(perm) === 'forbidden'" viewBox="0 0 12 12" width="10" height="10">
+                        <line x1="3" y1="3" x2="9" y2="9" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="9" y1="3" x2="3" y2="9" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                      <!-- Check for role or direct -->
+                      <svg v-else-if="userHasPerm(perm)" viewBox="0 0 12 12" width="10" height="10">
                         <polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
                       </svg>
                     </div>
-                    <span :class="userHasPerm(perm) ? 'fw-semibold text-dark' : 'text-muted'">
-                      {{ perm === 'multi_school' ? 'Multi-School Access' : perm.split('.')[1]?.replace(/_/g,' ') }}
+                    <!-- Label -->
+                    <span :class="permSource(perm) === 'forbidden' ? 'text-danger text-decoration-line-through' :
+                                  userHasPerm(perm) ? 'fw-semibold text-dark' : 'text-muted'" style="flex:1;">
+                      {{ perm === 'multi_school' ? 'Multi-School Access' : perm.split('.')[1]?.replace(/_/g,' ') ?? perm }}
                     </span>
-                    <!-- Source tag -->
-                    <span
-                      v-if="permSource(perm) !== 'none'"
-                      class="ms-auto badge"
-                      :style="permSource(perm) === 'role'
-                        ? 'background:rgba(0,127,62,.15); color:#007f3e; font-size:.6rem;'
-                        : 'background:rgba(13,110,253,.15); color:#0d6efd; font-size:.6rem;'"
-                    >{{ permSource(perm) === 'role' ? 'role' : 'user' }}</span>
+                    <!-- Source badge -->
+                    <span v-if="permSource(perm) !== 'none'" class="badge ms-auto" style="font-size:.6rem; white-space:nowrap;"
+                      :style="permSource(perm) === 'forbidden' ? 'background:rgba(220,53,69,.15);color:#dc3545;' :
+                              permSource(perm) === 'direct'    ? 'background:rgba(13,110,253,.15);color:#0d6efd;' :
+                                                                 'background:rgba(0,127,62,.15);color:#007f3e;'"
+                    >{{ permSource(perm) === 'forbidden' ? 'denied' : permSource(perm) === 'direct' ? 'user' : 'role' }}</span>
                   </div>
                 </div>
               </div>
@@ -750,14 +834,22 @@ function initials(name) {
       </CModalBody>
 
       <CModalFooter class="border-top">
-        <div class="me-auto text-muted small d-flex align-items-center gap-2 flex-wrap">
-          <span>🟢 role &nbsp;🔵 user-specific</span>
+        <div class="me-auto text-muted small d-flex align-items-center gap-3 flex-wrap">
           <span v-if="schoolGranting || schoolAccessLoading" class="text-warning fw-semibold">
             ⏳ School operation in progress…
           </span>
-          <span v-else-if="userPermsChanged" class="text-primary fw-semibold">
-            {{ directPermsToSave.length }} direct permission{{ directPermsToSave.length !== 1 ? 's' : '' }} to save
-          </span>
+          <template v-else-if="userPermsChanged">
+            <span v-if="directPermsToSave.length > 0" class="text-primary">
+              +{{ directPermsToSave.length }} extra to save
+            </span>
+            <span v-if="userForbiddenCount > 0" class="text-danger">
+              {{ userForbiddenCount }} denied
+            </span>
+            <span v-if="directPermsToSave.length === 0 && userForbiddenCount === 0" class="text-muted">
+              Reset to role defaults
+            </span>
+          </template>
+          <span v-else class="text-muted">🟢 role &nbsp;🔵 user &nbsp;🔴 denied</span>
         </div>
         <CAlert v-if="userPermSaved && !userPermsChanged" color="success" class="mb-0 py-1 px-3 small">Saved ✓</CAlert>
         <CButton color="secondary" variant="ghost" @click="userPermModal = false; userPermSaved = false">Close</CButton>
@@ -767,7 +859,7 @@ function initials(name) {
           @click="saveUserPermissions"
           style="min-width:160px;"
         >
-          <CSpinner v-if="savingUserPerms" size="sm" class="me-1" />
+          <CSpinner v-if="savingUserPerms" size="sm" class="me-1"/>
           {{ userPermsChanged ? 'Save User Permissions' : 'No Changes' }}
         </CButton>
       </CModalFooter>

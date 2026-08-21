@@ -207,6 +207,8 @@ class SuperadminUserController extends Controller
         $data = $request->validate([
             'permissions' => 'required|array',
             'permissions.*' => 'string|exists:permissions,name',
+            'forbidden_permissions' => 'nullable|array',
+            'forbidden_permissions.*' => 'string|exists:permissions,name',
         ]);
 
         // Guard: cannot assign permissions that belong to no known group (prevents DB pollution)
@@ -218,10 +220,24 @@ class SuperadminUserController extends Controller
             ], 422);
         }
 
+        $forbidList = array_values(array_unique($data['forbidden_permissions'] ?? []));
+
+        // Conflict check: same perm cannot be granted and forbidden simultaneously
+        $conflict = array_intersect($data['permissions'], $forbidList);
+        if (! empty($conflict)) {
+            return response()->json([
+                'message' => 'Mgongano: ruhusa moja haiwezi kupewa na kukatazwa kwa wakati mmoja: '.implode(', ', $conflict),
+            ], 422);
+        }
+
         $hadMultiSchool = $user->hasPermissionTo('multi_school');
-        $removingMultiSchool = $hadMultiSchool && ! in_array('multi_school', $data['permissions'], true);
+        $removingMultiSchool = $hadMultiSchool && (
+            ! in_array('multi_school', $data['permissions'], true)
+            || in_array('multi_school', $forbidList, true)
+        );
 
         $user->syncPermissions($data['permissions']);
+        $user->update(['forbidden_permissions' => $forbidList]);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         // If multi_school was removed, revoke all explicit school access grants
@@ -231,10 +247,16 @@ class SuperadminUserController extends Controller
 
         AuditLogger::log('user_permissions_updated', $user, [
             'permissions' => $data['permissions'],
+            'forbidden_permissions' => $forbidList,
             'updated_by' => auth()->user()->name,
         ]);
 
-        return response()->json($user->load(['roles', 'permissions', 'school']));
+        $user->refresh()->load(['roles', 'permissions', 'school']);
+
+        return response()->json(array_merge(
+            $user->toArray(),
+            ['forbidden_permissions' => $user->forbidden_permissions ?? []]
+        ));
     }
 
     // ── Delete user permanently ──────────────────────────────────────────────
