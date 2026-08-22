@@ -28,28 +28,44 @@
         <div v-else-if="!store.guardians.length" class="text-center text-muted py-5">
           {{ t('guardians.noGuardians') }}
         </div>
-        <CTable v-else responsive hover class="mb-0">
+        <CTable v-else hover class="mb-0" style="table-layout:auto; width:auto; min-width:100%;">
           <CTableHead class="table-light">
             <CTableRow>
-              <CTableHeaderCell>{{ t('common.name') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('guardians.phone') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('guardians.relation') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('guardians.children') }}</CTableHeaderCell>
-              <CTableHeaderCell class="text-center" style="width:56px;">{{ t('common.actions') }}</CTableHeaderCell>
+              <CTableHeaderCell style="white-space:nowrap;">{{ t('common.name') }}</CTableHeaderCell>
+              <CTableHeaderCell style="white-space:nowrap;">{{ t('guardians.phone') }}</CTableHeaderCell>
+              <CTableHeaderCell style="white-space:nowrap;">{{ t('guardians.relation') }}</CTableHeaderCell>
+              <CTableHeaderCell style="white-space:nowrap;">{{ t('guardians.children') }}</CTableHeaderCell>
+              <CTableHeaderCell class="text-center" style="width:56px; white-space:nowrap;">{{ t('common.actions') }}</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
           <CTableBody>
             <CTableRow v-for="g in store.guardians" :key="g.id">
-              <CTableDataCell class="fw-semibold">{{ g.full_name || g.user?.name || '—' }}</CTableDataCell>
-              <CTableDataCell>{{ g.phone || g.user?.phone || '—' }}</CTableDataCell>
-              <CTableDataCell>{{ g.relation || '—' }}</CTableDataCell>
-              <CTableDataCell>
-                <CBadge
-                  v-for="s in g.students" :key="s.id"
-                  color="info" shape="rounded-pill" class="me-1"
-                >{{ s.full_name }}</CBadge>
+              <CTableDataCell class="fw-semibold" style="white-space:nowrap;">{{ g.full_name || g.user?.name || '—' }}</CTableDataCell>
+              <CTableDataCell style="white-space:nowrap;">{{ g.phone || g.user?.phone || '—' }}</CTableDataCell>
+              <CTableDataCell style="white-space:nowrap;">{{ g.relation || '—' }}</CTableDataCell>
+              <!-- Children: single badge inline; multiple → collapsible dropdown -->
+              <CTableDataCell style="position:relative; white-space:nowrap;">
+                <template v-if="!g.students?.length">—</template>
+                <template v-else-if="g.students.length === 1">
+                  <CBadge color="info" shape="rounded-pill">{{ g.students[0].full_name }}</CBadge>
+                </template>
+                <template v-else>
+                  <CButton size="sm" color="info" variant="outline"
+                           style="font-size:.75rem; padding:2px 8px;"
+                           @click.stop="activeChildRow = activeChildRow === g.id ? null : g.id">
+                    {{ g.students.length }} watoto ▾
+                  </CButton>
+                  <div v-if="activeChildRow === g.id"
+                       style="position:absolute; top:100%; left:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:6px 8px; z-index:200; min-width:180px;"
+                       @click.stop>
+                    <div v-for="s in g.students" :key="s.id"
+                         style="padding:3px 0; font-size:.85rem; border-bottom:1px solid #f0f0f0;">
+                      <CBadge color="info" shape="rounded-pill" class="me-1">{{ s.full_name }}</CBadge>
+                    </div>
+                  </div>
+                </template>
               </CTableDataCell>
-              <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
+              <CTableDataCell style="position:relative; min-width:56px; text-align:center; white-space:nowrap;">
                 <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === g.id ? null : g.id">👁️</CButton>
                 <div v-if="activeRow === g.id"
                      style="position:absolute; bottom:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
@@ -187,8 +203,9 @@ const { t } = useI18n()
 const store        = useGuardiansStore()
 const studentsStore = useStudentsStore()
 
-const search      = ref('')
-const activeRow   = ref(null)
+const search         = ref('')
+const activeRow      = ref(null)
+const activeChildRow = ref(null)
 const showViewModal = ref(false)
 const viewTarget  = ref(null)
 const showModal   = ref(false)
@@ -273,7 +290,7 @@ async function remove(g) {
   try { await store.deleteGuardian(g.id) } catch {}
 }
 
-function onDocClick() { activeRow.value = null }
+function onDocClick() { activeRow.value = null; activeChildRow.value = null }
 
 onMounted(async () => {
   document.addEventListener('click', onDocClick)
