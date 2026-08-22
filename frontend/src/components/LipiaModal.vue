@@ -135,14 +135,24 @@ function formatTZS(cents) {
 const previewData = ref({})
 
 function updatePreview() {
+  const inv = props.invoice
+  const paid = form.value.amount ? Number(form.value.amount) : 0
+  const balanceBefore = Math.round((inv?.balance_due_cents || 0) / 100)
   previewData.value = {
-    student: props.invoice?.student?.full_name || '',
-    admission: props.invoice?.student?.admission_number || '',
-    invoice_number: props.invoice?.invoice_number || '',
-    amount_tzs: form.value.amount ? Number(form.value.amount) : 0,
-    method: form.value.method,
-    reference: form.value.reference_number,
-    date: form.value.paid_at,
+    student:        inv?.student?.full_name || '',
+    admission:      inv?.student?.admission_number || '',
+    school_class:   inv?.student?.school_class?.name || inv?.school_class?.name || '',
+    invoice_number: inv?.invoice_number || '',
+    term:           inv?.term?.name || '',
+    academic_year:  inv?.academic_year?.name || inv?.academic_year?.year || '',
+    total_tzs:      Math.round((inv?.total_amount_cents || 0) / 100),
+    paid_before_tzs:Math.round((inv?.paid_cents || 0) / 100),
+    balance_before_tzs: balanceBefore,
+    amount_tzs:     paid,
+    balance_after_tzs: Math.max(0, balanceBefore - paid),
+    method:         form.value.method,
+    reference:      form.value.reference_number,
+    date:           form.value.paid_at,
     receipt_number: 'RCP-PREVIEW',
   }
 }
