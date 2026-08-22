@@ -18,21 +18,21 @@
       <div class="row g-2 mb-0 py-3 border-top border-bottom">
         <div class="col-4">
           <div class="rounded p-2 text-center" style="background:#f8f9fa;">
-            <div style="font-size:.65rem; color:#6c757d; font-weight:600; text-transform:uppercase; letter-spacing:.03em;">Jumla</div>
-            <div class="fw-bold" style="font-size:.82rem;">{{ formatMoney(totalInvoiced) }}</div>
+            <div style="font-size:.62rem; color:#6c757d; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Jumla</div>
+            <div style="font-weight:700; font-size:.85rem; letter-spacing:-.01em;">{{ formatMoney(totalInvoiced) }}</div>
           </div>
         </div>
         <div class="col-4">
           <div class="rounded p-2 text-center" style="background:rgba(25,135,84,.08);">
-            <div style="font-size:.65rem; color:#198754; font-weight:600; text-transform:uppercase; letter-spacing:.03em;">Imelipwa</div>
-            <div class="fw-bold text-success" style="font-size:.82rem;">{{ formatMoney(totalPaid) }}</div>
+            <div style="font-size:.62rem; color:#198754; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Imelipwa</div>
+            <div class="text-success" style="font-weight:700; font-size:.85rem; letter-spacing:-.01em;">{{ formatMoney(totalPaid) }}</div>
           </div>
         </div>
         <div class="col-4">
           <div class="rounded p-2 text-center"
                :style="totalOutstanding > 0 ? 'background:rgba(220,53,69,.08)' : 'background:rgba(25,135,84,.08)'">
-            <div :style="`font-size:.65rem; font-weight:600; text-transform:uppercase; letter-spacing:.03em; color:${totalOutstanding>0?'#dc3545':'#198754'}`">Deni</div>
-            <div class="fw-bold" :class="totalOutstanding > 0 ? 'text-danger' : 'text-success'" style="font-size:.82rem;">
+            <div :style="`font-size:.62rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:${totalOutstanding>0?'#dc3545':'#198754'}`">Deni</div>
+            <div :class="totalOutstanding > 0 ? 'text-danger' : 'text-success'" style="font-weight:700; font-size:.85rem; letter-spacing:-.01em;">
               {{ totalOutstanding > 0 ? formatMoney(totalOutstanding) : '✓ Sifuri' }}
             </div>
           </div>
