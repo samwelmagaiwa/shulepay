@@ -55,7 +55,17 @@
       </div>
 
       <!-- Desktop table -->
-      <CCard class="d-none d-md-block">
+      <CCard class="d-none d-md-block" style="position:relative; overflow:visible;">
+        <!-- Toolbar floating top-right, overlapping Actions column -->
+        <div style="position:absolute; top:6px; right:0; z-index:10; display:flex; align-items:center; gap:6px; padding:0 8px;">
+          <CFormSelect v-model="filters.status" @update:modelValue="page = 1; load()" size="sm" style="width:130px;">
+            <option value="">{{ t('common.allStatuses') }}</option>
+            <option value="active">{{ t('installments.ongoing') }}</option>
+            <option value="completed">{{ t('installments.completed') }}</option>
+          </CFormSelect>
+          <CFormInput v-model="filters.search" :placeholder="t('installments.searchPlaceholder')" @input="debouncedLoad" size="sm" style="width:180px;" />
+          <CButton color="primary" size="sm" @click="showBulkModal = true" style="white-space:nowrap;">📋 {{ t('installments.bulkByClass') }}</CButton>
+        </div>
         <CCardBody class="p-0">
           <CTable hover class="mb-0" style="width:100%;">
             <CTableHead class="table-light">
@@ -69,18 +79,6 @@
                 <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.progress') }}</CTableHeaderCell>
                 <CTableHeaderCell style="white-space:nowrap;">{{ t('common.status') }}</CTableHeaderCell>
                 <CTableHeaderCell style="white-space:nowrap; width:56px;">{{ t('common.actions') }}</CTableHeaderCell>
-                <!-- Toolbar embedded after Actions -->
-                <CTableHeaderCell style="width:100%; padding:6px 12px;">
-                  <div class="d-flex align-items-center gap-2">
-                    <CFormSelect v-model="filters.status" @update:modelValue="page = 1; load()" size="sm" style="width:140px;">
-                      <option value="">{{ t('common.allStatuses') }}</option>
-                      <option value="active">{{ t('installments.ongoing') }}</option>
-                      <option value="completed">{{ t('installments.completed') }}</option>
-                    </CFormSelect>
-                    <CFormInput v-model="filters.search" :placeholder="t('installments.searchPlaceholder')" @input="debouncedLoad" size="sm" style="min-width:160px; max-width:260px;" />
-                    <CButton color="primary" size="sm" @click="showBulkModal = true" style="white-space:nowrap;">📋 {{ t('installments.bulkByClass') }}</CButton>
-                  </div>
-                </CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
@@ -112,10 +110,9 @@
                     <CButton v-if="plan.status !== 'completed' && plan.status !== 'paid'" size="sm" color="primary" variant="ghost" class="text-start" @click="recordPayment(plan); activeRow = null">💳 {{ t('installments.recordPayment') }}</CButton>
                   </div>
                 </CTableDataCell>
-                <CTableDataCell></CTableDataCell>
               </CTableRow>
               <CTableRow v-if="!installments.length">
-                <CTableDataCell colspan="10" class="text-center text-muted py-4">{{ t('installments.noPlans') }}</CTableDataCell>
+                <CTableDataCell colspan="9" class="text-center text-muted py-4">{{ t('installments.noPlans') }}</CTableDataCell>
               </CTableRow>
             </CTableBody>
           </CTable>
