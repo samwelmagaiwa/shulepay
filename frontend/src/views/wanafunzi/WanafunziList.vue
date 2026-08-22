@@ -110,6 +110,7 @@
                      style="position:absolute; bottom:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                      @click.stop>
                   <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openDetail(s); activeRow = null">👁️ {{ t('common.view') }}</CButton>
+                  <CButton size="sm" color="warning" variant="ghost" class="text-start" @click="router.push({ name: 'MwanafunziDetail', params: { id: s.id }, query: { tab: 'ahadi' } }); activeRow = null">🤝 {{ t('students.summary.recordPromise') }}</CButton>
                   <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(s); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                 </div>
               </CTableDataCell>
@@ -153,6 +154,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { CPagination, CPaginationItem } from '@coreui/vue'
 import { useStudentsStore } from '@/stores/students'
 import { useSchoolsStore }  from '@/stores/schools'
@@ -162,6 +164,7 @@ import MwanafunziDrawer    from '@/components/MwanafunziDrawer.vue'
 import AddStudentModal     from '@/components/AddStudentModal.vue'
 
 const { t } = useI18n()
+const router = useRouter()
 const studentsStore = useStudentsStore()
 const schoolsStore  = useSchoolsStore()
 const schoolStore   = useSchoolStore()

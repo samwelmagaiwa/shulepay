@@ -160,7 +160,7 @@
                       💰 {{ t('students.summary.paymentHistory') }}
                     </CButton>
                     <CButton color="warning" size="sm" @click="activeTab = 'ahadi'; $nextTick(() => scrollToPromiseForm())" style="min-height:40px;">
-                      🤝 Weka Ahadi
+                      🤝 {{ t('students.summary.recordPromise') }}
                     </CButton>
                     <RouterLink :to="`/wanafunzi/clearance?student_id=${student.id}`"
                                 class="btn btn-info btn-sm" style="min-height:40px;display:flex;align-items:center;">
@@ -491,7 +491,7 @@
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                       <span class="fw-semibold small">{{ p.invoice?.invoice_number || '—' }}</span>
                       <CBadge :color="p.status === 'kept' ? 'success' : p.status === 'broken' ? 'danger' : isPromiseOverdue(p) ? 'warning' : 'info'" style="font-size:.65rem;">
-                        {{ p.status === 'kept' ? '✓ Imelipwa' : p.status === 'broken' ? '✗ Haikulipwa' : isPromiseOverdue(p) ? '⚠ Imechelewa' : '⏳ Inasubiri' }}
+                        {{ p.status === 'kept' ? t('students.promises.statusKept') : p.status === 'broken' ? t('students.promises.statusBroken') : isPromiseOverdue(p) ? t('students.promises.statusOverdue') : t('students.promises.statusPending') }}
                       </CBadge>
                     </div>
                     <div class="small text-muted mt-1">
@@ -502,72 +502,72 @@
                   </div>
                   <div class="d-flex gap-1 flex-shrink-0" v-if="p.status === 'pending'">
                     <CButton size="sm" color="success" variant="outline" style="font-size:.7rem; padding:2px 6px;"
-                             @click="markPromise(p.id, 'kept')">✓ Imelipwa</CButton>
+                             @click="markPromise(p.id, 'kept')">{{ t('students.promises.markKept') }}</CButton>
                     <CButton size="sm" color="danger"  variant="outline" style="font-size:.7rem; padding:2px 6px;"
-                             @click="markPromise(p.id, 'broken')">✗ Haikulipwa</CButton>
+                             @click="markPromise(p.id, 'broken')">{{ t('students.promises.markBroken') }}</CButton>
                   </div>
                 </div>
               </div>
               <div v-else class="text-muted small mb-2 d-flex align-items-center gap-2">
-                <span>🤝</span> Hakuna ahadi zilizorekodiwa.
+                <span>🤝</span> {{ t('students.promises.noPromises') }}
               </div>
             </div>
 
             <!-- Record new promise form -->
             <div class="rounded overflow-hidden" style="border:1px solid #c3e6cb;">
               <div class="px-3 py-2" style="background:linear-gradient(135deg,#f8fffe,#e8f5ee); border-bottom:1px solid #c3e6cb;">
-                <span class="fw-bold small" style="color:#007f3e;">🤝 Rekodi Ahadi Mpya</span>
+                <span class="fw-bold small" style="color:#007f3e;">{{ t('students.promises.newTitle') }}</span>
               </div>
               <div class="p-3" style="background:#fff;" ref="promiseFormRef">
                 <CAlert v-if="promiseError" color="danger" class="py-2 mb-2 small">{{ promiseError }}</CAlert>
                 <div class="row g-2 mb-2">
                   <!-- Invoice — full width -->
                   <div class="col-12">
-                    <label class="form-label small fw-semibold mb-1">Chagua Ankara (yenye deni)</label>
+                    <label class="form-label small fw-semibold mb-1">{{ t('students.promises.selectInvoice') }}</label>
                     <select class="form-select form-select-sm" v-model="newPromise.invoice_id">
-                      <option value="">— Chagua Ankara —</option>
+                      <option value="">{{ t('students.promises.invoicePlaceholder') }}</option>
                       <option v-for="inv in overdueInvoices" :key="inv.id" :value="inv.id">
-                        {{ inv.invoice_number }} · Deni: {{ formatMoney(inv.balance_due_cents) }}
+                        {{ inv.invoice_number }} · {{ t('invoices.debt') }}: {{ formatMoney(inv.balance_due_cents) }}
                       </option>
                     </select>
                   </div>
                   <!-- 3-column row: Guardian | Amount | Date -->
                   <div class="col-12 col-md-4">
-                    <label class="form-label small fw-semibold mb-1">Mlezi (aliyeahidi)</label>
+                    <label class="form-label small fw-semibold mb-1">{{ t('students.promises.selectGuardian') }}</label>
                     <select class="form-select form-select-sm" v-model="newPromise.guardian_id">
-                      <option value="">— Mlezi Mwovote —</option>
+                      <option value="">{{ t('students.promises.guardianPlaceholder') }}</option>
                       <option v-for="g in studentGuardians" :key="g.id" :value="g.id">
                         {{ g.full_name }} {{ g.phone ? `(${g.phone})` : '' }}
                       </option>
                     </select>
                   </div>
                   <div class="col-12 col-md-4">
-                    <label class="form-label small fw-semibold mb-1">Kiasi Kilichoahidiwa (TZS)</label>
+                    <label class="form-label small fw-semibold mb-1">{{ t('students.promises.amount') }}</label>
                     <input type="number" class="form-control form-control-sm" v-model.number="newPromise.amount"
                            min="1" placeholder="0" />
                   </div>
                   <div class="col-12 col-md-4">
-                    <label class="form-label small fw-semibold mb-1">Tarehe ya Ahadi</label>
+                    <label class="form-label small fw-semibold mb-1">{{ t('students.promises.date') }}</label>
                     <input type="date" class="form-control form-control-sm" v-model="newPromise.promised_date"
                            :min="today" />
                   </div>
                   <!-- Notes — full width -->
                   <div class="col-12">
-                    <label class="form-label small fw-semibold mb-1">Maelezo (hiari)</label>
+                    <label class="form-label small fw-semibold mb-1">{{ t('students.promises.notes') }}</label>
                     <input type="text" class="form-control form-control-sm" v-model="newPromise.notes"
-                           placeholder="e.g. Anakuja Ijumaa..." />
+                           :placeholder="t('students.promises.notesPlaceholder')" />
                   </div>
                 </div>
                 <!-- SMS notice -->
                 <div class="small text-muted mb-2" style="font-size:.72rem;">
-                  📱 SMS itatumwa kwa mlezi siku moja kabla ya tarehe · SMS kwa muhasibu siku hiyo hiyo (saa 7:00)
+                  {{ t('students.promises.smsHint') }}
                 </div>
                 <CButton color="success" size="sm"
                          :disabled="savingPromise || !newPromise.invoice_id || !newPromise.amount || !newPromise.promised_date"
                          @click="savePromise"
                          style="background:#007f3e; border-color:#007f3e; min-height:36px;">
                   <CSpinner v-if="savingPromise" size="sm" class="me-1" />
-                  Hifadhi Ahadi
+                  {{ t('students.promises.save') }}
                 </CButton>
               </div>
             </div>
@@ -685,7 +685,7 @@ const tabs = computed(() => [
   { key: 'malipo',       label: t('students.tabs.payments') },
   { key: 'walezi',       label: t('students.tabs.guardians') },
   { key: 'installments', label: t('students.tabs.installments') },
-  { key: 'ahadi',        label: '🤝 Ahadi za Malipo', badge: pendingPromisesCount.value || null },
+  { key: 'ahadi',        label: t('students.promises.tabLabel'), badge: pendingPromisesCount.value || null },
 ])
 
 const payments            = ref([])
@@ -745,7 +745,7 @@ async function loadPromises() {
 async function savePromise() {
   promiseError.value = ''
   if (!newPromise.value.invoice_id || !newPromise.value.amount || !newPromise.value.promised_date) {
-    promiseError.value = 'Tafadhali jaza Ankara, Kiasi, na Tarehe ya Ahadi.'
+    promiseError.value = t('students.promises.validationMsg')
     return
   }
   savingPromise.value = true
@@ -761,7 +761,7 @@ async function savePromise() {
     newPromise.value = { invoice_id: '', guardian_id: '', amount: '', promised_date: '', notes: '' }
     await loadPromises()
   } catch (e) {
-    promiseError.value = e?.response?.data?.message || 'Imeshindwa kuhifadhi.'
+    promiseError.value = e?.response?.data?.message || t('students.promises.saveError')
   } finally { savingPromise.value = false }
 }
 
@@ -956,6 +956,14 @@ onMounted(async () => {
     await loadPayments()
     await loadInstallments()
     await loadPromises()
+    // Support ?tab=ahadi (or any valid tab key) from router navigation
+    const tabParam = route.query.tab
+    if (tabParam) {
+      activeTab.value = tabParam
+      if (tabParam === 'ahadi') {
+        setTimeout(() => scrollToPromiseForm(), 300)
+      }
+    }
   } catch (e) {
     console.error('MwanafunziDetail error', e)
   }

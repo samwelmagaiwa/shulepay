@@ -11,33 +11,34 @@ defineProps({ label: String, value: [String, Number] })
 .ir-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
-  padding: 7px 0;
-  font-size: .875rem;
-  border-bottom: 1px solid rgba(128,128,128,.2);
+  padding: 6px 0;
+  font-size: .82rem;
+  border-bottom: 1px solid rgba(128,128,128,.12);
 }
 .ir-label {
-  color: #6c757d;
+  color: #8a94a6;
   flex-shrink: 0;
-  max-width: 55%;
+  max-width: 52%;
   font-weight: 400;
+  font-style: italic;
+  letter-spacing: .01em;
 }
 .ir-value {
-  color: #111827;
-  font-weight: 700;
+  color: #1e293b;
+  font-weight: 500;
   text-align: right;
   word-break: break-word;
   min-width: 0;
+  letter-spacing: .015em;
 }
-/* dark mode via CoreUI data-theme */
 [data-theme="dark"] .ir-label,
-[data-bs-theme="dark"] .ir-label { color: #9ca3af; }
+[data-bs-theme="dark"] .ir-label { color: #94a3b8; }
 [data-theme="dark"] .ir-value,
-[data-bs-theme="dark"] .ir-value { color: #f9fafb; }
-/* dark mode via system preference */
+[data-bs-theme="dark"] .ir-value { color: #e2e8f0; }
 @media (prefers-color-scheme: dark) {
-  .ir-label { color: #9ca3af; }
-  .ir-value { color: #f9fafb; }
+  .ir-label { color: #94a3b8; }
+  .ir-value { color: #e2e8f0; }
 }
 </style>
