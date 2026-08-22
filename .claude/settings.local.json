@@ -181,7 +181,8 @@
       "Bash(bash deploy.sh release \"feat: dashboard absent-students card with per-class dropdown\")",
       "Bash(bash deploy.sh release \"fix: add missing computed import in SocialStatsWidgets\")",
       "Bash(bash deploy.sh release \"feat: guardians page — remove title row, merge toolbar into one row\")",
-      "Bash(bash deploy.sh release \"feat: guardians compact table + children dropdown\")"
+      "Bash(bash deploy.sh release \"feat: guardians compact table + children dropdown\")",
+      "Bash(bash deploy.sh release \"feat: ada-madeni promised to pay card\")"
     ]
   }
 }
