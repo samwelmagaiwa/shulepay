@@ -1303,7 +1303,7 @@ export default {
     position:        'Position',
     noClearance:     'Student clearance information not available.',
     searchStudent:   'Search Student',
-    searchPlaceholder:'Name or admission number...',
+    searchPlaceholder:'Name, admission no. or invoice no...',
     check:           'Check',
     clearedTitle:    'Cleared!',
     clearedMsg:      '{name} has no outstanding debts for the selected year.',

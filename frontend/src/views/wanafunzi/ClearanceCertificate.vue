@@ -7,7 +7,7 @@
           <CCol xs="12" md="6">
             <label class="form-label fw-semibold small mb-1">{{ t('clearance.searchStudent') }}</label>
             <div class="position-relative">
-              <CFormInput v-model="searchQuery" :placeholder="t('clearance.searchPlaceholder')" @input="debouncedSearch" style="min-height:40px;" />
+              <CFormInput v-model="searchQuery" :placeholder="t('clearance.searchPlaceholder')" @input="debouncedSearch" style="min-height:40px;" autocomplete="off" />
               <div v-if="searchResults.length" class="border rounded shadow-sm position-absolute w-100 bg-white"
                    style="z-index:1055; max-height:220px; overflow-y:auto; top:100%; left:0;">
                 <div v-for="s in searchResults" :key="s.id"

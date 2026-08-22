@@ -73,6 +73,7 @@ class StudentController extends Controller
                     ->where('first_name', 'like', "%{$s}%")
                     ->orWhere('last_name', 'like', "%{$s}%")
                     ->orWhereHas('enrollments', fn ($eq) => $eq->where('admission_number', 'like', "%{$s}%"))
+                    ->orWhereHas('invoices', fn ($iq) => $iq->where('invoice_number', 'like', "%{$s}%"))
             );
         }
         if ($request->filled('status')) {

@@ -1303,7 +1303,7 @@ export default {
     position:        'Cheo',
     noClearance:     'Taarifa za uhuru wa mwanafunzi hazipatikani.',
     searchStudent:   'Tafuta Mwanafunzi',
-    searchPlaceholder:'Jina au nambari ya udahili...',
+    searchPlaceholder:'Jina, nambari ya udahili au ankara...',
     check:           'Angalia',
     clearedTitle:    'Amefuzu!',
     clearedMsg:      '{name} haana madeni yoyote kwa mwaka uliopiwa.',
