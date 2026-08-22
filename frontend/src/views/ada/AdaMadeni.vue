@@ -3,7 +3,7 @@
     <!-- Summary bar -->
     <CRow class="g-2 g-md-3 mb-3">
       <CCol xs="6" md="3">
-        <CCard class="border-0 bg-body-secondary h-100">
+        <CCard class="h-100" style="border:2px solid #6c757d; background:rgba(108,117,125,0.07); box-shadow:0 8px 24px rgba(108,117,125,0.35), 0 2px 6px rgba(0,0,0,0.12);">
           <CCardBody class="p-2 p-md-3">
             <div class="text-muted small">{{ t('invoices.allInvoices') }}</div>
             <div class="fw-bold fs-5">{{ pagination.total || invoices.length }}</div>
@@ -11,7 +11,7 @@
         </CCard>
       </CCol>
       <CCol xs="6" md="3">
-        <CCard class="border-0 h-100" style="background:rgba(220,53,69,0.08);">
+        <CCard class="h-100" style="border:2px solid #dc3545; background:rgba(220,53,69,0.07); box-shadow:0 8px 24px rgba(220,53,69,0.35), 0 2px 6px rgba(0,0,0,0.12);">
           <CCardBody class="p-2 p-md-3">
             <div class="text-muted small">{{ t('invoices.totalDebt') }}</div>
             <div class="fw-bold fs-5 text-danger">{{ formatMoney(totalOutstanding) }}</div>
@@ -19,7 +19,7 @@
         </CCard>
       </CCol>
       <CCol xs="6" md="3">
-        <CCard class="border-0 h-100" style="background:rgba(25,135,84,0.08);">
+        <CCard class="h-100" style="border:2px solid #198754; background:rgba(25,135,84,0.07); box-shadow:0 8px 24px rgba(25,135,84,0.35), 0 2px 6px rgba(0,0,0,0.12);">
           <CCardBody class="p-2 p-md-3">
             <div class="text-muted small">{{ t('invoices.collected') }}</div>
             <div class="fw-bold fs-5 text-success">{{ formatMoney(totalCollected) }}</div>
@@ -27,7 +27,7 @@
         </CCard>
       </CCol>
       <CCol xs="6" md="3">
-        <CCard class="border-0 h-100" style="background:rgba(255,193,7,0.12);">
+        <CCard class="h-100" style="border:2px solid #d97706; background:rgba(255,193,7,0.1); box-shadow:0 8px 24px rgba(217,119,6,0.35), 0 2px 6px rgba(0,0,0,0.12);">
           <CCardBody class="p-2 p-md-3">
             <div class="text-muted small">{{ t('invoices.promisedToPay') }}</div>
             <div class="fw-bold fs-5" style="color:#b45309;">
