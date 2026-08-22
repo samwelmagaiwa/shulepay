@@ -205,20 +205,20 @@ function go(path) {
             {{ t('nav.finance') }}
           </CDropdownToggle>
           <CDropdownMenu style="min-width:240px; border-radius:12px; border:none; box-shadow:0 8px 24px rgba(0,0,0,.12);">
-            <CDropdownItem @click="router.push('/ada-madeni')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/ada-madeni')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/ada-madeni') }">
               <CIcon icon="cilList" class="me-2" /> {{ t('nav.invoices') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/installments')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/installments')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/installments') }">
               <CIcon icon="cilCalendar" class="me-2" /> {{ t('nav.installments') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/malipo/refunds')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/malipo/refunds')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/malipo/refunds') }">
               <CIcon icon="cilTransfer" class="me-2" /> {{ t('nav.refunds') }}
             </CDropdownItem>
-            <CDropdownItem v-if="auth.isAccountant" @click="router.push('/malipo/rekodi')" style="cursor:pointer;">
+            <CDropdownItem v-if="auth.isAccountant" @click="router.push('/malipo/rekodi')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/malipo/rekodi') }">
               <CIcon icon="cilDollar" class="me-2" /> {{ t('nav.paymentRecord') }}
             </CDropdownItem>
             <CDropdownDivider />
-            <CDropdownItem @click="router.push('/ada/muundo')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/ada/muundo')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/ada/muundo') }">
               <CIcon icon="cilSettings" class="me-2" /> {{ t('nav.feeStructures') }}
             </CDropdownItem>
             <CDropdownItem @click="router.push('/admin/terms')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/terms') }">
@@ -233,24 +233,24 @@ function go(path) {
             {{ t('nav.expenses') }}
           </CDropdownToggle>
           <CDropdownMenu style="min-width:220px; border-radius:12px; border:none; box-shadow:0 8px 24px rgba(0,0,0,.12);">
-            <CDropdownItem @click="router.push('/matumizi')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/matumizi')" style="cursor:pointer;" :class="{ 'active': route.path === '/matumizi' }">
               <CIcon icon="cilClipboard" class="me-2" /> {{ t('nav.expenses') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/matumizi/petty-cash')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/matumizi/petty-cash')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/matumizi/petty-cash') }">
               <CIcon icon="cilWallet" class="me-2" /> {{ t('nav.pettyCash') }}
             </CDropdownItem>
             <CDropdownDivider />
-            <CDropdownItem @click="router.push('/payroll')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/payroll')" style="cursor:pointer;" :class="{ 'active': route.path === '/payroll' }">
               <CIcon icon="cilDollar" class="me-2" /> {{ t('nav.payroll') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/payroll/employees')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/payroll/employees')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/payroll/employees') }">
               <CIcon icon="cilPeople" class="me-2" /> {{ t('nav.employees') }}
             </CDropdownItem>
             <CDropdownDivider />
-            <CDropdownItem @click="router.push('/wasambazaji')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/wasambazaji')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/wasambazaji') }">
               <CIcon icon="cilBriefcase" class="me-2" /> {{ t('nav.suppliers') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/mali')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/mali')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/mali') }">
               <CIcon icon="cilBuilding" class="me-2" /> {{ t('nav.assets') }}
             </CDropdownItem>
           </CDropdownMenu>
@@ -294,7 +294,7 @@ function go(path) {
               👥 {{ t('nav.staff') }}
             </CDropdownItem>
             <CDropdownDivider />
-            <CDropdownItem @click="router.push('/bajeti')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/bajeti')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/bajeti') }">
               <CIcon icon="cilLibrary" class="me-2" /> {{ t('nav.budgets') }}
             </CDropdownItem>
             <CDropdownItem @click="router.push('/admin/academic-years')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/academic-years') }">
@@ -303,7 +303,7 @@ function go(path) {
             <CDropdownItem @click="router.push('/admin/terms')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/terms') }">
               📋 {{ t('nav.terms') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/admin/rollover')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/admin/rollover')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/rollover') }">
               <CIcon icon="cilReload" class="me-2" /> {{ t('nav.rollover') }}
             </CDropdownItem>
             <CDropdownItem @click="router.push('/audit')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/audit') }">
