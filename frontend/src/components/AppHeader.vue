@@ -183,17 +183,17 @@ function go(path) {
             {{ t('nav.students') }}
           </CDropdownToggle>
           <CDropdownMenu style="min-width:220px; border-radius:12px; border:none; box-shadow:0 8px 24px rgba(0,0,0,.12);">
-            <CDropdownItem @click="router.push('/wanafunzi')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/wanafunzi')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/wanafunzi') && !route.path.startsWith('/wanafunzi/clearance') }">
               <CIcon icon="cilPeople" class="me-2" /> {{ t('nav.studentList') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/walezi')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/walezi')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/walezi') }">
               <CIcon icon="cilUser" class="me-2" /> {{ t('nav.guardians') }}
             </CDropdownItem>
             <CDropdownDivider />
-            <CDropdownItem @click="router.push('/wanafunzi/clearance')" style="cursor:pointer;">
+            <CDropdownItem @click="router.push('/wanafunzi/clearance')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/wanafunzi/clearance') }">
               <CIcon icon="cilCheckAlt" class="me-2" /> {{ t('nav.clearance') }}
             </CDropdownItem>
-            <CDropdownItem v-if="auth.isOwner" @click="router.push('/admin/bulk-import')" style="cursor:pointer;">
+            <CDropdownItem v-if="auth.isOwner" @click="router.push('/admin/bulk-import')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/bulk-import') }">
               <CIcon icon="cilCloudDownload" class="me-2" /> {{ t('nav.bulkImport') }}
             </CDropdownItem>
           </CDropdownMenu>

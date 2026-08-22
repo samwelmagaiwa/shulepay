@@ -1,7 +1,7 @@
 <template>
   <CContainer fluid class="p-2 p-md-3" style="max-width:100%; padding-left:12px; padding-right:12px;">
     <!-- Summary bar — sticky -->
-    <div style="position:sticky; top:0; z-index:20; background:var(--cui-body-bg, #fff); padding-bottom:6px;">
+    <div style="position:sticky; top:0; z-index:20; background:var(--cui-body-bg, #fff); padding-bottom:0;">
     <CRow class="g-2">
       <CCol xs="6" md="3">
         <CCard class="h-100" style="border:2px solid #6c757d; background:rgba(108,117,125,0.07); box-shadow:0 8px 24px rgba(108,117,125,0.35), 0 2px 6px rgba(0,0,0,0.12);">
@@ -42,7 +42,7 @@
     </div><!-- end sticky wrapper -->
 
     <!-- Filters + Table unified card -->
-    <CCard>
+    <CCard style="margin-top:-2px; border-top-left-radius:0; border-top-right-radius:0;">
       <!-- Filters bar — sticky below the summary cards -->
       <CCardBody class="p-2 border-bottom" style="position:sticky; top:var(--summary-height, 90px); z-index:15; background:var(--cui-card-bg, #fff); border-radius:0;">
         <div class="d-flex align-items-center gap-2 flex-nowrap overflow-auto">
