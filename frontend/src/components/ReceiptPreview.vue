@@ -1,13 +1,17 @@
 <template>
   <div class="receipt-preview border rounded p-3"
        style="font-family:'Courier New',monospace; background:#fff; color:#000; font-size:.8rem; min-height:280px;">
-    <div class="text-center mb-2">
-      <!-- School logo -->
-      <img v-if="branding.logoUrl" :src="branding.logoUrl"
-           style="max-height:48px; max-width:120px; object-fit:contain; display:block; margin:0 auto 4px;" />
-      <div class="fw-bold" style="font-size:1rem; letter-spacing:1px;">{{ branding.appName }}</div>
-      <div v-if="branding.appTagline" style="font-size:.7rem; color:#555; margin-bottom:2px;">{{ branding.appTagline }}</div>
-      <div class="fw-bold">{{ t('payments.receipt').toUpperCase() }}</div>
+    <div class="mb-2">
+      <!-- Logo left + school name right -->
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+        <img v-if="branding.logoUrl" :src="branding.logoUrl"
+             style="height:44px; width:44px; object-fit:contain; flex-shrink:0;" />
+        <div style="text-align:left;">
+          <div class="fw-bold" style="font-size:1rem; letter-spacing:1px;">{{ branding.appName }}</div>
+          <div v-if="branding.appTagline" style="font-size:.7rem; color:#555;">{{ branding.appTagline }}</div>
+        </div>
+      </div>
+      <div class="fw-bold text-center">{{ t('payments.receipt').toUpperCase() }}</div>
       <div style="border-top:2px solid #000; border-bottom:1px solid #000; margin:4px 0; padding:2px 0;">
         PAYMENT RECEIPT
       </div>
