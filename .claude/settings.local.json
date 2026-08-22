@@ -186,7 +186,8 @@
       "Bash(bash deploy.sh release \"feat: installments toolbar inline in table header\")",
       "Bash(bash deploy.sh release \"style: ada-madeni cards colored border + shadow\")",
       "Bash(bash deploy.sh release \"feat: ada-madeni sticky cards + unified filter+table card\")",
-      "Bash(bash deploy.sh release \"fix: ada-madeni missing closing div\")"
+      "Bash(bash deploy.sh release \"fix: ada-madeni missing closing div\")",
+      "Bash(bash deploy.sh release \"fix: installments filter bar above table\")"
     ]
   }
 }
