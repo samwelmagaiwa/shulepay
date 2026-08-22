@@ -18,7 +18,7 @@ import {
 } from '@coreui/icons'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useI18n } from 'vue-i18n'
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const { t } = useI18n()
 
