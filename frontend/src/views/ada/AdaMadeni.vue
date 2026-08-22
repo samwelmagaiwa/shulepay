@@ -2,7 +2,7 @@
   <CContainer fluid class="p-2 p-md-4">
     <!-- Summary bar -->
     <CRow class="g-2 g-md-3 mb-3">
-      <CCol xs="6" md="4">
+      <CCol xs="6" md="3">
         <CCard class="border-0 bg-body-secondary h-100">
           <CCardBody class="p-2 p-md-3">
             <div class="text-muted small">{{ t('invoices.allInvoices') }}</div>
@@ -10,7 +10,7 @@
           </CCardBody>
         </CCard>
       </CCol>
-      <CCol xs="6" md="4">
+      <CCol xs="6" md="3">
         <CCard class="border-0 h-100" style="background:rgba(220,53,69,0.08);">
           <CCardBody class="p-2 p-md-3">
             <div class="text-muted small">{{ t('invoices.totalDebt') }}</div>
@@ -18,11 +18,22 @@
           </CCardBody>
         </CCard>
       </CCol>
-      <CCol xs="12" md="4">
+      <CCol xs="6" md="3">
         <CCard class="border-0 h-100" style="background:rgba(25,135,84,0.08);">
           <CCardBody class="p-2 p-md-3">
             <div class="text-muted small">{{ t('invoices.collected') }}</div>
             <div class="fw-bold fs-5 text-success">{{ formatMoney(totalCollected) }}</div>
+          </CCardBody>
+        </CCard>
+      </CCol>
+      <CCol xs="6" md="3">
+        <CCard class="border-0 h-100" style="background:rgba(255,193,7,0.12);">
+          <CCardBody class="p-2 p-md-3">
+            <div class="text-muted small">{{ t('invoices.promisedToPay') }}</div>
+            <div class="fw-bold fs-5" style="color:#b45309;">
+              <span v-if="promisesLoading" class="spinner-border spinner-border-sm"></span>
+              <span v-else>{{ promisedCount.toLocaleString() }} {{ t('invoices.promises') }}</span>
+            </div>
           </CCardBody>
         </CCard>
       </CCol>
@@ -245,6 +256,8 @@ const drawerStudent    = ref(null)
 const showGenerateModal = ref(false)
 const showSmsModal     = ref(false)
 const classes          = ref([])
+const promisedCount    = ref(0)
+const promisesLoading  = ref(false)
 let   debounceTimer    = null
 
 const invoices   = computed(() => invoicesStore.invoices)
@@ -325,6 +338,19 @@ function onGenerated() {
   fetchData()
 }
 
+async function fetchPromisedCount() {
+  promisesLoading.value = true
+  try {
+    const params = { per_page: 1, status: 'pending' }
+    if (filters.value.school_id) params.school_id = filters.value.school_id
+    const { data } = await api.get('/payment-promises', { params })
+    promisedCount.value = data.total ?? data.meta?.total ?? 0
+  } catch {}
+  finally { promisesLoading.value = false }
+}
+
+watch(() => filters.value.school_id, () => fetchPromisedCount())
+
 onMounted(async () => {
   try {
     await schoolsStore.fetchSchools()
@@ -332,7 +358,7 @@ onMounted(async () => {
       const { data: cd } = await api.get('/school-classes')
       classes.value = cd.data || cd
     } catch {}
-    await fetchData()
+    await Promise.all([fetchData(), fetchPromisedCount()])
   } catch (e) {
     console.error('AdaMadeni mount error', e)
   }
