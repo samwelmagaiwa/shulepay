@@ -47,18 +47,39 @@
     <!-- Result -->
     <div v-if="result">
       <!-- Cleared -->
-      <CCard v-if="result.cleared" class="border-success mb-3">
-        <CCardBody class="p-4 text-center">
-          <div class="mb-2" style="font-size:3.5rem; color:#198754;">✓</div>
-          <h4 class="text-success fw-bold mb-1">{{ t('clearance.clearedTitle') }}</h4>
-          <p class="text-muted mb-4">{{ t('clearance.clearedMsg', { name: selectedStudent?.full_name }) }}</p>
-          <CButton color="success" :disabled="issuing" @click="issueCertificate" style="min-height:44px; min-width:200px;">
-            <CSpinner v-if="issuing" size="sm" class="me-1" />
-            <CIcon v-else icon="cilCloudDownload" class="me-1" />
-            {{ t('clearance.downloadCert') }}
-          </CButton>
-        </CCardBody>
-      </CCard>
+      <div v-if="result.cleared">
+        <!-- Status bar -->
+        <CCard class="border-success mb-3">
+          <CCardBody class="p-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+              <div style="font-size:2rem; color:#198754; line-height:1;">✓</div>
+              <div>
+                <div class="fw-bold text-success" style="font-size:1.1rem;">{{ t('clearance.clearedTitle') }}</div>
+                <div class="text-muted small">{{ t('clearance.clearedMsg', { name: selectedStudent?.full_name }) }}</div>
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <CButton color="outline-success" size="sm" :disabled="issuing" @click="loadPreview" style="min-height:38px;">
+                <CSpinner v-if="issuing && !pdfUrl" size="sm" class="me-1" />
+                <CIcon v-else icon="cilMagnifyingGlass" class="me-1" />
+                Preview
+              </CButton>
+              <CButton color="success" size="sm" :disabled="issuing" @click="downloadCert" style="min-height:38px;">
+                <CSpinner v-if="issuing && pdfUrl" size="sm" class="me-1" />
+                <CIcon v-else icon="cilCloudDownload" class="me-1" />
+                {{ t('clearance.downloadCert') }}
+              </CButton>
+            </div>
+          </CCardBody>
+        </CCard>
+
+        <!-- 3D Certificate Preview -->
+        <div v-if="pdfUrl" class="cert-stage mb-4">
+          <div class="cert-3d">
+            <iframe :src="pdfUrl" class="cert-frame" frameborder="0"></iframe>
+          </div>
+        </div>
+      </div>
 
       <!-- Not Cleared -->
       <CCard v-else class="border-danger mb-3">
@@ -102,6 +123,43 @@
   </CContainer>
 </template>
 
+<style scoped>
+.cert-stage {
+  perspective: 1200px;
+  display: flex;
+  justify-content: center;
+  padding: 32px 0 48px;
+  background: linear-gradient(160deg, #e8f5e9 0%, #f0f4fb 100%);
+  border-radius: 16px;
+}
+.cert-3d {
+  transform: rotateX(4deg) rotateY(-3deg) scale(1);
+  transform-origin: center center;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.22),
+    0 6px 18px rgba(0,0,0,0.14),
+    6px 12px 32px rgba(26,60,110,0.18);
+  border-radius: 4px;
+  background: #fff;
+}
+.cert-3d:hover {
+  transform: rotateX(0deg) rotateY(0deg) scale(1.02);
+  box-shadow:
+    0 28px 70px rgba(0,0,0,0.26),
+    0 8px 24px rgba(0,0,0,0.16);
+}
+.cert-frame {
+  width: 794px;
+  height: 1123px;
+  max-width: 90vw;
+  max-height: 75vh;
+  display: block;
+  border: none;
+  border-radius: 4px;
+}
+</style>
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -117,6 +175,7 @@ const academicYears = ref([])
 const result = ref(null)
 const checking = ref(false)
 const issuing = ref(false)
+const pdfUrl = ref(null)
 const checkError = ref('')
 let srDebouncer = null
 
@@ -146,6 +205,7 @@ function clearStudent() {
   selectedStudent.value = null
   searchQuery.value = ''
   result.value = null
+  pdfUrl.value = null
 }
 
 async function checkClearance() {
@@ -164,14 +224,35 @@ async function checkClearance() {
   }
 }
 
-async function issueCertificate() {
+async function fetchPdf() {
+  const params = { student_id: selectedStudent.value.id }
+  if (selectedYear.value) params.academic_year_id = selectedYear.value
+  const response = await api.post('/clearance/issue', params, { responseType: 'blob' })
+  return window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+}
+
+async function loadPreview() {
+  if (pdfUrl.value) { pdfUrl.value = null; return } // toggle off
   issuing.value = true
+  checkError.value = ''
   try {
-    const params = { student_id: selectedStudent.value.id }
-    if (selectedYear.value) params.academic_year_id = selectedYear.value
-    const response = await api.post('/clearance/issue', params, { responseType: 'blob' })
-    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
-    window.open(url, '_blank')
+    pdfUrl.value = await fetchPdf()
+  } catch (e) {
+    checkError.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakua hati'
+  } finally {
+    issuing.value = false
+  }
+}
+
+async function downloadCert() {
+  issuing.value = true
+  checkError.value = ''
+  try {
+    const url = pdfUrl.value || await fetchPdf()
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `clearance-${selectedStudent.value?.full_name?.replace(/\s+/g, '-')}.pdf`
+    a.click()
   } catch (e) {
     checkError.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakua hati'
   } finally {
