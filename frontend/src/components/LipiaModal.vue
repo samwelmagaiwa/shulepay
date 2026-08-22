@@ -139,7 +139,7 @@ function updatePreview() {
     student: props.invoice?.student?.full_name || '',
     admission: props.invoice?.student?.admission_number || '',
     invoice_number: props.invoice?.invoice_number || '',
-    amount: form.value.amount ? Number(form.value.amount) * 100 : 0,
+    amount_tzs: form.value.amount ? Number(form.value.amount) : 0,
     method: form.value.method,
     reference: form.value.reference_number,
     date: form.value.paid_at,

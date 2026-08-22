@@ -25,13 +25,13 @@
       <span>{{ data.date || '—' }}</span>
     </div>
     <div style="border-top:1px dashed #000; margin:6px 0;"></div>
-    <div class="small mb-1"><strong>{{ t('students.student') }}:</strong> {{ data.student || '—' }}</div>
+    <div class="small mb-1"><strong>{{ t('common.name') }}:</strong> {{ data.student || '—' }}</div>
     <div class="small mb-1"><strong>{{ t('students.admissionNo') }}:</strong> {{ data.admission || '—' }}</div>
     <div class="small mb-1"><strong>{{ t('invoices.invoiceNo') }}:</strong> {{ data.invoice_number || '—' }}</div>
     <div style="border-top:1px dashed #000; margin:6px 0;"></div>
     <div class="d-flex justify-content-between mb-1">
       <span class="small">{{ t('payments.amount') }}:</span>
-      <span class="fw-bold" style="font-size:1.1rem;">{{ formatTZS(data.amount) }}</span>
+      <span class="fw-bold" style="font-size:1.1rem;">{{ formatTZS(data.amount_tzs) }}</span>
     </div>
     <div class="small mb-1"><strong>{{ t('payments.method') }}:</strong> {{ methodLabel(data.method) }}</div>
     <div v-if="data.reference" class="small mb-1"><strong>{{ t('payments.reference') }}:</strong> {{ data.reference }}</div>
@@ -48,9 +48,9 @@ const { t } = useI18n()
 const branding = useBrandingStore()
 defineProps({ data: { type: Object, default: () => ({}) } })
 
-function formatTZS(cents) {
-  if (!cents) return 'TZS 0'
-  return 'TZS ' + Math.round(cents / 100).toLocaleString('sw-TZ', { maximumFractionDigits: 0 })
+function formatTZS(tzs) {
+  if (!tzs) return 'TZS 0'
+  return 'TZS ' + Math.round(tzs).toLocaleString('en-TZ', { maximumFractionDigits: 0 })
 }
 function methodLabel(m) {
   const map = { cash: 'common.cash', mpesa: 'common.mpesa', bank: 'common.bank', cheque: 'common.cheque' }
