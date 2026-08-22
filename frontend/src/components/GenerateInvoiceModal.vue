@@ -1,5 +1,5 @@
 <template>
-  <CModal :visible="true" @close="$emit('close')" size="lg" class="modal-fullscreen-sm-down">
+  <CModal :visible="visible" @close="$emit('close')" size="lg" class="modal-fullscreen-sm-down">
     <CModalHeader>
       <CModalTitle>{{ t('generateInvoice.title') }}</CModalTitle>
     </CModalHeader>
@@ -110,6 +110,7 @@ import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
 
 const { t } = useI18n()
+defineProps({ visible: { type: Boolean, default: false } })
 const emit = defineEmits(['close', 'generated'])
 
 const steps = computed(() => [

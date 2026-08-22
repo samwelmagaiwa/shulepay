@@ -204,14 +204,14 @@
 
     <!-- Generate Invoice Modal -->
     <GenerateInvoiceModal
-      v-if="showGenerateModal"
+      :visible="showGenerateModal"
       @close="showGenerateModal = false"
       @generated="onGenerated"
     />
 
     <!-- SMS Blast Modal -->
     <SmsBlastModal
-      v-if="showSmsModal"
+      :visible="showSmsModal"
       :student-ids="debtorIds"
       @close="showSmsModal = false"
     />

@@ -1,5 +1,5 @@
 <template>
-  <CModal :visible="true" @close="$emit('close')" size="lg" class="modal-fullscreen-sm-down">
+  <CModal :visible="visible" @close="$emit('close')" size="lg" class="modal-fullscreen-sm-down">
     <CModalHeader>
       <CModalTitle>{{ t('sms.title') }}</CModalTitle>
     </CModalHeader>
@@ -95,6 +95,7 @@ import { useSmsStore } from '@/stores/sms'
 const { t } = useI18n()
 
 const props = defineProps({
+  visible:    { type: Boolean, default: false },
   studentIds: { type: Array, default: () => [] },
   invoiceIds: { type: Array, default: () => [] },
 })
