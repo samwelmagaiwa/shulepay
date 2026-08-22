@@ -6,7 +6,7 @@
       <div style="position:absolute; top:6px; right:8px; z-index:30; display:flex; align-items:center; gap:6px;">
         <CFormInput v-model="search" :placeholder="t('common.search') + '...'" @input="debouncedLoad" size="sm" style="min-width:160px; max-width:240px;" />
         <CButton color="secondary" variant="outline" size="sm" @click="search = ''; page = 1; loadData()">{{ t('common.reset') }}</CButton>
-        <CButton color="primary" size="sm" @click="openAdd"><CIcon icon="cilPlus" class="me-1" />{{ t('guardians.add') }}</CButton>
+        <CButton color="primary" size="sm" @click="openAdd" style="white-space:nowrap;"><CIcon icon="cilPlus" class="me-1" />{{ t('guardians.add') }}</CButton>
       </div>
       <CCardBody class="p-0">
         <div v-if="store.loading" class="text-center py-5"><CSpinner color="primary" /></div>
