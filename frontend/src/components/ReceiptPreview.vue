@@ -2,7 +2,11 @@
   <div class="receipt-preview border rounded p-3"
        style="font-family:'Courier New',monospace; background:#fff; color:#000; font-size:.8rem; min-height:280px;">
     <div class="text-center mb-2">
-      <div class="fw-bold" style="font-size:1rem;">SHULE PAY</div>
+      <!-- School logo -->
+      <img v-if="branding.logoUrl" :src="branding.logoUrl"
+           style="max-height:48px; max-width:120px; object-fit:contain; display:block; margin:0 auto 4px;" />
+      <div class="fw-bold" style="font-size:1rem; letter-spacing:1px;">{{ branding.appName }}</div>
+      <div v-if="branding.appTagline" style="font-size:.7rem; color:#555; margin-bottom:2px;">{{ branding.appTagline }}</div>
       <div class="fw-bold">{{ t('payments.receipt').toUpperCase() }}</div>
       <div style="border-top:2px solid #000; border-bottom:1px solid #000; margin:4px 0; padding:2px 0;">
         PAYMENT RECEIPT
@@ -10,7 +14,7 @@
     </div>
     <div class="d-flex justify-content-between small mb-1">
       <span>{{ t('payments.receiptNo') }}:</span>
-      <span class="fw-bold">{{ data.receipt_number || '—' }}</span>
+      <span class="fw-bold">{{ data.receipt_number || 'RCP-PREVIEW' }}</span>
     </div>
     <div class="d-flex justify-content-between small mb-1">
       <span>{{ t('common.date') }}:</span>
@@ -34,8 +38,10 @@
 
 <script setup>
 import { useI18n } from 'vue-i18n'
+import { useBrandingStore } from '@/stores/branding'
 
 const { t } = useI18n()
+const branding = useBrandingStore()
 defineProps({ data: { type: Object, default: () => ({}) } })
 
 function formatTZS(cents) {
