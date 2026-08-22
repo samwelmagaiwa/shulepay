@@ -1,5 +1,5 @@
 <template>
-  <CContainer fluid class="p-2 p-md-4">
+  <CContainer fluid class="p-2 p-md-3" style="max-width:100%; padding-left:12px; padding-right:12px;">
     <!-- Summary bar — sticky -->
     <div style="position:sticky; top:0; z-index:20; background:var(--cui-body-bg, #fff); padding-bottom:10px;">
     <CRow class="g-2 g-md-3">
@@ -43,52 +43,38 @@
 
     <!-- Filters + Table unified card -->
     <CCard>
-      <!-- Filters bar inside the card -->
-      <CCardBody class="p-2 p-md-3 border-bottom">
-        <CRow class="g-2 align-items-center">
-          <CCol xs="12" sm="6" md="3">
-            <CFormSelect v-model="filters.school_id" @update:modelValue="fetchData(1)" style="min-height:40px;">
-              <option value="">{{ t('common.allSchools') }}</option>
-              <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol xs="6" sm="4" md="2">
-            <CFormSelect v-model="filters.class_id" @update:modelValue="fetchData(1)" style="min-height:40px;">
-              <option value="">{{ t('invoices.allClasses') }}</option>
-              <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.name }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol xs="6" sm="4" md="2">
-            <CFormSelect v-model="filters.term_number" @update:modelValue="fetchData(1)" style="min-height:40px;">
-              <option value="">{{ t('invoices.allTerms') }}</option>
-              <option value="1">{{ t('invoices.term1') }}</option>
-              <option value="2">{{ t('invoices.term2') }}</option>
-              <option value="3">{{ t('invoices.term3') }}</option>
-              <option value="4">{{ t('invoices.term4') }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol xs="6" sm="4" md="2">
-            <CFormSelect v-model="filters.status" @update:modelValue="fetchData(1)" style="min-height:40px;">
-              <option value="">{{ t('invoices.allStatuses') }}</option>
-              <option value="unpaid">{{ t('invoices.statusFull.unpaid') }}</option>
-              <option value="partial">{{ t('invoices.statusFull.partial') }}</option>
-              <option value="paid">{{ t('invoices.statusFull.paid') }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol xs="12" md>
-            <CFormInput v-model="filters.search" :placeholder="t('invoices.searchStudent')" @input="debouncedFetch" style="min-height:40px;" />
-          </CCol>
-          <CCol xs="6" sm="auto">
-            <CButton color="warning" @click="showSmsModal = true" class="w-100" style="min-height:40px;">
-              <CIcon icon="cilSend" class="me-1" /> {{ t('invoices.sendSms') }}
-            </CButton>
-          </CCol>
-          <CCol xs="6" sm="auto">
-            <CButton color="success" @click="showGenerateModal = true" class="w-100" style="min-height:40px;">
-              <CIcon icon="cilPlus" class="me-1" /> {{ t('invoices.generate') }}
-            </CButton>
-          </CCol>
-        </CRow>
+      <!-- Filters bar inside the card — single row -->
+      <CCardBody class="p-2 border-bottom">
+        <div class="d-flex align-items-center gap-2 flex-nowrap overflow-auto">
+          <CFormSelect v-model="filters.school_id" @update:modelValue="fetchData(1)" size="sm" style="min-width:160px; flex:2;">
+            <option value="">{{ t('common.allSchools') }}</option>
+            <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
+          </CFormSelect>
+          <CFormSelect v-model="filters.class_id" @update:modelValue="fetchData(1)" size="sm" style="min-width:110px; flex:1;">
+            <option value="">{{ t('invoices.allClasses') }}</option>
+            <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.name }}</option>
+          </CFormSelect>
+          <CFormSelect v-model="filters.term_number" @update:modelValue="fetchData(1)" size="sm" style="min-width:100px; flex:1;">
+            <option value="">{{ t('invoices.allTerms') }}</option>
+            <option value="1">{{ t('invoices.term1') }}</option>
+            <option value="2">{{ t('invoices.term2') }}</option>
+            <option value="3">{{ t('invoices.term3') }}</option>
+            <option value="4">{{ t('invoices.term4') }}</option>
+          </CFormSelect>
+          <CFormSelect v-model="filters.status" @update:modelValue="fetchData(1)" size="sm" style="min-width:110px; flex:1;">
+            <option value="">{{ t('invoices.allStatuses') }}</option>
+            <option value="unpaid">{{ t('invoices.statusFull.unpaid') }}</option>
+            <option value="partial">{{ t('invoices.statusFull.partial') }}</option>
+            <option value="paid">{{ t('invoices.statusFull.paid') }}</option>
+          </CFormSelect>
+          <CFormInput v-model="filters.search" :placeholder="t('invoices.searchStudent')" @input="debouncedFetch" size="sm" style="min-width:140px; flex:2;" />
+          <CButton color="warning" size="sm" @click="showSmsModal = true" style="white-space:nowrap; flex-shrink:0;">
+            <CIcon icon="cilSend" class="me-1" /> {{ t('invoices.sendSms') }}
+          </CButton>
+          <CButton color="success" size="sm" @click="showGenerateModal = true" style="white-space:nowrap; flex-shrink:0;">
+            <CIcon icon="cilPlus" class="me-1" /> {{ t('invoices.generate') }}
+          </CButton>
+        </div>
       </CCardBody>
 
       <!-- Loading -->
