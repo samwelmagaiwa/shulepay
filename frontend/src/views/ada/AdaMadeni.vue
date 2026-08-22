@@ -131,6 +131,7 @@
           </div>
         </div>
       </div>
+      </div><!-- end mobile v-else -->
 
       <!-- DESKTOP: full table (inside the same card) -->
       <div class="d-none d-md-block">
