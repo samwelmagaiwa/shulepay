@@ -1,16 +1,17 @@
 <template>
   <CContainer fluid>
     <!-- Table -->
-    <CCard>
+    <CCard style="position:relative;">
+      <!-- Toolbar overlay: top-right above Actions column -->
+      <div style="position:absolute; top:6px; right:8px; z-index:30; display:flex; align-items:center; gap:6px;">
+        <CFormInput v-model="search" :placeholder="t('common.search') + '...'" @input="debouncedLoad" size="sm" style="min-width:160px; max-width:240px;" />
+        <CButton color="secondary" variant="outline" size="sm" @click="search = ''; page = 1; loadData()">{{ t('common.reset') }}</CButton>
+        <CButton color="primary" size="sm" @click="openAdd"><CIcon icon="cilPlus" class="me-1" />{{ t('guardians.add') }}</CButton>
+      </div>
       <CCardBody class="p-0">
         <div v-if="store.loading" class="text-center py-5"><CSpinner color="primary" /></div>
         <div v-else-if="!store.guardians.length" class="text-muted py-5 px-3">
-          <div class="d-flex align-items-center gap-2 mb-3">
-            <CFormInput v-model="search" :placeholder="t('common.search') + '...'" @input="debouncedLoad" style="max-width:260px;" />
-            <CButton color="secondary" variant="outline" size="sm" @click="search = ''; page = 1; loadData()">{{ t('common.reset') }}</CButton>
-            <CButton color="primary" size="sm" @click="openAdd"><CIcon icon="cilPlus" class="me-1" />{{ t('guardians.add') }}</CButton>
-          </div>
-          <div class="text-center">{{ t('guardians.noGuardians') }}</div>
+          <div class="text-center mt-4">{{ t('guardians.noGuardians') }}</div>
         </div>
         <CTable v-else hover class="mb-0" style="table-layout:auto; width:100%;">
           <CTableHead class="table-light">
@@ -19,15 +20,7 @@
               <CTableHeaderCell style="white-space:nowrap;">{{ t('guardians.phone') }}</CTableHeaderCell>
               <CTableHeaderCell style="white-space:nowrap;">{{ t('guardians.relation') }}</CTableHeaderCell>
               <CTableHeaderCell style="white-space:nowrap;">{{ t('guardians.children') }}</CTableHeaderCell>
-              <CTableHeaderCell class="text-center" style="width:56px; white-space:nowrap;">{{ t('common.actions') }}</CTableHeaderCell>
-              <!-- Toolbar embedded in header row after Actions -->
-              <CTableHeaderCell style="width:100%; padding:6px 12px;">
-                <div class="d-flex align-items-center gap-2">
-                  <CFormInput v-model="search" :placeholder="t('common.search') + '...'" @input="debouncedLoad" size="sm" style="min-width:160px; max-width:260px;" />
-                  <CButton color="secondary" variant="outline" size="sm" @click="search = ''; page = 1; loadData()">{{ t('common.reset') }}</CButton>
-                  <CButton color="primary" size="sm" @click="openAdd"><CIcon icon="cilPlus" class="me-1" />{{ t('guardians.add') }}</CButton>
-                </div>
-              </CTableHeaderCell>
+              <CTableHeaderCell class="text-center" style="width:56px; white-space:nowrap; padding-top:38px;">{{ t('common.actions') }}</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
           <CTableBody>
@@ -67,7 +60,6 @@
                   <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="remove(g); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                 </div>
               </CTableDataCell>
-              <CTableDataCell></CTableDataCell>
             </CTableRow>
           </CTableBody>
         </CTable>
