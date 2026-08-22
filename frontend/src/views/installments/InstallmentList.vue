@@ -55,17 +55,19 @@
       </div>
 
       <!-- Desktop table -->
-      <CCard class="d-none d-md-block" style="position:relative; overflow:visible;">
-        <!-- Toolbar floating top-right, overlapping Actions column -->
-        <div style="position:absolute; top:6px; right:0; z-index:10; display:flex; align-items:center; gap:6px; padding:0 8px;">
-          <CFormSelect v-model="filters.status" @update:modelValue="page = 1; load()" size="sm" style="width:130px;">
-            <option value="">{{ t('common.allStatuses') }}</option>
-            <option value="active">{{ t('installments.ongoing') }}</option>
-            <option value="completed">{{ t('installments.completed') }}</option>
-          </CFormSelect>
-          <CFormInput v-model="filters.search" :placeholder="t('installments.searchPlaceholder')" @input="debouncedLoad" size="sm" style="width:180px;" />
-          <CButton color="primary" size="sm" @click="showBulkModal = true" style="white-space:nowrap;">📋 {{ t('installments.bulkByClass') }}</CButton>
-        </div>
+      <CCard class="d-none d-md-block">
+        <!-- Filter bar -->
+        <CCardBody class="p-2 border-bottom">
+          <div class="d-flex align-items-center gap-2 flex-nowrap overflow-auto">
+            <CFormSelect v-model="filters.status" @update:modelValue="page = 1; load()" size="sm" style="min-width:130px; flex:1;">
+              <option value="">{{ t('common.allStatuses') }}</option>
+              <option value="active">{{ t('installments.ongoing') }}</option>
+              <option value="completed">{{ t('installments.completed') }}</option>
+            </CFormSelect>
+            <CFormInput v-model="filters.search" :placeholder="t('installments.searchPlaceholder')" @input="debouncedLoad" size="sm" style="min-width:180px; flex:2;" />
+            <CButton color="primary" size="sm" @click="showBulkModal = true" style="white-space:nowrap; flex-shrink:0;">📋 {{ t('installments.bulkByClass') }}</CButton>
+          </div>
+        </CCardBody>
         <CCardBody class="p-0">
           <CTable hover class="mb-0" style="width:100%;">
             <CTableHead class="table-light">
