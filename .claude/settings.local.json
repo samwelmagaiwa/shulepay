@@ -179,7 +179,8 @@
       "Bash(bash deploy.sh release \"feat: student detail — cards on top, 3-col promise form, Weka Ahadi quick action\")",
       "Bash(bash deploy.sh release \"feat: i18n promises tab, InfoRow style, Weka Ahadi in student list\")",
       "Bash(bash deploy.sh release \"feat: dashboard absent-students card with per-class dropdown\")",
-      "Bash(bash deploy.sh release \"fix: add missing computed import in SocialStatsWidgets\")"
+      "Bash(bash deploy.sh release \"fix: add missing computed import in SocialStatsWidgets\")",
+      "Bash(bash deploy.sh release \"feat: guardians page — remove title row, merge toolbar into one row\")"
     ]
   }
 }
