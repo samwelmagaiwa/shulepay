@@ -211,12 +211,50 @@
 
         {{-- Header --}}
         <div class="header">
-            <div class="school-name">{{ $school?->name ?? 'School Name' }}</div>
-            <div class="school-sub">
-                @if($school?->address){{ $school->address }}@endif
-                @if($school?->phone) &bull; {{ $school->phone }}@endif
-                @if($school?->email) &bull; {{ $school->email }}@endif
-            </div>
+            {{-- Logo + school info row --}}
+            <table style="width:100%; border:none; margin-bottom:6px;">
+                <tr>
+                    {{-- Logo --}}
+                    <td style="width:22mm; border:none; vertical-align:middle; text-align:center; padding:0 8px 0 0;">
+                        @if(!empty($logoBase64))
+                            <img src="{{ $logoBase64 }}" style="max-width:20mm; max-height:20mm; object-fit:contain;" />
+                        @else
+                            <div style="width:20mm; height:20mm; border:1px dashed #ccc; display:inline-block; line-height:20mm; text-align:center; font-size:7pt; color:#bbb;">LOGO</div>
+                        @endif
+                    </td>
+                    {{-- School details centre --}}
+                    <td style="border:none; vertical-align:middle; text-align:center; padding:0;">
+                        <div class="school-name">{{ $school?->name ?? 'School Name' }}</div>
+                        @php
+                            $tagline = $school?->settings['branding']['app_tagline'] ?? null;
+                        @endphp
+                        @if($tagline)
+                            <div style="font-size:9pt; color:#7a6830; font-style:italic; letter-spacing:1px;">{{ $tagline }}</div>
+                        @endif
+                        @if($school?->motto)
+                            <div style="font-size:8.5pt; color:#555; font-style:italic; margin-top:1px;">&ldquo;{{ $school->motto }}&rdquo;</div>
+                        @endif
+                        <div class="school-sub" style="margin-top:3px;">
+                            @if($school?->address){{ $school->address }}@endif
+                            @if($school?->region || $school?->district)
+                                @if($school?->address), @endif
+                                {{ implode(', ', array_filter([$school?->district, $school?->region])) }}
+                            @endif
+                            @if($school?->phone) &bull; {{ $school->phone }}@endif
+                            @if($school?->email) &bull; {{ $school->email }}@endif
+                            @if($school?->website) &bull; {{ $school->website }}@endif
+                        </div>
+                        @if($school?->registration_number)
+                            <div style="font-size:7.5pt; color:#888; margin-top:2px;">Reg. No: {{ $school->registration_number }}</div>
+                        @endif
+                        @if($school?->established_year)
+                            <div style="font-size:7.5pt; color:#888;">Est. {{ $school->established_year }}</div>
+                        @endif
+                    </td>
+                    {{-- Mirror logo space for balance --}}
+                    <td style="width:22mm; border:none;"></td>
+                </tr>
+            </table>
             <div class="doc-title">Clearance Certificate</div>
             <div class="doc-subtitle">Cheti cha Usafi wa Madeni &mdash; Fee Clearance</div>
         </div>
