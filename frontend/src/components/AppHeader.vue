@@ -90,50 +90,70 @@ function go(path) {
           {{ t('nav.dashboard') }}
         </RouterLink>
 
-        <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.students') }}</div>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/wanafunzi" @click="mobileNavOpen=false">{{ t('nav.studentList') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/walezi" @click="mobileNavOpen=false">{{ t('nav.guardians') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/wanafunzi/clearance" @click="mobileNavOpen=false">{{ t('nav.clearance') }}</RouterLink>
-        <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/bulk-import" @click="mobileNavOpen=false">{{ t('nav.bulkImport') }}</RouterLink>
+        <!-- Students: accountant / owner / headmaster / head_teacher / academic_teacher -->
+        <template v-if="auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher || auth.isAcademicTeacher">
+          <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.students') }}</div>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/wanafunzi" @click="mobileNavOpen=false">{{ t('nav.studentList') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/walezi" @click="mobileNavOpen=false">{{ t('nav.guardians') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/wanafunzi/clearance" @click="mobileNavOpen=false">{{ t('nav.clearance') }}</RouterLink>
+          <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/bulk-import" @click="mobileNavOpen=false">{{ t('nav.bulkImport') }}</RouterLink>
+        </template>
 
-        <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.finance') }}</div>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/ada-madeni" @click="mobileNavOpen=false">{{ t('nav.invoices') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/installments" @click="mobileNavOpen=false">{{ t('nav.installments') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/malipo/refunds" @click="mobileNavOpen=false">{{ t('nav.refunds') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/ada/muundo" @click="mobileNavOpen=false">{{ t('nav.feeStructures') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/malipo/rekodi" @click="mobileNavOpen=false">{{ t('nav.paymentRecord') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/admin/terms" @click="mobileNavOpen=false">📅 {{ t('nav.terms') }}</RouterLink>
+        <!-- Finance: accountant / owner -->
+        <template v-if="auth.isAccountant || auth.isOwner">
+          <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.finance') }}</div>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/ada-madeni" @click="mobileNavOpen=false">{{ t('nav.invoices') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/installments" @click="mobileNavOpen=false">{{ t('nav.installments') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/malipo/refunds" @click="mobileNavOpen=false">{{ t('nav.refunds') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/ada/muundo" @click="mobileNavOpen=false">{{ t('nav.feeStructures') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/malipo/rekodi" @click="mobileNavOpen=false">{{ t('nav.paymentRecord') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/admin/terms" @click="mobileNavOpen=false">📅 {{ t('nav.terms') }}</RouterLink>
+        </template>
 
-        <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.expenses') }}</div>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/matumizi" @click="mobileNavOpen=false">{{ t('nav.expenses') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/matumizi/petty-cash" @click="mobileNavOpen=false">{{ t('nav.pettyCash') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/payroll" @click="mobileNavOpen=false">{{ t('nav.payroll') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/payroll/employees" @click="mobileNavOpen=false">{{ t('nav.employees') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/wasambazaji" @click="mobileNavOpen=false">{{ t('nav.suppliers') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/mali" @click="mobileNavOpen=false">{{ t('nav.assets') }}</RouterLink>
+        <!-- Expenses: accountant / owner -->
+        <template v-if="auth.isAccountant || auth.isOwner">
+          <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.expenses') }}</div>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/matumizi" @click="mobileNavOpen=false">{{ t('nav.expenses') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/matumizi/petty-cash" @click="mobileNavOpen=false">{{ t('nav.pettyCash') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/payroll" @click="mobileNavOpen=false">{{ t('nav.payroll') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/payroll/employees" @click="mobileNavOpen=false">{{ t('nav.employees') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/wasambazaji" @click="mobileNavOpen=false">{{ t('nav.suppliers') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/mali" @click="mobileNavOpen=false">{{ t('nav.assets') }}</RouterLink>
+        </template>
 
+        <!-- School Life: everyone except parent -->
         <template v-if="!auth.isParent">
           <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.schoolLife') }}</div>
           <RouterLink class="btn btn-ghost-secondary text-start" to="/mahudhurio" @click="mobileNavOpen=false">📋 {{ t('nav.attendance') }}</RouterLink>
           <RouterLink class="btn btn-ghost-secondary text-start" to="/usafiri" @click="mobileNavOpen=false">🚌 {{ t('nav.transport') }}</RouterLink>
           <RouterLink class="btn btn-ghost-secondary text-start" to="/inventory" @click="mobileNavOpen=false">📦 {{ t('nav.inventory') }}</RouterLink>
         </template>
+
+        <!-- Notifications: all roles -->
         <RouterLink class="btn btn-ghost-secondary text-start position-relative" to="/arifa" @click="mobileNavOpen=false">
           🔔 {{ t('nav.notifications') }}
           <CBadge v-if="notifications.unreadCount > 0" color="danger" class="position-absolute top-0 end-0">{{ notifications.unreadCount }}</CBadge>
         </RouterLink>
 
-        <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.other') }}</div>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/ripoti" @click="mobileNavOpen=false">{{ t('nav.reports') }}</RouterLink>
-        <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/schools" @click="mobileNavOpen=false">{{ t('nav.schools') }}</RouterLink>
-        <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/wafanyakazi" @click="mobileNavOpen=false">👥 {{ t('nav.staff') }}</RouterLink>
-        <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/audit" @click="mobileNavOpen=false">{{ t('nav.audit') }}</RouterLink>
-        <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/branding" @click="mobileNavOpen=false">🎨 {{ t('nav.branding') }}</RouterLink>
-        <RouterLink v-if="auth.isSuperAdmin" class="btn btn-ghost-secondary text-start" to="/superadmin/users" @click="mobileNavOpen=false">👤 {{ t('nav.userManagement') }}</RouterLink>
-        <RouterLink v-if="auth.isSuperAdmin" class="btn btn-ghost-secondary text-start" to="/superadmin/roles" @click="mobileNavOpen=false">🔐 {{ t('nav.rolesPermissions') }}</RouterLink>
-        <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/bajeti" @click="mobileNavOpen=false">{{ t('nav.budgets') }}</RouterLink>
-        <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/academic-years" @click="mobileNavOpen=false">📅 {{ t('nav.academicYears') }}</RouterLink>
-        <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/rollover" @click="mobileNavOpen=false">{{ t('nav.rollover') }}</RouterLink>
+        <!-- Reports: accountant / owner / headmaster / head_teacher / academic_teacher -->
+        <template v-if="auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher || auth.isAcademicTeacher">
+          <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.other') }}</div>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/ripoti" @click="mobileNavOpen=false">{{ t('nav.reports') }}</RouterLink>
+        </template>
+
+        <!-- Admin: owner / superadmin -->
+        <template v-if="auth.isOwner || auth.isSuperAdmin">
+          <div v-if="!(auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher)" class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.other') }}</div>
+          <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/schools" @click="mobileNavOpen=false">{{ t('nav.schools') }}</RouterLink>
+          <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/wafanyakazi" @click="mobileNavOpen=false">👥 {{ t('nav.staff') }}</RouterLink>
+          <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/audit" @click="mobileNavOpen=false">{{ t('nav.audit') }}</RouterLink>
+          <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/branding" @click="mobileNavOpen=false">🎨 {{ t('nav.branding') }}</RouterLink>
+          <RouterLink v-if="auth.isSuperAdmin" class="btn btn-ghost-secondary text-start" to="/superadmin/users" @click="mobileNavOpen=false">👤 {{ t('nav.userManagement') }}</RouterLink>
+          <RouterLink v-if="auth.isSuperAdmin" class="btn btn-ghost-secondary text-start" to="/superadmin/roles" @click="mobileNavOpen=false">🔐 {{ t('nav.rolesPermissions') }}</RouterLink>
+          <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/bajeti" @click="mobileNavOpen=false">{{ t('nav.budgets') }}</RouterLink>
+          <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/academic-years" @click="mobileNavOpen=false">📅 {{ t('nav.academicYears') }}</RouterLink>
+          <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/rollover" @click="mobileNavOpen=false">{{ t('nav.rollover') }}</RouterLink>
+        </template>
       </nav>
     </COffcanvasBody>
   </COffcanvas>
@@ -180,7 +200,7 @@ function go(path) {
         </CNavItem>
 
         <!-- Wanafunzi dropdown -->
-        <CDropdown v-if="auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher" variant="nav-item" :caret="false">
+        <CDropdown v-if="auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher || auth.isAcademicTeacher" variant="nav-item" :caret="false">
           <CDropdownToggle class="fw-semibold px-2" :class="{ 'nav-active': isStudentsActive }" style="font-size:.9rem;">
             {{ t('nav.students') }}
           </CDropdownToggle>
@@ -284,7 +304,7 @@ function go(path) {
         </CNavItem>
 
         <!-- Ripoti -->
-        <CNavItem v-if="auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher">
+        <CNavItem v-if="auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher || auth.isAcademicTeacher">
           <RouterLink to="/ripoti" class="nav-link fw-semibold px-2" style="font-size:.9rem;">
             {{ t('nav.reports') }}
           </RouterLink>
