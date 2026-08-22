@@ -249,6 +249,21 @@
         </CButton>
       </CModalFooter>
     </CModal>
+
+    <!-- Delete Confirm Modal -->
+    <CModal :visible="showDeleteModal" @close="showDeleteModal = false" size="sm" class="modal-fullscreen-sm-down">
+      <CModalHeader><CModalTitle>🗑️ {{ t('common.delete') }}</CModalTitle></CModalHeader>
+      <CModalBody>
+        <p class="mb-1 text-muted small">{{ t('common.confirmDelete') || 'Are you sure you want to delete?' }}</p>
+        <p class="fw-bold mb-0">{{ deleteTarget?.school_class?.name }} — {{ deleteTarget?.term?.name }}</p>
+      </CModalBody>
+      <CModalFooter class="gap-2">
+        <CButton color="secondary" @click="showDeleteModal = false" style="min-height:44px;">{{ t('common.cancel') }}</CButton>
+        <CButton color="danger" :disabled="deleting" @click="doDelete" style="min-height:44px;">
+          <CSpinner v-if="deleting" size="sm" class="me-1" />{{ t('common.delete') }}
+        </CButton>
+      </CModalFooter>
+    </CModal>
   </CContainer>
 </template>
 
@@ -266,9 +281,12 @@ const schoolsStore = useSchoolsStore()
 const schoolStore  = useSchoolStore()
 
 const filters      = ref({ school_id: schoolStore.activeSchoolId || '', academic_year_id: '', term_id: '', school_class_id: '' })
-const showModal    = ref(false)
-const editing      = ref(null)
-const activeRow    = ref(null)
+const showModal       = ref(false)
+const editing         = ref(null)
+const activeRow       = ref(null)
+const showDeleteModal = ref(false)
+const deleteTarget    = ref(null)
+const deleting        = ref(false)
 
 function closeActions() { activeRow.value = null }
 onMounted(() => document.addEventListener('click', closeActions))
@@ -411,9 +429,23 @@ async function saveStructure() {
   }
 }
 
-async function confirmDelete(s) {
-  if (!confirm(`${t('common.delete')} "${s.school_class?.name} — ${s.term?.name}"?`)) return
-  try { await store.deleteStructure(s.id) } catch {}
+function confirmDelete(s) {
+  deleteTarget.value = s
+  showDeleteModal.value = true
+}
+
+async function doDelete() {
+  if (!deleteTarget.value) return
+  deleting.value = true
+  try {
+    await store.deleteStructure(deleteTarget.value.id)
+    showDeleteModal.value = false
+    await loadData()
+  } catch (e) {
+    alert(e?.response?.data?.message || t('common.error'))
+  } finally {
+    deleting.value = false
+  }
 }
 
 async function loadData() {

@@ -182,6 +182,21 @@
         </CButton>
       </CModalFooter>
     </CModal>
+
+    <!-- Delete Confirm Modal -->
+    <CModal :visible="showDeleteModal" @close="showDeleteModal = false" size="sm" class="modal-fullscreen-sm-down">
+      <CModalHeader><CModalTitle>🗑️ {{ t('common.delete') }}</CModalTitle></CModalHeader>
+      <CModalBody>
+        <p class="mb-1 text-muted small">{{ t('common.confirmDelete') || 'Are you sure you want to delete?' }}</p>
+        <p class="fw-bold mb-0">{{ deleteTarget?.full_name }}</p>
+      </CModalBody>
+      <CModalFooter class="gap-2">
+        <CButton color="secondary" @click="showDeleteModal = false" style="min-height:44px;">{{ t('common.cancel') }}</CButton>
+        <CButton color="danger" :disabled="deleting" @click="doDelete" style="min-height:44px;">
+          <CSpinner v-if="deleting" size="sm" class="me-1" />{{ t('common.delete') }}
+        </CButton>
+      </CModalFooter>
+    </CModal>
   </CContainer>
 </template>
 
@@ -199,9 +214,12 @@ const studentsStore = useStudentsStore()
 const search         = ref('')
 const activeRow      = ref(null)
 const activeChildRow = ref(null)
-const showViewModal = ref(false)
-const viewTarget  = ref(null)
-const showModal   = ref(false)
+const showViewModal   = ref(false)
+const viewTarget      = ref(null)
+const showDeleteModal = ref(false)
+const deleteTarget    = ref(null)
+const deleting        = ref(false)
+const showModal       = ref(false)
 const editing     = ref(null)
 const saving      = ref(false)
 const modalError  = ref('')
@@ -278,9 +296,22 @@ async function save() {
   }
 }
 
-async function remove(g) {
-  if (!confirm(`${t('common.delete')} "${g.user?.name}"?`)) return
-  try { await store.deleteGuardian(g.id) } catch {}
+function remove(g) {
+  deleteTarget.value = { id: g.id, full_name: g.full_name || g.user?.name }
+  showDeleteModal.value = true
+}
+
+async function doDelete() {
+  deleting.value = true
+  try {
+    await store.deleteGuardian(deleteTarget.value.id)
+    showDeleteModal.value = false
+    await loadData()
+  } catch (e) {
+    alert(e?.response?.data?.message || t('common.error'))
+  } finally {
+    deleting.value = false
+  }
 }
 
 function onDocClick() { activeRow.value = null; activeChildRow.value = null }
