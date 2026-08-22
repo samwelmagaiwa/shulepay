@@ -183,7 +183,8 @@
       "Bash(bash deploy.sh release \"feat: guardians page — remove title row, merge toolbar into one row\")",
       "Bash(bash deploy.sh release \"feat: guardians compact table + children dropdown\")",
       "Bash(bash deploy.sh release \"feat: ada-madeni promised to pay card\")",
-      "Bash(bash deploy.sh release \"feat: installments toolbar inline in table header\")"
+      "Bash(bash deploy.sh release \"feat: installments toolbar inline in table header\")",
+      "Bash(bash deploy.sh release \"style: ada-madeni cards colored border + shadow\")"
     ]
   }
 }
