@@ -346,16 +346,19 @@ watch(() => props.student?.id, (id) => {
 
 <style scoped>
 .drawer-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1050;
   display: flex; justify-content: flex-end;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(3px);
 }
 .drawer-panel {
-  background: white; width: 440px; max-width: 100%; height: 100%;
+  background: #ffffff !important;
+  color: #1a1a2e !important;
+  width: 440px; max-width: 100%; height: 100%;
   padding: 1.25rem; overflow-y: auto;
-  box-shadow: -4px 0 24px rgba(0,0,0,0.18);
+  box-shadow: -6px 0 32px rgba(0,0,0,0.22);
 }
-@media (prefers-color-scheme: dark) {
-  .drawer-panel { background: #1a1d21; color: #f8f9fa; }
+/* Force all text inside drawer to be dark regardless of device theme */
+.drawer-panel :deep(*) {
+  color: inherit;
 }
 </style>
