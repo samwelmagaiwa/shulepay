@@ -216,7 +216,7 @@ function go(path) {
             <CDropdownItem @click="router.push('/malipo/refunds')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/malipo/refunds') }">
               <CIcon icon="cilTransfer" class="me-2" /> {{ t('nav.refunds') }}
             </CDropdownItem>
-            <CDropdownItem v-if="auth.isAccountant" @click="router.push('/malipo/rekodi')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/malipo/rekodi') }">
+            <CDropdownItem @click="router.push('/malipo/rekodi')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/malipo/rekodi') }">
               <CIcon icon="cilDollar" class="me-2" /> {{ t('nav.paymentRecord') }}
             </CDropdownItem>
             <CDropdownDivider />
