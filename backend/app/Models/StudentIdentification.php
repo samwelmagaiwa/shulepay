@@ -12,13 +12,13 @@ class StudentIdentification extends Model
     protected $casts = ['expires_at' => 'date', 'is_primary' => 'boolean'];
 
     public static array $TYPES = [
-        'nida'             => 'National ID (NIDA)',
-        'driving_license'  => 'Driving License',
-        'voter_id'         => 'Voter ID',
-        'passport'         => 'Passport',
-        'birth_certificate'=> 'Birth Certificate',
-        'student_id'       => 'Student ID Card',
-        'other'            => 'Other',
+        'nida' => 'National ID (NIDA)',
+        'driving_license' => 'Driving License',
+        'voter_id' => 'Voter ID',
+        'passport' => 'Passport',
+        'birth_certificate' => 'Birth Certificate',
+        'student_id' => 'Student ID Card',
+        'other' => 'Other',
     ];
 
     public function student(): BelongsTo

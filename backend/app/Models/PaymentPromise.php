@@ -14,15 +14,30 @@ class PaymentPromise extends Model
     ];
 
     protected $casts = [
-        'promised_date'              => 'date',
-        'reminder_sent_day_before'   => 'boolean',
-        'reminder_sent_on_day'       => 'boolean',
+        'promised_date' => 'date',
+        'reminder_sent_day_before' => 'boolean',
+        'reminder_sent_on_day' => 'boolean',
     ];
 
-    public function student(): BelongsTo   { return $this->belongsTo(Student::class); }
-    public function invoice(): BelongsTo   { return $this->belongsTo(Invoice::class); }
-    public function guardian(): BelongsTo  { return $this->belongsTo(Guardian::class); }
-    public function recordedBy(): BelongsTo { return $this->belongsTo(User::class, 'recorded_by'); }
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(Student::class);
+    }
+
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class);
+    }
+
+    public function guardian(): BelongsTo
+    {
+        return $this->belongsTo(Guardian::class);
+    }
+
+    public function recordedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'recorded_by');
+    }
 
     public function isOverdue(): bool
     {

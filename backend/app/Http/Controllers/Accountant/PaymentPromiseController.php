@@ -15,8 +15,8 @@ class PaymentPromiseController extends Controller
     {
         $q = PaymentPromise::with(['student', 'invoice', 'guardian', 'recordedBy'])
             ->when($request->student_id, fn ($q) => $q->where('student_id', $request->student_id))
-            ->when($request->status,     fn ($q) => $q->where('status', $request->status))
-            ->when($request->school_id,  fn ($q) => $q->whereHas('student.currentEnrollment', fn ($e) => $e->where('school_id', $request->school_id)))
+            ->when($request->status, fn ($q) => $q->where('status', $request->status))
+            ->when($request->school_id, fn ($q) => $q->whereHas('student.currentEnrollment', fn ($e) => $e->where('school_id', $request->school_id)))
             ->orderByDesc('promised_date');
 
         return response()->json($q->paginate($request->per_page ?? 50));
@@ -25,12 +25,12 @@ class PaymentPromiseController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'student_id'    => 'required|exists:students,id',
-            'invoice_id'    => 'required|exists:invoices,id',
-            'guardian_id'   => 'nullable|exists:guardians,id',
+            'student_id' => 'required|exists:students,id',
+            'invoice_id' => 'required|exists:invoices,id',
+            'guardian_id' => 'nullable|exists:guardians,id',
             'promised_date' => 'required|date|after_or_equal:today',
-            'amount_cents'  => 'required|integer|min:1',
-            'notes'         => 'nullable|string|max:1000',
+            'amount_cents' => 'required|integer|min:1',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
         // Validate invoice belongs to student and has a balance
@@ -41,7 +41,7 @@ class PaymentPromiseController extends Controller
         $promise = PaymentPromise::create([
             ...$data,
             'recorded_by' => auth()->id(),
-            'status'      => 'pending',
+            'status' => 'pending',
         ]);
 
         return response()->json($promise->load(['guardian', 'recordedBy', 'invoice']), 201);
@@ -51,7 +51,7 @@ class PaymentPromiseController extends Controller
     {
         $data = $request->validate([
             'status' => 'required|in:pending,kept,broken',
-            'notes'  => 'nullable|string|max:1000',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
         $paymentPromise->update($data);

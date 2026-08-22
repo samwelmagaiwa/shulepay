@@ -65,9 +65,9 @@ class StudentResource extends JsonResource
             'identifications' => $this->whenLoaded(
                 'identifications',
                 fn () => $this->identifications->map(fn ($id) => [
-                    'id'         => $id->id,
-                    'type'       => $id->type,
-                    'number'     => $id->number,
+                    'id' => $id->id,
+                    'type' => $id->type,
+                    'number' => $id->number,
                     'expires_at' => $id->expires_at?->format('Y-m-d'),
                     'is_primary' => $id->is_primary,
                 ])

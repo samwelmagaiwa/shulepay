@@ -72,14 +72,16 @@ class StudentRegistrationService
             ]);
 
             // 5. Save identifications
-            if (!empty($data['identifications'])) {
+            if (! empty($data['identifications'])) {
                 $hasPrimary = false;
                 foreach ($data['identifications'] as $idx => $idData) {
-                    $isPrimary = !$hasPrimary && (!isset($idData['is_primary']) || $idData['is_primary']);
-                    if ($isPrimary) $hasPrimary = true;
+                    $isPrimary = ! $hasPrimary && (! isset($idData['is_primary']) || $idData['is_primary']);
+                    if ($isPrimary) {
+                        $hasPrimary = true;
+                    }
                     $student->identifications()->create([
-                        'type'       => $idData['type'],
-                        'number'     => $idData['number'],
+                        'type' => $idData['type'],
+                        'number' => $idData['number'],
                         'expires_at' => $idData['expires_at'] ?? null,
                         'is_primary' => $isPrimary,
                     ]);
@@ -134,7 +136,7 @@ class StudentRegistrationService
 
     private function resolveGuardian(array $gData): Guardian
     {
-        $gData['phone']     = self::normalizePhone($gData['phone']);
+        $gData['phone'] = self::normalizePhone($gData['phone']);
         $gData['alt_phone'] = isset($gData['alt_phone']) && $gData['alt_phone']
             ? self::normalizePhone($gData['alt_phone']) : null;
 
@@ -195,14 +197,15 @@ class StudentRegistrationService
     {
         $digits = preg_replace('/\D/', '', $raw);
         if (str_starts_with($digits, '0') && strlen($digits) === 10) {
-            return '255' . substr($digits, 1);
+            return '255'.substr($digits, 1);
         }
         if (str_starts_with($digits, '255') && strlen($digits) === 12) {
             return $digits;
         }
         if ((str_starts_with($digits, '7') || str_starts_with($digits, '6')) && strlen($digits) === 9) {
-            return '255' . $digits;
+            return '255'.$digits;
         }
+
         return $digits; // return as-is if unrecognized
     }
 

@@ -11,12 +11,13 @@ use Illuminate\Support\Facades\Log;
 
 class SendPromiseReminders extends Command
 {
-    protected $signature   = 'promises:send-reminders';
+    protected $signature = 'promises:send-reminders';
+
     protected $description = 'Send SMS reminders for payment promises: guardian day-before, accountant on the day';
 
     public function handle(SmsService $sms): void
     {
-        $today    = now()->toDateString();
+        $today = now()->toDateString();
         $tomorrow = now()->addDay()->toDateString();
 
         // ── 1. Day-before reminder → guardian ───────────────────────────────
@@ -28,11 +29,12 @@ class SendPromiseReminders extends Command
 
         foreach ($dayBefore as $promise) {
             $guardian = $promise->guardian;
-            $phone    = $guardian?->phone ?? $promise->student->guardians()
+            $phone = $guardian?->phone ?? $promise->student->guardians()
                 ->wherePivot('is_primary', true)->first()?->phone;
 
             if (! $phone) {
                 $this->warn("Promise #{$promise->id}: no guardian phone — skipped day-before SMS.");
+
                 continue;
             }
 
@@ -57,7 +59,7 @@ class SendPromiseReminders extends Command
 
         foreach ($onDay as $promise) {
             $accountant = $promise->recordedBy;
-            $phone      = $accountant?->phone;
+            $phone = $accountant?->phone;
 
             // Fallback: any active accountant/owner at the student's school
             if (! $phone) {
