@@ -925,3 +925,14 @@
 [0;36m[2026-08-22 14:26:50][0m   ShulePay — Release
 [0;36m[2026-08-22 14:26:50][0m ══════════════════════════════════════════
 [0;36m[2026-08-22 14:26:50][0m Checking working tree...
+[0;36m[2026-08-22 14:26:50][0m Files staged for commit:
+[0;36m[2026-08-22 14:26:50][0m Committing: "fix: role-guard all mobile nav sections — teachers and parents now see only relevant links"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-22 14:26:51][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-22 14:26:54][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-22 14:27:45][0m ══════════════════════════════════════════
+[0;36m[2026-08-22 14:27:45][0m   ShulePay — Release
+[0;36m[2026-08-22 14:27:45][0m ══════════════════════════════════════════
+[0;36m[2026-08-22 14:27:45][0m Checking working tree...
