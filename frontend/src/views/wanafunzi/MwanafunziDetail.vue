@@ -1,5 +1,5 @@
 <template>
-  <CContainer fluid class="p-2 p-md-4">
+  <CContainer fluid class="p-2 p-md-4" style="min-height:100vh; background:#f0faf4;">
     <div v-if="loading" class="text-center py-5"><CSpinner color="primary" /></div>
 
     <div v-else-if="student">
