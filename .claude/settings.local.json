@@ -189,7 +189,11 @@
       "Bash(bash deploy.sh release \"fix: ada-madeni missing closing div\")",
       "Bash(bash deploy.sh release \"fix: installments filter bar above table\")",
       "Bash(bash D:/Projects/shulepay/deploy.sh shell)",
-      "Bash(cat ~/.ssh/config 2>/dev/null | head -20; cat D:/Projects/shulepay/.env 2>/dev/null | grep -i \"ssh\\\\|host\\\\|server\" | head -10)"
+      "Bash(cat ~/.ssh/config 2>/dev/null | head -20; cat D:/Projects/shulepay/.env 2>/dev/null | grep -i \"ssh\\\\|host\\\\|server\" | head -10)",
+      "Bash(php -m)",
+      "Bash(php --ini)",
+      "Bash(grep \"extension=gd\" C:/xampp/php/php.ini)",
+      "PowerShell(\\(Get-Content C:\\\\xampp\\\\php\\\\php.ini\\) -replace '^;extension=gd$', 'extension=gd' | Set-Content C:\\\\xampp\\\\php\\\\php.ini -Encoding utf8)"
     ]
   }
 }
