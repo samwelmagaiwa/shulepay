@@ -177,7 +177,8 @@
       "Bash(bash deploy.sh release \"fix: translate all backend API/error messages from Swahili to English\")",
       "Bash(bash deploy.sh release)",
       "Bash(bash deploy.sh release \"feat: student detail — cards on top, 3-col promise form, Weka Ahadi quick action\")",
-      "Bash(bash deploy.sh release \"feat: i18n promises tab, InfoRow style, Weka Ahadi in student list\")"
+      "Bash(bash deploy.sh release \"feat: i18n promises tab, InfoRow style, Weka Ahadi in student list\")",
+      "Bash(bash deploy.sh release \"feat: dashboard absent-students card with per-class dropdown\")"
     ]
   }
 }
