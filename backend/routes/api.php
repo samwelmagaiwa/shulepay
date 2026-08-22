@@ -118,6 +118,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('discounts', DiscountController::class)->only(['index', 'store', 'destroy']);
 
         // Invoices
+        Route::post('invoices/generate-preview', [InvoiceController::class, 'generatePreview']);
         Route::post('invoices/generate', [InvoiceController::class, 'generate']);
         Route::apiResource('invoices', InvoiceController::class)->only(['index', 'show']);
 

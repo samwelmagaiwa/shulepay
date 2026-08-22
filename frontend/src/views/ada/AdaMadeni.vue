@@ -43,8 +43,8 @@
 
     <!-- Filters + Table unified card -->
     <CCard>
-      <!-- Filters bar inside the card — single row -->
-      <CCardBody class="p-2 border-bottom">
+      <!-- Filters bar — sticky below the summary cards -->
+      <CCardBody class="p-2 border-bottom" style="position:sticky; top:var(--summary-height, 90px); z-index:15; background:var(--cui-card-bg, #fff); border-radius:0;">
         <div class="d-flex align-items-center gap-2 flex-nowrap overflow-auto">
           <CFormSelect v-model="filters.school_id" @update:modelValue="fetchData(1)" size="sm" style="min-width:160px; flex:2;">
             <option value="">{{ t('common.allSchools') }}</option>

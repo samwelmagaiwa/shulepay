@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accountant;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\InvoiceResource;
 use App\Models\AcademicYear;
+use App\Models\Enrollment;
 use App\Models\Invoice;
 use App\Models\Student;
 use App\Models\Term;
@@ -74,6 +75,32 @@ class InvoiceController extends Controller
     public function show(Invoice $invoice): InvoiceResource
     {
         return new InvoiceResource($invoice->load(['student.currentEnrollment', 'term', 'lines', 'payments.receipt']));
+    }
+
+    public function generatePreview(Request $request): JsonResponse
+    {
+        $request->validate([
+            'term_id' => 'required|exists:terms,id',
+            'academic_year_id' => 'required|exists:academic_years,id',
+            'student_id' => 'nullable|exists:students,id',
+        ]);
+
+        $term = Term::findOrFail($request->term_id);
+        $year = AcademicYear::findOrFail($request->academic_year_id);
+
+        if ($request->filled('student_id')) {
+            $count = 1;
+        } else {
+            $count = Enrollment::where('school_id', $year->school_id)
+                ->where('status', 'active')
+                ->count();
+        }
+
+        return response()->json([
+            'count' => $count,
+            'term' => $term->name,
+            'academic_year' => $year->name ?? $year->year,
+        ]);
     }
 
     public function generate(Request $request): JsonResponse

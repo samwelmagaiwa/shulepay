@@ -29,7 +29,10 @@
         <CRow class="g-3">
           <CCol xs="12" md="6">
             <label class="form-label fw-semibold">{{ t('generateInvoice.year') }} *</label>
-            <CFormInput v-model="form.academic_year" placeholder="e.g. 2024" style="min-height:44px;" />
+            <CFormSelect v-model="form.academic_year_id" style="min-height:44px;">
+              <option value="">{{ t('common.select') }}...</option>
+              <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name ?? y.year }}</option>
+            </CFormSelect>
           </CCol>
           <CCol xs="12" md="6">
             <label class="form-label fw-semibold">{{ t('generateInvoice.term') }} *</label>
@@ -63,7 +66,7 @@
       <div v-if="currentStep === 1">
         <CAlert color="info" class="mb-3">
           <div class="fw-bold mb-1">{{ t('generateInvoice.summary') }}</div>
-          <div>{{ t('generateInvoice.year') }}: <strong>{{ form.academic_year }}</strong></div>
+          <div>{{ t('generateInvoice.year') }}: <strong>{{ selectedYearName }}</strong></div>
           <div>{{ t('generateInvoice.term') }}: <strong>{{ selectedTermName }}</strong></div>
           <div v-if="form.student_name">{{ t('clearance.student') }}: <strong>{{ form.student_name }}</strong></div>
           <div v-else>{{ t('generateInvoice.allStudents') }}</div>
@@ -123,18 +126,24 @@ const result      = ref(null)
 const terms       = ref([])
 const studentResults = ref([])
 
+const academicYears = ref([])
+
 const form = ref({
-  academic_year: '',
+  academic_year_id: '',
   term_id: '',
   student_id: '',
   student_name: '',
   student_search: '',
 })
 
-const canNext = computed(() => form.value.academic_year && form.value.term_id)
+const canNext = computed(() => form.value.academic_year_id && form.value.term_id)
 const selectedTermName = computed(() => {
-  const t = terms.value.find(t => String(t.id) === String(form.value.term_id))
-  return t?.name || form.value.term_id
+  const trm = terms.value.find(t => String(t.id) === String(form.value.term_id))
+  return trm?.name || form.value.term_id
+})
+const selectedYearName = computed(() => {
+  const y = academicYears.value.find(y => String(y.id) === String(form.value.academic_year_id))
+  return y ? (y.name ?? y.year) : form.value.academic_year_id
 })
 
 let studentTimer = null
@@ -165,7 +174,7 @@ async function goPreview() {
   previewLoading.value = true
   try {
     const payload = {
-      academic_year: form.value.academic_year,
+      academic_year_id: form.value.academic_year_id,
       term_id: form.value.term_id,
     }
     if (form.value.student_id) payload.student_id = form.value.student_id
@@ -182,7 +191,7 @@ async function doGenerate() {
   generating.value = true
   try {
     const payload = {
-      academic_year: form.value.academic_year,
+      academic_year_id: form.value.academic_year_id,
       term_id: form.value.term_id,
     }
     if (form.value.student_id) payload.student_id = form.value.student_id
@@ -190,19 +199,22 @@ async function doGenerate() {
     result.value  = data
     currentStep.value = 2
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Imeshindwa kutengeneza ankara.'
+    error.value = e?.response?.data?.message || 'Failed to generate invoices.'
     currentStep.value = 0
   } finally {
     generating.value = false
   }
 }
 
-// load terms on mount
 import { onMounted } from 'vue'
 onMounted(async () => {
   try {
-    const { data } = await api.get('/terms')
-    terms.value = data.data || data
+    const [termsRes, yearsRes] = await Promise.all([
+      api.get('/terms'),
+      api.get('/academic-years'),
+    ])
+    terms.value = termsRes.data.data || termsRes.data
+    academicYears.value = yearsRes.data.data || yearsRes.data
   } catch {}
 })
 </script>
