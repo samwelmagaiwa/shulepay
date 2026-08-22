@@ -1,31 +1,20 @@
 <template>
   <CContainer fluid class="p-2 p-md-3">
-    <!-- Filters -->
-    <CCard class="mb-3">
-      <CCardBody class="p-2 p-md-3">
-        <CRow class="g-2 align-items-center">
-          <CCol xs="12" sm="6" md="4">
-            <CFormSelect v-model="filters.status" @update:modelValue="page = 1; load()" style="min-height:40px;">
-              <option value="">{{ t('common.allStatuses') }}</option>
-              <option value="active">{{ t('installments.ongoing') }}</option>
-              <option value="completed">{{ t('installments.completed') }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol xs="12" sm="6" md="4">
-            <CFormInput v-model="filters.search" :placeholder="t('installments.searchPlaceholder')" @input="debouncedLoad" style="min-height:40px;" />
-          </CCol>
-          <CCol xs="12" sm="auto" class="ms-sm-auto">
-            <CButton color="primary" @click="showBulkModal = true" style="min-height:40px; white-space:nowrap;">
-              📋 {{ t('installments.bulkByClass') }}
-            </CButton>
-          </CCol>
-        </CRow>
-      </CCardBody>
-    </CCard>
-
     <div v-if="loading" class="text-center py-5"><CSpinner color="primary" /></div>
 
     <div v-else>
+      <!-- Mobile: compact toolbar + cards -->
+      <div class="d-md-none">
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          <CFormSelect v-model="filters.status" @update:modelValue="page = 1; load()" size="sm" style="flex:1; min-width:120px;">
+            <option value="">{{ t('common.allStatuses') }}</option>
+            <option value="active">{{ t('installments.ongoing') }}</option>
+            <option value="completed">{{ t('installments.completed') }}</option>
+          </CFormSelect>
+          <CFormInput v-model="filters.search" :placeholder="t('installments.searchPlaceholder')" @input="debouncedLoad" size="sm" style="flex:2; min-width:140px;" />
+          <CButton color="primary" size="sm" @click="showBulkModal = true" style="white-space:nowrap;">📋 {{ t('installments.bulkByClass') }}</CButton>
+        </div>
+      </div>
       <!-- Mobile cards -->
       <div class="d-md-none">
         <div v-if="!installments.length" class="text-center text-muted py-5">{{ t('installments.noPlans') }}</div>
@@ -68,41 +57,53 @@
       <!-- Desktop table -->
       <CCard class="d-none d-md-block">
         <CCardBody class="p-0">
-          <CTable responsive hover class="mb-0">
+          <CTable hover class="mb-0" style="width:100%;">
             <CTableHead class="table-light">
               <CTableRow>
-                <CTableHeaderCell>{{ t('installments.student') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('installments.invoice') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('installments.totalInst') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('installments.paid', 'Paid Amount') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('installments.amountPerInst', 'Balance Due') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('installments.nextDue') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('installments.progress') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('common.status') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('common.actions') }}</CTableHeaderCell>
+                <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.student') }}</CTableHeaderCell>
+                <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.invoice') }}</CTableHeaderCell>
+                <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.totalInst') }}</CTableHeaderCell>
+                <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.paid', 'Paid') }}</CTableHeaderCell>
+                <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.amountPerInst', 'Amount/Installment') }}</CTableHeaderCell>
+                <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.nextDue') }}</CTableHeaderCell>
+                <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.progress') }}</CTableHeaderCell>
+                <CTableHeaderCell style="white-space:nowrap;">{{ t('common.status') }}</CTableHeaderCell>
+                <CTableHeaderCell style="white-space:nowrap; width:56px;">{{ t('common.actions') }}</CTableHeaderCell>
+                <!-- Toolbar embedded after Actions -->
+                <CTableHeaderCell style="width:100%; padding:6px 12px;">
+                  <div class="d-flex align-items-center gap-2">
+                    <CFormSelect v-model="filters.status" @update:modelValue="page = 1; load()" size="sm" style="width:140px;">
+                      <option value="">{{ t('common.allStatuses') }}</option>
+                      <option value="active">{{ t('installments.ongoing') }}</option>
+                      <option value="completed">{{ t('installments.completed') }}</option>
+                    </CFormSelect>
+                    <CFormInput v-model="filters.search" :placeholder="t('installments.searchPlaceholder')" @input="debouncedLoad" size="sm" style="min-width:160px; max-width:260px;" />
+                    <CButton color="primary" size="sm" @click="showBulkModal = true" style="white-space:nowrap;">📋 {{ t('installments.bulkByClass') }}</CButton>
+                  </div>
+                </CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
               <CTableRow v-for="plan in installments" :key="plan.id">
                 <CTableDataCell>
-                  <div class="fw-semibold">{{ plan.student?.full_name }}</div>
+                  <div class="fw-semibold" style="white-space:nowrap;">{{ plan.student?.full_name }}</div>
                   <div class="small text-muted">{{ plan.student?.admission_number }}</div>
                 </CTableDataCell>
-                <CTableDataCell>{{ plan.invoice?.invoice_number }}</CTableDataCell>
-                <CTableDataCell>{{ plan.installments_paid || 0 }} / {{ plan.total_installments }}</CTableDataCell>
-                <CTableDataCell>{{ formatAmount(plan.paid_amount_cents || 0) }}</CTableDataCell>
-                <CTableDataCell class="text-danger fw-semibold">{{ formatAmount(plan.installment_amount_cents - (plan.paid_amount_cents || 0)) }}</CTableDataCell>
-                <CTableDataCell>{{ plan.next_due_date || '—' }}</CTableDataCell>
+                <CTableDataCell style="white-space:nowrap;">{{ plan.invoice?.invoice_number }}</CTableDataCell>
+                <CTableDataCell style="white-space:nowrap;">{{ plan.installments_paid || 0 }} / {{ plan.total_installments }}</CTableDataCell>
+                <CTableDataCell style="white-space:nowrap;">{{ formatAmount(plan.paid_amount_cents || 0) }}</CTableDataCell>
+                <CTableDataCell class="text-danger fw-semibold" style="white-space:nowrap;">{{ formatAmount(plan.installment_amount_cents - (plan.paid_amount_cents || 0)) }}</CTableDataCell>
+                <CTableDataCell style="white-space:nowrap;">{{ plan.next_due_date || '—' }}</CTableDataCell>
                 <CTableDataCell style="min-width:120px;">
                   <CProgress :value="progressPct(plan)" color="success" style="height:8px;" />
                   <span class="small text-muted">{{ progressPct(plan) }}%</span>
                 </CTableDataCell>
-                <CTableDataCell>
+                <CTableDataCell style="white-space:nowrap;">
                   <CBadge :color="plan.status === 'completed' || plan.status === 'paid' ? 'success' : 'warning'">
                     {{ plan.status === 'completed' || plan.status === 'paid' ? t('installments.completed', 'Paid') : (plan.status === 'partial' ? 'Partial' : t('installments.ongoing', 'Ongoing')) }}
                   </CBadge>
                 </CTableDataCell>
-                <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
+                <CTableDataCell style="position:relative; min-width:56px; text-align:center; white-space:nowrap;">
                   <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === plan.id ? null : plan.id">👁️</CButton>
                   <div v-if="activeRow === plan.id"
                        style="position:absolute; bottom:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
@@ -111,9 +112,10 @@
                     <CButton v-if="plan.status !== 'completed' && plan.status !== 'paid'" size="sm" color="primary" variant="ghost" class="text-start" @click="recordPayment(plan); activeRow = null">💳 {{ t('installments.recordPayment') }}</CButton>
                   </div>
                 </CTableDataCell>
+                <CTableDataCell></CTableDataCell>
               </CTableRow>
               <CTableRow v-if="!installments.length">
-                <CTableDataCell colspan="9" class="text-center text-muted py-4">{{ t('installments.noPlans') }}</CTableDataCell>
+                <CTableDataCell colspan="10" class="text-center text-muted py-4">{{ t('installments.noPlans') }}</CTableDataCell>
               </CTableRow>
             </CTableBody>
           </CTable>
@@ -264,7 +266,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { CPagination, CPaginationItem } from '@coreui/vue'
 import { useInstallmentsStore } from '@/stores/installments'
@@ -402,8 +404,15 @@ function onBulkDone() {
   load()
 }
 
+function onDocClick() { activeRow.value = null }
+
 onMounted(() => {
+  document.addEventListener('click', onDocClick)
   load()
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', onDocClick)
 })
 </script>
 
