@@ -1,8 +1,8 @@
 <template>
   <CContainer fluid class="p-2 p-md-3" style="max-width:100%; padding-left:12px; padding-right:12px;">
     <!-- Summary bar — sticky -->
-    <div style="position:sticky; top:0; z-index:20; background:var(--cui-body-bg, #fff); padding-bottom:10px;">
-    <CRow class="g-2 g-md-3">
+    <div style="position:sticky; top:0; z-index:20; background:var(--cui-body-bg, #fff); padding-bottom:6px;">
+    <CRow class="g-2">
       <CCol xs="6" md="3">
         <CCard class="h-100" style="border:2px solid #6c757d; background:rgba(108,117,125,0.07); box-shadow:0 8px 24px rgba(108,117,125,0.35), 0 2px 6px rgba(0,0,0,0.12);">
           <CCardBody class="p-2 p-md-3">
