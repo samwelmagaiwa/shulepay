@@ -483,3 +483,14 @@
 [0;36m[2026-08-22 11:21:13][0m   ShulePay — Release
 [0;36m[2026-08-22 11:21:13][0m ══════════════════════════════════════════
 [0;36m[2026-08-22 11:21:13][0m Checking working tree...
+[0;36m[2026-08-22 11:21:13][0m Files staged for commit:
+[0;36m[2026-08-22 11:21:13][0m Committing: "feat: i18n promises tab, InfoRow style, Weka Ahadi in student list"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-22 11:21:13][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-22 11:21:16][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-22 11:30:06][0m ══════════════════════════════════════════
+[0;36m[2026-08-22 11:30:06][0m   ShulePay — Release
+[0;36m[2026-08-22 11:30:06][0m ══════════════════════════════════════════
+[0;36m[2026-08-22 11:30:06][0m Checking working tree...

@@ -12,33 +12,41 @@ defineProps({ label: String, value: [String, Number] })
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 8px;
-  padding: 6px 0;
-  font-size: .82rem;
-  border-bottom: 1px solid rgba(128,128,128,.12);
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.15);
 }
 .ir-label {
-  color: #8a94a6;
+  color: #6c757d !important;
   flex-shrink: 0;
-  max-width: 52%;
-  font-weight: 400;
-  font-style: italic;
-  letter-spacing: .01em;
+  max-width: 50%;
+  font-size: .8rem;
+  font-weight: 500;
+  line-height: 1.4;
 }
 .ir-value {
-  color: #1e293b;
-  font-weight: 500;
+  color: #0f172a !important;
+  font-weight: 700;
+  font-size: .9rem;
   text-align: right;
   word-break: break-word;
   min-width: 0;
-  letter-spacing: .015em;
+  line-height: 1.4;
 }
-[data-theme="dark"] .ir-label,
-[data-bs-theme="dark"] .ir-label { color: #94a3b8; }
-[data-theme="dark"] .ir-value,
-[data-bs-theme="dark"] .ir-value { color: #e2e8f0; }
+:root[data-coreui-theme="dark"] .ir-label,
+:root[data-bs-theme="dark"] .ir-label,
+[data-theme="dark"] .ir-label { color: #94a3b8 !important; }
+
+:root[data-coreui-theme="dark"] .ir-value,
+:root[data-bs-theme="dark"] .ir-value,
+[data-theme="dark"] .ir-value { color: #f1f5f9 !important; }
+
 @media (prefers-color-scheme: dark) {
-  .ir-label { color: #94a3b8; }
-  .ir-value { color: #e2e8f0; }
+  .ir-label { color: #94a3b8 !important; }
+  .ir-value { color: #f1f5f9 !important; }
+}
+@media (max-width: 480px) {
+  .ir-label { font-size: .75rem; }
+  .ir-value  { font-size: .85rem; }
 }
 </style>
