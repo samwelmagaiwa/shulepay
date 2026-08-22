@@ -171,19 +171,25 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Attendance summary for a date range (per class).
+     * Attendance summary for a date or date range (per class).
+     * Accepts either `date` (single day) or `from_date`+`to_date` (range).
      */
     public function summary(Request $request)
     {
         $request->validate([
-            'from_date' => 'required|date',
-            'to_date' => 'required|date|after_or_equal:from_date',
+            'date'      => 'nullable|date',
+            'from_date' => 'nullable|date',
+            'to_date'   => 'nullable|date|after_or_equal:from_date',
         ]);
+
+        // Support both single-date and range params
+        $fromDate = $request->from_date ?? $request->date ?? now()->toDateString();
+        $toDate   = $request->to_date   ?? $request->date ?? now()->toDateString();
 
         $schoolId = app()->bound('active_school') ? app('active_school')->id : auth()->user()->school_id;
 
         $summary = Attendance::where('school_id', $schoolId)
-            ->whereBetween('date', [$request->from_date, $request->to_date])
+            ->whereBetween('date', [$fromDate, $toDate])
             ->select('school_class_id', 'status', DB::raw('count(*) as count'))
             ->groupBy('school_class_id', 'status')
             ->with('schoolClass:id,name')

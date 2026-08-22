@@ -143,7 +143,7 @@ const clearedCount   = computed(() => children.value.filter(c => c._invoice && c
 const pendingCount   = computed(() => children.value.filter(c => c._invoice && c._invoice.balance_tzs > 0).length)
 
 function childInitials(child) {
-  return (child.full_name || '').split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
+  return (child.full_name || child.name || '').split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
 }
 
 function fmtTzs(tzs) {
@@ -172,24 +172,44 @@ async function downloadStatement(child) {
 onMounted(async () => {
   try {
     const { data } = await api.get('/parent/children')
+    // API returns { data: [...] }; each child has `name`, `enrollment.admission_number`, `enrollment.school_class`
     const list = Array.isArray(data) ? data : (data.data || [])
-    // fetch statement for each child to get balance info
-    const enriched = await Promise.all(list.map(async child => {
+
+    const enriched = await Promise.all(list.map(async raw => {
+      // Normalise field names so template can use child.full_name / child.admission_number / child.school_class
+      const child = {
+        ...raw,
+        full_name:        raw.full_name || raw.name || '',
+        admission_number: raw.admission_number || raw.enrollment?.admission_number || '',
+        school_class:     raw.school_class || raw.enrollment?.school_class || null,
+        _downloading:     false,
+        _invoice:         null,
+      }
+
       try {
         const { data: stmt } = await api.get('/parent/statement', { params: { student_id: child.id } })
-        const invoices = Array.isArray(stmt) ? stmt : (stmt.data || stmt.invoices || [])
-        const latestInv = invoices[0] || null
-        child._invoice = latestInv ? {
-          total_tzs:   Math.round((latestInv.total_amount_cents || 0) / 100),
-          paid_tzs:    Math.round((latestInv.paid_cents || 0) / 100),
-          balance_tzs: Math.round((latestInv.balance_due_cents || 0) / 100),
-        } : null
-      } catch {
-        child._invoice = null
-      }
-      child._downloading = false
+        // Response: { student, invoices: [...], summary: { total_billed_cents, total_paid_cents, total_balance_cents } }
+        const summary = stmt.summary || null
+        if (summary) {
+          child._invoice = {
+            total_tzs:   Math.round((summary.total_billed_cents || 0) / 100),
+            paid_tzs:    Math.round((summary.total_paid_cents  || 0) / 100),
+            balance_tzs: Math.round((summary.total_balance_cents || 0) / 100),
+          }
+        } else {
+          // Fallback: use first invoice's fields
+          const inv = (stmt.invoices || [])[0] || null
+          if (inv) {
+            const total   = Math.round((inv.total_amount_cents || 0) / 100)
+            const paid    = Math.round((inv.paid_cents || 0) / 100)
+            child._invoice = { total_tzs: total, paid_tzs: paid, balance_tzs: Math.max(0, total - paid) }
+          }
+        }
+      } catch { /* statement unavailable */ }
+
       return child
     }))
+
     children.value = enriched
   } catch { /* no data */ } finally {
     loading.value = false

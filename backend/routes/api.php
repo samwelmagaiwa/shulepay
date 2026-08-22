@@ -75,10 +75,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('locations/streets', [LocationController::class, 'streets']);
     Route::get('locations/places', [LocationController::class, 'places']);
 
-    // Branding (read: all authenticated; write: owner/superadmin only)
+    // Branding — read: all authenticated; write: owner/superadmin only
     Route::get('branding', [BrandingController::class, 'show']);
-    Route::post('branding', [BrandingController::class, 'update']);
-    Route::delete('branding/logo', [BrandingController::class, 'deleteLogo']);
+    Route::post('branding', [BrandingController::class, 'update'])->middleware('role:owner|superadmin');
+    Route::delete('branding/logo', [BrandingController::class, 'deleteLogo'])->middleware('role:owner|superadmin');
 
     // User settings (all authenticated users)
     Route::get('settings/profile', [UserSettingsController::class, 'profile']);
@@ -208,18 +208,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('subjects', SubjectController::class);
         Route::apiResource('exams', ExamController::class);
         Route::apiResource('attendances', AttendanceController::class);
-
-        // Attendance register (new bulk endpoints)
-        Route::get('attendance/register', [AttendanceController::class, 'getRegister']);
-        Route::post('attendance/bulk-mark', [AttendanceController::class, 'bulkMark']);
-        Route::get('attendance/summary', [AttendanceController::class, 'summary']);
-        Route::get('attendance/student-report', [AttendanceController::class, 'studentReport']);
-
-        // Notifications
-        Route::get('notifications', [NotificationController::class, 'index']);
-        Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
-        Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
-        Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead']);
 
         // Transport
         Route::prefix('transport')->group(function () {
