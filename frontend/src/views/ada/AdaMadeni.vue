@@ -1,7 +1,8 @@
 <template>
   <CContainer fluid class="p-2 p-md-4">
-    <!-- Summary bar -->
-    <CRow class="g-2 g-md-3 mb-3">
+    <!-- Summary bar — sticky -->
+    <div style="position:sticky; top:0; z-index:20; background:var(--cui-body-bg, #fff); padding-bottom:10px;">
+    <CRow class="g-2 g-md-3">
       <CCol xs="6" md="3">
         <CCard class="h-100" style="border:2px solid #6c757d; background:rgba(108,117,125,0.07); box-shadow:0 8px 24px rgba(108,117,125,0.35), 0 2px 6px rgba(0,0,0,0.12);">
           <CCardBody class="p-2 p-md-3">
@@ -38,25 +39,27 @@
         </CCard>
       </CCol>
     </CRow>
+    </div><!-- end sticky wrapper -->
 
-    <!-- Filters -->
-    <CCard class="mb-3">
-      <CCardBody class="p-2 p-md-3">
-        <CRow class="g-2">
+    <!-- Filters + Table unified card -->
+    <CCard>
+      <!-- Filters bar inside the card -->
+      <CCardBody class="p-2 p-md-3 border-bottom">
+        <CRow class="g-2 align-items-center">
           <CCol xs="12" sm="6" md="3">
-            <CFormSelect v-model="filters.school_id" @update:modelValue="fetchData(1)" style="min-height:44px;">
+            <CFormSelect v-model="filters.school_id" @update:modelValue="fetchData(1)" style="min-height:40px;">
               <option value="">{{ t('common.allSchools') }}</option>
               <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
             </CFormSelect>
           </CCol>
-          <CCol xs="12" sm="6" md="2">
-            <CFormSelect v-model="filters.class_id" @update:modelValue="fetchData(1)" style="min-height:44px;">
+          <CCol xs="6" sm="4" md="2">
+            <CFormSelect v-model="filters.class_id" @update:modelValue="fetchData(1)" style="min-height:40px;">
               <option value="">{{ t('invoices.allClasses') }}</option>
               <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.name }}</option>
             </CFormSelect>
           </CCol>
-          <CCol xs="12" sm="6" md="2">
-            <CFormSelect v-model="filters.term_number" @update:modelValue="fetchData(1)" style="min-height:44px;">
+          <CCol xs="6" sm="4" md="2">
+            <CFormSelect v-model="filters.term_number" @update:modelValue="fetchData(1)" style="min-height:40px;">
               <option value="">{{ t('invoices.allTerms') }}</option>
               <option value="1">{{ t('invoices.term1') }}</option>
               <option value="2">{{ t('invoices.term2') }}</option>
@@ -64,38 +67,37 @@
               <option value="4">{{ t('invoices.term4') }}</option>
             </CFormSelect>
           </CCol>
-          <CCol xs="12" sm="6" md="2">
-            <CFormSelect v-model="filters.status" @update:modelValue="fetchData(1)" style="min-height:44px;">
+          <CCol xs="6" sm="4" md="2">
+            <CFormSelect v-model="filters.status" @update:modelValue="fetchData(1)" style="min-height:40px;">
               <option value="">{{ t('invoices.allStatuses') }}</option>
               <option value="unpaid">{{ t('invoices.statusFull.unpaid') }}</option>
               <option value="partial">{{ t('invoices.statusFull.partial') }}</option>
               <option value="paid">{{ t('invoices.statusFull.paid') }}</option>
             </CFormSelect>
           </CCol>
-          <CCol xs="12" md="3">
-            <CFormInput v-model="filters.search" :placeholder="t('invoices.searchStudent')" @input="debouncedFetch" style="min-height:44px;" />
+          <CCol xs="12" md>
+            <CFormInput v-model="filters.search" :placeholder="t('invoices.searchStudent')" @input="debouncedFetch" style="min-height:40px;" />
           </CCol>
-          <CCol xs="6" md="auto">
-            <CButton color="warning" @click="showSmsModal = true" class="w-100" style="min-height:44px;">
+          <CCol xs="6" sm="auto">
+            <CButton color="warning" @click="showSmsModal = true" class="w-100" style="min-height:40px;">
               <CIcon icon="cilSend" class="me-1" /> {{ t('invoices.sendSms') }}
             </CButton>
           </CCol>
-          <CCol xs="6" md="auto">
-            <CButton color="success" @click="showGenerateModal = true" class="w-100" style="min-height:44px;">
+          <CCol xs="6" sm="auto">
+            <CButton color="success" @click="showGenerateModal = true" class="w-100" style="min-height:40px;">
               <CIcon icon="cilPlus" class="me-1" /> {{ t('invoices.generate') }}
             </CButton>
           </CCol>
         </CRow>
       </CCardBody>
-    </CCard>
 
-    <!-- Loading -->
-    <div v-if="loading" class="text-center py-5">
-      <CSpinner color="primary" />
-    </div>
+      <!-- Loading -->
+      <div v-if="loading" class="text-center py-5">
+        <CSpinner color="primary" />
+      </div>
 
-    <!-- MOBILE: card list view -->
-    <div v-else class="d-md-none">
+      <!-- MOBILE: card list view -->
+      <div v-else class="d-md-none p-2">
       <div v-if="invoices.length === 0" class="text-center text-muted py-5">
         {{ t('invoices.noInvoices') }}
       </div>
@@ -129,11 +131,9 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- DESKTOP: full table -->
-    <CCard class="d-none d-md-block">
-      <CCardBody class="p-0">
+      <!-- DESKTOP: full table (inside the same card) -->
+      <div class="d-none d-md-block">
         <CTable responsive hover class="mb-0">
           <CTableHead class="table-light">
             <CTableRow>
@@ -178,8 +178,8 @@
             </CTableRow>
           </CTableBody>
         </CTable>
-      </CCardBody>
-    </CCard>
+      </div><!-- end desktop table -->
+    </CCard><!-- end unified card -->
 
     <!-- Pagination -->
     <div v-if="pagination.last_page > 1" class="d-flex justify-content-center mt-3">
