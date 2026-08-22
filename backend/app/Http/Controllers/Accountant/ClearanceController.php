@@ -104,15 +104,20 @@ class ClearanceController extends Controller
             Log::warning('[ClearanceController] Clearance SMS failed: '.$e->getMessage());
         }
 
-        // Resolve logo as base64 for DomPDF (can't load storage URLs directly)
+        // Resolve logo as base64 for DomPDF (needs GD; skip gracefully if unavailable)
         $logoBase64 = null;
-        $logoMime   = 'image/png';
-        $logoPath   = $school?->settings['branding']['logo_path'] ?? $school?->logo ?? null;
-        if ($logoPath) {
-            $fullPath = storage_path('app/public/' . $logoPath);
-            if (file_exists($fullPath)) {
-                $logoMime   = mime_content_type($fullPath) ?: 'image/png';
-                $logoBase64 = 'data:' . $logoMime . ';base64,' . base64_encode(file_get_contents($fullPath));
+        if (extension_loaded('gd')) {
+            try {
+                $logoPath = $school?->settings['branding']['logo_path'] ?? $school?->logo ?? null;
+                if ($logoPath) {
+                    $fullPath = storage_path('app/public/' . $logoPath);
+                    if (file_exists($fullPath)) {
+                        $logoMime   = mime_content_type($fullPath) ?: 'image/png';
+                        $logoBase64 = 'data:' . $logoMime . ';base64,' . base64_encode(file_get_contents($fullPath));
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('[ClearanceController] Logo embed failed: ' . $e->getMessage());
             }
         }
 
