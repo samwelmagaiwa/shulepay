@@ -187,7 +187,9 @@
       "Bash(bash deploy.sh release \"style: ada-madeni cards colored border + shadow\")",
       "Bash(bash deploy.sh release \"feat: ada-madeni sticky cards + unified filter+table card\")",
       "Bash(bash deploy.sh release \"fix: ada-madeni missing closing div\")",
-      "Bash(bash deploy.sh release \"fix: installments filter bar above table\")"
+      "Bash(bash deploy.sh release \"fix: installments filter bar above table\")",
+      "Bash(bash D:/Projects/shulepay/deploy.sh shell)",
+      "Bash(cat ~/.ssh/config 2>/dev/null | head -20; cat D:/Projects/shulepay/.env 2>/dev/null | grep -i \"ssh\\\\|host\\\\|server\" | head -10)"
     ]
   }
 }
