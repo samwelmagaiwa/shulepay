@@ -179,6 +179,7 @@ export default {
     cardPaidInvoices:   'Paid Invoices',
     cardUnpaid:         'Unpaid',
     cardNotPaidToday:   'Not Yet Paid',
+    cardAbsent:         'Absent Today',
     compYesterday:      'Yesterday',
     compLastWeek:       'Last Week',
     compLastMonth:      'Last Month',

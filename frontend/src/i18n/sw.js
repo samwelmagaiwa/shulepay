@@ -179,6 +179,7 @@ export default {
     cardPaidInvoices:   'Ankara Zilizolipwa',
     cardUnpaid:         'Hawajalipiwa',
     cardNotPaidToday:   'Bado Hawajalipa',
+    cardAbsent:         'Hawakuja Leo',
     compYesterday:      'Jana',
     compLastWeek:       'Wiki Iliyopita',
     compLastMonth:      'Mwezi Uliopita',

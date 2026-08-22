@@ -256,6 +256,16 @@ export const useDashboardStore = defineStore('dashboard', () => {
     return []
   }
 
+  async function fetchAbsentByClass(date) {
+    const { data } = await api.get('/attendance/summary', {
+      params: { from_date: date, to_date: date },
+    })
+    // Return array sorted by class name, only classes with at least 1 absent
+    return (data || [])
+      .filter(c => c.absent > 0)
+      .sort((a, b) => (a.class_name || '').localeCompare(b.class_name || ''))
+  }
+
   function setBreakdownMode(_enabled) {
     // No-op: breakdown mode is not wired to a separate endpoint in ShulePay
   }
@@ -291,6 +301,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
     // Legacy stubs
     metrics, clinics,
     // Actions
-    fetchStats, fetchPendingPatients, setBreakdownMode, calculateDateRange, stopPulse,
+    fetchStats, fetchPendingPatients, fetchAbsentByClass, setBreakdownMode, calculateDateRange, stopPulse,
   }
 })

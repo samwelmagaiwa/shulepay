@@ -33,46 +33,58 @@ const getPrevValue = (key) => {
   return (dashboard.previousStats?.[key] || 0).toLocaleString()
 }
 
-const showPendingList = ref(false)
-const pendingPatients = ref([])
-const isListLoading = ref(false)
+// ── Absent students card ──────────────────────────────────────────────────
+const showAbsentList  = ref(false)
+const absentByClass   = ref([])
+const isAbsentLoading = ref(false)
 
-const togglePendingList = async () => {
-  showPendingList.value = !showPendingList.value
-  if (showPendingList.value && pendingPatients.value.length === 0) {
-    await fetchPendingPatients()
+const todayStr = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
+
+const totalAbsent = computed(() =>
+  absentByClass.value.reduce((s, c) => s + (c.absent || 0), 0)
+)
+
+const toggleAbsentList = async () => {
+  showAbsentList.value = !showAbsentList.value
+  if (showAbsentList.value) {
+    await loadAbsentByClass()
   }
 }
 
-const fetchPendingPatients = async () => {
-  isListLoading.value = true
+const loadAbsentByClass = async () => {
+  isAbsentLoading.value = true
   try {
-    pendingPatients.value = await dashboard.fetchPendingPatients()
-  } catch (error) {
-    console.error('Error in SocialStatsWidgets:', error)
+    absentByClass.value = await dashboard.fetchAbsentByClass(todayStr())
+  } catch (e) {
+    console.error('fetchAbsentByClass error', e)
+    absentByClass.value = []
   } finally {
-    isListLoading.value = false
+    isAbsentLoading.value = false
   }
 }
 
-// Refresh list if date range changes and list is open
+// Auto-load on mount so the count shows immediately
+loadAbsentByClass()
+
+// Refresh when school / date changes
 watch(
-  () => [
-    dashboard.selectedDay,
-    dashboard.selectedWeek,
-    dashboard.selectedMonth,
-    dashboard.selectedYear,
-    dashboard.selectedRange,
-  ],
+  () => [dashboard.selectedDay, dashboard.selectedWeek, dashboard.selectedMonth, dashboard.selectedYear, dashboard.selectedRange],
   () => {
-    if (showPendingList.value) {
-      fetchPendingPatients()
-    } else {
-      pendingPatients.value = [] // Clear cache to force refresh on next open
-    }
+    absentByClass.value = []
+    if (showAbsentList.value) loadAbsentByClass()
   },
   { deep: true },
 )
+
+// ── Legacy pending list (kept to avoid breaking other callers) ────────────
+const showPendingList = ref(false)
+const pendingPatients = ref([])
+const isListLoading   = ref(false)
+const togglePendingList = () => {}
+const fetchPendingPatients = () => {}
 </script>
 
 <template>
@@ -241,112 +253,53 @@ watch(
         </div>
       </CCol>
 
+      <!-- Absent Students Today -->
       <CCol class="metric-col">
         <div
-          class="stat-card premium-shadow"
-          :class="[
-            dashboard.isTodaySelected ? 'shadow-red red-theme-active' : 'shadow-orange orange-theme-active',
-            { expanded: showPendingList },
-          ]"
+          class="stat-card premium-shadow shadow-red red-theme-active"
+          :class="{ expanded: showAbsentList }"
         >
-          <!-- Notch Borders -->
-          <div class="notch-border top" :class="dashboard.isTodaySelected ? 'red' : 'orange'"></div>
-          <div class="notch-border bottom" :class="dashboard.isTodaySelected ? 'red' : 'orange'"></div>
-          <!-- Decorative backgrounds for red theme -->
-          <div v-if="!dashboard.isTodaySelected" class="decorative-curve-image"></div>
-          <div v-if="!dashboard.isTodaySelected" class="vertical-dots"></div>
-          <div v-if="!dashboard.isTodaySelected" class="status-info-icon mirror-design">
-            <CIcon :icon="cilInfo" />
-          </div>
+          <div class="notch-border top red"></div>
+          <div class="notch-border bottom red"></div>
 
-          <div class="stat-card-header mb-1" @click="togglePendingList" style="cursor: pointer">
-            <div
-              class="stat-icon-wrapper larger-icon"
-              :class="{ 'glass-morphism-orange': !dashboard.isTodaySelected }"
-              :style="{
-                backgroundColor: dashboard.isTodaySelected
-                  ? 'rgba(239, 68, 68, 0.12)'
-                  : 'transparent',
-              }"
-            >
-              <div v-if="!dashboard.isTodaySelected" class="custom-icon-container">
-                <!-- Custom SVG: Two people at a desk facing each other -->
-                <svg viewBox="0 0 24 24" class="stat-icon main-icon" style="color: #f97316">
-                  <!-- Table -->
-                  <rect x="4" y="14" width="16" height="1.5" rx="0.75" fill="currentColor" />
-                  <rect x="11" y="15.5" width="2" height="4.5" fill="currentColor" />
-                  
-                  <!-- Left Person -->
-                  <circle cx="6" cy="8" r="2.5" fill="currentColor" />
-                  <path d="M2 14c0-2.5 2-4.5 4.5-4.5s4.5 2 4.5 4.5v1H2v-1z" fill="currentColor" />
-                  
-                  <!-- Right Person -->
-                  <circle cx="18" cy="8" r="2.5" fill="currentColor" />
-                  <path d="M15 14c0-2.5 2-4.5 4.5-4.5s4.5 2 4.5 4.5v1H15v-1z" fill="currentColor" />
-                </svg>
-                <!-- Overlaid 'No' symbol -->
-                <div class="icon-overlay-no">
-                  <CIcon :icon="cilXCircle" size="sm" />
-                </div>
-              </div>
-              <CIcon
-                v-else
-                :icon="cilClock"
-                class="stat-icon"
-                :style="{ color: '#ef4444' }"
-              />
+          <div class="stat-card-header mb-1" @click="toggleAbsentList" style="cursor:pointer;">
+            <div class="stat-icon-wrapper" style="background:rgba(239,68,68,0.12);">
+              <!-- Person with X -->
+              <svg viewBox="0 0 24 24" class="stat-icon" style="color:#ef4444;" fill="currentColor">
+                <circle cx="9" cy="7" r="3.5" />
+                <path d="M2 19c0-3.3 3.1-6 7-6s7 2.7 7 6H2z" />
+                <line x1="16" y1="11" x2="22" y2="17" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round"/>
+                <line x1="22" y1="11" x2="16" y2="17" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round"/>
+              </svg>
             </div>
             <div class="stat-main-info">
-              <h3
-                class="stat-value"
-                :class="{ 'orange-text-shadow': !dashboard.isTodaySelected }"
-                :style="{ color: dashboard.isTodaySelected ? '#ef4444' : '#f97316' }"
-              >
-                {{ getValue('pending') }}
-                <CIcon
-                  :icon="showPendingList ? cilChevronTop : cilChevronBottom"
-                  size="sm"
-                  class="ms-1 dropdown-arrow"
-                />
+              <h3 class="stat-value" style="color:#ef4444;">
+                <span v-if="isAbsentLoading" class="spinner-border spinner-border-sm" style="width:1rem;height:1rem;border-width:2px;"></span>
+                <span v-else>{{ totalAbsent }}</span>
+                <CIcon :icon="showAbsentList ? cilChevronTop : cilChevronBottom" size="sm" class="ms-1 dropdown-arrow" />
               </h3>
-              <span
-                class="stat-label"
-                :class="{ 'orange-text-shadow-sm': !dashboard.isTodaySelected }"
-              >
-                {{ dashboard.isTodaySelected ? t('dashboard.cardNotPaidToday') : t('dashboard.cardUnpaid') }}
-              </span>
-            </div>
-          </div>
-          <div
-            v-if="dashboard.compLabel"
-            class="stat-card-footer mt-auto"
-            :class="{ 'design-mirror-footer': !dashboard.isTodaySelected }"
-          >
-            <div class="stat-comparison">
-              <h4 class="prev-value mb-0" :class="{ 'design-mirror-prev': !dashboard.isTodaySelected }">
-                {{ getPrevValue('pending') }}
-              </h4>
-              <span class="prev-label" :class="{ 'design-mirror-label': !dashboard.isTodaySelected }">
-                {{ dashboard.compLabel }}
-              </span>
+              <span class="stat-label">{{ t('dashboard.cardAbsent', 'ABSENT TODAY') }}</span>
             </div>
           </div>
 
-          <!-- Scrollable Patient List -->
-          <div v-if="showPendingList" class="pending-list-container">
-            <div v-if="isListLoading" class="text-center py-2">
+          <!-- Per-class absent breakdown dropdown -->
+          <div v-if="showAbsentList" class="pending-list-container">
+            <div v-if="isAbsentLoading" class="text-center py-2">
               <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
             </div>
-            <div v-else-if="pendingPatients.length === 0" class="no-data-text">
-              Hakuna wanafunzi wanaongoja
+            <div v-else-if="absentByClass.length === 0" class="no-data-text">
+              Hakuna wanafunzi walioripotiwa leo
             </div>
             <div v-else class="patient-list">
-              <div v-for="patient in pendingPatients" :key="patient.id" class="patient-item">
-                <CIcon :icon="cilUser" size="custom-size" :height="10" class="me-1 opacity-50" />
-                <span class="mr-number">{{ patient.mr_number }}</span>
-                <span class="visit-time">{{
-                  patient.cons_time ? patient.cons_time.substring(0, 5) : ''
-                }}</span>
+              <!-- Total row -->
+              <div class="patient-item absent-total-row">
+                <span class="mr-number fw-bold">Jumla</span>
+                <span class="absent-count-badge absent-count-total">{{ totalAbsent }}</span>
+              </div>
+              <!-- Per class rows -->
+              <div v-for="cls in absentByClass" :key="cls.class_id" class="patient-item">
+                <span class="mr-number">{{ cls.class_name || '—' }}</span>
+                <span class="absent-count-badge">{{ cls.absent }}</span>
               </div>
             </div>
           </div>
@@ -487,6 +440,29 @@ watch(
   color: #9ca3af;
   text-align: center;
   padding: 1rem;
+}
+
+.absent-count-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border-radius: 10px;
+  padding: 1px 8px;
+  min-width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.absent-count-total {
+  background: #ef4444;
+  color: #fff;
+}
+
+.absent-total-row {
+  border-bottom: 1px solid rgba(239, 68, 68, 0.15);
+  margin-bottom: 2px;
+  padding-bottom: 4px;
 }
 
 /* Custom Scrollbar */
