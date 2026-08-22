@@ -215,11 +215,9 @@
             <table style="width:100%; border:none; margin-bottom:6px;">
                 <tr>
                     {{-- Logo --}}
-                    <td style="width:22mm; border:none; vertical-align:middle; text-align:center; padding:0 8px 0 0;">
+                    <td style="width:24mm; border:none; vertical-align:middle; text-align:center; padding:0 10px 0 0;">
                         @if(!empty($logoBase64))
-                            <img src="{{ $logoBase64 }}" style="max-width:20mm; max-height:20mm; object-fit:contain;" />
-                        @else
-                            <div style="width:20mm; height:20mm; border:1px dashed #ccc; display:inline-block; line-height:20mm; text-align:center; font-size:7pt; color:#bbb;">LOGO</div>
+                            <img src="{{ $logoBase64 }}" style="max-width:22mm; max-height:22mm; display:block; margin:0 auto;" />
                         @endif
                     </td>
                     {{-- School details centre --}}
