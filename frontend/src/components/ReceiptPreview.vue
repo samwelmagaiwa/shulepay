@@ -25,7 +25,7 @@
       <span>{{ data.date || '—' }}</span>
     </div>
     <div style="border-top:1px dashed #000; margin:6px 0;"></div>
-    <div class="small mb-1"><strong>{{ t('common.name') }}:</strong> {{ data.student || '—' }}</div>
+    <div class="small mb-1"><strong>{{ t('common.student') }}:</strong> {{ data.student || '—' }}</div>
     <div class="small mb-1"><strong>{{ t('students.admissionNo') }}:</strong> {{ data.admission || '—' }}</div>
     <div class="small mb-1"><strong>{{ t('invoices.invoiceNo') }}:</strong> {{ data.invoice_number || '—' }}</div>
     <div style="border-top:1px dashed #000; margin:6px 0;"></div>

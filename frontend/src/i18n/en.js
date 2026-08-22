@@ -61,6 +61,7 @@ export default {
     all:         'All',
     status:      'Status',
     name:        'Name',
+    student:     'Student',
     amount:      'Amount',
     date:        'Date',
     school:      'School',

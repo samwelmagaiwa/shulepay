@@ -61,6 +61,7 @@ export default {
     all:         'Zote',
     status:      'Hali',
     name:        'Jina',
+    student:     'Mwanafunzi',
     amount:      'Kiasi',
     date:        'Tarehe',
     school:      'Shule',

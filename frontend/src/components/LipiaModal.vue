@@ -10,7 +10,7 @@
           <!-- Invoice summary -->
           <div class="p-3 rounded mb-3" style="background:var(--cui-tertiary-bg, #f8f9fa);">
             <div class="d-flex justify-content-between mb-1">
-              <span class="text-muted small">{{ t('students.student') }}</span>
+              <span class="text-muted small">{{ t('common.student') }}</span>
               <strong>{{ invoice?.student?.full_name }}</strong>
             </div>
             <div class="d-flex justify-content-between mb-1">
