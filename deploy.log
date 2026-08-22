@@ -516,3 +516,14 @@
 [0;36m[2026-08-22 11:33:03][0m   ShulePay — Release
 [0;36m[2026-08-22 11:33:03][0m ══════════════════════════════════════════
 [0;36m[2026-08-22 11:33:03][0m Checking working tree...
+[0;36m[2026-08-22 11:33:03][0m Files staged for commit:
+[0;36m[2026-08-22 11:33:04][0m Committing: "fix: InfoRow JS-computed inline styles — dark #0d1117 value, font-weight 800, unoverridable"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-22 11:33:04][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-22 11:33:07][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-22 11:35:56][0m ══════════════════════════════════════════
+[0;36m[2026-08-22 11:35:56][0m   ShulePay — Release
+[0;36m[2026-08-22 11:35:56][0m ══════════════════════════════════════════
+[0;36m[2026-08-22 11:35:56][0m Checking working tree...
