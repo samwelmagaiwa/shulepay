@@ -49,13 +49,10 @@
       <!-- Cleared -->
       <CCard v-if="result.cleared" class="border-success mb-3">
         <CCardBody class="p-4 text-center">
-          <div class="mb-3" style="font-size:4rem; color:#198754;">✓</div>
-          <h4 class="text-success fw-bold">{{ t('clearance.clearedTitle') }}</h4>
-          <p class="text-muted mb-0">{{ t('clearance.clearedMsg', { name: selectedStudent?.full_name }) }}</p>
-          <div class="mt-3">
-            <CBadge color="success" class="px-3 py-2" style="font-size:.9rem;">{{ t('clearance.cleared') }}</CBadge>
-          </div>
-          <CButton color="success" class="mt-4" :disabled="issuing" @click="issueCertificate" style="min-height:44px; min-width:160px;">
+          <div class="mb-2" style="font-size:3.5rem; color:#198754;">✓</div>
+          <h4 class="text-success fw-bold mb-1">{{ t('clearance.clearedTitle') }}</h4>
+          <p class="text-muted mb-4">{{ t('clearance.clearedMsg', { name: selectedStudent?.full_name }) }}</p>
+          <CButton color="success" :disabled="issuing" @click="issueCertificate" style="min-height:44px; min-width:200px;">
             <CSpinner v-if="issuing" size="sm" class="me-1" />
             <CIcon v-else icon="cilCloudDownload" class="me-1" />
             {{ t('clearance.downloadCert') }}
