@@ -14,7 +14,17 @@ const routes = [
       {
         path: 'dashibodi',
         name: 'Dashibodi',
-        component: () => import('@/views/dashboard/Dashboard.vue'),
+        component: () => {
+          try {
+            const raw = localStorage.getItem('shulepay_user')
+            const user = raw ? JSON.parse(raw) : null
+            const role = user?.role
+            if (role === 'teacher' || role === 'head_teacher') return import('@/views/dashboard/TeacherDashboard.vue')
+            if (role === 'academic_teacher' || role === 'headmaster') return import('@/views/dashboard/AcademicDashboard.vue')
+            if (role === 'parent') return import('@/views/dashboard/ParentDashboard.vue')
+          } catch { }
+          return import('@/views/dashboard/Dashboard.vue')
+        },
         meta: { requiresAuth: true },
       },
       // Students
@@ -188,7 +198,7 @@ const routes = [
       // Shule modules
       { path: 'usafiri', name: 'Usafiri', component: () => import('@/views/usafiri/UsafiriView.vue'), meta: { requiresAuth: true } },
       { path: 'inventory', name: 'Inventory', component: () => import('@/views/inventory/InventoryView.vue'), meta: { requiresAuth: true } },
-      { path: 'mahudhurio', name: 'Mahudhurio', component: () => import('@/views/mahudhurio/MahudhurioView.vue'), meta: { requiresAuth: true } },
+      { path: 'mahudhurio', name: 'Mahudhurio', component: () => import('@/views/mahudhurio/MahudhurioView.vue'), meta: { requiresAuth: true, roles: ['teacher', 'head_teacher', 'academic_teacher', 'headmaster', 'owner', 'superadmin'] } },
       { path: 'arifa', name: 'Arifa', component: () => import('@/views/arifa/ArifaView.vue'), meta: { requiresAuth: true } },
     ],
   },

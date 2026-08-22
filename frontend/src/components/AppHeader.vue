@@ -112,10 +112,12 @@ function go(path) {
         <RouterLink class="btn btn-ghost-secondary text-start" to="/wasambazaji" @click="mobileNavOpen=false">{{ t('nav.suppliers') }}</RouterLink>
         <RouterLink class="btn btn-ghost-secondary text-start" to="/mali" @click="mobileNavOpen=false">{{ t('nav.assets') }}</RouterLink>
 
-        <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.schoolLife') }}</div>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/mahudhurio" @click="mobileNavOpen=false">📋 {{ t('nav.attendance') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/usafiri" @click="mobileNavOpen=false">🚌 {{ t('nav.transport') }}</RouterLink>
-        <RouterLink class="btn btn-ghost-secondary text-start" to="/inventory" @click="mobileNavOpen=false">📦 {{ t('nav.inventory') }}</RouterLink>
+        <template v-if="!auth.isParent">
+          <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.schoolLife') }}</div>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/mahudhurio" @click="mobileNavOpen=false">📋 {{ t('nav.attendance') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/usafiri" @click="mobileNavOpen=false">🚌 {{ t('nav.transport') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/inventory" @click="mobileNavOpen=false">📦 {{ t('nav.inventory') }}</RouterLink>
+        </template>
         <RouterLink class="btn btn-ghost-secondary text-start position-relative" to="/arifa" @click="mobileNavOpen=false">
           🔔 {{ t('nav.notifications') }}
           <CBadge v-if="notifications.unreadCount > 0" color="danger" class="position-absolute top-0 end-0">{{ notifications.unreadCount }}</CBadge>
@@ -256,8 +258,8 @@ function go(path) {
           </CDropdownMenu>
         </CDropdown>
 
-        <!-- Shule dropdown -->
-        <CDropdown variant="nav-item" :caret="false">
+        <!-- Shule dropdown (hidden from parents) -->
+        <CDropdown v-if="!auth.isParent" variant="nav-item" :caret="false">
           <CDropdownToggle class="fw-semibold px-2" :class="{ 'nav-active': isSchuleActive }" style="font-size:.9rem;">
             {{ t('nav.schoolLife') }}
           </CDropdownToggle>
@@ -273,6 +275,13 @@ function go(path) {
             </CDropdownItem>
           </CDropdownMenu>
         </CDropdown>
+
+        <!-- Parent nav: notifications link -->
+        <CNavItem v-if="auth.isParent">
+          <RouterLink to="/arifa" class="nav-link fw-semibold px-2" style="font-size:.9rem;">
+            🔔 {{ t('nav.notifications') }}
+          </RouterLink>
+        </CNavItem>
 
         <!-- Ripoti -->
         <CNavItem v-if="auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher">
