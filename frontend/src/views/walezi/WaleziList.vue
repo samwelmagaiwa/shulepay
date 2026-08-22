@@ -1,26 +1,20 @@
 <template>
   <CContainer fluid>
-    <CRow class="align-items-center mb-3">
-      <CCol>
-        <h4 class="fw-bold mb-0">{{ t('guardians.title') }}</h4>
-      </CCol>
-      <CCol xs="auto">
-        <CButton color="primary" @click="openAdd">
-          <CIcon icon="cilPlus" class="me-1" /> {{ t('guardians.add') }}
-        </CButton>
-      </CCol>
-    </CRow>
-
-    <!-- Search -->
+    <!-- Single toolbar row: search · reset · add -->
     <CCard class="mb-3">
-      <CCardBody>
-        <CRow class="g-2">
-          <CCol sm="6">
+      <CCardBody class="py-2">
+        <CRow class="g-2 align-items-center">
+          <CCol>
             <CFormInput v-model="search" :placeholder="t('common.search') + '...'" @input="debouncedLoad" />
           </CCol>
-          <CCol sm="3">
-            <CButton color="secondary" variant="outline" @click="search = ''; page = 1; loadData()" class="w-100">
+          <CCol xs="auto">
+            <CButton color="secondary" variant="outline" @click="search = ''; page = 1; loadData()">
               {{ t('common.reset') }}
+            </CButton>
+          </CCol>
+          <CCol xs="auto">
+            <CButton color="primary" @click="openAdd">
+              <CIcon icon="cilPlus" class="me-1" /> {{ t('guardians.add') }}
             </CButton>
           </CCol>
         </CRow>
