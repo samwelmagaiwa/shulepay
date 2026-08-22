@@ -152,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { CPagination, CPaginationItem } from '@coreui/vue'
@@ -256,9 +256,16 @@ function onStudentSaved() {
   fetchData()
 }
 
+function onDocClick() { activeRow.value = null }
+
 onMounted(async () => {
+  document.addEventListener('click', onDocClick)
   try { await schoolsStore.fetchSchools() } catch {}
   try { await fetchData() } catch {}
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', onDocClick)
 })
 </script>
 

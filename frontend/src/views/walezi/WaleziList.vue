@@ -177,7 +177,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { CPagination, CPaginationItem } from '@coreui/vue'
 import { useI18n } from 'vue-i18n'
 import { useGuardiansStore } from '@/stores/guardians'
@@ -273,12 +273,19 @@ async function remove(g) {
   try { await store.deleteGuardian(g.id) } catch {}
 }
 
+function onDocClick() { activeRow.value = null }
+
 onMounted(async () => {
+  document.addEventListener('click', onDocClick)
   await loadData()
   try {
     await studentsStore.fetchStudents()
     students.value = studentsStore.students
   } catch {}
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', onDocClick)
 })
 </script>
 
