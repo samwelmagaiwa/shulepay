@@ -51,7 +51,7 @@ class DashboardService
                 DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} GROUP BY invoice_id) as p"),
                 'p.invoice_id', '=', "{$invoiceTable}.id"
             )
-            ->selectRaw("SUM({$invoiceTable}.total_cents - COALESCE(p.paid_sum, 0)) as outstanding")
+            ->selectRaw("SUM({$invoiceTable}.total_amount_cents - COALESCE(p.paid_sum, 0)) as outstanding")
             ->value('outstanding') ?? 0;
 
         // ── Weekly trend — single GROUP BY query (replaces 7 queries) ─────────
@@ -141,7 +141,7 @@ class DashboardService
                 DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} GROUP BY invoice_id) as pd"),
                 'pd.invoice_id', '=', "{$invoiceTable}.id"
             )
-            ->selectRaw("{$invoiceTable}.*, ({$invoiceTable}.total_cents - COALESCE(pd.paid_sum, 0)) as balance")
+            ->selectRaw("{$invoiceTable}.*, ({$invoiceTable}.total_amount_cents - COALESCE(pd.paid_sum, 0)) as balance")
             ->orderByDesc('balance')
             ->limit(5)
             ->with('student')

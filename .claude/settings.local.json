@@ -215,7 +215,8 @@
       "PowerShell(docker exec shulepay_backend cat /etc/nginx/http.d/default.conf)",
       "Bash(bash deploy.sh release \"style: fix pint unary/binary operator spacing in AttendanceController\")",
       "PowerShell(gh run list --limit 5 --repo samwelmagaiwa/shulepay)",
-      "Bash(bash deploy.sh release \"perf: dashboard — replace 20+ loop queries with bulk GROUP BY queries\")"
+      "Bash(bash deploy.sh release \"perf: dashboard — replace 20+ loop queries with bulk GROUP BY queries\")",
+      "Bash(grep -r 'total_cents\\\\|amount_cents\\\\|$table->decimal\\\\|$table->unsignedBigInteger' D:/Projects/shulepay/backend/database/migrations/)"
     ]
   }
 }
