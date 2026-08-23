@@ -197,7 +197,20 @@
       "Bash(bash deploy.sh release \"feat: add teacher, academic, and parent dashboards with role-based routing\")",
       "Bash(bash deploy.sh release \"fix: branding auth guard, attendance summary date param, parent dashboard field mapping, remove duplicate routes\")",
       "PowerShell(cd \"D:\\\\Projects\\\\shulepay\\\\backend\"; php -r \"require 'vendor/autoload.php'; \\\\$app = require 'bootstrap/app.php'; \\\\$app->make\\('Illuminate\\\\Contracts\\\\Http\\\\Kernel'\\); echo \\\\$app['config']['app.url'];\"  2>&1)",
-      "PowerShell(Get-Item \"C:\\\\xampp\\\\htdocs\\\\shulepay\" | Select-Object FullName, LinkType, Target; \\(Get-Item \"C:\\\\xampp\\\\htdocs\\\\shulepay\"\\).Target)"
+      "PowerShell(Get-Item \"C:\\\\xampp\\\\htdocs\\\\shulepay\" | Select-Object FullName, LinkType, Target; \\(Get-Item \"C:\\\\xampp\\\\htdocs\\\\shulepay\"\\).Target)",
+      "PowerShell(robocopy \"D:\\\\Projects\\\\shulepay\\\\backend\\\\storage\\\\app\\\\public\" \"C:\\\\xampp\\\\htdocs\\\\shulepay\\\\backend\\\\storage\\\\app\\\\public\" /E /NFL /NDL /NJH /NJS 2>&1)",
+      "Bash(cmd //c mklink //J \"C:\\\\\\\\xampp\\\\\\\\htdocs\\\\\\\\shulepay\\\\\\\\backend\\\\\\\\public\\\\\\\\storage\" \"D:\\\\\\\\Projects\\\\\\\\shulepay\\\\\\\\backend\\\\\\\\storage\\\\\\\\app\\\\\\\\public\")",
+      "PowerShell(netstat -ano)",
+      "PowerShell(Get-Process -Id 28824 -ErrorAction SilentlyContinue)",
+      "Bash(wsl -- bash -c \"nginx -T 2>/dev/null | grep -E 'root|server_name|location.*storage|shulepay' | head -30\")",
+      "Bash(wsl -- bash -c \"cat /etc/nginx/sites-enabled/* 2>/dev/null | head -60; ls /etc/nginx/sites-enabled/ 2>/dev/null\")",
+      "Bash(wsl -- bash -c \"ls /etc/nginx/ 2>/dev/null && cat /etc/nginx/nginx.conf 2>/dev/null | head -30 || echo 'nginx not at /etc/nginx'\")",
+      "Bash(wsl -- bash -c \"which nginx apache2 php 2>/dev/null; ss -tlnp | grep :80; ps aux | grep -E 'nginx|apache|php' | grep -v grep | head -10\")",
+      "Bash(wsl -- bash -c \"ss -tlnp | grep -E ':80|:443|:8000|:3000'; ps aux | grep -v grep | head -20\")",
+      "Bash(wsl -- bash -c \"ss -tlnp | grep ':80 '; fuser 80/tcp 2>/dev/null; cat /proc/\\\\$\\(fuser 80/tcp 2>/dev/null | awk '{print \\\\$1}'\\)/cmdline 2>/dev/null | tr '\\\\0' ' '\")",
+      "Bash(wsl -- bash -c \"ls /www/shulepay 2>/dev/null | head -10; ls /var/www/ 2>/dev/null | head -10\")",
+      "Bash(wsl -- bash -c \"find /mnt -name 'nginx.conf' -o -name 'apache2.conf' 2>/dev/null | head -5; find / -maxdepth 6 -name 'nginx.conf' 2>/dev/null | grep -v proc | head -5\")",
+      "Bash(bash deploy.sh release \"fix: recreate storage symlink at container startup to fix localhost/storage 404\")"
     ]
   }
 }

@@ -44,16 +44,19 @@ COPY . .
 # stale service/package discovery files cause "class not found" on boot)
 RUN rm -f bootstrap/cache/services.php bootstrap/cache/packages.php
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html \
+# Remove any Windows-path symlink baked in by local dev, then set permissions
+RUN rm -f /var/www/html/public/storage \
+ && chown -R www-data:www-data /var/www/html \
  && chmod -R 755 /var/www/html/storage \
  && chmod -R 755 /var/www/html/bootstrap/cache
 
 # Copy configs
 COPY docker/supervisord.conf /etc/supervisord.conf
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+COPY docker/start.sh /start.sh
+RUN chmod +x /start.sh
 
 # Expose HTTP port
 EXPOSE 80
 
-CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["/start.sh"]
