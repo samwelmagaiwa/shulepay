@@ -200,6 +200,9 @@ const routes = [
       { path: 'inventory', name: 'Inventory', component: () => import('@/views/inventory/InventoryView.vue'), meta: { requiresAuth: true } },
       { path: 'mahudhurio', name: 'Mahudhurio', component: () => import('@/views/mahudhurio/MahudhurioView.vue'), meta: { requiresAuth: true, roles: ['teacher', 'teacher_pri', 'teacher_sec', 'head_teacher', 'academic_teacher', 'headmaster', 'academic_pri', 'academic_sec', 'owner', 'superadmin'] } },
       { path: 'arifa', name: 'Arifa', component: () => import('@/views/arifa/ArifaView.vue'), meta: { requiresAuth: true } },
+      // Stationary
+      { path: 'stationary/mine', name: 'MyStationary', component: () => import('@/views/stationary/MyStationaryView.vue'), meta: { requiresAuth: true, roles: ['teacher', 'teacher_pri', 'teacher_sec', 'head_teacher', 'headmaster', 'academic_pri', 'academic_sec'] } },
+      { path: 'stationary/manage', name: 'StationaryManage', component: () => import('@/views/stationary/StationaryManageView.vue'), meta: { requiresAuth: true, roles: ['accountant', 'owner', 'superadmin'] } },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/dashibodi' },

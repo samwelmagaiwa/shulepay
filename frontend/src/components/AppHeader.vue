@@ -127,6 +127,8 @@ function go(path) {
           <RouterLink class="btn btn-ghost-secondary text-start" to="/mahudhurio" @click="mobileNavOpen=false">📋 {{ t('nav.attendance') }}</RouterLink>
           <RouterLink v-if="!auth.isTeacher" class="btn btn-ghost-secondary text-start" to="/usafiri" @click="mobileNavOpen=false">🚌 {{ t('nav.transport') }}</RouterLink>
           <RouterLink v-if="!auth.isTeacher" class="btn btn-ghost-secondary text-start" to="/inventory" @click="mobileNavOpen=false">📦 {{ t('nav.inventory') }}</RouterLink>
+          <RouterLink v-if="auth.isStaff" class="btn btn-ghost-secondary text-start" to="/stationary/mine" @click="mobileNavOpen=false">{{ t('stationary.navMine') }}</RouterLink>
+          <RouterLink v-if="auth.isAccountant || auth.isOwner || auth.isSuperAdmin" class="btn btn-ghost-secondary text-start" to="/stationary/manage" @click="mobileNavOpen=false">{{ t('stationary.navManage') }}</RouterLink>
         </template>
 
         <!-- Notifications: all roles -->
@@ -292,6 +294,12 @@ function go(path) {
             </CDropdownItem>
             <CDropdownItem v-if="!auth.isTeacher" @click="router.push('/inventory')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/inventory') }">
               📦 {{ t('nav.inventory') }}
+            </CDropdownItem>
+            <CDropdownItem v-if="auth.isStaff" @click="router.push('/stationary/mine')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/stationary/mine') }">
+              {{ t('stationary.navMine') }}
+            </CDropdownItem>
+            <CDropdownItem v-if="auth.isAccountant || auth.isOwner || auth.isSuperAdmin" @click="router.push('/stationary/manage')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/stationary/manage') }">
+              {{ t('stationary.navManage') }}
             </CDropdownItem>
           </CDropdownMenu>
         </CDropdown>

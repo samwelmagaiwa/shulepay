@@ -30,6 +30,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\Inventory\InventoryController;
+use App\Http\Controllers\Inventory\StationaryController;
 use App\Http\Controllers\Owner\BudgetController;
 use App\Http\Controllers\Owner\DashboardController;
 use App\Http\Controllers\Owner\UserController;
@@ -87,6 +88,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('settings/profile', [UserSettingsController::class, 'profile']);
     Route::put('settings/profile', [UserSettingsController::class, 'updateProfile']);
     Route::post('settings/toggle-2fa', [UserSettingsController::class, 'toggle2fa']);
+
+    // Stationary requests — teaching staff can request; finance can manage
+    Route::get('stationary/items', [StationaryController::class, 'availableItems'])
+        ->middleware('role:'.UserRole::guard(UserRole::teachingStaff()));
+    Route::get('stationary/summary', [StationaryController::class, 'summary'])
+        ->middleware('role:'.UserRole::guard(UserRole::adminStaff()));
+    Route::middleware('role:'.UserRole::guard([...UserRole::teachingStaff(), ...UserRole::financeStaff()]))->group(function () {
+        Route::get('stationary', [StationaryController::class, 'index']);
+        Route::post('stationary', [StationaryController::class, 'store'])
+            ->middleware('role:'.UserRole::guard(UserRole::teachingStaff()));
+        Route::post('stationary/{stationaryRequest}/approve', [StationaryController::class, 'approve'])
+            ->middleware('role:'.UserRole::guard(UserRole::financeStaff()));
+        Route::post('stationary/{stationaryRequest}/provide', [StationaryController::class, 'provide'])
+            ->middleware('role:'.UserRole::guard(UserRole::financeStaff()));
+        Route::post('stationary/{stationaryRequest}/reject', [StationaryController::class, 'reject'])
+            ->middleware('role:'.UserRole::guard(UserRole::financeStaff()));
+    });
 
     // Teaching staff — attendance + notifications
     // All roles that can mark or view attendance (teaching staff + finance staff)
