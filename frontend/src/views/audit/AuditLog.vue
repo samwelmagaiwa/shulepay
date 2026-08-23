@@ -1,15 +1,10 @@
 <template>
-  <CContainer fluid class="p-2 p-md-4">
-    <CRow class="align-items-center mb-3 g-2">
-      <CCol>
-        <h4 class="fw-bold mb-0 fs-5">{{ t('audit.title') }}</h4>
-        <p class="text-muted mb-0 small">{{ t('audit.subtitle') }}</p>
-      </CCol>
-    </CRow>
-
-    <!-- Filters -->
-    <CCard class="mb-3">
-      <CCardBody class="p-2">
+  <div>
+    <!-- Sticky filter bar -->
+    <div class="audit-sticky-filters">
+      <CCard class="mb-0 border-0 rounded-0 shadow-sm">
+        <CCardBody class="p-2">
+        <CRow class="g-2">
         <CRow class="g-2">
           <CCol xs="6" sm="4" md="2">
             <CFormInput type="date" v-model="filters.date_from" @change="load" style="min-height:44px;"
@@ -41,9 +36,12 @@
             </CButton>
           </CCol>
         </CRow>
-      </CCardBody>
-    </CCard>
+        </CCardBody>
+      </CCard>
+    </div>
 
+    <!-- Scrollable content -->
+    <CContainer fluid class="p-2 p-md-4 pt-3">
     <div v-if="loading" class="text-center py-5"><CSpinner color="primary" /></div>
 
     <div v-else>
@@ -127,7 +125,8 @@
         </CPagination>
       </div>
     </div>
-  </CContainer>
+    </CContainer>
+  </div>
 </template>
 
 <script setup>
@@ -211,3 +210,12 @@ function resetFilters() {
 
 onMounted(() => { try { load(1) } catch {} })
 </script>
+
+<style scoped>
+.audit-sticky-filters {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--cui-body-bg, #fff);
+}
+</style>

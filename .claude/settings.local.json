@@ -213,7 +213,8 @@
       "Bash(bash deploy.sh release \"fix: recreate storage symlink at container startup to fix localhost/storage 404\")",
       "Bash(docker cp *)",
       "PowerShell(docker exec shulepay_backend cat /etc/nginx/http.d/default.conf)",
-      "Bash(bash deploy.sh release \"style: fix pint unary/binary operator spacing in AttendanceController\")"
+      "Bash(bash deploy.sh release \"style: fix pint unary/binary operator spacing in AttendanceController\")",
+      "PowerShell(gh run list --limit 5 --repo samwelmagaiwa/shulepay)"
     ]
   }
 }
