@@ -59,9 +59,9 @@
             <CBadge :color="actionColor(log.action)">{{ log.action }}</CBadge>
           </div>
           <div class="mt-1 small">
-            <span class="text-muted">Kitu: </span>{{ log.auditable_type }} #{{ log.auditable_id }}
+            <span class="text-muted">Kitu: </span>{{ shortType(log.subject_type) }} #{{ log.subject_id }}
           </div>
-          <div v-if="log.ip_address" class="small text-muted">IP: {{ log.ip_address }}</div>
+          <div v-if="log.ip" class="small text-muted">IP: {{ log.ip }}</div>
         </div>
       </div>
 
@@ -83,22 +83,25 @@
               <CTableRow v-for="log in logs" :key="log.id">
                 <CTableDataCell class="small text-nowrap">{{ formatDate(log.created_at) }}</CTableDataCell>
                 <CTableDataCell>
-                  <div class="fw-semibold small">{{ log.user?.name || log.user_email }}</div>
+                  <div class="fw-semibold small">{{ log.user?.name || '—' }}</div>
                   <div class="small text-muted">{{ log.user?.role }}</div>
                 </CTableDataCell>
                 <CTableDataCell>
                   <CBadge :color="actionColor(log.action)">{{ log.action }}</CBadge>
                 </CTableDataCell>
                 <CTableDataCell class="small">
-                  {{ log.auditable_type }} #{{ log.auditable_id }}
+                  {{ shortType(log.subject_type) }}
+                  <span v-if="log.subject_id" class="text-muted">#{{ log.subject_id }}</span>
+                  <span v-else class="text-muted">—</span>
                 </CTableDataCell>
                 <CTableDataCell class="d-none d-lg-table-cell" style="max-width:300px;">
-                  <div v-if="log.new_values" class="small" style="font-family:monospace; white-space:pre-wrap; max-height:60px; overflow:hidden;">
-                    {{ formatChanges(log.new_values) }}
+                  <div v-if="log.changes?.after" class="small" style="font-family:monospace; white-space:pre-wrap; max-height:60px; overflow:hidden;">
+                    {{ formatChanges(log.changes.after) }}
                   </div>
+                  <span v-else class="text-muted small">—</span>
                 </CTableDataCell>
                 <CTableDataCell class="d-none d-xl-table-cell small text-muted">
-                  {{ log.ip_address || '—' }}
+                  {{ log.ip || '—' }}
                 </CTableDataCell>
               </CTableRow>
               <CTableRow v-if="!logs.length">
@@ -152,8 +155,14 @@ function formatDate(dt) {
   if (!dt) return '—'
   return new Date(dt).toLocaleString('sw-TZ', {
     year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
   })
+}
+
+function shortType(type) {
+  if (!type) return '—'
+  // "App\Models\Invoice" → "Invoice"
+  return type.split('\\').pop()
 }
 
 function actionColor(action) {

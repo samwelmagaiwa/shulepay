@@ -17,6 +17,7 @@ class AuditLogController extends Controller
     {
         $data = $request->validate([
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'user' => ['nullable', 'string', 'max:200'],
             'subject_type' => ['nullable', 'string', 'max:200'],
             'action' => ['nullable', 'string', 'max:100'],
             'date_from' => ['nullable', 'date'],
@@ -27,6 +28,8 @@ class AuditLogController extends Controller
 
         if (! empty($data['user_id'])) {
             $query->where('user_id', $data['user_id']);
+        } elseif (! empty($data['user'])) {
+            $query->whereHas('user', fn ($q) => $q->where('name', 'like', '%'.$data['user'].'%'));
         }
 
         if (! empty($data['subject_type'])) {
@@ -62,7 +65,7 @@ class AuditLogController extends Controller
                 'after' => $log->after,
             ],
             'note' => null, // AuditLog model has no 'note' column; include for API consistency
-            'user' => $log->user ? ['id' => $log->user->id, 'name' => $log->user->name] : null,
+            'user' => $log->user ? ['id' => $log->user->id, 'name' => $log->user->name, 'role' => $log->user->getRoleNames()->first()] : null,
             'ip' => $log->ip_address,
             'created_at' => $log->created_at?->toISOString(),
         ]);
