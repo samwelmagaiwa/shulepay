@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -19,8 +20,11 @@ class User extends Authenticatable
         hasPermissionTo as spatieHasPermissionTo;
     }
 
-    protected $fillable = ['name', 'email', 'password', 'school_id', 'phone', 'avatar', '2fa_enabled',
-        'is_active', 'deactivated_at', 'deactivation_reason', 'forbidden_permissions'];
+    protected $fillable = [
+        'name', 'email', 'password', 'school_id', 'phone', 'avatar',
+        '2fa_enabled', 'is_active', 'deactivated_at', 'deactivation_reason',
+        'forbidden_permissions',
+    ];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -33,61 +37,72 @@ class User extends Authenticatable
         'forbidden_permissions' => 'array',
     ];
 
+    // ── Permission overrides ──────────────────────────────────────────────────
+
     /**
-     * Override Spatie's hasPermissionTo so that superadmin-forbidden permissions
-     * are denied even when the user's role would normally grant them.
-     * Superadmin accounts are never restricted.
+     * Superadmin always passes. Everyone else is checked against their
+     * forbidden_permissions list before falling through to Spatie.
      */
     public function hasPermissionTo($permission, $guardName = null): bool
     {
-        if ($this->hasRole('superadmin')) {
+        if ($this->hasRole(UserRole::SuperAdmin->value)) {
             return true;
         }
-        $permName = $permission instanceof Permission
-            ? $permission->name : (string) $permission;
 
-        $forbidden = $this->forbidden_permissions ?? [];
-        if (in_array($permName, $forbidden, true)) {
+        $permName = $permission instanceof Permission
+            ? $permission->name
+            : (string) $permission;
+
+        if (in_array($permName, $this->forbidden_permissions ?? [], true)) {
             return false;
         }
 
         return $this->spatieHasPermissionTo($permission, $guardName);
     }
 
-    /** All effective permissions: role + direct, minus forbidden */
+    /** All effective permissions: role + direct grants, minus forbidden list. */
     public function effectivePermissions(): array
     {
-        if ($this->hasRole('superadmin')) {
+        if ($this->hasRole(UserRole::SuperAdmin->value)) {
             return Permission::all()->pluck('name')->toArray();
         }
-        $all = $this->getAllPermissions()->pluck('name')->toArray();
-        $forbidden = $this->forbidden_permissions ?? [];
 
-        return array_values(array_diff($all, $forbidden));
+        return array_values(
+            array_diff(
+                $this->getAllPermissions()->pluck('name')->toArray(),
+                $this->forbidden_permissions ?? []
+            )
+        );
     }
+
+    // ── Relationships ─────────────────────────────────────────────────────────
 
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
     }
 
-    /** Schools explicitly granted via multi_school access (pivot table) */
+    public function guardian(): HasOne
+    {
+        return $this->hasOne(Guardian::class);
+    }
+
+    /** Schools explicitly granted via multi-school access (pivot). */
     public function accessibleSchools(): BelongsToMany
     {
         return $this->belongsToMany(School::class, 'user_school_access')->withTimestamps();
     }
 
+    // ── School-access helpers ─────────────────────────────────────────────────
+
     /**
      * True if the user may act on the given school.
-     * Superadmins always pass. Others must match their primary school
-     * OR have an explicit row in user_school_access for that school.
-     *
-     * Intentionally queries the pivot table directly so that forbidden_permissions
-     * or stale Spatie caches cannot block a legitimately-granted school access.
+     * Superadmin always passes. Others must match their primary school
+     * or hold an explicit grant in user_school_access.
      */
     public function canAccessSchool(int $schoolId): bool
     {
-        if ($this->hasRole('superadmin')) {
+        if ($this->isSuperAdmin()) {
             return true;
         }
         if ((int) $this->school_id === $schoolId) {
@@ -100,83 +115,102 @@ class User extends Authenticatable
             ->exists();
     }
 
-    /** IDs of all schools this user can act on (primary + granted extras) */
+    /**
+     * IDs of all schools this user can act on.
+     * Empty array means "all schools" (superadmin only).
+     */
     public function allAccessibleSchoolIds(): array
     {
-        if ($this->hasRole('superadmin')) {
-            return [];  // empty = "all schools" for superadmin callers
+        if ($this->isSuperAdmin()) {
+            return [];
         }
-        $ids = $this->school_id ? [(int) $this->school_id] : [];
 
+        $primary = $this->school_id ? [(int) $this->school_id] : [];
         $extra = \DB::table('user_school_access')
             ->where('user_id', $this->id)
             ->pluck('school_id')
             ->map(fn ($id) => (int) $id)
             ->toArray();
 
-        return array_values(array_unique(array_merge($ids, $extra)));
+        return array_values(array_unique(array_merge($primary, $extra)));
     }
 
-    public function guardian(): HasOne
+    // ── Role helpers (delegate to UserRole enum) ──────────────────────────────
+
+    /** Returns the user's primary UserRole enum case, or null if unrecognised. */
+    public function userRole(): ?UserRole
     {
-        return $this->hasOne(Guardian::class);
-    }
+        $roleName = $this->roles->first()?->name;
 
-    // ── Role helpers ──────────────────────────────────────────────────────────
+        return $roleName ? UserRole::tryFrom($roleName) : null;
+    }
 
     public function isSuperAdmin(): bool
     {
-        return $this->hasRole('superadmin');
-    }
-
-    public function isAccountant(): bool
-    {
-        return $this->hasRole('accountant');
+        return $this->hasRole(UserRole::SuperAdmin->value);
     }
 
     public function isOwner(): bool
     {
-        return $this->hasRole('owner') || $this->hasRole('superadmin');
+        // Superadmin carries owner-level privileges as well.
+        return $this->hasAnyRole([UserRole::Owner->value, UserRole::SuperAdmin->value]);
+    }
+
+    public function isAccountant(): bool
+    {
+        return $this->hasAnyRole([UserRole::Accountant->value, UserRole::SuperAdmin->value]);
     }
 
     public function isParent(): bool
     {
-        return $this->hasRole('parent');
+        return $this->hasRole(UserRole::Parent->value);
     }
 
-    /** Class teacher — primary or secondary */
+    /** Class teacher — primary or secondary. */
     public function isTeacher(): bool
     {
-        return $this->hasRole('teacher');
+        return $this->hasAnyRole(UserRole::classTeachers());
     }
 
-    /** Head Teacher — primary schools */
+    /** Head teacher (primary) or headmaster (secondary). */
+    public function isSchoolHead(): bool
+    {
+        return $this->hasAnyRole(UserRole::schoolHeads());
+    }
+
+    /** Head teacher — primary schools. */
     public function isHeadTeacher(): bool
     {
-        return $this->hasRole('head_teacher');
+        return $this->hasRole(UserRole::HeadTeacher->value);
     }
 
-    /** Headmaster/Headmistress — secondary schools */
+    /** Headmaster — secondary schools. */
     public function isHeadmaster(): bool
     {
-        return $this->hasRole('headmaster');
+        return $this->hasRole(UserRole::Headmaster->value);
     }
 
-    /** Subject / academic teacher — primary or secondary */
-    public function isAcademicTeacher(): bool
+    /** Academic coordinator — primary or secondary. */
+    public function isAcademicCoordinator(): bool
     {
-        return $this->hasRole('academic_teacher');
+        return $this->hasAnyRole(UserRole::academicCoordinators());
     }
 
-    /** Any teaching-staff role */
+    /** Any teaching or academic-staff role. */
     public function isStaff(): bool
     {
-        return $this->hasAnyRole(['teacher', 'head_teacher', 'headmaster', 'academic_teacher']);
+        return $this->hasAnyRole(UserRole::teachingStaff());
     }
 
-    /** Roles allowed to mark attendance */
+    /** True for any role that may mark or view attendance. */
     public function canMarkAttendance(): bool
     {
-        return $this->hasAnyRole(['teacher', 'head_teacher', 'headmaster', 'academic_teacher', 'accountant', 'owner', 'superadmin']);
+        return $this->hasAnyRole(UserRole::attendanceMarkers());
+    }
+
+    /** True for any role that has access to financial data. */
+    public function isFinanceStaff(): bool
+    {
+        return $this->hasAnyRole(UserRole::financeStaff());
     }
 }

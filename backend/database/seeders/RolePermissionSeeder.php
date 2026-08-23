@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserRole;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 
@@ -9,20 +10,10 @@ class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        $roles = [
-            'superadmin',
-            'owner',
-            'accountant',
-            'parent',
-            'teacher_pri',   // Class Teacher — primary schools only
-            'teacher_sec',   // Subject Teacher — secondary schools only
-            'academic_pri',  // Academic Teacher — primary schools only
-            'academic_sec',  // Academic Teacher — secondary schools only
-            'head_teacher',  // Head Teacher — primary schools only
-            'headmaster',    // Headmaster/Headmistress — secondary schools only
-        ];
-        foreach ($roles as $role) {
-            Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
+        // Canonical role set — sourced from UserRole enum so this seeder
+        // never drifts out of sync with the rest of the codebase.
+        foreach (UserRole::all() as $name) {
+            Role::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
         }
     }
 }

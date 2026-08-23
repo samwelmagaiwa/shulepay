@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Accountant\AssetController;
 use App\Http\Controllers\Accountant\BulkImportController;
 use App\Http\Controllers\Accountant\ClearanceController;
@@ -77,8 +78,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Branding — read: all authenticated; write: owner/superadmin only
     Route::get('branding', [BrandingController::class, 'show']);
-    Route::post('branding', [BrandingController::class, 'update'])->middleware('role:owner|superadmin');
-    Route::delete('branding/logo', [BrandingController::class, 'deleteLogo'])->middleware('role:owner|superadmin');
+    Route::post('branding', [BrandingController::class, 'update'])
+        ->middleware('role:'.UserRole::guard(UserRole::adminStaff()));
+    Route::delete('branding/logo', [BrandingController::class, 'deleteLogo'])
+        ->middleware('role:'.UserRole::guard(UserRole::adminStaff()));
 
     // User settings (all authenticated users)
     Route::get('settings/profile', [UserSettingsController::class, 'profile']);
@@ -86,19 +89,27 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('settings/toggle-2fa', [UserSettingsController::class, 'toggle2fa']);
 
     // Teaching staff — attendance + notifications
-    Route::middleware('role:teacher|head_teacher|headmaster|academic_teacher')->group(function () {
+    // All roles that can mark or view attendance (teaching staff + finance staff)
+    Route::middleware('role:'.UserRole::guard(UserRole::teachingStaff()))->group(function () {
         Route::get('attendance/register', [AttendanceController::class, 'getRegister']);
         Route::post('attendance/bulk-mark', [AttendanceController::class, 'bulkMark']);
         Route::get('attendance/summary', [AttendanceController::class, 'summary']);
         Route::get('attendance/student-report', [AttendanceController::class, 'studentReport']);
+    });
+
+    // Notifications — all authenticated staff except parent
+    Route::middleware('role:'.UserRole::guard([
+        ...UserRole::teachingStaff(),
+        ...UserRole::financeStaff(),
+    ]))->group(function () {
         Route::get('notifications', [NotificationController::class, 'index']);
         Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
         Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead']);
     });
 
-    // Accountant + Owner + Superadmin
-    Route::middleware('role:accountant|owner|superadmin')->group(function () {
+    // Finance staff — accountant / owner / superadmin
+    Route::middleware('role:'.UserRole::guard(UserRole::financeStaff()))->group(function () {
 
         // Dashboard
         Route::get('dashboard/stats', [DashboardController::class, 'stats']);
@@ -160,7 +171,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Expenses
         Route::apiResource('expenses', ExpenseController::class);
-        Route::post('expenses/{expense}/approve', [ExpenseController::class, 'approve'])->middleware('role:owner');
+        Route::post('expenses/{expense}/approve', [ExpenseController::class, 'approve'])
+            ->middleware('role:'.UserRole::guard(UserRole::adminStaff()));
 
         // Petty Cash
         Route::get('petty-cash/balance', [PettyCashController::class, 'balance']);
@@ -241,8 +253,8 @@ Route::middleware('auth:sanctum')->group(function () {
         });
     });
 
-    // Owner + Superadmin
-    Route::middleware('role:owner|superadmin')->group(function () {
+    // Admin staff — owner / superadmin
+    Route::middleware('role:'.UserRole::guard(UserRole::adminStaff()))->group(function () {
         Route::get('audit-logs', [AuditLogController::class, 'index']);
         Route::get('login-history', [LoginHistoryController::class, 'index']);
 
@@ -278,8 +290,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('school-classes/{schoolClass}', [SchoolClassController::class, 'destroy']);
     });
 
-    // Accountant + Owner + Superadmin — term management
-    Route::middleware('role:accountant|owner|superadmin')->group(function () {
+    // Finance staff — term management
+    Route::middleware('role:'.UserRole::guard(UserRole::financeStaff()))->group(function () {
         Route::post('terms', [TermController::class, 'store']);
         Route::put('terms/{term}', [TermController::class, 'update']);
         Route::patch('terms/{term}', [TermController::class, 'update']);
