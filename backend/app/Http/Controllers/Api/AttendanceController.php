@@ -177,14 +177,14 @@ class AttendanceController extends Controller
     public function summary(Request $request)
     {
         $request->validate([
-            'date'      => 'nullable|date',
+            'date' => 'nullable|date',
             'from_date' => 'nullable|date',
-            'to_date'   => 'nullable|date|after_or_equal:from_date',
+            'to_date' => 'nullable|date|after_or_equal:from_date',
         ]);
 
         // Support both single-date and range params
         $fromDate = $request->from_date ?? $request->date ?? now()->toDateString();
-        $toDate   = $request->to_date   ?? $request->date ?? now()->toDateString();
+        $toDate = $request->to_date ?? $request->date ?? now()->toDateString();
 
         $schoolId = app()->bound('active_school') ? app('active_school')->id : auth()->user()->school_id;
 

@@ -212,7 +212,8 @@
       "Bash(wsl -- bash -c \"find /mnt -name 'nginx.conf' -o -name 'apache2.conf' 2>/dev/null | head -5; find / -maxdepth 6 -name 'nginx.conf' 2>/dev/null | grep -v proc | head -5\")",
       "Bash(bash deploy.sh release \"fix: recreate storage symlink at container startup to fix localhost/storage 404\")",
       "Bash(docker cp *)",
-      "PowerShell(docker exec shulepay_backend cat /etc/nginx/http.d/default.conf)"
+      "PowerShell(docker exec shulepay_backend cat /etc/nginx/http.d/default.conf)",
+      "Bash(bash deploy.sh release \"style: fix pint unary/binary operator spacing in AttendanceController\")"
     ]
   }
 }
