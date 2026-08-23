@@ -349,7 +349,7 @@
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: #06150e;
+  background: radial-gradient(ellipse at 40% 35%, #4a90c4 0%, #2e6e9e 30%, #1a4a6e 60%, #0d2f4a 100%);
   display: flex;
   align-items: center;
   justify-content: center;
