@@ -77,7 +77,7 @@ class RegisterStudentRequest extends FormRequest
             'payment_history.*.payments' => 'nullable|array',
             'payment_history.*.payments.*.amount_cents' => 'required_with:payment_history.*.payments|integer|min:1',
             'payment_history.*.payments.*.paid_at' => 'required_with:payment_history.*.payments|date|before_or_equal:today',
-            'payment_history.*.payments.*.method' => 'nullable|in:cash,mpesa,bank,cheque,other',
+            'payment_history.*.payments.*.method' => 'nullable|in:cash,mpesa,bank,cheque',
             'payment_history.*.payments.*.notes' => 'nullable|string|max:300',
         ];
     }

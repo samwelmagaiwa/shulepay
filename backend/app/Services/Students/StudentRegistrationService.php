@@ -9,8 +9,6 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\School;
 use App\Models\Student;
-use App\Models\Term;
-use App\Models\AcademicYear;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\Sms\SmsService;
@@ -235,12 +233,17 @@ class StudentRegistrationService
     private function importPaymentHistory(Student $student, int $schoolId, array $history): void
     {
         foreach ($history as $entry) {
-            $termId       = $entry['term_id'];
-            $yearId       = $entry['academic_year_id'];
-            $feeCents     = (int) $entry['fee_amount_cents'];
-            $payments     = $entry['payments'] ?? [];
+            $termId   = $entry['term_id']          ?? null;
+            $yearId   = $entry['academic_year_id'] ?? null;
+            $feeCents = (int) ($entry['fee_amount_cents'] ?? 0);
+            $payments = $entry['payments'] ?? [];
 
-            // Skip if invoice already exists for this student+term
+            // Skip incomplete entries
+            if (! $termId || ! $yearId || $feeCents <= 0) {
+                continue;
+            }
+
+            // Skip if invoice already exists for this student+term (idempotent)
             if (Invoice::withoutGlobalScope('school')
                 ->where('student_id', $student->id)
                 ->where('school_id', $schoolId)
@@ -254,7 +257,7 @@ class StudentRegistrationService
                 'school_id'          => $schoolId,
                 'term_id'            => $termId,
                 'academic_year_id'   => $yearId,
-                'invoice_number'     => 'MIG-'.strtoupper(Str::random(8)),
+                'invoice_number'     => $this->nextMigrationNumber(),
                 'total_amount_cents' => $feeCents,
                 'arrears_cents'      => 0,
                 'discount_cents'     => 0,
@@ -266,26 +269,48 @@ class StudentRegistrationService
 
             $invoice->lines()->create([
                 'fee_item_id'  => null,
-                'description'  => 'Migrated fee (from books)',
+                'description'  => 'Ada iliyohamishwa (kutoka vitabuni)',
                 'amount_cents' => $feeCents,
             ]);
 
             foreach ($payments as $p) {
+                $amountCents = (int) ($p['amount_cents'] ?? 0);
+                if ($amountCents <= 0 || empty($p['paid_at'])) {
+                    continue; // skip malformed payment rows
+                }
+
+                // Guard: don't allow overpayment beyond invoice total
+                $alreadyPaid = $invoice->paidCents();
+                $cap = $feeCents - $alreadyPaid;
+                if ($cap <= 0) break;
+                $amountCents = min($amountCents, $cap);
+
                 Payment::create([
                     'invoice_id'       => $invoice->id,
                     'student_id'       => $student->id,
                     'school_id'        => $schoolId,
-                    'amount_cents'     => (int) $p['amount_cents'],
+                    'amount_cents'     => $amountCents,
                     'method'           => $p['method'] ?? 'cash',
                     'reference_number' => null,
                     'paid_at'          => $p['paid_at'],
                     'recorded_by'      => auth()->id(),
-                    'notes'            => $p['notes'] ?? 'Migrated from books',
+                    'notes'            => trim($p['notes'] ?? '') ?: 'Imehamishwa kutoka vitabuni',
                 ]);
             }
 
             $invoice->syncStatus();
         }
+    }
+
+    private function nextMigrationNumber(): string
+    {
+        $year = date('Y');
+        $last = Invoice::allSchools()
+            ->where('invoice_number', 'like', "MIG-{$year}-%")
+            ->max('invoice_number');
+        $seq = $last ? ((int) substr($last, -6)) + 1 : 1;
+
+        return sprintf('MIG-%s-%06d', $year, $seq);
     }
 
     private function generateInvoice(Student $student, array $data): void

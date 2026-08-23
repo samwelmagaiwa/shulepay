@@ -115,6 +115,7 @@ class SuperadminUserController extends Controller
         }
         if (isset($data['password'])) {
             $user->password = Hash::make($data['password']);
+            $user->must_change_password = true;
         }
         if (isset($data['phone'])) {
             $user->phone = $data['phone'];

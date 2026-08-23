@@ -10,17 +10,15 @@
       <div class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3 border"
            :style="form.is_existing_student ? 'border-color:#ffc107!important;background:#fffdf0;' : 'border-color:#007f3e!important;background:#f8fff8;'">
         <div class="flex-grow-1">
-          <div class="fw-semibold small">{{ t('students.isNewStudent') }}</div>
+          <div class="fw-semibold small">
+            {{ form.is_existing_student ? '📚 ' + t('students.isExistingStudent') : '🆕 ' + t('students.isNewStudent') }}
+          </div>
           <div class="text-muted" style="font-size:.72rem;">
-            {{ form.is_existing_student ? t('students.isExistingStudent') : t('students.migrationHint') }}
+            {{ form.is_existing_student ? t('students.migrationHint') : t('students.isNewStudentHint') }}
           </div>
         </div>
-        <div class="d-flex align-items-center gap-2">
-          <span class="small fw-semibold" :class="!form.is_existing_student ? 'text-success' : 'text-muted'">{{ t('common.yes') }}</span>
-          <CFormSwitch v-model="form.is_existing_student" id="existingStudentToggle"
-                       @update:modelValue="onExistingToggle" />
-          <span class="small fw-semibold" :class="form.is_existing_student ? 'text-warning' : 'text-muted'">{{ t('common.no') }}</span>
-        </div>
+        <CFormSwitch v-model="form.is_existing_student" id="existingStudentToggle"
+                     @update:modelValue="onExistingToggle" />
       </div>
 
       <!-- Step indicator — desktop -->
@@ -502,13 +500,19 @@
             </div>
           </div>
 
-          <!-- Col 3: Generate invoice toggle -->
+          <!-- Col 3: Generate invoice toggle (hidden for existing students — history covers it) -->
           <div class="p-3 rounded-3 border d-flex flex-column justify-content-center gap-2" style="background:#f8f9fa;">
-            <div class="d-flex align-items-center gap-2">
-              <CFormSwitch v-model="form.generate_first_invoice" id="genInvoice" size="xl" />
-              <div class="fw-semibold small">{{ t('students.generateFirstInvoice') }}</div>
-            </div>
-            <div class="text-muted" style="font-size:.72rem;">{{ t('students.generateFirstInvoiceHint') }}</div>
+            <template v-if="!form.is_existing_student">
+              <div class="d-flex align-items-center gap-2">
+                <CFormSwitch v-model="form.generate_first_invoice" id="genInvoice" size="xl" />
+                <div class="fw-semibold small">{{ t('students.generateFirstInvoice') }}</div>
+              </div>
+              <div class="text-muted" style="font-size:.72rem;">{{ t('students.generateFirstInvoiceHint') }}</div>
+            </template>
+            <template v-else>
+              <div class="text-warning fw-semibold small">📚 {{ t('students.isExistingStudent') }}</div>
+              <div class="text-muted" style="font-size:.72rem;">{{ t('students.migrationInvoiceNote') }}</div>
+            </template>
           </div>
 
         </div>
@@ -702,11 +706,10 @@
             <div style="flex:1;min-width:100px;">
               <label class="form-label mb-1 small">{{ t('students.paymentMethod') }}</label>
               <CFormSelect v-model="pmt.method">
-                <option value="cash">Cash</option>
+                <option value="cash">Taslimu (Cash)</option>
                 <option value="mpesa">M-Pesa</option>
-                <option value="bank">Bank</option>
-                <option value="cheque">Cheque</option>
-                <option value="other">Other</option>
+                <option value="bank">Benki (Bank)</option>
+                <option value="cheque">Hundi (Cheque)</option>
               </CFormSelect>
             </div>
             <div style="flex:1.5;min-width:120px;">
@@ -728,7 +731,7 @@
             <span class="text-muted">{{ t('fees.total') }}: <strong>{{ formatMoney(entry.fee_amount * 100) }}</strong></span>
             <span class="text-muted">{{ t('common.paid') }}: <strong class="text-success">{{ formatMoney(termPaid(entry)) }}</strong></span>
             <span :class="termBalance(entry) > 0 ? 'text-danger fw-bold' : 'text-success fw-bold'">
-              {{ t('ada.balance') }}: {{ formatMoney(termBalance(entry)) }}
+              {{ t('common.balance') }}: {{ formatMoney(termBalance(entry)) }}
             </span>
           </div>
         </div>
@@ -1041,8 +1044,14 @@ function setPrimary(idx)   { form.value.guardians.forEach((g, i) => { if (i !== 
 
 // ── Existing student toggle ───────────────────────────────────────────────────
 function onExistingToggle(isExisting) {
-  if (!isExisting) form.value.payment_history = []
-  else if (form.value.payment_history.length === 0) addTermHistory()
+  if (!isExisting) {
+    form.value.payment_history = []
+    // If user was on step 6 (migration), drop back to step 5
+    if (step.value > 5) step.value = 5
+  } else {
+    form.value.generate_first_invoice = false
+    if (form.value.payment_history.length === 0) addTermHistory()
+  }
 }
 
 // ── Migration history helpers ─────────────────────────────────────────────────
@@ -1106,6 +1115,18 @@ function validateStep() {
     if (!g?.full_name)    errors.value['guardians.0.full_name']    = t('guardians.errors.nameRequired')
     if (!g?.phone)        errors.value['guardians.0.phone']        = t('guardians.errors.phoneRequired')
     if (!g?.relationship) errors.value['guardians.0.relationship'] = t('guardians.errors.relationshipRequired')
+  }
+  if (step.value === 6) {
+    form.value.payment_history.forEach((entry, ei) => {
+      if (!entry.academic_year_id) errors.value[`payment_history.${ei}.academic_year_id`] = t('students.errors.yearRequired')
+      if (!entry.term_id)          errors.value[`payment_history.${ei}.term_id`]          = t('students.errors.termRequired')
+      if (!entry.fee_amount || entry.fee_amount <= 0)
+        errors.value[`payment_history.${ei}.fee_amount_cents`] = t('students.errors.feeAmountRequired')
+      entry.payments.forEach((p, pi) => {
+        if (!p.paid_at)  errors.value[`payment_history.${ei}.payments.${pi}.paid_at`]     = t('students.paidDate') + ' ' + t('common.required')
+        if (!p.amount || p.amount <= 0) errors.value[`payment_history.${ei}.payments.${pi}.amount_cents`] = t('students.paidAmount') + ' ' + t('common.required')
+      })
+    })
   }
   return Object.keys(errors.value).length === 0
 }
