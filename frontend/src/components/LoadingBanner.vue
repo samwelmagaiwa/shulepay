@@ -1,90 +1,81 @@
 <template>
   <div class="loading-overlay">
-    <div class="scene-wrap">
+    <div class="scene-card">
 
-      <!-- Sky + clouds -->
+      <!-- Sky -->
       <div class="sky">
-        <div class="cloud cloud-1"></div>
-        <div class="cloud cloud-2"></div>
         <div class="sun"></div>
+        <div class="cloud c1"></div>
+        <div class="cloud c2"></div>
       </div>
 
       <!-- School building -->
-      <div class="building">
-        <div class="building-roof"></div>
-        <div class="building-body">
-          <div class="building-flag-pole"><div class="building-flag"></div></div>
-          <div class="building-windows">
+      <div class="building-wrap">
+        <div class="roof"></div>
+        <div class="facade">
+          <div class="flag-pole"><div class="flag"></div></div>
+          <div class="sign-board">
+            <span>SHULE</span>
+          </div>
+          <div class="windows-row">
             <div class="win"></div>
             <div class="win"></div>
             <div class="win"></div>
           </div>
-          <div class="building-door"></div>
-          <div class="building-sign">SHULE</div>
+          <div class="door"></div>
         </div>
       </div>
 
-      <!-- Ground -->
+      <!-- Ground scene -->
       <div class="ground">
-        <div class="grass"></div>
-
-        <!-- Tree left -->
-        <div class="tree tree-l">
-          <div class="tree-top"></div>
-          <div class="trunk"></div>
-        </div>
-
-        <!-- Tree right -->
-        <div class="tree tree-r">
-          <div class="tree-top"></div>
-          <div class="trunk"></div>
-        </div>
-
-        <!-- Teacher figure -->
-        <div class="person teacher">
-          <div class="head"></div>
-          <div class="body teacher-body">
-            <div class="book-held"></div>
+        <!-- Path -->
+        <div class="path"></div>
+        <!-- Trees -->
+        <div class="tree tl"><div class="leaves"></div><div class="trunk"></div></div>
+        <div class="tree tr"><div class="leaves"></div><div class="trunk"></div></div>
+        <!-- Teacher -->
+        <div class="figure teacher">
+          <div class="fig-head"></div>
+          <div class="fig-body t-shirt">
+            <div class="t-book"></div>
           </div>
-          <div class="legs">
-            <div class="leg"></div><div class="leg"></div>
-          </div>
+          <div class="fig-legs"><div class="fig-leg"></div><div class="fig-leg"></div></div>
         </div>
-
-        <!-- Student 1 -->
-        <div class="person student s1">
-          <div class="head s-head"></div>
-          <div class="body student-body">
-            <div class="backpack"></div>
+        <!-- Student A -->
+        <div class="figure stu-a">
+          <div class="fig-head"></div>
+          <div class="fig-body s-shirt"></div>
+          <div class="fig-legs walk">
+            <div class="fig-leg la"></div><div class="fig-leg lb"></div>
           </div>
-          <div class="legs">
-            <div class="leg anim-walk"></div><div class="leg anim-walk-r"></div>
+          <div class="s-bag"></div>
+        </div>
+        <!-- Student B -->
+        <div class="figure stu-b">
+          <div class="fig-head"></div>
+          <div class="fig-body s-shirt sb2"></div>
+          <div class="fig-legs walk">
+            <div class="fig-leg lb"></div><div class="fig-leg la"></div>
           </div>
         </div>
-
-        <!-- Student 2 -->
-        <div class="person student s2">
-          <div class="head s-head"></div>
-          <div class="body student-body s2-body"></div>
-          <div class="legs">
-            <div class="leg anim-walk-r"></div><div class="leg anim-walk"></div>
-          </div>
-        </div>
-
-        <!-- Floating items -->
-        <div class="float-item pen"></div>
-        <div class="float-item book bk1"></div>
-        <div class="float-item book bk2"></div>
-        <div class="float-item pencil"></div>
+        <!-- Floating stationery -->
+        <div class="stat pen-a"></div>
+        <div class="stat pen-b"></div>
+        <div class="stat nb-a"></div>
+        <div class="stat nb-b"></div>
+        <div class="stat ruler"></div>
       </div>
 
-      <!-- Bottom bar -->
-      <div class="bottom-bar">
-        <div class="brand">
-          <span class="brand-s">Shule</span><span class="brand-p">Pay</span>
+      <!-- Grass strip -->
+      <div class="grass"></div>
+
+      <!-- Bottom brand bar -->
+      <div class="footer-bar">
+        <div class="footer-brand">
+          <span class="fb-shule">Shule</span><span class="fb-pay">Pay</span>
         </div>
-        <div class="loading-msg">Inapakia data ya shule...</div>
-        <div class="progress-track"><div class="progress-fill"></div></div>
+        <div class="footer-msg">Inapakia data ya shule...</div>
+        <div class="footer-bar-track"><div class="footer-bar-fill"></div></div>
       </div>
 
     </div>
@@ -92,369 +83,295 @@
 </template>
 
 <style scoped>
-/* ── Overlay ─────────────────────────────────────────── */
+/* === Palette ===
+   Navy:   #0a2240
+   Green:  #007f3e  /  dark #0d3d26
+   Gold:   #fcd116
+   Sky:    #d1f0ff → #eaf9f0
+*/
+
 .loading-overlay {
   position: fixed;
   inset: 0;
   z-index: 9999;
+  background: #06150e;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0f172a;
 }
 
-.scene-wrap {
-  width: 380px;
-  border-radius: 24px;
+.scene-card {
+  width: 360px;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.06);
-  background: #fff;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
   display: flex;
   flex-direction: column;
 }
 
-/* ── Sky ─────────────────────────────────────────────── */
+/* ── Sky ─── */
 .sky {
+  height: 84px;
+  background: linear-gradient(180deg, #c9edff 0%, #e8fbf0 100%);
   position: relative;
-  height: 90px;
-  background: linear-gradient(180deg, #bfdbfe 0%, #eff6ff 100%);
   overflow: hidden;
 }
-
 .sun {
   position: absolute;
-  top: 14px; right: 28px;
-  width: 36px; height: 36px;
+  top: 12px; right: 26px;
+  width: 34px; height: 34px;
   border-radius: 50%;
-  background: radial-gradient(circle, #fef08a 40%, #fde68a 70%, transparent 100%);
-  box-shadow: 0 0 18px 6px rgba(253,224,71,0.4);
-  animation: sun-pulse 3s ease-in-out infinite;
+  background: radial-gradient(circle, #fef08a 30%, #fde68a 65%, transparent 100%);
+  box-shadow: 0 0 20px 8px rgba(252,209,22,0.35);
+  animation: sun-glow 3s ease-in-out infinite;
 }
-@keyframes sun-pulse {
-  0%,100%{ box-shadow: 0 0 18px 6px rgba(253,224,71,0.4); }
-  50%    { box-shadow: 0 0 28px 12px rgba(253,224,71,0.25); }
+@keyframes sun-glow {
+  0%,100%{ box-shadow: 0 0 20px 8px rgba(252,209,22,0.35); }
+  50%    { box-shadow: 0 0 34px 14px rgba(252,209,22,0.2); }
 }
-
 .cloud {
   position: absolute;
-  border-radius: 50px;
-  background: white;
-  opacity: 0.9;
+  background: #fff;
+  border-radius: 40px;
+  opacity: 0.85;
 }
-.cloud::before, .cloud::after {
-  content:''; position: absolute;
-  background: white; border-radius: 50%;
+.cloud::before,.cloud::after {
+  content:''; position:absolute;
+  background:#fff; border-radius:50%;
 }
-.cloud-1 {
-  width: 70px; height: 22px;
-  top: 18px; left: 30px;
-  animation: drift 12s linear infinite;
-}
-.cloud-1::before { width:28px;height:28px; top:-14px; left:10px; }
-.cloud-1::after  { width:20px;height:20px; top:-10px; left:32px; }
-.cloud-2 {
-  width: 50px; height: 16px;
-  top: 30px; left: 160px;
-  animation: drift 18s linear infinite;
-  opacity: 0.7;
-}
-.cloud-2::before { width:22px;height:22px; top:-11px; left:8px; }
-.cloud-2::after  { width:16px;height:16px; top:-8px;  left:24px; }
-@keyframes drift {
-  from { transform: translateX(0); }
-  to   { transform: translateX(40px); }
-}
+.c1 { width:64px;height:20px;top:20px;left:22px; animation:drift 14s linear infinite; }
+.c1::before{width:26px;height:26px;top:-13px;left:8px;}
+.c1::after {width:18px;height:18px;top:-9px;left:28px;}
+.c2 { width:46px;height:14px;top:36px;left:140px; animation:drift 20s linear infinite; opacity:.65; }
+.c2::before{width:18px;height:18px;top:-9px;left:7px;}
+.c2::after {width:14px;height:14px;top:-7px;left:22px;}
+@keyframes drift { to{transform:translateX(30px)} }
 
-/* ── Building ────────────────────────────────────────── */
-.building {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: -10px;
+/* ── Building ─── */
+.building-wrap {
+  display:flex; flex-direction:column; align-items:center;
+  background: linear-gradient(180deg, #e8fbf0 0%, #ccf0d8 100%);
+  padding-bottom: 0;
+  position: relative;
   z-index: 2;
-  position: relative;
 }
-.building-roof {
-  width: 0;
-  height: 0;
-  border-left: 70px solid transparent;
-  border-right: 70px solid transparent;
-  border-bottom: 44px solid #1d4ed8;
-  filter: drop-shadow(0 -2px 4px rgba(29,78,216,0.3));
+.roof {
+  width:0; height:0;
+  border-left:72px solid transparent;
+  border-right:72px solid transparent;
+  border-bottom:46px solid #0a2240;
 }
-.building-body {
-  width: 140px;
-  background: linear-gradient(180deg, #dbeafe 0%, #eff6ff 100%);
-  border: 2px solid #bfdbfe;
-  border-top: none;
-  border-radius: 0 0 6px 6px;
-  padding: 6px 8px 8px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
+.facade {
+  width:144px;
+  background: linear-gradient(180deg,#f0faf4,#e2f4ea);
+  border:2px solid #b6e4c8;
+  border-top:none;
+  border-radius:0 0 6px 6px;
+  display:flex; flex-direction:column; align-items:center;
+  padding:4px 8px 8px;
+  position:relative; gap:3px;
 }
-.building-flag-pole {
-  position: absolute;
-  top: -52px; left: 50%; transform: translateX(-50%);
-  width: 2px; height: 28px;
-  background: #94a3b8;
+.flag-pole {
+  position:absolute; top:-52px; left:50%; transform:translateX(-50%);
+  width:2px; height:30px; background:#8fb3a0;
 }
-.building-flag {
-  position: absolute;
-  top: 0; left: 2px;
-  width: 18px; height: 11px;
-  background: linear-gradient(90deg, #ef4444, #f97316);
-  clip-path: polygon(0 0, 100% 40%, 0 80%);
-  animation: flag-wave 1.5s ease-in-out infinite;
-  transform-origin: left center;
+.flag {
+  position:absolute; top:0; left:2px;
+  width:20px; height:12px;
+  background: linear-gradient(90deg,#007f3e,#00a34f);
+  clip-path:polygon(0 0,100% 40%,0 80%);
+  animation:flag-flap 1.6s ease-in-out infinite; transform-origin:left center;
 }
-@keyframes flag-wave {
-  0%,100%{ transform: scaleX(1); }
-  50%    { transform: scaleX(0.8) skewY(5deg); }
+@keyframes flag-flap {
+  0%,100%{transform:scaleX(1) skewY(0);}
+  50%{transform:scaleX(.82) skewY(6deg);}
 }
-.building-windows {
-  display: flex; gap: 8px;
+.sign-board {
+  background:#fcd116; border-radius:3px; padding:1px 10px;
+  font-size:7px; font-weight:800; letter-spacing:2.5px; color:#0a2240;
 }
+.windows-row { display:flex; gap:8px; }
 .win {
-  width: 26px; height: 20px;
-  background: linear-gradient(135deg, #bfdbfe, #93c5fd);
-  border: 1.5px solid #60a5fa;
-  border-radius: 3px 3px 0 0;
-  position: relative;
+  width:28px; height:20px;
+  background:linear-gradient(135deg,#a8d8f0,#7ec8e3);
+  border:1.5px solid #0a2240; border-radius:3px 3px 0 0;
+  position:relative;
 }
 .win::after {
-  content:''; position:absolute;
-  top:2px; left:2px;
-  width:8px; height:6px;
-  background: rgba(255,255,255,0.5);
-  border-radius: 2px;
+  content:''; position:absolute; top:2px; left:2px;
+  width:9px; height:6px;
+  background:rgba(255,255,255,0.55); border-radius:2px;
 }
-.building-door {
-  width: 24px; height: 28px;
-  background: linear-gradient(180deg,#1d4ed8,#1e40af);
-  border-radius: 4px 4px 0 0;
-  border: 1.5px solid #1e40af;
-}
-.building-sign {
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  color: #1d4ed8;
-  margin-top: 2px;
+.door {
+  width:26px; height:30px;
+  background:linear-gradient(180deg,#0a2240,#0d2f57);
+  border-radius:4px 4px 0 0;
+  border:1.5px solid #071a30;
 }
 
-/* ── Ground ──────────────────────────────────────────── */
+/* ── Ground ─── */
 .ground {
-  position: relative;
-  height: 130px;
-  background: #f0fdf4;
-  overflow: hidden;
+  height:120px;
+  background:#e8fdf0;
+  position:relative; overflow:hidden;
+}
+.path {
+  position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+  width:48px; height:100%;
+  background:linear-gradient(180deg,rgba(210,185,140,0.3),rgba(210,185,140,0.7));
+  border-radius:0;
 }
 .grass {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 18px;
-  background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%);
-  border-radius: 40% 40% 0 0;
+  height:18px;
+  background:linear-gradient(180deg,#007f3e,#0d3d26);
 }
 
-/* ── Trees ───────────────────────────────────────────── */
-.tree {
-  position: absolute;
-  bottom: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* ── Trees ─── */
+.tree { position:absolute; bottom:14px; display:flex; flex-direction:column; align-items:center; }
+.tl { left:10px; }
+.tr { right:10px; }
+.leaves {
+  width:34px; height:46px;
+  background:linear-gradient(180deg,#00a34f,#007f3e);
+  clip-path:polygon(50% 0%,0% 100%,100% 100%);
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,0.15));
 }
-.tree-l { left: 12px; }
-.tree-r { right: 12px; }
-.tree-top {
-  width: 32px; height: 42px;
-  background: linear-gradient(180deg, #16a34a, #15803d);
-  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+.trunk { width:9px; height:15px; background:#5c3d11; border-radius:2px; }
+
+/* ── Figures ─── */
+.figure { position:absolute; bottom:14px; display:flex; flex-direction:column; align-items:center; }
+.teacher{ left:52px; }
+.stu-a  { left:130px; animation:bob 1.8s ease-in-out infinite; }
+.stu-b  { left:196px; animation:bob 1.8s ease-in-out infinite .3s; }
+@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+
+.fig-head {
+  width:18px; height:18px; border-radius:50%;
+  background:#f5c97a; border:2px solid #d4952a;
+  margin-bottom:1px;
 }
-.trunk {
-  width: 8px; height: 14px;
-  background: #92400e;
-  border-radius: 2px;
+.fig-body {
+  width:20px; height:26px; border-radius:4px;
+  display:flex; align-items:center; justify-content:center;
+  position:relative;
+}
+.t-shirt  { background:#0a2240; }   /* Teacher — navy */
+.s-shirt  { background:#007f3e; }   /* Student — green uniform */
+.sb2      { background:#005c2d; }   /* Slightly darker green */
+
+.t-book {
+  position:absolute; left:-9px; top:5px;
+  width:10px; height:13px;
+  background:#fcd116; border-radius:1px;
+  border-left:2px solid #b89c00;
+}
+.s-bag {
+  position:absolute; right:-9px; top:0;
+  width:10px; height:13px;
+  background:#fcd116; border-radius:2px;
+  border:1.5px solid #b89c00;
+  margin-top:19px;
 }
 
-/* ── People ──────────────────────────────────────────── */
-.person {
-  position: absolute;
-  bottom: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.fig-legs { display:flex; gap:4px; }
+.fig-leg {
+  width:7px; height:15px;
+  background:#0a2240; border-radius:0 0 3px 3px;
 }
-.teacher { left: 55px; }
-.student.s1 { left: 130px; animation: walk 1.8s ease-in-out infinite; }
-.student.s2 { left: 195px; animation: walk 1.8s ease-in-out infinite 0.3s; }
-
-@keyframes walk {
-  0%,100%{ transform: translateY(0); }
-  50%    { transform: translateY(-3px); }
+.la { animation:leg-swing .5s ease-in-out infinite alternate; }
+.lb { animation:leg-swing .5s ease-in-out infinite alternate-reverse; }
+@keyframes leg-swing {
+  from{transform:rotate(-11deg)} to{transform:rotate(11deg)}
 }
 
-.head {
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  background: #fcd34d;
-  border: 2px solid #f59e0b;
-  margin-bottom: 1px;
+/* ── Stationery floaters ─── */
+.stat { position:absolute; }
+/* Pen A */
+.pen-a {
+  width:4px; height:22px; bottom:58px; left:88px;
+  background:linear-gradient(180deg,#fcd116,#b89c00);
+  border-radius:2px;
+  animation:float1 2.4s ease-in-out infinite;
 }
-.s-head {
-  width: 15px; height: 15px;
-  border-color: #f59e0b;
+.pen-a::after {
+  content:''; position:absolute; bottom:-4px; left:-1px;
+  width:6px; height:5px; background:#c0392b;
+  clip-path:polygon(50% 100%,0 0,100% 0);
 }
-.body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
+/* Pen B — pencil shape */
+.pen-b {
+  width:4px; height:18px; bottom:65px; right:72px;
+  background:linear-gradient(180deg,#fcd116,#e6b800);
+  border-radius:2px; transform:rotate(18deg);
+  animation:float1 2.2s ease-in-out infinite .6s;
 }
-.teacher-body {
-  width: 22px; height: 28px;
-  background: #1d4ed8;
-  position: relative;
+.pen-b::after {
+  content:''; position:absolute; bottom:-4px; left:-1px;
+  width:6px; height:5px; background:#888;
+  clip-path:polygon(50% 100%,0 0,100% 0);
 }
-.student-body {
-  width: 18px; height: 22px;
-  background: #16a34a;
-  border-radius: 3px;
-  position: relative;
+/* Notebook A */
+.nb-a {
+  width:20px; height:15px; bottom:72px; left:248px;
+  background:#007f3e; border-radius:1px 3px 3px 1px;
+  border-left:3px solid #005c2d;
+  animation:float2 2.8s ease-in-out infinite .2s;
 }
-.s2-body { background: #dc2626; }
-
-.backpack {
-  position: absolute;
-  right: -7px; top: 2px;
-  width: 9px; height: 13px;
-  background: #7c3aed;
-  border-radius: 2px;
-  border: 1px solid #6d28d9;
-}
-
-.book-held {
-  position: absolute;
-  left: -8px; top: 6px;
-  width: 10px; height: 13px;
-  background: #ef4444;
-  border-radius: 1px;
-  border-left: 2px solid #b91c1c;
-}
-
-.legs {
-  display: flex; gap: 4px;
-}
-.leg {
-  width: 6px; height: 14px;
-  background: #374151;
-  border-radius: 0 0 3px 3px;
-}
-.anim-walk   { animation: leg-a 0.5s ease-in-out infinite alternate; }
-.anim-walk-r { animation: leg-a 0.5s ease-in-out infinite alternate-reverse; }
-@keyframes leg-a {
-  from { transform: rotate(-10deg); }
-  to   { transform: rotate(10deg); }
-}
-
-/* ── Floating items ──────────────────────────────────── */
-.float-item {
-  position: absolute;
-  animation: float-up 2.5s ease-in-out infinite;
-}
-.pen {
-  bottom: 55px; left: 90px;
-  width: 4px; height: 22px;
-  background: linear-gradient(180deg, #fbbf24, #f59e0b);
-  border-radius: 2px;
-  animation-delay: 0s;
-}
-.pen::after {
+.nb-a::after {
   content:''; position:absolute;
-  bottom:-4px; left:-1px;
-  width:6px; height:5px;
-  background: #f87171;
-  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  top:3px; left:4px; right:2px; height:1.5px;
+  background:rgba(255,255,255,0.4); border-radius:1px;
+  box-shadow:0 4px 0 rgba(255,255,255,0.3);
 }
-.pencil {
-  bottom: 60px; right: 80px;
-  width: 4px; height: 20px;
-  background: linear-gradient(180deg, #818cf8, #6366f1);
-  border-radius: 2px;
-  transform: rotate(15deg);
-  animation-delay: 0.7s;
+/* Notebook B */
+.nb-b {
+  width:18px; height:14px; bottom:55px; right:56px;
+  background:#0a2240; border-radius:1px 3px 3px 1px;
+  border-left:3px solid #061628;
+  animation:float2 2.6s ease-in-out infinite .9s;
+  transform:rotate(-10deg);
 }
-.book {
-  width: 18px; height: 14px;
-  border-radius: 1px 3px 3px 1px;
-  border-left: 3px solid rgba(0,0,0,0.2);
-}
-.bk1 {
-  bottom: 70px; left: 260px;
-  background: #f97316;
-  animation-delay: 0.4s;
-}
-.bk2 {
-  bottom: 52px; left: 288px;
-  background: #06b6d4;
-  animation-delay: 1.1s;
-  transform: rotate(-8deg);
-}
-@keyframes float-up {
-  0%,100%{ transform: translateY(0) rotate(0deg);   opacity:0.9; }
-  50%    { transform: translateY(-8px) rotate(5deg); opacity:1;   }
-}
-.bk2 { animation-name: float-tilt; }
-@keyframes float-tilt {
-  0%,100%{ transform: translateY(0) rotate(-8deg);   opacity:0.9; }
-  50%    { transform: translateY(-7px) rotate(-3deg); opacity:1;   }
+/* Ruler */
+.ruler {
+  width:34px; height:6px; bottom:78px; left:60px;
+  background:linear-gradient(90deg,#fcd116 0%,#fcd116 48%,#0a2240 48%,#0a2240 52%,#fcd116 52%);
+  border-radius:2px; border:1px solid #b89c00;
+  animation:float1 3s ease-in-out infinite .4s;
+  transform:rotate(-5deg);
 }
 
-/* ── Bottom bar ──────────────────────────────────────── */
-.bottom-bar {
-  background: #1e293b;
-  padding: 14px 20px 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
+@keyframes float1 {
+  0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)}
 }
-.brand {
-  font-size: 1.3rem;
-  font-weight: 800;
-  letter-spacing: 1px;
-}
-.brand-s { color: #38bdf8; }
-.brand-p { color: #ffffff; }
-
-.loading-msg {
-  font-size: 0.78rem;
-  color: rgba(255,255,255,0.5);
-  letter-spacing: 0.5px;
+@keyframes float2 {
+  0%,100%{transform:translateY(0) rotate(-10deg)} 50%{transform:translateY(-7px) rotate(-5deg)}
 }
 
-.progress-track {
-  width: 160px;
-  height: 3px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 10px;
-  overflow: hidden;
-  margin-top: 2px;
+/* ── Footer bar ─── */
+.footer-bar {
+  background:#0a2240;
+  padding:12px 20px 16px;
+  display:flex; flex-direction:column; align-items:center; gap:5px;
 }
-.progress-fill {
-  height: 100%;
-  width: 45%;
-  background: linear-gradient(90deg, #38bdf8, #818cf8);
-  border-radius: 10px;
-  animation: slide 1.6s ease-in-out infinite;
+.footer-brand { font-size:1.4rem; font-weight:900; letter-spacing:1px; }
+.fb-shule { color:#fcd116; }
+.fb-pay   { color:#ffffff; }
+.footer-msg {
+  font-size:0.76rem; color:rgba(255,255,255,0.45); letter-spacing:.6px;
 }
-@keyframes slide {
-  0%  { transform: translateX(-120%); }
-  100%{ transform: translateX(320%); }
+.footer-bar-track {
+  width:150px; height:3px;
+  background:rgba(255,255,255,0.1);
+  border-radius:10px; overflow:hidden; margin-top:2px;
+}
+.footer-bar-fill {
+  height:100%; width:40%;
+  background:linear-gradient(90deg,#fcd116,#00a34f);
+  border-radius:10px;
+  animation:bar-slide 1.8s ease-in-out infinite;
+}
+@keyframes bar-slide {
+  0%  {transform:translateX(-140%)}
+  100%{transform:translateX(320%)}
 }
 </style>
