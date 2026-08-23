@@ -210,7 +210,9 @@
       "Bash(wsl -- bash -c \"ss -tlnp | grep ':80 '; fuser 80/tcp 2>/dev/null; cat /proc/\\\\$\\(fuser 80/tcp 2>/dev/null | awk '{print \\\\$1}'\\)/cmdline 2>/dev/null | tr '\\\\0' ' '\")",
       "Bash(wsl -- bash -c \"ls /www/shulepay 2>/dev/null | head -10; ls /var/www/ 2>/dev/null | head -10\")",
       "Bash(wsl -- bash -c \"find /mnt -name 'nginx.conf' -o -name 'apache2.conf' 2>/dev/null | head -5; find / -maxdepth 6 -name 'nginx.conf' 2>/dev/null | grep -v proc | head -5\")",
-      "Bash(bash deploy.sh release \"fix: recreate storage symlink at container startup to fix localhost/storage 404\")"
+      "Bash(bash deploy.sh release \"fix: recreate storage symlink at container startup to fix localhost/storage 404\")",
+      "Bash(docker cp *)",
+      "PowerShell(docker exec shulepay_backend cat /etc/nginx/http.d/default.conf)"
     ]
   }
 }

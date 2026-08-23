@@ -1,11 +1,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
 const auth = useAuthStore()
+const router = useRouter()
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const users   = ref([])
@@ -143,11 +145,13 @@ async function saveUser() {
 
     if (editTarget.value) {
       await api.put(`/users/${editTarget.value.id}`, payload)
+      showForm.value = false
+      await fetchData()
     } else {
       await api.post('/users', payload)
+      showForm.value = false
+      router.push('/superadmin/roles')
     }
-    showForm.value = false
-    await fetchData()
   } catch (e) {
     const errs = e?.response?.data?.errors
     if (errs) {
