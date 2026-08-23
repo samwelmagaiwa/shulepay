@@ -101,7 +101,7 @@ class ClearanceController extends Controller
             $message = SmsTemplates::clearanceIssued($student, $academicYear->name);
             app(SmsService::class)->notifyGuardians($student, $message);
         } catch (\Throwable $e) {
-            Log::warning('[ClearanceController] Clearance SMS failed: '.$e->getMessage());
+            Log::warning('[ClearanceController] Clearance SMS failed: ' . $e->getMessage());
         }
 
         // Resolve logo as base64 for DomPDF (needs GD; skip gracefully if unavailable)
@@ -112,7 +112,7 @@ class ClearanceController extends Controller
                 if ($logoPath) {
                     $fullPath = storage_path('app/public/' . $logoPath);
                     if (file_exists($fullPath)) {
-                        $logoMime   = mime_content_type($fullPath) ?: 'image/png';
+                        $logoMime = mime_content_type($fullPath) ?: 'image/png';
                         $logoBase64 = 'data:' . $logoMime . ';base64,' . base64_encode(file_get_contents($fullPath));
                     }
                 }
@@ -125,13 +125,13 @@ class ClearanceController extends Controller
             'student'     => $student,
             'enrollment'  => $enrollment,
             'school'      => $school,
-            'academicYear'=> $academicYear,
+            'academicYear' => $academicYear,
             'issuedAt'    => now(),
             'issuedBy'    => auth()->user(),
             'logoBase64'  => $logoBase64,
         ]);
 
-        $filename = 'clearance-'.$student->id.'-'.$academicYear->id.'.pdf';
+        $filename = 'clearance-' . $student->id . '-' . $academicYear->id . '.pdf';
 
         return $pdf->download($filename);
     }
