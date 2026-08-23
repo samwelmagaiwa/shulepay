@@ -26,14 +26,14 @@ export const useAuthStore = defineStore('auth', () => {
   const isAccountant       = computed(() => role.value === 'accountant' || role.value === 'superadmin')
   const isOwner            = computed(() => role.value === 'owner' || role.value === 'superadmin')
   const isParent           = computed(() => role.value === 'parent')
-  const isTeacher          = computed(() => role.value === 'teacher')
+  const isTeacher          = computed(() => ['teacher', 'teacher_pri', 'teacher_sec'].includes(role.value))
   const isHeadTeacher      = computed(() => role.value === 'head_teacher')
   const isHeadmaster       = computed(() => role.value === 'headmaster')
   const isAcademicTeacher  = computed(() => role.value === 'academic_teacher')
   const isAcademicPri      = computed(() => role.value === 'academic_pri')
   const isAcademicSec      = computed(() => role.value === 'academic_sec')
   const isAcademicStaff    = computed(() => ['academic_teacher', 'academic_pri', 'academic_sec', 'headmaster'].includes(role.value))
-  const isStaff            = computed(() => ['teacher', 'head_teacher', 'headmaster', 'academic_teacher', 'academic_pri', 'academic_sec'].includes(role.value))
+  const isStaff            = computed(() => ['teacher', 'teacher_pri', 'teacher_sec', 'head_teacher', 'headmaster', 'academic_teacher', 'academic_pri', 'academic_sec'].includes(role.value))
 
   async function login(email, password, schoolId = null) {
     const payload = { email, password }

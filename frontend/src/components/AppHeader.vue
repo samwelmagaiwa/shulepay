@@ -125,8 +125,8 @@ function go(path) {
         <template v-if="!auth.isParent">
           <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.schoolLife') }}</div>
           <RouterLink class="btn btn-ghost-secondary text-start" to="/mahudhurio" @click="mobileNavOpen=false">📋 {{ t('nav.attendance') }}</RouterLink>
-          <RouterLink class="btn btn-ghost-secondary text-start" to="/usafiri" @click="mobileNavOpen=false">🚌 {{ t('nav.transport') }}</RouterLink>
-          <RouterLink class="btn btn-ghost-secondary text-start" to="/inventory" @click="mobileNavOpen=false">📦 {{ t('nav.inventory') }}</RouterLink>
+          <RouterLink v-if="!auth.isTeacher" class="btn btn-ghost-secondary text-start" to="/usafiri" @click="mobileNavOpen=false">🚌 {{ t('nav.transport') }}</RouterLink>
+          <RouterLink v-if="!auth.isTeacher" class="btn btn-ghost-secondary text-start" to="/inventory" @click="mobileNavOpen=false">📦 {{ t('nav.inventory') }}</RouterLink>
         </template>
 
         <!-- Notifications: all roles -->
@@ -287,10 +287,10 @@ function go(path) {
             <CDropdownItem @click="router.push('/mahudhurio')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/mahudhurio') }">
               📋 {{ t('nav.attendance') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/usafiri')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/usafiri') }">
+            <CDropdownItem v-if="!auth.isTeacher" @click="router.push('/usafiri')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/usafiri') }">
               🚌 {{ t('nav.transport') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/inventory')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/inventory') }">
+            <CDropdownItem v-if="!auth.isTeacher" @click="router.push('/inventory')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/inventory') }">
               📦 {{ t('nav.inventory') }}
             </CDropdownItem>
           </CDropdownMenu>
