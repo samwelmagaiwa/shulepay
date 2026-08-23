@@ -6,6 +6,23 @@
 
     <CModalBody class="p-2 p-md-3">
 
+      <!-- ── New / Existing toggle ──────────────────────────────────────── -->
+      <div class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3 border"
+           :style="form.is_existing_student ? 'border-color:#ffc107!important;background:#fffdf0;' : 'border-color:#007f3e!important;background:#f8fff8;'">
+        <div class="flex-grow-1">
+          <div class="fw-semibold small">{{ t('students.isNewStudent') }}</div>
+          <div class="text-muted" style="font-size:.72rem;">
+            {{ form.is_existing_student ? t('students.isExistingStudent') : t('students.migrationHint') }}
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="small fw-semibold" :class="!form.is_existing_student ? 'text-success' : 'text-muted'">{{ t('common.yes') }}</span>
+          <CFormSwitch v-model="form.is_existing_student" id="existingStudentToggle"
+                       @update:modelValue="onExistingToggle" />
+          <span class="small fw-semibold" :class="form.is_existing_student ? 'text-warning' : 'text-muted'">{{ t('common.no') }}</span>
+        </div>
+      </div>
+
       <!-- Step indicator — desktop -->
       <div class="d-none d-md-flex justify-content-center mb-4">
         <div v-for="(s, i) in steps" :key="i" class="d-flex align-items-center">
@@ -619,6 +636,112 @@
         </CCard>
       </div>
 
+      <!-- ═══════════════ STEP 6: Migration History (existing students only) ═══════════════ -->
+      <div v-if="step === 6">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <div class="fw-semibold text-muted small text-uppercase" style="letter-spacing:.05em;">📚 {{ t('students.stepMigration') }}</div>
+          <CBadge color="warning" class="ms-1">{{ t('students.migrationTerms', { count: form.payment_history.length }) }}</CBadge>
+        </div>
+        <div class="text-muted small mb-3">{{ t('students.migrationHint') }}</div>
+
+        <!-- Term entries -->
+        <div v-for="(entry, ei) in form.payment_history" :key="ei"
+             class="border rounded-3 p-3 mb-3 position-relative"
+             style="border-color:#ffc107!important;background:#fffdf0;">
+
+          <!-- Remove term -->
+          <CButton v-if="form.payment_history.length > 0" size="sm" color="danger" variant="ghost"
+                   class="position-absolute" style="top:8px;right:8px;"
+                   @click="removeTermHistory(ei)">✕</CButton>
+
+          <div class="fw-semibold small mb-2">📅 {{ t('students.term') }} {{ ei + 1 }}</div>
+
+          <CRow class="g-2 mb-2">
+            <CCol xs="12" sm="4">
+              <label class="form-label fw-semibold mb-1">{{ t('students.academicYear') }} <span class="text-danger">*</span></label>
+              <CFormSelect v-model="entry.academic_year_id">
+                <option value="">— {{ t('students.selectYear') }} —</option>
+                <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
+              </CFormSelect>
+            </CCol>
+            <CCol xs="12" sm="4">
+              <label class="form-label fw-semibold mb-1">{{ t('students.term') }} <span class="text-danger">*</span></label>
+              <CFormSelect v-model="entry.term_id">
+                <option value="">— {{ t('students.selectTerm') }} —</option>
+                <option v-for="tm in terms" :key="tm.id" :value="tm.id">{{ tm.name }}</option>
+              </CFormSelect>
+            </CCol>
+            <CCol xs="12" sm="4">
+              <label class="form-label fw-semibold mb-1">{{ t('students.termFeeAmount') }} <span class="text-danger">*</span></label>
+              <CFormInput
+                type="text" inputmode="numeric"
+                :value="formatAmount(entry.fee_amount)"
+                @input="entry.fee_amount = parseAmount($event.target.value)"
+                placeholder="0"
+              />
+            </CCol>
+          </CRow>
+
+          <!-- Payments for this term -->
+          <div class="small fw-semibold text-muted mb-1">{{ t('students.paymentsRecorded') }}</div>
+          <div v-for="(pmt, pi) in entry.payments" :key="pi"
+               class="d-flex gap-2 align-items-end mb-2 flex-wrap">
+            <div style="flex:1;min-width:120px;">
+              <label class="form-label mb-1 small">{{ t('students.paidDate') }}</label>
+              <CFormInput type="date" v-model="pmt.paid_at" :max="today" />
+            </div>
+            <div style="flex:1;min-width:100px;">
+              <label class="form-label mb-1 small">{{ t('students.paidAmount') }}</label>
+              <CFormInput
+                type="text" inputmode="numeric"
+                :value="formatAmount(pmt.amount)"
+                @input="pmt.amount = parseAmount($event.target.value)"
+                placeholder="0"
+              />
+            </div>
+            <div style="flex:1;min-width:100px;">
+              <label class="form-label mb-1 small">{{ t('students.paymentMethod') }}</label>
+              <CFormSelect v-model="pmt.method">
+                <option value="cash">Cash</option>
+                <option value="mpesa">M-Pesa</option>
+                <option value="bank">Bank</option>
+                <option value="cheque">Cheque</option>
+                <option value="other">Other</option>
+              </CFormSelect>
+            </div>
+            <div style="flex:1.5;min-width:120px;">
+              <label class="form-label mb-1 small">{{ t('students.migrationNote') }}</label>
+              <CFormInput v-model="pmt.notes" placeholder="e.g. Receipt #123" />
+            </div>
+            <div class="pb-1">
+              <CButton size="sm" color="danger" variant="ghost" @click="removePayment(ei, pi)" title="Remove">✕</CButton>
+            </div>
+          </div>
+
+          <CButton size="sm" color="warning" variant="outline" @click="addPayment(ei)">
+            + {{ t('students.addPayment') }}
+          </CButton>
+
+          <!-- Term balance preview -->
+          <div v-if="entry.fee_amount > 0" class="mt-2 small d-flex justify-content-between"
+               style="border-top:1px dashed #ffc107;padding-top:.5rem;">
+            <span class="text-muted">{{ t('fees.total') }}: <strong>{{ formatMoney(entry.fee_amount * 100) }}</strong></span>
+            <span class="text-muted">{{ t('common.paid') }}: <strong class="text-success">{{ formatMoney(termPaid(entry)) }}</strong></span>
+            <span :class="termBalance(entry) > 0 ? 'text-danger fw-bold' : 'text-success fw-bold'">
+              {{ t('ada.balance') }}: {{ formatMoney(termBalance(entry)) }}
+            </span>
+          </div>
+        </div>
+
+        <CButton color="warning" variant="outline" @click="addTermHistory" style="min-height:44px;">
+          + {{ t('students.addTermHistory') }}
+        </CButton>
+
+        <CAlert v-if="form.payment_history.length === 0" color="secondary" class="mt-3 small">
+          ℹ️ {{ t('students.noHistoryHint') }}
+        </CAlert>
+      </div>
+
       <CAlert v-if="submitError" color="danger" class="mt-3 mb-0">
         <div class="fw-semibold mb-1">⚠️ {{ submitError }}</div>
         <ul v-if="Object.keys(errors).length" class="mb-0 ps-3" style="font-size:.875rem;">
@@ -745,13 +868,17 @@ const loadingWards    = ref(false)
 const loadingStreets  = ref(false)
 const loadingPlaces   = ref(false)
 
-const steps = computed(() => [
-  t('students.stepPersonal'),
-  t('students.stepHealthAddress'),
-  t('students.stepClass'),
-  t('students.stepGuardians'),
-  t('students.stepFinancial'),
-])
+const steps = computed(() => {
+  const base = [
+    t('students.stepPersonal'),
+    t('students.stepHealthAddress'),
+    t('students.stepClass'),
+    t('students.stepGuardians'),
+    t('students.stepFinancial'),
+  ]
+  if (form.value.is_existing_student) base.push(t('students.stepMigration'))
+  return base
+})
 
 const defaultGuardian = () => ({
   full_name: '', relationship: '', phone: '', alt_phone: '',
@@ -780,6 +907,9 @@ function blankForm() {
     // Financial
     opening_balance: 0, discount_type: '', discount_amount: 0,
     generate_first_invoice: true,
+    // Migration
+    is_existing_student: false,
+    payment_history: [],
   }
 }
 
@@ -909,6 +1039,38 @@ function addGuardian()     { form.value.guardians.push(defaultGuardian()) }
 function removeGuardian(i) { form.value.guardians.splice(i, 1) }
 function setPrimary(idx)   { form.value.guardians.forEach((g, i) => { if (i !== idx) g.is_primary_contact = false }) }
 
+// ── Existing student toggle ───────────────────────────────────────────────────
+function onExistingToggle(isExisting) {
+  if (!isExisting) form.value.payment_history = []
+  else if (form.value.payment_history.length === 0) addTermHistory()
+}
+
+// ── Migration history helpers ─────────────────────────────────────────────────
+function defaultTermEntry() {
+  return {
+    academic_year_id: form.value.academic_year_id || '',
+    term_id: '',
+    fee_amount: 0,
+    payments: [],
+  }
+}
+
+function defaultPayment() {
+  return { paid_at: today, amount: 0, method: 'cash', notes: '' }
+}
+
+function addTermHistory() { form.value.payment_history.push(defaultTermEntry()) }
+function removeTermHistory(i) { form.value.payment_history.splice(i, 1) }
+function addPayment(ei) { form.value.payment_history[ei].payments.push(defaultPayment()) }
+function removePayment(ei, pi) { form.value.payment_history[ei].payments.splice(pi, 1) }
+
+function termPaid(entry) {
+  return entry.payments.reduce((s, p) => s + ((p.amount || 0) * 100), 0)
+}
+function termBalance(entry) {
+  return Math.max(0, (entry.fee_amount || 0) * 100 - termPaid(entry))
+}
+
 async function checkGuardianExists(idx) {
   // Normalize phone to 255 format on blur
   const raw = form.value.guardians[idx].phone
@@ -1000,6 +1162,7 @@ async function submit() {
       discount_type:          f.discount_type || '',
       discount_amount_cents:  Math.round((f.discount_amount || 0) * 100),
       generate_first_invoice: f.generate_first_invoice ? 1 : 0,
+      is_existing_student: f.is_existing_student ? 1 : 0,
     }
 
     Object.entries(fields).forEach(([k, v]) => fd.append(k, v ?? ''))
@@ -1008,6 +1171,20 @@ async function submit() {
         if (!k.startsWith('_')) fd.append(`guardians[${i}][${k}]`, v ?? '')
       })
     })
+    // Migration history
+    if (f.is_existing_student && f.payment_history.length) {
+      f.payment_history.forEach((entry, ei) => {
+        fd.append(`payment_history[${ei}][term_id]`, entry.term_id)
+        fd.append(`payment_history[${ei}][academic_year_id]`, entry.academic_year_id)
+        fd.append(`payment_history[${ei}][fee_amount_cents]`, Math.round((entry.fee_amount || 0) * 100))
+        entry.payments.forEach((p, pi) => {
+          fd.append(`payment_history[${ei}][payments][${pi}][amount_cents]`, Math.round((p.amount || 0) * 100))
+          fd.append(`payment_history[${ei}][payments][${pi}][paid_at]`, p.paid_at)
+          fd.append(`payment_history[${ei}][payments][${pi}][method]`, p.method || 'cash')
+          fd.append(`payment_history[${ei}][payments][${pi}][notes]`, p.notes || 'Migrated from books')
+        })
+      })
+    }
     if (photoFile.value) fd.append('photo', photoFile.value)
 
     await api.post('/students/register', fd, { headers: { 'Content-Type': 'multipart/form-data' } })

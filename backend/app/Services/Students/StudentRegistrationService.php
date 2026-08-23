@@ -6,8 +6,11 @@ use App\Models\Discount;
 use App\Models\FeeStructure;
 use App\Models\Guardian;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\School;
 use App\Models\Student;
+use App\Models\Term;
+use App\Models\AcademicYear;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\Sms\SmsService;
@@ -101,10 +104,16 @@ class StudentRegistrationService
                 ]);
             }
 
-            // 6. Generate first invoice if requested
-            $generateInvoice = isset($data['generate_first_invoice'])
+            // 6. Migration: create backdated invoices + payments for existing students
+            $isExisting = ! empty($data['is_existing_student']);
+            if ($isExisting && ! empty($data['payment_history'])) {
+                $this->importPaymentHistory($student, $data['school_id'], $data['payment_history']);
+            }
+
+            // 7. Generate first invoice if requested (skip for existing — history covers it)
+            $generateInvoice = ! $isExisting && (isset($data['generate_first_invoice'])
                 ? (bool) $data['generate_first_invoice']
-                : true;
+                : true);
 
             if ($generateInvoice) {
                 $this->generateInvoice($student, $data);
@@ -221,6 +230,62 @@ class StudentRegistrationService
         $parts = explode(' ', trim($fullName));
 
         return count($parts) > 1 ? implode(' ', array_slice($parts, 1)) : $fullName;
+    }
+
+    private function importPaymentHistory(Student $student, int $schoolId, array $history): void
+    {
+        foreach ($history as $entry) {
+            $termId       = $entry['term_id'];
+            $yearId       = $entry['academic_year_id'];
+            $feeCents     = (int) $entry['fee_amount_cents'];
+            $payments     = $entry['payments'] ?? [];
+
+            // Skip if invoice already exists for this student+term
+            if (Invoice::withoutGlobalScope('school')
+                ->where('student_id', $student->id)
+                ->where('school_id', $schoolId)
+                ->where('term_id', $termId)
+                ->exists()) {
+                continue;
+            }
+
+            $invoice = Invoice::withoutGlobalScope('school')->create([
+                'student_id'         => $student->id,
+                'school_id'          => $schoolId,
+                'term_id'            => $termId,
+                'academic_year_id'   => $yearId,
+                'invoice_number'     => 'MIG-'.strtoupper(Str::random(8)),
+                'total_amount_cents' => $feeCents,
+                'arrears_cents'      => 0,
+                'discount_cents'     => 0,
+                'status'             => 'unpaid',
+                'due_date'           => null,
+                'generated_at'       => now(),
+                'generated_by'       => auth()->id(),
+            ]);
+
+            $invoice->lines()->create([
+                'fee_item_id'  => null,
+                'description'  => 'Migrated fee (from books)',
+                'amount_cents' => $feeCents,
+            ]);
+
+            foreach ($payments as $p) {
+                Payment::create([
+                    'invoice_id'       => $invoice->id,
+                    'student_id'       => $student->id,
+                    'school_id'        => $schoolId,
+                    'amount_cents'     => (int) $p['amount_cents'],
+                    'method'           => $p['method'] ?? 'cash',
+                    'reference_number' => null,
+                    'paid_at'          => $p['paid_at'],
+                    'recorded_by'      => auth()->id(),
+                    'notes'            => $p['notes'] ?? 'Migrated from books',
+                ]);
+            }
+
+            $invoice->syncStatus();
+        }
     }
 
     private function generateInvoice(Student $student, array $data): void

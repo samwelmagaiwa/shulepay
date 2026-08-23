@@ -67,6 +67,18 @@ class RegisterStudentRequest extends FormRequest
             'discount_amount_cents' => 'nullable|integer|min:0',
             'opening_balance_cents' => 'nullable|integer|min:0',
             'generate_first_invoice' => 'nullable|boolean',
+
+            // Migration: existing student payment history
+            'is_existing_student' => 'nullable|boolean',
+            'payment_history' => 'nullable|array',
+            'payment_history.*.term_id' => 'required_with:payment_history|exists:terms,id',
+            'payment_history.*.academic_year_id' => 'required_with:payment_history|exists:academic_years,id',
+            'payment_history.*.fee_amount_cents' => 'required_with:payment_history|integer|min:1',
+            'payment_history.*.payments' => 'nullable|array',
+            'payment_history.*.payments.*.amount_cents' => 'required_with:payment_history.*.payments|integer|min:1',
+            'payment_history.*.payments.*.paid_at' => 'required_with:payment_history.*.payments|date|before_or_equal:today',
+            'payment_history.*.payments.*.method' => 'nullable|in:cash,mpesa,bank,cheque,other',
+            'payment_history.*.payments.*.notes' => 'nullable|string|max:300',
         ];
     }
 
