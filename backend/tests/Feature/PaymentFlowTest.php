@@ -30,7 +30,7 @@ class PaymentFlowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Role::create(['name' => 'accountant', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'accountant', 'guard_name' => 'web']);
 
         $school = School::create(['name' => 'Test School', 'code' => 'MSG-01', 'slug' => 'test-school', 'level' => 'primary', 'is_active' => true]);
         $class = SchoolClass::create(['school_id' => $school->id, 'name' => 'Darasa la 1', 'sort_order' => 1]);
