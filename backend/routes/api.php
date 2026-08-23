@@ -87,6 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // User settings (all authenticated users)
     Route::get('settings/profile', [UserSettingsController::class, 'profile']);
     Route::put('settings/profile', [UserSettingsController::class, 'updateProfile']);
+    Route::post('settings/change-password', [UserSettingsController::class, 'changePassword']);
     Route::post('settings/toggle-2fa', [UserSettingsController::class, 'toggle2fa']);
 
     // Stationary requests — teaching staff can request; finance can manage

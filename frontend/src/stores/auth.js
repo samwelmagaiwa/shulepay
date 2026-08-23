@@ -34,6 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAcademicSec      = computed(() => role.value === 'academic_sec')
   const isAcademicStaff    = computed(() => ['academic_teacher', 'academic_pri', 'academic_sec', 'headmaster'].includes(role.value))
   const isStaff            = computed(() => ['teacher', 'teacher_pri', 'teacher_sec', 'head_teacher', 'headmaster', 'academic_teacher', 'academic_pri', 'academic_sec'].includes(role.value))
+  const mustChangePassword = computed(() => !!user.value?.must_change_password)
 
   async function login(email, password, schoolId = null) {
     const payload = { email, password }
@@ -93,6 +94,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAccountant, isOwner, isParent, isSuperAdmin,
     isTeacher, isHeadTeacher, isHeadmaster, isAcademicTeacher,
     isAcademicPri, isAcademicSec, isAcademicStaff, isStaff,
+    mustChangePassword,
     login, logout, fetchMe,
   }
 })

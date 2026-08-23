@@ -78,6 +78,33 @@ class UserSettingsController extends Controller
     }
 
     /**
+     * POST /api/settings/change-password
+     * Works for both forced first-login change and voluntary profile change.
+     */
+    public function changePassword(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],
+        ]);
+
+        if (! Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Neno la siri la sasa si sahihi.'],
+            ]);
+        }
+
+        $user->update([
+            'password' => $data['password'],
+            'must_change_password' => false,
+        ]);
+
+        return response()->json(['message' => 'Neno la siri limebadilishwa.']);
+    }
+
+    /**
      * POST /api/settings/toggle-2fa
      */
     public function toggle2fa(Request $request): JsonResponse

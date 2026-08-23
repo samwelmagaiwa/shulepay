@@ -119,7 +119,7 @@ async function saveUser() {
   formError.value = ''
   try {
     const payload = { ...form.value }
-    if (!payload.password) delete payload.password
+    delete payload.password
 
     if (editTarget.value) {
       await api.put(`/users/${editTarget.value.id}`, payload)
@@ -366,13 +366,10 @@ async function deleteUser() {
             <CFormLabel class="fw-semibold">{{ t('common.email') }} <span class="text-danger">*</span></CFormLabel>
             <CFormInput v-model="form.email" type="email" placeholder="email@shule.tz" />
           </CCol>
-          <CCol md="6">
-            <CFormLabel class="fw-semibold">
-              {{ t('staff.password') }}
-              <span v-if="editTarget" class="text-muted fw-normal">({{ t('staff.passwordHint') }})</span>
-              <span v-else class="text-danger">*</span>
-            </CFormLabel>
-            <CFormInput v-model="form.password" type="password" :placeholder="t('staff.passwordPlaceholder')" />
+          <CCol v-if="!editTarget" md="6">
+            <CFormLabel class="fw-semibold">{{ t('staff.password') }}</CFormLabel>
+            <CFormInput value="SCHOOL" type="text" readonly class="bg-light text-muted fw-bold" />
+            <div class="text-muted small mt-1">{{ t('staff.passwordDefault') }}</div>
           </CCol>
           <CCol md="12">
             <CFormLabel class="fw-semibold">{{ t('staff.role') }} <span class="text-danger">*</span></CFormLabel>

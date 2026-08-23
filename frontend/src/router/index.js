@@ -7,6 +7,12 @@ const routes = [
     component: () => import('@/views/pages/Login.vue'),
   },
   {
+    path: '/change-password',
+    name: 'ChangePassword',
+    component: () => import('@/views/auth/ChangePasswordView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/',
     component: () => import('@/layouts/DefaultLayout.vue'),
     children: [
@@ -200,6 +206,8 @@ const routes = [
       { path: 'inventory', name: 'Inventory', component: () => import('@/views/inventory/InventoryView.vue'), meta: { requiresAuth: true } },
       { path: 'mahudhurio', name: 'Mahudhurio', component: () => import('@/views/mahudhurio/MahudhurioView.vue'), meta: { requiresAuth: true, roles: ['teacher', 'teacher_pri', 'teacher_sec', 'head_teacher', 'academic_teacher', 'headmaster', 'academic_pri', 'academic_sec', 'owner', 'superadmin'] } },
       { path: 'arifa', name: 'Arifa', component: () => import('@/views/arifa/ArifaView.vue'), meta: { requiresAuth: true } },
+      // Profile
+      { path: 'profile', name: 'Profile', component: () => import('@/views/auth/ProfileView.vue'), meta: { requiresAuth: true } },
       // Stationary
       { path: 'stationary/mine', name: 'MyStationary', component: () => import('@/views/stationary/MyStationaryView.vue'), meta: { requiresAuth: true, roles: ['teacher', 'teacher_pri', 'teacher_sec', 'head_teacher', 'headmaster', 'academic_pri', 'academic_sec'] } },
       { path: 'stationary/manage', name: 'StationaryManage', component: () => import('@/views/stationary/StationaryManageView.vue'), meta: { requiresAuth: true, roles: ['accountant', 'owner', 'superadmin'] } },
@@ -219,6 +227,15 @@ router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('shulepay_token')
   const valid = !!token && token !== 'undefined' && token !== 'null'
   if (!valid) return next('/login')
+
+  // Force password change before accessing any page
+  try {
+    const raw = localStorage.getItem('shulepay_user')
+    const user = raw ? JSON.parse(raw) : null
+    if (user?.must_change_password && to.name !== 'ChangePassword') {
+      return next('/change-password')
+    }
+  } catch { }
 
   if (to.meta.roles) {
     try {

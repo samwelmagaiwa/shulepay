@@ -84,7 +84,6 @@ class UserController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
             'phone' => 'nullable|string|max:20',
             'role' => 'required|string|in:'.implode(',', $this->allAllowedRoles()),
         ]);
@@ -96,7 +95,8 @@ class UserController extends Controller
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'password' => Hash::make('SCHOOL'),
+            'must_change_password' => true,
             'school_id' => $schoolId,
             'phone' => $data['phone'] ?? null,
         ]);

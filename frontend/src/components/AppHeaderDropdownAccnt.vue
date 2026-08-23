@@ -1,8 +1,11 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { getRoleLabel, getRoleIcon } from '@/utils/roles'
+
+const { t } = useI18n()
 
 const auth   = useAuthStore()
 const router = useRouter()
@@ -34,6 +37,12 @@ async function logout() {
         <div class="fw-bold">{{ auth.user?.name }}</div>
         <div class="text-muted small">{{ roleDisplay }}</div>
       </CDropdownHeader>
+
+      <CDropdownDivider />
+
+      <CDropdownItem @click="router.push('/profile')" class="dropdown-item-custom" style="cursor:pointer">
+        🔐 {{ t('nav.changePassword') }}
+      </CDropdownItem>
 
       <CDropdownDivider />
 

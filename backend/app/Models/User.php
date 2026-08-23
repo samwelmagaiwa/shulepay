@@ -21,7 +21,7 @@ class User extends Authenticatable
     }
 
     protected $fillable = [
-        'name', 'email', 'password', 'school_id', 'phone', 'avatar',
+        'name', 'email', 'password', 'must_change_password', 'school_id', 'phone', 'avatar',
         '2fa_enabled', 'is_active', 'deactivated_at', 'deactivation_reason',
         'forbidden_permissions',
     ];
@@ -33,6 +33,7 @@ class User extends Authenticatable
         'password' => 'hashed',
         '2fa_enabled' => 'boolean',
         'is_active' => 'boolean',
+        'must_change_password' => 'boolean',
         'deactivated_at' => 'datetime',
         'forbidden_permissions' => 'array',
     ];

@@ -46,7 +46,6 @@ class SuperadminUserController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
             'phone' => 'nullable|string|max:20',
             'school_id' => 'nullable|integer|exists:schools,id',
             'role' => 'required|string|exists:roles,name',
@@ -57,7 +56,8 @@ class SuperadminUserController extends Controller
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'password' => Hash::make('SCHOOL'),
+            'must_change_password' => true,
             'phone' => $data['phone'] ?? null,
             'school_id' => $data['school_id'] ?? null,
             'is_active' => true,

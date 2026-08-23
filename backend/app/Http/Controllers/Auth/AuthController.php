@@ -157,6 +157,7 @@ class AuthController extends Controller
                 'school_id' => $selectedSchoolId,
                 'permissions' => $user->effectivePermissions(),
                 'accessible_school_ids' => $user->hasRole('superadmin') ? null : $user->allAccessibleSchoolIds(),
+                'must_change_password' => (bool) $user->must_change_password,
             ],
         ]);
     }
