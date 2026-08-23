@@ -267,8 +267,15 @@ cmd_release() {
 
   # 5. Push
   BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  LOCAL_SHA=$(git rev-parse HEAD)
   log "Pushing to origin/$BRANCH..."
-  git push origin "$BRANCH"
+  GIT_TERMINAL_PROMPT=0 git push origin "$BRANCH" \
+    || error "Push failed — run 'git push origin $BRANCH' manually to authenticate."
+
+  # Verify remote actually received the commit
+  REMOTE_SHA=$(GIT_TERMINAL_PROMPT=0 git ls-remote origin "refs/heads/$BRANCH" | awk '{print $1}')
+  [[ "$REMOTE_SHA" == "$LOCAL_SHA" ]] \
+    || error "Push appeared to succeed but remote SHA ($REMOTE_SHA) != local ($LOCAL_SHA). Push manually."
   success "Pushed to origin/$BRANCH"
 
   # 6. Show latest commit
