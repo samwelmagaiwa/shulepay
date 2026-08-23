@@ -326,10 +326,10 @@
         <!-- Subtle chalk lines in footer -->
         <line x1="0" y1="314" x2="400" y2="314" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
         <!-- Brand text -->
-        <text x="200" y="348" text-anchor="middle" font-size="26" font-weight="900"
+        <text x="130" y="348" font-size="26" font-weight="900"
               font-family="Arial,sans-serif" letter-spacing="2" fill="#fcd116">Shule</text>
-        <text x="200" y="348" text-anchor="middle" font-size="26" font-weight="900"
-              font-family="Arial,sans-serif" letter-spacing="2" fill="#fcd116" dx="76" fill="white">Pay</text>
+        <text x="206" y="348" font-size="26" font-weight="900"
+              font-family="Arial,sans-serif" letter-spacing="2" fill="white">Pay</text>
         <!-- Tagline -->
         <text x="200" y="370" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.45)"
               font-family="Arial,sans-serif" letter-spacing="1.5">MFUMO WA FEDHA ZA SHULE</text>
