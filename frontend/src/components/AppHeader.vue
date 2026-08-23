@@ -135,8 +135,8 @@ function go(path) {
           <CBadge v-if="notifications.unreadCount > 0" color="danger" class="position-absolute top-0 end-0">{{ notifications.unreadCount }}</CBadge>
         </RouterLink>
 
-        <!-- Reports: accountant / owner / headmaster / head_teacher / academic_teacher -->
-        <template v-if="auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher || auth.isAcademicTeacher">
+        <!-- Reports: accountant / owner / headmaster / head_teacher / all academic roles -->
+        <template v-if="auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher || auth.isAcademicTeacher || auth.isAcademicPri || auth.isAcademicSec">
           <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.other') }}</div>
           <RouterLink class="btn btn-ghost-secondary text-start" to="/ripoti" @click="mobileNavOpen=false">{{ t('nav.reports') }}</RouterLink>
         </template>
@@ -304,7 +304,7 @@ function go(path) {
         </CNavItem>
 
         <!-- Ripoti -->
-        <CNavItem v-if="auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher || auth.isAcademicTeacher">
+        <CNavItem v-if="auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher || auth.isAcademicTeacher || auth.isAcademicPri || auth.isAcademicSec">
           <RouterLink to="/ripoti" class="nav-link fw-semibold px-2" style="font-size:.9rem;">
             {{ t('nav.reports') }}
           </RouterLink>

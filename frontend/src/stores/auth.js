@@ -30,7 +30,10 @@ export const useAuthStore = defineStore('auth', () => {
   const isHeadTeacher      = computed(() => role.value === 'head_teacher')
   const isHeadmaster       = computed(() => role.value === 'headmaster')
   const isAcademicTeacher  = computed(() => role.value === 'academic_teacher')
-  const isStaff            = computed(() => ['teacher', 'head_teacher', 'headmaster', 'academic_teacher'].includes(role.value))
+  const isAcademicPri      = computed(() => role.value === 'academic_pri')
+  const isAcademicSec      = computed(() => role.value === 'academic_sec')
+  const isAcademicStaff    = computed(() => ['academic_teacher', 'academic_pri', 'academic_sec', 'headmaster'].includes(role.value))
+  const isStaff            = computed(() => ['teacher', 'head_teacher', 'headmaster', 'academic_teacher', 'academic_pri', 'academic_sec'].includes(role.value))
 
   async function login(email, password, schoolId = null) {
     const payload = { email, password }
@@ -88,7 +91,8 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated, role, permissions, hasPermission,
     hasMultiSchool, accessibleSchoolIds,
     isAccountant, isOwner, isParent, isSuperAdmin,
-    isTeacher, isHeadTeacher, isHeadmaster, isAcademicTeacher, isStaff,
+    isTeacher, isHeadTeacher, isHeadmaster, isAcademicTeacher,
+    isAcademicPri, isAcademicSec, isAcademicStaff, isStaff,
     login, logout, fetchMe,
   }
 })

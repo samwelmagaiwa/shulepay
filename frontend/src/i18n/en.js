@@ -243,6 +243,8 @@ export default {
     welcome:               'Welcome',
     teacher:               'Teacher',
     academicTeacher:       'Academic Teacher',
+    academicPri:           'Primary Academic Coordinator',
+    academicSec:           'Secondary Academic Coordinator',
     headmaster:            'Headmaster',
     parent:                'Parent / Guardian',
     myStudents:            'My Students',

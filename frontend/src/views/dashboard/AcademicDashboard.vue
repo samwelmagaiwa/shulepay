@@ -11,7 +11,7 @@
         </div>
         <div>
           <div class="fw-bold" style="font-size:1.2rem;">{{ t('dashboard.welcome') }}, {{ auth.user?.name }}</div>
-          <div style="opacity:.85; font-size:.9rem;">{{ todayDate }} &bull; {{ t('dashboard.academicTeacher') }}</div>
+          <div style="opacity:.85; font-size:.9rem;">{{ todayDate }} &bull; {{ roleLabel }}</div>
         </div>
       </div>
     </div>
@@ -132,6 +132,15 @@ const initials = computed(() => {
   return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
 })
 
+const roleLabel = computed(() => {
+  const map = {
+    academic_teacher: t('dashboard.academicTeacher'),
+    headmaster:       t('dashboard.headmaster'),
+    academic_pri:     t('dashboard.academicPri'),
+    academic_sec:     t('dashboard.academicSec'),
+  }
+  return map[auth.user?.role] || t('dashboard.academicTeacher')
+})
 const todayDate = computed(() => new Date().toLocaleDateString('en-TZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))
 const todayShort = computed(() => new Date().toLocaleDateString('en-TZ', { day: 'numeric', month: 'short', year: 'numeric' }))
 

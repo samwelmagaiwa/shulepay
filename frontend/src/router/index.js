@@ -20,7 +20,7 @@ const routes = [
             const user = raw ? JSON.parse(raw) : null
             const role = user?.role
             if (role === 'teacher' || role === 'head_teacher') return import('@/views/dashboard/TeacherDashboard.vue')
-            if (role === 'academic_teacher' || role === 'headmaster') return import('@/views/dashboard/AcademicDashboard.vue')
+            if (role === 'academic_teacher' || role === 'headmaster' || role === 'academic_pri' || role === 'academic_sec') return import('@/views/dashboard/AcademicDashboard.vue')
             if (role === 'parent') return import('@/views/dashboard/ParentDashboard.vue')
           } catch { }
           return import('@/views/dashboard/Dashboard.vue')
@@ -89,7 +89,7 @@ const routes = [
         path: 'ripoti',
         name: 'Reports',
         component: () => import('@/views/reports/Reports.vue'),
-        meta: { requiresAuth: true, roles: ['accountant', 'owner'] },
+        meta: { requiresAuth: true, roles: ['accountant', 'owner', 'headmaster', 'head_teacher', 'academic_teacher', 'academic_pri', 'academic_sec'] },
       },
       // Expenses & Petty Cash
       {
@@ -198,7 +198,7 @@ const routes = [
       // Shule modules
       { path: 'usafiri', name: 'Usafiri', component: () => import('@/views/usafiri/UsafiriView.vue'), meta: { requiresAuth: true } },
       { path: 'inventory', name: 'Inventory', component: () => import('@/views/inventory/InventoryView.vue'), meta: { requiresAuth: true } },
-      { path: 'mahudhurio', name: 'Mahudhurio', component: () => import('@/views/mahudhurio/MahudhurioView.vue'), meta: { requiresAuth: true, roles: ['teacher', 'head_teacher', 'academic_teacher', 'headmaster', 'owner', 'superadmin'] } },
+      { path: 'mahudhurio', name: 'Mahudhurio', component: () => import('@/views/mahudhurio/MahudhurioView.vue'), meta: { requiresAuth: true, roles: ['teacher', 'head_teacher', 'academic_teacher', 'headmaster', 'academic_pri', 'academic_sec', 'owner', 'superadmin'] } },
       { path: 'arifa', name: 'Arifa', component: () => import('@/views/arifa/ArifaView.vue'), meta: { requiresAuth: true } },
     ],
   },

@@ -243,6 +243,8 @@ export default {
     welcome:               'Karibu',
     teacher:               'Mwalimu',
     academicTeacher:       'Mwalimu wa Masomo',
+    academicPri:           'Mratibu wa Masomo - Msingi',
+    academicSec:           'Mratibu wa Masomo - Sekondari',
     headmaster:            'Mkurugenzi',
     parent:                'Mzazi / Mlezi',
     myStudents:            'Wanafunzi Wangu',
