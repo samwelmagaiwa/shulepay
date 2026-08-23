@@ -67,9 +67,9 @@ class DashboardService
         for ($i = 6; $i >= 0; $i--) {
             $day = $today->copy()->subDays($i);
             $weeklyTrend[] = [
-                'date'      => $day->format('D'),
+                'date' => $day->format('D'),
                 'full_date' => $day->format('Y-m-d'),
-                'amount'    => (int) ($weeklyRaw[$day->format('Y-m-d')] ?? 0),
+                'amount' => (int) ($weeklyRaw[$day->format('Y-m-d')] ?? 0),
             ];
         }
 
@@ -80,8 +80,8 @@ class DashboardService
             ->get()
             ->map(fn ($r) => [
                 'method' => $r->method,
-                'count'  => (int) $r->cnt,
-                'total'  => (int) $r->total,
+                'count' => (int) $r->cnt,
+                'total' => (int) $r->total,
             ])->values();
 
         // ── School breakdown — bulk pre-fetch (replaces N+1) ──────────────────
@@ -111,15 +111,15 @@ class DashboardService
             ->pluck('cnt', 'school_id');
 
         $schoolBreakdown = $enrollmentRows->map(fn ($r) => [
-            'school'        => $r->school->name ?? 'Unknown',
-            'code'          => $r->school->code ?? '',
-            'count'         => (int) $r->cnt,
-            'paid_count'    => (int) ($paidBySchool[$r->school_id] ?? 0),
-            'unpaid_count'  => (int) ($unpaidBySchool[$r->school_id] ?? 0),
-            'previous_count'     => 0,
-            'prev_paid_count'    => 0,
-            'prev_unpaid_count'  => 0,
-            'trend'         => 0,
+            'school' => $r->school->name ?? 'Unknown',
+            'code' => $r->school->code ?? '',
+            'count' => (int) $r->cnt,
+            'paid_count' => (int) ($paidBySchool[$r->school_id] ?? 0),
+            'unpaid_count' => (int) ($unpaidBySchool[$r->school_id] ?? 0),
+            'previous_count' => 0,
+            'prev_paid_count' => 0,
+            'prev_unpaid_count' => 0,
+            'trend' => 0,
         ])->values();
 
         // ── Class breakdown (1 query) ─────────────────────────────────────────
@@ -147,10 +147,10 @@ class DashboardService
             ->with('student')
             ->get()
             ->map(fn ($inv) => [
-                'student'       => $inv->student?->fullName(),
-                'invoice'       => $inv->invoice_number,
+                'student' => $inv->student?->fullName(),
+                'invoice' => $inv->invoice_number,
                 'balance_cents' => (int) $inv->balance,
-                'status'        => $inv->status instanceof \BackedEnum ? $inv->status->value : $inv->status,
+                'status' => $inv->status instanceof \BackedEnum ? $inv->status->value : $inv->status,
             ])->values();
 
         // ── Academic year + total collected (2 queries) ───────────────────────
@@ -180,10 +180,10 @@ class DashboardService
             ->limit(5)
             ->get()
             ->map(fn ($p) => [
-                'student'      => $p->student?->fullName(),
+                'student' => $p->student?->fullName(),
                 'amount_cents' => (int) $p->amount_cents->cents(),
-                'method'       => $p->method instanceof \BackedEnum ? $p->method->value : $p->method,
-                'paid_at'      => $p->paid_at?->toIso8601String(),
+                'method' => $p->method instanceof \BackedEnum ? $p->method->value : $p->method,
+                'paid_at' => $p->paid_at?->toIso8601String(),
             ])->values();
 
         // ── Payment trend last 6 months — single GROUP BY (replaces 6 queries) ─
@@ -199,7 +199,7 @@ class DashboardService
         for ($i = 5; $i >= 0; $i--) {
             $month = $today->copy()->startOfMonth()->subMonths($i);
             $paymentTrend[] = [
-                'month'       => $month->format('Y-m'),
+                'month' => $month->format('Y-m'),
                 'total_cents' => (int) ($trendRaw[$month->format('Y-m')] ?? 0),
             ];
         }
@@ -211,23 +211,23 @@ class DashboardService
             : 0;
 
         return [
-            'total_students'         => $studentCount,
-            'total_collected_cents'  => (int) $totalCollectedCents,
+            'total_students' => $studentCount,
+            'total_collected_cents' => (int) $totalCollectedCents,
             'total_outstanding_cents' => (int) $totalOutstanding,
-            'total_expenses_cents'   => (int) $totalExpensesCents,
-            'recent_payments'        => $recentPayments,
-            'payment_trend'          => $paymentTrend,
-            'collection_rate'        => $collectionRate,
-            'today_collections'      => (int) $todayCollections,
-            'yesterday_collections'  => (int) $yesterdayCollections,
-            'paid_invoices'          => (int) ($statusCounts['paid'] ?? 0),
-            'partial_invoices'       => (int) ($statusCounts['partial'] ?? 0),
-            'unpaid_invoices'        => (int) ($statusCounts['unpaid'] ?? 0),
-            'weekly_trend'           => $weeklyTrend,
-            'method_breakdown'       => $methodBreakdown,
-            'school_breakdown'       => $schoolBreakdown,
-            'class_breakdown'        => $classBreakdown,
-            'top_debtors'            => $topDebtors,
+            'total_expenses_cents' => (int) $totalExpensesCents,
+            'recent_payments' => $recentPayments,
+            'payment_trend' => $paymentTrend,
+            'collection_rate' => $collectionRate,
+            'today_collections' => (int) $todayCollections,
+            'yesterday_collections' => (int) $yesterdayCollections,
+            'paid_invoices' => (int) ($statusCounts['paid'] ?? 0),
+            'partial_invoices' => (int) ($statusCounts['partial'] ?? 0),
+            'unpaid_invoices' => (int) ($statusCounts['unpaid'] ?? 0),
+            'weekly_trend' => $weeklyTrend,
+            'method_breakdown' => $methodBreakdown,
+            'school_breakdown' => $schoolBreakdown,
+            'class_breakdown' => $classBreakdown,
+            'top_debtors' => $topDebtors,
         ];
     }
 }

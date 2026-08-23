@@ -233,8 +233,8 @@ class StudentRegistrationService
     private function importPaymentHistory(Student $student, int $schoolId, array $history): void
     {
         foreach ($history as $entry) {
-            $termId   = $entry['term_id']          ?? null;
-            $yearId   = $entry['academic_year_id'] ?? null;
+            $termId = $entry['term_id'] ?? null;
+            $yearId = $entry['academic_year_id'] ?? null;
             $feeCents = (int) ($entry['fee_amount_cents'] ?? 0);
             $payments = $entry['payments'] ?? [];
 
@@ -253,23 +253,23 @@ class StudentRegistrationService
             }
 
             $invoice = Invoice::withoutGlobalScope('school')->create([
-                'student_id'         => $student->id,
-                'school_id'          => $schoolId,
-                'term_id'            => $termId,
-                'academic_year_id'   => $yearId,
-                'invoice_number'     => $this->nextMigrationNumber(),
+                'student_id' => $student->id,
+                'school_id' => $schoolId,
+                'term_id' => $termId,
+                'academic_year_id' => $yearId,
+                'invoice_number' => $this->nextMigrationNumber(),
                 'total_amount_cents' => $feeCents,
-                'arrears_cents'      => 0,
-                'discount_cents'     => 0,
-                'status'             => 'unpaid',
-                'due_date'           => null,
-                'generated_at'       => now(),
-                'generated_by'       => auth()->id(),
+                'arrears_cents' => 0,
+                'discount_cents' => 0,
+                'status' => 'unpaid',
+                'due_date' => null,
+                'generated_at' => now(),
+                'generated_by' => auth()->id(),
             ]);
 
             $invoice->lines()->create([
-                'fee_item_id'  => null,
-                'description'  => 'Ada iliyohamishwa (kutoka vitabuni)',
+                'fee_item_id' => null,
+                'description' => 'Ada iliyohamishwa (kutoka vitabuni)',
                 'amount_cents' => $feeCents,
             ]);
 
@@ -288,15 +288,15 @@ class StudentRegistrationService
                 $amountCents = min($amountCents, $cap);
 
                 Payment::create([
-                    'invoice_id'       => $invoice->id,
-                    'student_id'       => $student->id,
-                    'school_id'        => $schoolId,
-                    'amount_cents'     => $amountCents,
-                    'method'           => $p['method'] ?? 'cash',
+                    'invoice_id' => $invoice->id,
+                    'student_id' => $student->id,
+                    'school_id' => $schoolId,
+                    'amount_cents' => $amountCents,
+                    'method' => $p['method'] ?? 'cash',
                     'reference_number' => null,
-                    'paid_at'          => $p['paid_at'],
-                    'recorded_by'      => auth()->id(),
-                    'notes'            => trim($p['notes'] ?? '') ?: 'Imehamishwa kutoka vitabuni',
+                    'paid_at' => $p['paid_at'],
+                    'recorded_by' => auth()->id(),
+                    'notes' => trim($p['notes'] ?? '') ?: 'Imehamishwa kutoka vitabuni',
                 ]);
             }
 
