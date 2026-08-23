@@ -35,7 +35,7 @@ class DashboardService
             ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId));
 
         // ── Today / yesterday collections (2 queries) ─────────────────────────
-        $todayCollections     = (clone $paymentQ)->whereDate('paid_at', $today)->sum('amount_cents');
+        $todayCollections = (clone $paymentQ)->whereDate('paid_at', $today)->sum('amount_cents');
         $yesterdayCollections = (clone $paymentQ)->whereDate('paid_at', $today->copy()->subDay())->sum('amount_cents');
 
         // ── Invoice status counts (1 query) ───────────────────────────────────
@@ -188,7 +188,7 @@ class DashboardService
 
         // ── Payment trend last 6 months — single GROUP BY (replaces 6 queries) ─
         $trendStart = $today->copy()->startOfMonth()->subMonths(5);
-        $trendRaw   = (clone $paymentQ)
+        $trendRaw = (clone $paymentQ)
             ->selectRaw("DATE_FORMAT(paid_at, '%Y-%m') as ym, SUM(amount_cents) as total")
             ->where('paid_at', '>=', $trendStart)
             ->groupBy('ym')
@@ -205,7 +205,7 @@ class DashboardService
         }
 
         // ── Collection rate ────────────────────────────────────────────────────
-        $totalForRate   = (int) $totalCollectedCents + (int) $totalOutstanding;
+        $totalForRate = (int) $totalCollectedCents + (int) $totalOutstanding;
         $collectionRate = $totalForRate > 0
             ? round(((int) $totalCollectedCents / $totalForRate) * 100, 2)
             : 0;

@@ -282,7 +282,9 @@ class StudentRegistrationService
                 // Guard: don't allow overpayment beyond invoice total
                 $alreadyPaid = $invoice->paidCents();
                 $cap = $feeCents - $alreadyPaid;
-                if ($cap <= 0) break;
+                if ($cap <= 0) {
+                    break;
+                }
                 $amountCents = min($amountCents, $cap);
 
                 Payment::create([
