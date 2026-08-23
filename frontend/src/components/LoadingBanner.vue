@@ -1,95 +1,350 @@
 <template>
   <div class="loading-overlay">
     <div class="scene-card">
+      <svg viewBox="0 0 400 440" xmlns="http://www.w3.org/2000/svg" class="scene-svg">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#c8eaff"/>
+            <stop offset="100%" stop-color="#e8f7f0"/>
+          </linearGradient>
+          <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#5cb85c"/>
+            <stop offset="100%" stop-color="#3d8b3d"/>
+          </linearGradient>
+          <linearGradient id="bldgWall" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#b0bec5"/>
+            <stop offset="100%" stop-color="#90a4ae"/>
+          </linearGradient>
+          <linearGradient id="busBody" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#e53935"/>
+            <stop offset="100%" stop-color="#ef5350"/>
+          </linearGradient>
+          <linearGradient id="ribbon" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#f9a825"/>
+            <stop offset="100%" stop-color="#fbc02d"/>
+          </linearGradient>
+          <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+            <feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity="0.18"/>
+          </filter>
+        </defs>
 
-      <!-- Sky -->
-      <div class="sky">
-        <div class="sun"></div>
-        <div class="cloud c1"></div>
-        <div class="cloud c2"></div>
-      </div>
+        <!-- ── Sky ── -->
+        <rect width="400" height="260" fill="url(#sky)"/>
 
-      <!-- School building -->
-      <div class="building-wrap">
-        <div class="roof"></div>
-        <div class="facade">
-          <div class="flag-pole"><div class="flag"></div></div>
-          <div class="sign-board">
-            <span>SHULE</span>
-          </div>
-          <div class="windows-row">
-            <div class="win"></div>
-            <div class="win"></div>
-            <div class="win"></div>
-          </div>
-          <div class="door"></div>
-        </div>
-      </div>
+        <!-- Faint chalkboard math hints in sky -->
+        <text x="30" y="40" font-size="11" fill="#a8d5c2" opacity="0.5" font-family="monospace">A+L = e²⁷</text>
+        <text x="290" y="55" font-size="10" fill="#a8d5c2" opacity="0.4" font-family="monospace">∑x = n</text>
+        <text x="50" y="90" font-size="9" fill="#a8d5c2" opacity="0.35" font-family="monospace">y=mx+c</text>
 
-      <!-- Ground scene -->
-      <div class="ground">
-        <!-- Path -->
-        <div class="path"></div>
-        <!-- Trees -->
-        <div class="tree tl"><div class="leaves"></div><div class="trunk"></div></div>
-        <div class="tree tr"><div class="leaves"></div><div class="trunk"></div></div>
-        <!-- Teacher -->
-        <div class="figure teacher">
-          <div class="fig-head"></div>
-          <div class="fig-body t-shirt">
-            <div class="t-book"></div>
-          </div>
-          <div class="fig-legs"><div class="fig-leg"></div><div class="fig-leg"></div></div>
-        </div>
-        <!-- Student A -->
-        <div class="figure stu-a">
-          <div class="fig-head"></div>
-          <div class="fig-body s-shirt"></div>
-          <div class="fig-legs walk">
-            <div class="fig-leg la"></div><div class="fig-leg lb"></div>
-          </div>
-          <div class="s-bag"></div>
-        </div>
-        <!-- Student B -->
-        <div class="figure stu-b">
-          <div class="fig-head"></div>
-          <div class="fig-body s-shirt sb2"></div>
-          <div class="fig-legs walk">
-            <div class="fig-leg lb"></div><div class="fig-leg la"></div>
-          </div>
-        </div>
-        <!-- Floating stationery -->
-        <div class="stat pen-a"></div>
-        <div class="stat pen-b"></div>
-        <div class="stat nb-a"></div>
-        <div class="stat nb-b"></div>
-        <div class="stat ruler"></div>
-      </div>
+        <!-- Sun -->
+        <circle cx="340" cy="48" r="28" fill="#fff176" opacity="0.9"/>
+        <circle cx="340" cy="48" r="22" fill="#ffee58"/>
+        <circle cx="340" cy="48" r="16" fill="#fdd835"/>
 
-      <!-- Grass strip -->
-      <div class="grass"></div>
+        <!-- Clouds -->
+        <g opacity="0.92" class="cloud-1">
+          <ellipse cx="90" cy="58" rx="38" ry="18" fill="white"/>
+          <ellipse cx="68" cy="64" rx="22" ry="14" fill="white"/>
+          <ellipse cx="120" cy="61" rx="24" ry="13" fill="white"/>
+        </g>
+        <g opacity="0.75" class="cloud-2">
+          <ellipse cx="230" cy="72" rx="30" ry="14" fill="white"/>
+          <ellipse cx="212" cy="77" rx="17" ry="11" fill="white"/>
+          <ellipse cx="254" cy="75" rx="18" ry="11" fill="white"/>
+        </g>
 
-      <!-- Bottom brand bar -->
-      <div class="footer-bar">
-        <div class="footer-brand">
-          <span class="fb-shule">Shule</span><span class="fb-pay">Pay</span>
-        </div>
-        <div class="footer-msg">Inapakia data ya shule...</div>
-        <div class="footer-bar-track"><div class="footer-bar-fill"></div></div>
-      </div>
+        <!-- Stars -->
+        <text x="170" y="38" font-size="13" fill="#fdd835" class="star-twinkle">★</text>
+        <text x="310" y="90" font-size="10" fill="#fdd835" class="star-twinkle" style="animation-delay:.4s">★</text>
+        <text x="148" y="78" font-size="8"  fill="#fdd835" class="star-twinkle" style="animation-delay:.8s">✦</text>
+        <text x="360" y="120" font-size="9" fill="#fdd835" class="star-twinkle" style="animation-delay:1.2s">★</text>
 
+        <!-- ── Golden Banner Ribbon ── -->
+        <g filter="url(#shadow)">
+          <path d="M70,22 Q200,10 330,22 L330,46 Q200,58 70,46 Z" fill="url(#ribbon)"/>
+          <path d="M70,22 L55,34 L70,46 Z" fill="#e65100"/>
+          <path d="M330,22 L345,34 L330,46 Z" fill="#e65100"/>
+          <text x="200" y="39" text-anchor="middle" font-size="15" font-weight="900"
+                fill="#1a237e" font-family="Arial,sans-serif" letter-spacing="2">ShulePay</text>
+        </g>
+
+        <!-- ── Pine Trees (far left) ── -->
+        <g>
+          <polygon points="18,190 35,135 52,190" fill="#2e7d32"/>
+          <polygon points="22,205 35,160 48,205" fill="#388e3c"/>
+          <rect x="32" y="205" width="6" height="16" fill="#5d4037"/>
+        </g>
+        <g>
+          <polygon points="2,200 14,152 26,200" fill="#388e3c" opacity=".8"/>
+          <rect x="11" y="200" width="5" height="12" fill="#5d4037"/>
+        </g>
+
+        <!-- ── Pine Trees (far right) ── -->
+        <g>
+          <polygon points="348,190 365,135 382,190" fill="#2e7d32"/>
+          <polygon points="352,205 365,160 378,205" fill="#388e3c"/>
+          <rect x="362" y="205" width="6" height="16" fill="#5d4037"/>
+        </g>
+        <g>
+          <polygon points="374,200 386,152 398,200" fill="#388e3c" opacity=".8"/>
+          <rect x="383" y="200" width="5" height="12" fill="#5d4037"/>
+        </g>
+
+        <!-- ── School Building ── -->
+        <g filter="url(#shadow)">
+          <!-- Clock tower -->
+          <rect x="56" y="115" width="22" height="40" fill="#78909c"/>
+          <circle cx="67" cy="128" r="7" fill="white" stroke="#546e7a" stroke-width="1.5"/>
+          <line x1="67" y1="128" x2="67" y2="123" stroke="#333" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="67" y1="128" x2="71" y2="128" stroke="#333" stroke-width="1.2" stroke-linecap="round"/>
+          <!-- Main body -->
+          <rect x="30" y="130" width="110" height="90" fill="url(#bldgWall)"/>
+          <!-- Roof -->
+          <polygon points="22,130 85,95 148,130" fill="#546e7a"/>
+          <!-- Flag -->
+          <line x1="85" y1="95" x2="85" y2="72" stroke="#9e9e9e" stroke-width="2"/>
+          <rect x="85" y="72" width="18" height="11" fill="#c62828" rx="1"/>
+          <!-- Sign board -->
+          <rect x="42" y="140" width="86" height="20" fill="#fdd835" rx="3"/>
+          <text x="85" y="154" text-anchor="middle" font-size="7.5" font-weight="800"
+                fill="#1a237e" font-family="Arial,sans-serif" letter-spacing="1.5">MAGRETH PRIMARY</text>
+          <!-- Windows -->
+          <rect x="38" y="168" width="22" height="18" fill="#a8d8f0" rx="3" stroke="#546e7a" stroke-width="1"/>
+          <rect x="38" y="168" width="22" height="18" fill="none" stroke="white" stroke-width=".5" rx="3"/>
+          <line x1="49" y1="168" x2="49" y2="186" stroke="#546e7a" stroke-width=".8"/>
+          <rect x="74" y="168" width="22" height="18" fill="#a8d8f0" rx="3" stroke="#546e7a" stroke-width="1"/>
+          <line x1="85" y1="168" x2="85" y2="186" stroke="#546e7a" stroke-width=".8"/>
+          <rect x="110" y="168" width="22" height="18" fill="#fdd835" rx="3" stroke="#546e7a" stroke-width="1"/>
+          <!-- Door -->
+          <rect x="74" y="192" width="22" height="28" fill="#3e2723" rx="3 3 0 0"/>
+          <circle cx="93" cy="207" r="2" fill="#fdd835"/>
+        </g>
+
+        <!-- ── Wooden Fence ── -->
+        <g fill="#a1887f" stroke="#795548" stroke-width="0.8">
+          <!-- Left fence -->
+          <rect x="155" y="218" width="6" height="22" rx="1"/>
+          <rect x="164" y="218" width="6" height="22" rx="1"/>
+          <rect x="173" y="218" width="6" height="22" rx="1"/>
+          <rect x="154" y="222" width="28" height="4" rx="1"/>
+          <rect x="154" y="230" width="28" height="4" rx="1"/>
+        </g>
+        <g fill="#a1887f" stroke="#795548" stroke-width="0.8">
+          <!-- Right fence -->
+          <rect x="265" y="218" width="6" height="22" rx="1"/>
+          <rect x="274" y="218" width="6" height="22" rx="1"/>
+          <rect x="283" y="218" width="6" height="22" rx="1"/>
+          <rect x="264" y="222" width="28" height="4" rx="1"/>
+          <rect x="264" y="230" width="28" height="4" rx="1"/>
+        </g>
+
+        <!-- ── Grass / Ground ── -->
+        <rect x="0" y="248" width="400" height="60" fill="url(#grass)"/>
+        <!-- Ground flowers -->
+        <g>
+          <circle cx="160" cy="252" r="5" fill="#ff7043"/>
+          <circle cx="155" cy="248" r="3" fill="#ffb300"/>
+          <circle cx="165" cy="248" r="3" fill="#ff7043"/>
+          <circle cx="160" cy="244" r="3" fill="#ffcc02"/>
+          <line x1="160" y1="257" x2="160" y2="268" stroke="#388e3c" stroke-width="1.5"/>
+        </g>
+        <g>
+          <circle cx="250" cy="253" r="4" fill="#e91e63"/>
+          <circle cx="246" cy="249" r="3" fill="#ff69b4"/>
+          <circle cx="254" cy="249" r="3" fill="#e91e63"/>
+          <circle cx="250" cy="245" r="3" fill="#fce4ec"/>
+          <line x1="250" y1="257" x2="250" y2="266" stroke="#388e3c" stroke-width="1.5"/>
+        </g>
+
+        <!-- ── Student (cartoon girl, center) ── -->
+        <g class="student-walk" transform="translate(190,110)">
+          <!-- Backpack -->
+          <rect x="22" y="46" width="18" height="26" rx="4" fill="#8d6e63"/>
+          <rect x="24" y="50" width="14" height="18" rx="2" fill="#6d4c41"/>
+          <rect x="27" y="55" width="8" height="2" rx="1" fill="#a1887f"/>
+          <!-- Hair / head -->
+          <circle cx="18" cy="18" r="19" fill="#2c1a0e"/>
+          <circle cx="18" cy="20" r="17" fill="#ffc8a2"/>
+          <!-- Hair top -->
+          <path d="M1 16 Q18 -2 35 16 Q32 2 18 1 Q4 2 1 16" fill="#2c1a0e"/>
+          <!-- Braids -->
+          <path d="M3 24 Q-3 42 1 58 Q2 62 4 58 Q2 46 5 30" fill="#2c1a0e"/>
+          <path d="M33 24 Q39 42 35 58 Q34 62 32 58 Q34 46 31 30" fill="#2c1a0e"/>
+          <!-- Braid tips -->
+          <circle cx="2" cy="60" r="3" fill="#fdd835"/>
+          <circle cx="34" cy="60" r="3" fill="#fdd835"/>
+          <!-- Eyes -->
+          <ellipse cx="12" cy="21" rx="3.5" ry="4" fill="white"/>
+          <ellipse cx="24" cy="21" rx="3.5" ry="4" fill="white"/>
+          <circle cx="12" cy="22" r="2.5" fill="#4e342e"/>
+          <circle cx="24" cy="22" r="2.5" fill="#4e342e"/>
+          <circle cx="13" cy="21" r="1" fill="white"/>
+          <circle cx="25" cy="21" r="1" fill="white"/>
+          <!-- Cheeks -->
+          <circle cx="8"  cy="27" r="4" fill="#ff8a80" opacity="0.55"/>
+          <circle cx="28" cy="27" r="4" fill="#ff8a80" opacity="0.55"/>
+          <!-- Smile -->
+          <path d="M11 30 Q18 36 25 30" stroke="#333" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <!-- Neck -->
+          <rect x="14" y="37" width="8" height="8" fill="#ffc8a2"/>
+          <!-- Shirt (white) -->
+          <rect x="3" y="44" width="30" height="36" rx="5" fill="#eceff1"/>
+          <!-- Tie (dark blue) -->
+          <path d="M16 44 L18 44 L20 57 L18 68 L16 57 Z" fill="#1565c0"/>
+          <rect x="15" y="44" width="6" height="5" rx="1" fill="#1e88e5"/>
+          <!-- Left arm (holding books) -->
+          <path d="M3 52 Q-8 64 -12 78" stroke="#ffc8a2" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <!-- Right arm -->
+          <path d="M33 52 Q42 60 40 72" stroke="#ffc8a2" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <!-- Books held (left arm) -->
+          <rect x="-22" y="72" width="20" height="26" rx="2" fill="#ef5350"/>
+          <rect x="-19" y="75" width="20" height="26" rx="2" fill="#26c6da"/>
+          <text x="-14" y="85" font-size="5" fill="white" font-weight="700">MATH</text>
+          <text x="-15" y="93" font-size="4.5" fill="white" font-weight="600">SCIENCE</text>
+          <!-- Skirt (blue) -->
+          <path d="M3 80 L33 80 L38 112 L-2 112 Z" fill="#1976d2"/>
+          <!-- Legs + socks -->
+          <rect x="5"  y="112" width="10" height="32" rx="4" fill="#eceff1"/>
+          <rect x="21" y="112" width="10" height="32" rx="4" fill="#eceff1" class="leg-r"/>
+          <!-- Shoes -->
+          <ellipse cx="10" cy="146" rx="10" ry="5" fill="#1a1a2e"/>
+          <ellipse cx="26" cy="146" rx="10" ry="5" fill="#1a1a2e"/>
+        </g>
+
+        <!-- ── School Bus ── -->
+        <g class="bus-move" filter="url(#shadow)">
+          <!-- Body -->
+          <rect x="286" y="215" width="90" height="40" rx="5" fill="url(#busBody)"/>
+          <!-- Roof stripe -->
+          <rect x="286" y="215" width="90" height="10" rx="5" fill="#b71c1c"/>
+          <!-- Windows -->
+          <rect x="292" y="220" width="16" height="12" rx="2" fill="#e3f2fd" stroke="#1565c0" stroke-width="1"/>
+          <rect x="312" y="220" width="16" height="12" rx="2" fill="#e3f2fd" stroke="#1565c0" stroke-width="1"/>
+          <rect x="332" y="220" width="16" height="12" rx="2" fill="#e3f2fd" stroke="#1565c0" stroke-width="1"/>
+          <!-- Windshield -->
+          <rect x="352" y="218" width="20" height="18" rx="3" fill="#b3e5fc" stroke="#1565c0" stroke-width="1"/>
+          <!-- Yellow stripe -->
+          <rect x="286" y="235" width="90" height="6" fill="#fdd835"/>
+          <!-- Wheels -->
+          <circle cx="306" cy="256" r="10" fill="#212121"/>
+          <circle cx="306" cy="256" r="5"  fill="#616161"/>
+          <circle cx="306" cy="256" r="2"  fill="#bdbdbd"/>
+          <circle cx="352" cy="256" r="10" fill="#212121"/>
+          <circle cx="352" cy="256" r="5"  fill="#616161"/>
+          <circle cx="352" cy="256" r="2"  fill="#bdbdbd"/>
+          <!-- Door -->
+          <rect x="372" y="228" width="10" height="24" rx="1" fill="#c62828"/>
+          <!-- Bumper -->
+          <rect x="370" y="252" width="8" height="3" rx="1" fill="#9e9e9e"/>
+          <!-- Headlight -->
+          <circle cx="376" cy="237" r="3" fill="#fff9c4"/>
+        </g>
+
+        <!-- ── Floating Pencils (image 1 style) ── -->
+        <!-- Pencil 1 - red -->
+        <g class="float1" transform="translate(32,155) rotate(-15)">
+          <rect x="0" y="0" width="7" height="52" rx="2" fill="#ef5350"/>
+          <rect x="0" y="0" width="7" height="8"  rx="2" fill="#ffcdd2"/>
+          <polygon points="0,52 7,52 3.5,62" fill="#ffc8a2"/>
+          <polygon points="1,58 6,58 3.5,62" fill="#5d4037"/>
+          <rect x="0" y="46" width="7" height="3" fill="#fdd835"/>
+        </g>
+        <!-- Pencil 2 - green -->
+        <g class="float2" transform="translate(355,158) rotate(12)">
+          <rect x="0" y="0" width="7" height="52" rx="2" fill="#43a047"/>
+          <rect x="0" y="0" width="7" height="8"  rx="2" fill="#c8e6c9"/>
+          <polygon points="0,52 7,52 3.5,62" fill="#ffc8a2"/>
+          <polygon points="1,58 6,58 3.5,62" fill="#5d4037"/>
+          <rect x="0" y="46" width="7" height="3" fill="#fdd835"/>
+        </g>
+        <!-- Pencil 3 - blue (floating mid) -->
+        <g class="float3" transform="translate(18,195) rotate(-8)">
+          <rect x="0" y="0" width="6" height="44" rx="2" fill="#1e88e5"/>
+          <rect x="0" y="0" width="6" height="7"  rx="2" fill="#bbdefb"/>
+          <polygon points="0,44 6,44 3,53" fill="#ffc8a2"/>
+          <polygon points="1,50 5,50 3,53" fill="#5d4037"/>
+          <rect x="0" y="39" width="6" height="3" fill="#e91e63"/>
+        </g>
+        <!-- Pencil 4 - orange (right side) -->
+        <g class="float1" transform="translate(374,195) rotate(10)" style="animation-delay:.5s">
+          <rect x="0" y="0" width="6" height="44" rx="2" fill="#fb8c00"/>
+          <rect x="0" y="0" width="6" height="7"  rx="2" fill="#ffe0b2"/>
+          <polygon points="0,44 6,44 3,53" fill="#ffc8a2"/>
+          <polygon points="1,50 5,50 3,53" fill="#5d4037"/>
+          <rect x="0" y="39" width="6" height="3" fill="#ab47bc"/>
+        </g>
+
+        <!-- ── Apple ── -->
+        <g class="float2" transform="translate(152, 138)" style="animation-delay:.3s">
+          <ellipse cx="12" cy="16" rx="12" ry="14" fill="#e53935"/>
+          <ellipse cx="12" cy="16" rx="12" ry="14" fill="none" stroke="#c62828" stroke-width="1"/>
+          <ellipse cx="8" cy="12" rx="4" ry="6" fill="#ef9a9a" opacity="0.5"/>
+          <path d="M12 4 Q14 -2 18 0" stroke="#388e3c" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <ellipse cx="20" cy="-1" rx="5" ry="3" fill="#43a047" transform="rotate(-20 20 -1)"/>
+        </g>
+
+        <!-- ── Notebook (right of student) ── -->
+        <g class="float3" transform="translate(320,145)" style="animation-delay:.6s">
+          <rect x="0" y="0" width="28" height="36" rx="3" fill="#1565c0"/>
+          <rect x="3" y="0" width="25" height="36" rx="3" fill="#1976d2"/>
+          <rect x="0" y="0" width="5" height="36" rx="2" fill="#0d47a1"/>
+          <!-- Spiral rings -->
+          <circle cx="2" cy="6"  r="2.5" fill="none" stroke="#90caf9" stroke-width="1.2"/>
+          <circle cx="2" cy="14" r="2.5" fill="none" stroke="#90caf9" stroke-width="1.2"/>
+          <circle cx="2" cy="22" r="2.5" fill="none" stroke="#90caf9" stroke-width="1.2"/>
+          <circle cx="2" cy="30" r="2.5" fill="none" stroke="#90caf9" stroke-width="1.2"/>
+          <!-- Lines -->
+          <line x1="8" y1="10" x2="24" y2="10" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+          <line x1="8" y1="16" x2="24" y2="16" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+          <line x1="8" y1="22" x2="24" y2="22" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+          <line x1="8" y1="28" x2="24" y2="28" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+        </g>
+
+        <!-- ── Ruler ── -->
+        <g class="float1" transform="translate(45,235) rotate(-5)" style="animation-delay:.9s">
+          <rect x="0" y="0" width="55" height="9" rx="2" fill="#fdd835" stroke="#f9a825" stroke-width="1"/>
+          <line x1="8"  y1="0" x2="8"  y2="5" stroke="#333" stroke-width="0.8"/>
+          <line x1="14" y1="0" x2="14" y2="4" stroke="#333" stroke-width="0.8"/>
+          <line x1="20" y1="0" x2="20" y2="5" stroke="#333" stroke-width="0.8"/>
+          <line x1="26" y1="0" x2="26" y2="4" stroke="#333" stroke-width="0.8"/>
+          <line x1="32" y1="0" x2="32" y2="5" stroke="#333" stroke-width="0.8"/>
+          <line x1="38" y1="0" x2="38" y2="4" stroke="#333" stroke-width="0.8"/>
+          <line x1="44" y1="0" x2="44" y2="5" stroke="#333" stroke-width="0.8"/>
+        </g>
+
+        <!-- ── Confetti dots (image 3 style) ── -->
+        <circle cx="155" cy="110" r="4" fill="#ef5350" class="confetti" />
+        <rect x="170" cy="95"  width="6" height="6" rx="1" fill="#1e88e5" transform="rotate(20 170 95)" class="confetti" style="animation-delay:.3s"/>
+        <polygon points="350,110 354,120 346,120" fill="#fdd835" class="confetti" style="animation-delay:.6s"/>
+        <circle cx="280" cy="100" r="3" fill="#43a047" class="confetti" style="animation-delay:.9s"/>
+        <rect x="130" y="145" width="5" height="5" rx="1" fill="#ab47bc" transform="rotate(-15 130 145)" class="confetti" style="animation-delay:.4s"/>
+        <circle cx="360" cy="140" r="4" fill="#ef5350" class="confetti" style="animation-delay:.7s"/>
+        <polygon points="30,140 34,150 26,150" fill="#1e88e5" class="confetti" style="animation-delay:.2s"/>
+
+        <!-- ── Bottom brand bar (inside SVG) ── -->
+        <rect x="0" y="310" width="400" height="130" fill="#0a2240"/>
+        <!-- Subtle chalk lines in footer -->
+        <line x1="0" y1="314" x2="400" y2="314" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+        <!-- Brand text -->
+        <text x="200" y="348" text-anchor="middle" font-size="26" font-weight="900"
+              font-family="Arial,sans-serif" letter-spacing="2" fill="#fcd116">Shule</text>
+        <text x="200" y="348" text-anchor="middle" font-size="26" font-weight="900"
+              font-family="Arial,sans-serif" letter-spacing="2" fill="#fcd116" dx="76" fill="white">Pay</text>
+        <!-- Tagline -->
+        <text x="200" y="370" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.45)"
+              font-family="Arial,sans-serif" letter-spacing="1.5">MFUMO WA FEDHA ZA SHULE</text>
+        <!-- Loading text -->
+        <text x="200" y="395" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.55)"
+              font-family="Arial,sans-serif">Inapakia data ya shule...</text>
+        <!-- Progress track -->
+        <rect x="100" y="408" width="200" height="4" rx="2" fill="rgba(255,255,255,0.1)"/>
+        <rect x="100" y="408" width="80"  height="4" rx="2" fill="url(#ribbon)" class="progress-bar"/>
+      </svg>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* === Palette ===
-   Navy:   #0a2240
-   Green:  #007f3e  /  dark #0d3d26
-   Gold:   #fcd116
-   Sky:    #d1f0ff → #eaf9f0
-*/
-
 .loading-overlay {
   position: fixed;
   inset: 0;
@@ -101,277 +356,76 @@
 }
 
 .scene-card {
-  width: 360px;
+  width: min(400px, 96vw);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
-  display: flex;
-  flex-direction: column;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.07);
 }
 
-/* ── Sky ─── */
-.sky {
-  height: 84px;
-  background: linear-gradient(180deg, #c9edff 0%, #e8fbf0 100%);
-  position: relative;
-  overflow: hidden;
-}
-.sun {
-  position: absolute;
-  top: 12px; right: 26px;
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #fef08a 30%, #fde68a 65%, transparent 100%);
-  box-shadow: 0 0 20px 8px rgba(252,209,22,0.35);
-  animation: sun-glow 3s ease-in-out infinite;
-}
-@keyframes sun-glow {
-  0%,100%{ box-shadow: 0 0 20px 8px rgba(252,209,22,0.35); }
-  50%    { box-shadow: 0 0 34px 14px rgba(252,209,22,0.2); }
-}
-.cloud {
-  position: absolute;
-  background: #fff;
-  border-radius: 40px;
-  opacity: 0.85;
-}
-.cloud::before,.cloud::after {
-  content:''; position:absolute;
-  background:#fff; border-radius:50%;
-}
-.c1 { width:64px;height:20px;top:20px;left:22px; animation:drift 14s linear infinite; }
-.c1::before{width:26px;height:26px;top:-13px;left:8px;}
-.c1::after {width:18px;height:18px;top:-9px;left:28px;}
-.c2 { width:46px;height:14px;top:36px;left:140px; animation:drift 20s linear infinite; opacity:.65; }
-.c2::before{width:18px;height:18px;top:-9px;left:7px;}
-.c2::after {width:14px;height:14px;top:-7px;left:22px;}
-@keyframes drift { to{transform:translateX(30px)} }
+.scene-svg { display: block; width: 100%; }
 
-/* ── Building ─── */
-.building-wrap {
-  display:flex; flex-direction:column; align-items:center;
-  background: linear-gradient(180deg, #e8fbf0 0%, #ccf0d8 100%);
-  padding-bottom: 0;
-  position: relative;
-  z-index: 2;
+/* ── Clouds ── */
+.cloud-1 { animation: drift1 14s ease-in-out infinite alternate; }
+.cloud-2 { animation: drift1 18s ease-in-out infinite alternate-reverse; }
+@keyframes drift1 { from{transform:translateX(0)} to{transform:translateX(20px)} }
+
+/* ── Stars ── */
+.star-twinkle { animation: twinkle 2s ease-in-out infinite; }
+@keyframes twinkle { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── Student walk ── */
+.student-walk { animation: student-bob 1.6s ease-in-out infinite; }
+@keyframes student-bob {
+  0%,100%{ transform:translate(190px,110px) }
+  50%    { transform:translate(190px,107px) }
 }
-.roof {
-  width:0; height:0;
-  border-left:72px solid transparent;
-  border-right:72px solid transparent;
-  border-bottom:46px solid #0a2240;
+/* Leg swing on right leg -->  */
+.leg-r { animation: leg-swing .5s ease-in-out infinite alternate; transform-origin: 26px 112px; }
+@keyframes leg-swing { from{transform:rotate(-10deg)} to{transform:rotate(10deg)} }
+
+/* ── Stationery floats ── */
+.float1 { animation: flt 2.4s ease-in-out infinite; }
+.float2 { animation: flt 3s ease-in-out infinite; }
+.float3 { animation: flt 2.8s ease-in-out infinite; }
+@keyframes flt {
+  0%,100%{ transform:translateY(0) }
+  50%    { transform:translateY(-8px) }
 }
-.facade {
-  width:144px;
-  background: linear-gradient(180deg,#f0faf4,#e2f4ea);
-  border:2px solid #b6e4c8;
-  border-top:none;
-  border-radius:0 0 6px 6px;
-  display:flex; flex-direction:column; align-items:center;
-  padding:4px 8px 8px;
-  position:relative; gap:3px;
+/* Float with rotation for items with rotate() already applied */
+.float1[transform*="rotate"] { animation-name: flt-r1; }
+.float2[transform*="rotate"] { animation-name: flt-r2; }
+.float3[transform*="rotate"] { animation-name: flt-r3; }
+@keyframes flt-r1 {
+  0%,100%{ transform:translateY(0) }
+  50%    { transform:translateY(-8px) }
 }
-.flag-pole {
-  position:absolute; top:-52px; left:50%; transform:translateX(-50%);
-  width:2px; height:30px; background:#8fb3a0;
+@keyframes flt-r2 {
+  0%,100%{ transform:translateY(0) }
+  50%    { transform:translateY(-7px) }
 }
-.flag {
-  position:absolute; top:0; left:2px;
-  width:20px; height:12px;
-  background: linear-gradient(90deg,#007f3e,#00a34f);
-  clip-path:polygon(0 0,100% 40%,0 80%);
-  animation:flag-flap 1.6s ease-in-out infinite; transform-origin:left center;
-}
-@keyframes flag-flap {
-  0%,100%{transform:scaleX(1) skewY(0);}
-  50%{transform:scaleX(.82) skewY(6deg);}
-}
-.sign-board {
-  background:#fcd116; border-radius:3px; padding:1px 10px;
-  font-size:7px; font-weight:800; letter-spacing:2.5px; color:#0a2240;
-}
-.windows-row { display:flex; gap:8px; }
-.win {
-  width:28px; height:20px;
-  background:linear-gradient(135deg,#a8d8f0,#7ec8e3);
-  border:1.5px solid #0a2240; border-radius:3px 3px 0 0;
-  position:relative;
-}
-.win::after {
-  content:''; position:absolute; top:2px; left:2px;
-  width:9px; height:6px;
-  background:rgba(255,255,255,0.55); border-radius:2px;
-}
-.door {
-  width:26px; height:30px;
-  background:linear-gradient(180deg,#0a2240,#0d2f57);
-  border-radius:4px 4px 0 0;
-  border:1.5px solid #071a30;
+@keyframes flt-r3 {
+  0%,100%{ transform:translateY(0) }
+  50%    { transform:translateY(-6px) }
 }
 
-/* ── Ground ─── */
-.ground {
-  height:120px;
-  background:#e8fdf0;
-  position:relative; overflow:hidden;
-}
-.path {
-  position:absolute; bottom:0; left:50%; transform:translateX(-50%);
-  width:48px; height:100%;
-  background:linear-gradient(180deg,rgba(210,185,140,0.3),rgba(210,185,140,0.7));
-  border-radius:0;
-}
-.grass {
-  height:18px;
-  background:linear-gradient(180deg,#007f3e,#0d3d26);
+/* ── Bus ── */
+.bus-move { animation: bus 6s ease-in-out infinite; }
+@keyframes bus {
+  0%,100%{ transform:translateX(0) }
+  50%    { transform:translateX(-8px) }
 }
 
-/* ── Trees ─── */
-.tree { position:absolute; bottom:14px; display:flex; flex-direction:column; align-items:center; }
-.tl { left:10px; }
-.tr { right:10px; }
-.leaves {
-  width:34px; height:46px;
-  background:linear-gradient(180deg,#00a34f,#007f3e);
-  clip-path:polygon(50% 0%,0% 100%,100% 100%);
-  filter:drop-shadow(0 2px 3px rgba(0,0,0,0.15));
-}
-.trunk { width:9px; height:15px; background:#5c3d11; border-radius:2px; }
-
-/* ── Figures ─── */
-.figure { position:absolute; bottom:14px; display:flex; flex-direction:column; align-items:center; }
-.teacher{ left:52px; }
-.stu-a  { left:130px; animation:bob 1.8s ease-in-out infinite; }
-.stu-b  { left:196px; animation:bob 1.8s ease-in-out infinite .3s; }
-@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
-
-.fig-head {
-  width:18px; height:18px; border-radius:50%;
-  background:#f5c97a; border:2px solid #d4952a;
-  margin-bottom:1px;
-}
-.fig-body {
-  width:20px; height:26px; border-radius:4px;
-  display:flex; align-items:center; justify-content:center;
-  position:relative;
-}
-.t-shirt  { background:#0a2240; }   /* Teacher — navy */
-.s-shirt  { background:#007f3e; }   /* Student — green uniform */
-.sb2      { background:#005c2d; }   /* Slightly darker green */
-
-.t-book {
-  position:absolute; left:-9px; top:5px;
-  width:10px; height:13px;
-  background:#fcd116; border-radius:1px;
-  border-left:2px solid #b89c00;
-}
-.s-bag {
-  position:absolute; right:-9px; top:0;
-  width:10px; height:13px;
-  background:#fcd116; border-radius:2px;
-  border:1.5px solid #b89c00;
-  margin-top:19px;
+/* ── Confetti ── */
+.confetti { animation: conf 2.5s ease-in-out infinite; }
+@keyframes conf {
+  0%,100%{ transform:translateY(0) rotate(0deg); opacity:.9 }
+  50%    { transform:translateY(-10px) rotate(20deg); opacity:1 }
 }
 
-.fig-legs { display:flex; gap:4px; }
-.fig-leg {
-  width:7px; height:15px;
-  background:#0a2240; border-radius:0 0 3px 3px;
-}
-.la { animation:leg-swing .5s ease-in-out infinite alternate; }
-.lb { animation:leg-swing .5s ease-in-out infinite alternate-reverse; }
-@keyframes leg-swing {
-  from{transform:rotate(-11deg)} to{transform:rotate(11deg)}
-}
-
-/* ── Stationery floaters ─── */
-.stat { position:absolute; }
-/* Pen A */
-.pen-a {
-  width:4px; height:22px; bottom:58px; left:88px;
-  background:linear-gradient(180deg,#fcd116,#b89c00);
-  border-radius:2px;
-  animation:float1 2.4s ease-in-out infinite;
-}
-.pen-a::after {
-  content:''; position:absolute; bottom:-4px; left:-1px;
-  width:6px; height:5px; background:#c0392b;
-  clip-path:polygon(50% 100%,0 0,100% 0);
-}
-/* Pen B — pencil shape */
-.pen-b {
-  width:4px; height:18px; bottom:65px; right:72px;
-  background:linear-gradient(180deg,#fcd116,#e6b800);
-  border-radius:2px; transform:rotate(18deg);
-  animation:float1 2.2s ease-in-out infinite .6s;
-}
-.pen-b::after {
-  content:''; position:absolute; bottom:-4px; left:-1px;
-  width:6px; height:5px; background:#888;
-  clip-path:polygon(50% 100%,0 0,100% 0);
-}
-/* Notebook A */
-.nb-a {
-  width:20px; height:15px; bottom:72px; left:248px;
-  background:#007f3e; border-radius:1px 3px 3px 1px;
-  border-left:3px solid #005c2d;
-  animation:float2 2.8s ease-in-out infinite .2s;
-}
-.nb-a::after {
-  content:''; position:absolute;
-  top:3px; left:4px; right:2px; height:1.5px;
-  background:rgba(255,255,255,0.4); border-radius:1px;
-  box-shadow:0 4px 0 rgba(255,255,255,0.3);
-}
-/* Notebook B */
-.nb-b {
-  width:18px; height:14px; bottom:55px; right:56px;
-  background:#0a2240; border-radius:1px 3px 3px 1px;
-  border-left:3px solid #061628;
-  animation:float2 2.6s ease-in-out infinite .9s;
-  transform:rotate(-10deg);
-}
-/* Ruler */
-.ruler {
-  width:34px; height:6px; bottom:78px; left:60px;
-  background:linear-gradient(90deg,#fcd116 0%,#fcd116 48%,#0a2240 48%,#0a2240 52%,#fcd116 52%);
-  border-radius:2px; border:1px solid #b89c00;
-  animation:float1 3s ease-in-out infinite .4s;
-  transform:rotate(-5deg);
-}
-
-@keyframes float1 {
-  0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)}
-}
-@keyframes float2 {
-  0%,100%{transform:translateY(0) rotate(-10deg)} 50%{transform:translateY(-7px) rotate(-5deg)}
-}
-
-/* ── Footer bar ─── */
-.footer-bar {
-  background:#0a2240;
-  padding:12px 20px 16px;
-  display:flex; flex-direction:column; align-items:center; gap:5px;
-}
-.footer-brand { font-size:1.4rem; font-weight:900; letter-spacing:1px; }
-.fb-shule { color:#fcd116; }
-.fb-pay   { color:#ffffff; }
-.footer-msg {
-  font-size:0.76rem; color:rgba(255,255,255,0.45); letter-spacing:.6px;
-}
-.footer-bar-track {
-  width:150px; height:3px;
-  background:rgba(255,255,255,0.1);
-  border-radius:10px; overflow:hidden; margin-top:2px;
-}
-.footer-bar-fill {
-  height:100%; width:40%;
-  background:linear-gradient(90deg,#fcd116,#00a34f);
-  border-radius:10px;
-  animation:bar-slide 1.8s ease-in-out infinite;
-}
-@keyframes bar-slide {
-  0%  {transform:translateX(-140%)}
-  100%{transform:translateX(320%)}
+/* ── Progress bar ── */
+.progress-bar { animation: prog 2s linear infinite; transform-origin: left center; }
+@keyframes prog {
+  0%  { transform:translateX(-120px) }
+  100%{ transform:translateX(320px)  }
 }
 </style>
