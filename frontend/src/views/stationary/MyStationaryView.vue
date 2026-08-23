@@ -1,29 +1,24 @@
 <template>
   <CContainer fluid class="py-3 px-3">
 
-    <!-- Header row -->
-    <div class="d-flex align-items-center justify-content-between mb-3">
-      <div>
-        <h5 class="mb-0 fw-bold">📎 {{ t('stationary.myTitle') }}</h5>
-        <div class="text-muted small">{{ t('stationary.mySubtitle') }}</div>
+    <!-- Tab bar + Request button on same row -->
+    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+      <div class="d-flex gap-1 flex-wrap">
+        <button
+          v-for="tab in tabs" :key="tab.value"
+          class="btn btn-sm"
+          :class="activeTab === tab.value ? 'btn-success' : 'btn-outline-secondary'"
+          @click="activeTab = tab.value">
+          {{ tab.label }}
+          <span v-if="tab.count" class="badge ms-1"
+            :class="activeTab === tab.value ? 'bg-white text-success' : 'bg-secondary'">
+            {{ tab.count }}
+          </span>
+        </button>
       </div>
-      <CButton color="success" size="sm" @click="openRequest">
+      <button class="btn btn-success btn-sm ms-auto" @click="openRequest">
         + {{ t('stationary.request') }}
-      </CButton>
-    </div>
-
-    <!-- Status filter tabs -->
-    <div class="d-flex gap-2 mb-3 flex-wrap">
-      <CButton
-        v-for="tab in tabs" :key="tab.value"
-        size="sm" variant="ghost"
-        :color="activeTab === tab.value ? 'success' : 'secondary'"
-        @click="activeTab = tab.value">
-        {{ tab.label }}
-        <CBadge v-if="tab.count" :color="activeTab === tab.value ? 'light' : 'secondary'" class="ms-1" text-color="dark">
-          {{ tab.count }}
-        </CBadge>
-      </CButton>
+      </button>
     </div>
 
     <CAlert v-if="error" color="danger" dismissible @close="error=''">{{ error }}</CAlert>
@@ -56,9 +51,7 @@
                   {{ r.reason || '—' }}
                 </CTableDataCell>
                 <CTableDataCell class="text-center">
-                  <CBadge :color="statusColor(r.status)" class="px-2">
-                    {{ statusLabel(r.status) }}
-                  </CBadge>
+                  <CBadge :color="statusColor(r.status)" class="px-2">{{ t(`stationary.${r.status}`) }}</CBadge>
                   <div v-if="r.status === 'rejected' && r.rejection_reason" class="text-danger small mt-1">
                     {{ r.rejection_reason }}
                   </div>
@@ -153,9 +146,6 @@ const filtered = computed(() =>
 
 function statusColor(s) {
   return { pending: 'warning', approved: 'info', provided: 'success', rejected: 'danger' }[s] ?? 'secondary'
-}
-function statusLabel(s) {
-  return t(`stationary.${s}`)
 }
 function fmtDate(d) {
   return d ? new Date(d).toLocaleDateString('sw-TZ', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'

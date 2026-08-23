@@ -1087,3 +1087,11 @@
 [0;36m[2026-08-23 19:26:34][0m   ShulePay — Release
 [0;36m[2026-08-23 19:26:34][0m ══════════════════════════════════════════
 [0;36m[2026-08-23 19:26:34][0m Checking working tree...
+[0;36m[2026-08-23 19:26:56][0m Files staged for commit:
+[0;36m[2026-08-23 19:26:56][0m Committing: "feat: deploy teacher/headmaster/parent dashboards, role-based nav guards, storage fix"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-23 19:27:02][0m Pushing to origin/master...
+[0;36m[2026-08-23 19:32:11][0m ══════════════════════════════════════════
+[0;36m[2026-08-23 19:32:11][0m   ShulePay — Release
+[0;36m[2026-08-23 19:32:11][0m ══════════════════════════════════════════
+[0;36m[2026-08-23 19:32:11][0m Checking working tree...
