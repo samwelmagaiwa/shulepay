@@ -4,38 +4,35 @@
     <div class="audit-sticky-filters">
       <CCard class="mb-0 border-0 rounded-0 shadow-sm">
         <CCardBody class="p-2">
-        <CRow class="g-2">
-        <CRow class="g-2">
-          <CCol xs="6" sm="4" md="2">
-            <CFormInput type="date" v-model="filters.date_from" @change="load" style="min-height:44px;"
-                        placeholder="Tarehe ya kwanza" />
-          </CCol>
-          <CCol xs="6" sm="4" md="2">
-            <CFormInput type="date" v-model="filters.date_to" @change="load" style="min-height:44px;"
-                        placeholder="Tarehe ya mwisho" />
-          </CCol>
-          <CCol xs="12" sm="4" md="3">
-            <CFormSelect v-model="filters.action" @update:modelValue="load" style="min-height:44px;">
-              <option value="">{{ t('audit.filters.allActions') }}</option>
-              <option value="create">Kuunda</option>
-              <option value="update">Kubadilisha</option>
-              <option value="delete">Kufuta</option>
-              <option value="login">Kuingia</option>
-              <option value="logout">Kutoka</option>
-              <option value="payment">Malipo</option>
-            </CFormSelect>
-          </CCol>
-          <CCol xs="12" sm="6" md="3">
-            <CFormInput v-model="filters.user" :placeholder="t('audit.user')" @input="debouncedLoad"
-                        style="min-height:44px;" />
-          </CCol>
-          <CCol xs="12" sm="6" md="2">
-            <CButton color="secondary" variant="outline" @click="resetFilters"
-                     style="min-height:44px; width:100%;">
-              {{ t('common.reset') }}
-            </CButton>
-          </CCol>
-        </CRow>
+          <CRow class="g-2">
+            <CCol xs="6" sm="4" md="2">
+              <CFormInput type="date" v-model="filters.date_from" @change="load" style="min-height:44px;" />
+            </CCol>
+            <CCol xs="6" sm="4" md="2">
+              <CFormInput type="date" v-model="filters.date_to" @change="load" style="min-height:44px;" />
+            </CCol>
+            <CCol xs="12" sm="4" md="3">
+              <CFormSelect v-model="filters.action" @update:modelValue="load" style="min-height:44px;">
+                <option value="">{{ t('audit.filters.allActions') }}</option>
+                <option value="create">Kuunda</option>
+                <option value="update">Kubadilisha</option>
+                <option value="delete">Kufuta</option>
+                <option value="login">Kuingia</option>
+                <option value="logout">Kutoka</option>
+                <option value="payment">Malipo</option>
+              </CFormSelect>
+            </CCol>
+            <CCol xs="12" sm="6" md="3">
+              <CFormInput v-model="filters.user" :placeholder="t('audit.user')" @input="debouncedLoad"
+                          style="min-height:44px;" />
+            </CCol>
+            <CCol xs="12" sm="6" md="2">
+              <CButton color="secondary" variant="outline" @click="resetFilters"
+                       style="min-height:44px; width:100%;">
+                {{ t('common.reset') }}
+              </CButton>
+            </CCol>
+          </CRow>
         </CCardBody>
       </CCard>
     </div>
