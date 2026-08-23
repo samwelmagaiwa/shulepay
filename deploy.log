@@ -1320,3 +1320,12 @@
 [0;36m[2026-08-23 23:06:33][0m   ShulePay — Release
 [0;36m[2026-08-23 23:06:33][0m ══════════════════════════════════════════
 [0;36m[2026-08-23 23:06:33][0m Checking working tree...
+[0;36m[2026-08-23 23:06:35][0m Files staged for commit:
+[0;36m[2026-08-23 23:06:35][0m Committing: "fix: deploy.sh — fail fast on push failure, verify remote SHA after push"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-23 23:06:36][0m Pushing to origin/master...
+[0;31m✖ Push failed — run 'git push origin master' manually to authenticate.[0m
+[0;36m[2026-08-23 23:13:25][0m ══════════════════════════════════════════
+[0;36m[2026-08-23 23:13:25][0m   ShulePay — Release
+[0;36m[2026-08-23 23:13:25][0m ══════════════════════════════════════════
+[0;36m[2026-08-23 23:13:25][0m Checking working tree...

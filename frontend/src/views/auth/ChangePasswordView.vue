@@ -30,6 +30,10 @@
           <CFormInput v-model="form.password_confirmation" type="password" size="sm"
             :placeholder="t('changePassword.confirmPlaceholder')" autocomplete="new-password" />
           <div v-if="errors.password_confirmation" class="text-danger small mt-1">{{ errors.password_confirmation }}</div>
+          <div v-else-if="form.password_confirmation && form.password" class="small mt-1"
+            :class="passwordsMatch ? 'text-success' : 'text-danger'">
+            {{ passwordsMatch ? '✓ ' + t('changePassword.match') : '✗ ' + t('changePassword.noMatch') }}
+          </div>
         </div>
 
         <!-- Strength indicator -->
@@ -67,8 +71,14 @@ const error = ref('')
 const success = ref('')
 const errors = ref({})
 
+const passwordsMatch = computed(() =>
+  form.value.password && form.value.password_confirmation &&
+  form.value.password === form.value.password_confirmation
+)
+
 const canSubmit = computed(() =>
-  form.value.current_password && form.value.password && form.value.password_confirmation
+  form.value.current_password && form.value.password &&
+  form.value.password_confirmation && passwordsMatch.value
 )
 
 const strength = computed(() => {

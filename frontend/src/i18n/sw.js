@@ -1730,5 +1730,7 @@ export default {
     fair:               'Wastani',
     good:               'Nzuri',
     strong:             'Imara',
+    match:              'Maneno ya siri yanafanana',
+    noMatch:            'Maneno ya siri hayafanani',
   },
 }

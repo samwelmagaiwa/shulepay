@@ -1730,5 +1730,7 @@ export default {
     fair:               'Fair',
     good:               'Good',
     strong:             'Strong',
+    match:              'Passwords match',
+    noMatch:            'Passwords do not match',
   },
 }
