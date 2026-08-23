@@ -195,7 +195,9 @@
       "Bash(grep \"extension=gd\" C:/xampp/php/php.ini)",
       "PowerShell(\\(Get-Content C:\\\\xampp\\\\php\\\\php.ini\\) -replace '^;extension=gd$', 'extension=gd' | Set-Content C:\\\\xampp\\\\php\\\\php.ini -Encoding utf8)",
       "Bash(bash deploy.sh release \"feat: add teacher, academic, and parent dashboards with role-based routing\")",
-      "Bash(bash deploy.sh release \"fix: branding auth guard, attendance summary date param, parent dashboard field mapping, remove duplicate routes\")"
+      "Bash(bash deploy.sh release \"fix: branding auth guard, attendance summary date param, parent dashboard field mapping, remove duplicate routes\")",
+      "PowerShell(cd \"D:\\\\Projects\\\\shulepay\\\\backend\"; php -r \"require 'vendor/autoload.php'; \\\\$app = require 'bootstrap/app.php'; \\\\$app->make\\('Illuminate\\\\Contracts\\\\Http\\\\Kernel'\\); echo \\\\$app['config']['app.url'];\"  2>&1)",
+      "PowerShell(Get-Item \"C:\\\\xampp\\\\htdocs\\\\shulepay\" | Select-Object FullName, LinkType, Target; \\(Get-Item \"C:\\\\xampp\\\\htdocs\\\\shulepay\"\\).Target)"
     ]
   }
 }

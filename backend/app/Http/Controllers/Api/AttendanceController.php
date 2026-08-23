@@ -49,7 +49,7 @@ class AttendanceController extends Controller
 
         $students = $enrollments->map(function ($enrollment) use ($existing) {
             $student = $enrollment->student;
-            if (!$student) {
+            if (! $student) {
                 return null; // skip orphaned enrollment (student record deleted)
             }
             $attendance = $existing->get($student->id);
