@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
+import { ROLES, getRoleLabel, getRoleIcon, getRoleBadgeColor, getRolesForLevel } from '@/utils/roles'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -29,17 +30,8 @@ function resetForm() {
   return { name: '', email: '', password: '', phone: '', role: '', school_id: '' }
 }
 
-// ── Role definitions ──────────────────────────────────────────────────────────
-const ALL_ROLES = [
-  { value: 'owner',        label: 'Owner',            icon: '👑', levels: ['primary','secondary'] },
-  { value: 'accountant',   label: 'Accountant',       icon: '💼', levels: ['primary','secondary'] },
-  { value: 'teacher_pri',  label: 'Class Teacher',    icon: '📚', levels: ['primary'] },
-  { value: 'teacher_sec',  label: 'Class Teacher',    icon: '📚', levels: ['secondary'] },
-  { value: 'academic_pri', label: 'Academic Teacher', icon: '🎓', levels: ['primary'] },
-  { value: 'academic_sec', label: 'Academic Teacher', icon: '🎓', levels: ['secondary'] },
-  { value: 'head_teacher', label: 'Head Teacher',     icon: '🏅', levels: ['primary'] },
-  { value: 'headmaster',   label: 'Headmaster',       icon: '🏫', levels: ['secondary'] },
-]
+// ── Role definitions (from central registry) ──────────────────────────────────
+const ALL_ROLES = ROLES.filter(r => !['parent', 'superadmin', 'teacher'].includes(r.value))
 
 // ── Available roles based on selected school level ────────────────────────────
 const selectedSchool = computed(() =>
@@ -48,10 +40,10 @@ const selectedSchool = computed(() =>
 
 const availableRoles = computed(() => {
   const level = selectedSchool.value?.level ?? 'primary'
-  return ALL_ROLES.filter(r => r.levels.includes(level))
+  return getRolesForLevel(level)
 })
 
-// Roles that should NOT appear in staff management (guardians, parents, unassigned)
+// Roles that should NOT appear in staff management
 const EXCLUDED_ROLES = ['parent', 'guardian']
 
 // ── Filtered list ─────────────────────────────────────────────────────────────
@@ -71,24 +63,10 @@ const filtered = computed(() => {
   return list
 })
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function roleLabel(roleName) {
-  return ALL_ROLES.find(r => r.value === roleName)?.label ?? roleName
-}
-
-function roleIcon(roleName) {
-  return ALL_ROLES.find(r => r.value === roleName)?.icon ?? '👤'
-}
-function roleBadgeColor(roleName) {
-  const colors = {
-    owner: 'success', accountant: 'info',
-    teacher_pri: 'primary', teacher_sec: 'primary',
-    academic_pri: 'warning', academic_sec: 'warning',
-    head_teacher: 'dark', headmaster: 'danger',
-  }
-  return colors[roleName] ?? 'secondary'
-}
+// ── Helpers (delegated to central role registry) ──────────────────────────────
+const roleLabel      = getRoleLabel
+const roleIcon       = getRoleIcon
+const roleBadgeColor = getRoleBadgeColor
 function schoolName(schoolId) {
   return schools.value.find(s => s.id == schoolId)?.name ?? '—'
 }

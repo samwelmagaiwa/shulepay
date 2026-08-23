@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { getRoleLabel, getRoleIcon } from '@/utils/roles'
 
 const auth   = useAuthStore()
 const router = useRouter()
@@ -11,22 +12,10 @@ const initials = computed(() => {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 })
 
-const roleName = computed(() => {
-  const map = {
-    superadmin:     'Super Admin',
-    owner:          'Mmiliki',
-    accountant:     'Muhasibu',
-    head_teacher:   'Mwalimu Mkuu',
-    headmaster:     'Mkurugenzi',
-    academic_pri:   'Msimamizi Masomo (Msingi)',
-    academic_sec:   'Msimamizi Masomo (Sekondari)',
-    teacher_pri:    'Mwalimu (Msingi)',
-    teacher_sec:    'Mwalimu (Sekondari)',
-    teacher:        'Mwalimu',
-    academic_teacher: 'Mwalimu Masomo',
-    parent:         'Mzazi',
-  }
-  return map[auth.user?.role] || auth.user?.role || ''
+const roleDisplay = computed(() => {
+  const role = auth.user?.role
+  if (!role) return ''
+  return `${getRoleIcon(role)} ${getRoleLabel(role)}`
 })
 
 async function logout() {
@@ -43,7 +32,7 @@ async function logout() {
     <CDropdownMenu class="pt-0 dropdown-menu-custom">
       <CDropdownHeader component="h6" class="dropdown-header-custom">
         <div class="fw-bold">{{ auth.user?.name }}</div>
-        <div class="text-muted small">{{ roleName }}</div>
+        <div class="text-muted small">{{ roleDisplay }}</div>
       </CDropdownHeader>
 
       <CDropdownDivider />
