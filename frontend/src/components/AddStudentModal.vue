@@ -663,14 +663,14 @@
           <CRow class="g-2 mb-2">
             <CCol xs="12" sm="4">
               <label class="form-label fw-semibold mb-1">{{ t('students.academicYear') }} <span class="text-danger">*</span></label>
-              <CFormSelect v-model="entry.academic_year_id">
+              <CFormSelect v-model="entry.academic_year_id" @update:modelValue="autoFillFee(ei)">
                 <option value="">— {{ t('students.selectYear') }} —</option>
                 <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
               </CFormSelect>
             </CCol>
             <CCol xs="12" sm="4">
               <label class="form-label fw-semibold mb-1">{{ t('students.term') }} <span class="text-danger">*</span></label>
-              <CFormSelect v-model="entry.term_id">
+              <CFormSelect v-model="entry.term_id" @update:modelValue="autoFillFee(ei)">
                 <option value="">— {{ t('students.selectTerm') }} —</option>
                 <option v-for="tm in terms" :key="tm.id" :value="tm.id">{{ tm.name }}</option>
               </CFormSelect>
@@ -1073,6 +1073,28 @@ function removeTermHistory(i) { form.value.payment_history.splice(i, 1) }
 function addPayment(ei) { form.value.payment_history[ei].payments.push(defaultPayment()) }
 function removePayment(ei, pi) { form.value.payment_history[ei].payments.splice(pi, 1) }
 
+async function autoFillFee(ei) {
+  const entry = form.value.payment_history[ei]
+  const f = form.value
+  if (!f.school_id || !f.school_class_id || !entry.academic_year_id || !entry.term_id) return
+  try {
+    const res = await api.get('/fee-structures', {
+      params: {
+        school_id: f.school_id,
+        school_class_id: f.school_class_id,
+        academic_year_id: entry.academic_year_id,
+        term_id: entry.term_id,
+      },
+    })
+    const structures = res.data.data ?? res.data
+    if (structures.length) {
+      const items = structures.flatMap(s => s.fee_items ?? s.feeItems ?? [])
+      const totalCents = items.reduce((sum, i) => sum + (i.amount_cents ?? 0), 0)
+      if (totalCents > 0) entry.fee_amount = Math.round(totalCents / 100)
+    }
+  } catch {}
+}
+
 function termPaid(entry) {
   return entry.payments.reduce((s, p) => s + ((p.amount || 0) * 100), 0)
 }
@@ -1227,6 +1249,8 @@ async function submit() {
         step.value = 3
       } else if (firstErr?.startsWith('guardians')) {
         step.value = 4
+      } else if (firstErr?.startsWith('payment_history')) {
+        step.value = 6
       }
     } else {
       submitError.value = e?.response?.data?.message || t('common.saveFailed')

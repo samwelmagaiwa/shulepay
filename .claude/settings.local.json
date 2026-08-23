@@ -217,7 +217,8 @@
       "PowerShell(gh run list --limit 5 --repo samwelmagaiwa/shulepay)",
       "Bash(bash deploy.sh release \"perf: dashboard — replace 20+ loop queries with bulk GROUP BY queries\")",
       "Bash(grep -r 'total_cents\\\\|amount_cents\\\\|$table->decimal\\\\|$table->unsignedBigInteger' D:/Projects/shulepay/backend/database/migrations/)",
-      "PowerShell(Get-Process -Id 28472)"
+      "PowerShell(Get-Process -Id 28472)",
+      "Bash(bash deploy.sh release \"fix: migration feature — enum bug, step orphan, validation, auto-fee, sequential numbers\")"
     ]
   }
 }
