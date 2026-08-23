@@ -91,6 +91,7 @@ class TwoFactorController extends Controller
                 'role' => $user->getRoleNames()->first(),
                 'school_id' => $user->school_id,
                 'permissions' => $user->effectivePermissions(),
+                'must_change_password' => (bool) $user->must_change_password,
             ],
         ]);
     }

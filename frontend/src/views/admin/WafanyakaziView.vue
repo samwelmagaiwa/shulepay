@@ -27,7 +27,7 @@ const filterRole = ref('')
 const form = ref(resetForm())
 
 function resetForm() {
-  return { name: '', email: '', password: '', phone: '', role: '', school_id: '' }
+  return { name: '', email: '', phone: '', role: '', school_id: '' }
 }
 
 // ── Role definitions (from central registry) ──────────────────────────────────
@@ -105,7 +105,6 @@ function openEdit(user) {
   form.value = {
     name:      user.name,
     email:     user.email,
-    password:  '',
     phone:     user.phone ?? '',
     role:      user.roles?.[0]?.name ?? '',
     school_id: user.school_id ?? '',
