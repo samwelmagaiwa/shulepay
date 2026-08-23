@@ -213,7 +213,7 @@ class DashboardService
         return [
             'total_students'         => $studentCount,
             'total_collected_cents'  => (int) $totalCollectedCents,
-            'total_outstanding_cents'=> (int) $totalOutstanding,
+            'total_outstanding_cents' => (int) $totalOutstanding,
             'total_expenses_cents'   => (int) $totalExpensesCents,
             'recent_payments'        => $recentPayments,
             'payment_trend'          => $paymentTrend,
