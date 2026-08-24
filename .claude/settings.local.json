@@ -262,7 +262,8 @@
       "Bash(curl -sI https://magrethschools.sc.tz/assets/index-*.js)",
       "Bash(xargs -I{} echo {})",
       "Bash(curl -s -o /dev/null -w \"schools with Accept header: %{http_code}\\\\n\" -H \"Accept: application/json\" https://magrethschools.sc.tz/api/schools)",
-      "Bash(bash deploy.sh release \"fix: Save Student button appeared unresponsive when lumpsum total fields were empty - validation errors were set but never rendered; add visible field errors and a fallback banner for any silent validation failure\")"
+      "Bash(bash deploy.sh release \"fix: Save Student button appeared unresponsive when lumpsum total fields were empty - validation errors were set but never rendered; add visible field errors and a fallback banner for any silent validation failure\")",
+      "Bash(bash deploy.sh release \"fix: Detailed-mode Save button appeared unresponsive - normalize draft payment_history shape, guard against undefined .payments arrays, wrap validateStep\\(\\) exceptions, and stop blocking save on terms with zero payments \\(matches backend's tolerant behavior\\)\")"
     ]
   }
 }

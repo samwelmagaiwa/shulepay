@@ -1455,9 +1455,15 @@ function validateStep() {
             if (!entry.term_id)          errors.value[`payment_history.${ei}.term_id`]          = t('students.errors.termRequired')
             if (!entry.fee_amount || entry.fee_amount <= 0)
               errors.value[`payment_history.${ei}.fee_amount_cents`] = t('students.errors.feeAmountRequired')
-            entry.payments.forEach((p, pi) => {
-              if (!p.paid_at)  errors.value[`payment_history.${ei}.payments.${pi}.paid_at`]     = t('students.paidDate') + ' ' + t('common.required')
-              if (!p.amount || p.amount <= 0) errors.value[`payment_history.${ei}.payments.${pi}.amount_cents`] = t('students.paidAmount') + ' ' + t('common.required')
+            ;(entry.payments || []).forEach((p, pi) => {
+              // A payment row with amount 0 means "nothing paid yet for this term" —
+              // that's a valid state (matches backend which silently skips amount<=0
+              // rows during import), not an error. Only require a date when an actual
+              // amount was entered.
+              const hasAmount = p.amount && p.amount > 0
+              if (hasAmount && !p.paid_at) {
+                errors.value[`payment_history.${ei}.payments.${pi}.paid_at`] = t('students.paidDate') + ' ' + t('common.required')
+              }
             })
           })
         }
@@ -1487,7 +1493,18 @@ function nextStep() {
 // ── Submit ────────────────────────────────────────────────────────────────────
 async function submit() {
   if (saving.value) return  // guard against double-submit (fast double-click/tap)
-  if (!validateStep()) {
+
+  let isValid = false
+  try {
+    isValid = validateStep()
+  } catch (e) {
+    // If validation itself throws (e.g. malformed data resumed from an old draft),
+    // this must never fail silently — surface it instead of leaving the button
+    // looking dead.
+    submitError.value = t('common.saveFailed')
+    return
+  }
+  if (!isValid) {
     // Always surface SOME visible feedback — a silent early-return here looks
     // exactly like "the button isn't working" if the failing field has no
     // inline error UI of its own.
@@ -1559,7 +1576,7 @@ async function submit() {
         fd.append(`payment_history[${ei}][term_id]`, entry.term_id)
         fd.append(`payment_history[${ei}][academic_year_id]`, entry.academic_year_id)
         fd.append(`payment_history[${ei}][fee_amount_cents]`, Math.round((entry.fee_amount || 0) * 100))
-        entry.payments.forEach((p, pi) => {
+        ;(entry.payments || []).forEach((p, pi) => {
           fd.append(`payment_history[${ei}][payments][${pi}][amount_cents]`, Math.round((p.amount || 0) * 100))
           fd.append(`payment_history[${ei}][payments][${pi}][paid_at]`, p.paid_at)
           fd.append(`payment_history[${ei}][payments][${pi}][method]`, p.method || 'cash')
@@ -1696,6 +1713,17 @@ async function loadDraft() {
           form.value[key] = draft[key]
         }
       })
+      // Normalize payment_history shape — a draft saved by an older code path may be
+      // missing fields (e.g. `payments`), which would otherwise crash validateStep()
+      // silently when the user tries to save.
+      if (Array.isArray(form.value.payment_history)) {
+        form.value.payment_history = form.value.payment_history.map(entry => ({
+          academic_year_id: entry?.academic_year_id ?? '',
+          term_id: entry?.term_id ?? '',
+          fee_amount: entry?.fee_amount ?? 0,
+          payments: Array.isArray(entry?.payments) ? entry.payments : [],
+        }))
+      }
       step.value = draft.current_step || 1
     }
   } catch (e) {
