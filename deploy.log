@@ -2009,3 +2009,14 @@ matching the existing pattern in the wipe_demo_data migration."
 [0;36m[2026-08-24 18:47:58][0m   ShulePay — Release
 [0;36m[2026-08-24 18:47:58][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 18:47:58][0m Checking working tree...
+[0;36m[2026-08-24 18:47:58][0m Files staged for commit:
+[0;36m[2026-08-24 18:47:58][0m Committing: "feat: migration invoice numbers now use the school code (MIG/MGRTH/0001/2026 for primary, MIG/MGRTHMR/0001/2026 for secondary) instead of a generic global MIG-YEAR-NNNNNN sequence - mirrors the existing admission-number format, sequence scoped per school_id"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 18:47:59][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 18:48:03][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 18:55:03][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 18:55:03][0m   ShulePay — Release
+[0;36m[2026-08-24 18:55:03][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 18:55:03][0m Checking working tree...

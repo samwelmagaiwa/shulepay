@@ -45,6 +45,24 @@
     <CCard style="margin-top:-2px; border-top-left-radius:0; border-top-right-radius:0;">
       <!-- Filters bar — sticky below the summary cards -->
       <CCardBody class="p-2 border-bottom" style="position:sticky; top:var(--summary-height, 90px); z-index:15; background:var(--cui-card-bg, #fff); border-radius:0;">
+        <div class="d-flex align-items-center justify-content-between gap-2 mb-2 flex-wrap">
+          <small class="text-medium-emphasis text-nowrap">
+            {{ t('common.showing', {
+              from: (pagination.total || 0) === 0 ? 0 : ((pagination.current_page || 1) - 1) * (pagination.per_page || perPage) + 1,
+              to: Math.min((pagination.current_page || 1) * (pagination.per_page || perPage), pagination.total || 0),
+              total: pagination.total || 0,
+            }) }}
+          </small>
+          <div class="d-flex align-items-center gap-2">
+            <CFormSelect v-model="perPage" @update:modelValue="fetchData(1)" size="sm" style="width:80px;">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </CFormSelect>
+            <small class="text-medium-emphasis text-nowrap">{{ t('common.perPage') }}</small>
+          </div>
+        </div>
         <div class="d-flex align-items-center gap-2 flex-nowrap overflow-auto">
           <CFormSelect v-model="filters.school_id" @update:modelValue="fetchData(1)" size="sm" style="min-width:160px; flex:2;">
             <option value="">{{ t('common.allSchools') }}</option>
@@ -270,6 +288,7 @@ const showSmsModal     = ref(false)
 const classes          = ref([])
 const promisedCount    = ref(0)
 const promisesLoading  = ref(false)
+const perPage          = ref('20')
 let   debounceTimer    = null
 
 const invoices   = computed(() => invoicesStore.invoices)
@@ -311,7 +330,7 @@ function rowBgClass(inv) {
 }
 
 async function fetchData(page) {
-  const params = { page: page ?? pagination.value.current_page ?? 1 }
+  const params = { page: page ?? pagination.value.current_page ?? 1, per_page: perPage.value }
   if (filters.value.school_id)   params.school_id   = filters.value.school_id
   if (filters.value.class_id)    params.school_class_id = filters.value.class_id
   if (filters.value.term_number) params.term_number = filters.value.term_number
