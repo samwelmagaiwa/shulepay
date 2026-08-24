@@ -3,9 +3,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
+import { useSchoolStore } from '@/stores/school'
 
 const { t } = useI18n()
 const auth = useAuthStore()
+const schoolStore = useSchoolStore()
 
 const years    = ref([])
 const schools  = ref([])
@@ -32,8 +34,9 @@ async function load() {
   loading.value = true
   error.value   = ''
   try {
+    const schoolId = schoolStore.activeSchoolId
     const [yRes, sRes] = await Promise.all([
-      api.get('/academic-years'),
+      api.get('/academic-years', { params: schoolId ? { school_id: schoolId } : {} }),
       isSuperAdmin.value ? api.get('/schools') : Promise.resolve(null),
     ])
     years.value   = yRes.data.data ?? yRes.data
@@ -81,7 +84,7 @@ async function save() {
   formError.value = ''
   try {
     const payload = { ...form.value }
-    if (!isSuperAdmin.value) delete payload.school_id
+    if (!isSuperAdmin.value) payload.school_id = schoolStore.activeSchoolId
 
     if (editTarget.value) {
       await api.put(`/academic-years/${editTarget.value.id}`, payload)
