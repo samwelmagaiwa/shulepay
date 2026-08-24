@@ -278,6 +278,7 @@ export default {
     add:          'Ongeza Mwanafunzi',
     register:     'Sajili Mwanafunzi',
     edit:         'Hariri Mwanafunzi',
+    draftSaved:   'Rasimu imekamatia',
     admission:    'Namba ya Usajili',
     fullName:     'Jina Kamili',
     firstName:    'Jina la Kwanza',

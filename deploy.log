@@ -1493,3 +1493,16 @@
 [0;36m[2026-08-24 13:15:19][0m   ShulePay — Release
 [0;36m[2026-08-24 13:15:19][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 13:15:19][0m Checking working tree...
+[0;36m[2026-08-24 13:15:19][0m Files staged for commit:
+[0;36m[2026-08-24 13:15:20][0m Committing: "fix: improve edit student modal error handling and submit button responsiveness"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 13:15:20][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 13:15:27][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 13:36:28][0m Checking for pending migrations...
+[0;32m✔ No pending migrations — nothing to do[0m
+[0;36m[2026-08-24 13:36:53][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 13:36:53][0m   ShulePay — Release
+[0;36m[2026-08-24 13:36:53][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 13:36:53][0m Checking working tree...

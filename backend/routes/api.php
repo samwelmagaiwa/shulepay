@@ -20,6 +20,7 @@ use App\Http\Controllers\Accountant\ReceiptController;
 use App\Http\Controllers\Accountant\RefundController;
 use App\Http\Controllers\Accountant\RolloverController;
 use App\Http\Controllers\Accountant\StudentController;
+use App\Http\Controllers\Accountant\StudentDraftController;
 use App\Http\Controllers\Accountant\SupplierController;
 use App\Http\Controllers\Accountant\SupplierPaymentController;
 use App\Http\Controllers\Api\AttendanceController;
@@ -137,6 +138,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('students/register', [StudentController::class, 'register']);
         Route::get('students/next-admission-number', [StudentController::class, 'nextAdmissionNumber']);
         Route::apiResource('students', StudentController::class);
+
+        // Student Drafts (auto-save during registration)
+        Route::apiResource('student-drafts', StudentDraftController::class);
 
         // Guardians
         Route::apiResource('guardians', GuardianController::class);

@@ -278,6 +278,7 @@ export default {
     add:          'Add Student',
     register:     'Register Student',
     edit:         'Edit Student',
+    draftSaved:   'Draft saved',
     admission:    'Admission No.',
     fullName:     'Full Name',
     firstName:    'First Name',

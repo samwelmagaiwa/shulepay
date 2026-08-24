@@ -2,6 +2,9 @@
   <CModal :visible="visible" @close="$emit('close')" size="xl" class="modal-fullscreen-sm-down" :backdrop="'static'" scrollable>
     <CModalHeader style="border-bottom:2px solid #007f3e;">
       <CModalTitle class="fw-bold">{{ t('students.register') }}</CModalTitle>
+      <div class="text-end" style="font-size:.75rem;" v-if="draftSaved" class="text-success">
+        ✓ {{ t('students.draftSaved') || 'Draft saved' }}
+      </div>
     </CModalHeader>
 
     <CModalBody class="p-2 p-md-3">
@@ -964,6 +967,7 @@ import { useI18n } from 'vue-i18n'
 import { useSchoolsStore } from '@/stores/schools'
 import { useSchoolStore } from '@/stores/school'
 import api from '@/services/api'
+import studentDraftService from '@/services/studentDraftService'
 
 const { t } = useI18n()
 
@@ -985,6 +989,12 @@ const photoInput    = ref(null)
 const academicYears = ref([])
 const terms         = ref([])
 const allClasses    = ref([])
+
+// Draft management
+const currentDraft  = ref(null)
+const autoSaveFn    = ref(null)
+const draftLoading  = ref(false)
+const draftSaved    = ref(false)
 
 // Allergies toggle (Step 2)
 const hasAllergies = ref(false)
@@ -1463,6 +1473,9 @@ async function submit() {
 
     await api.post('/students/register', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
 
+    // Delete draft after successful registration
+    await deleteDraft()
+
     emit('registered')
     resetForm()
   } catch (e) {
@@ -1503,6 +1516,8 @@ function resetForm() {
   places.value       = []
   form.value    = blankForm()
   hasAllergies.value = false
+  currentDraft.value = null
+  draftSaved.value   = false
 }
 
 watch(() => props.visible, async (v) => {
@@ -1534,6 +1549,79 @@ watch(() => form.value.academic_year_id, async (yearId) => {
   }
 })
 
+// Draft functions
+async function loadDraft() {
+  if (!schoolStore.activeSchoolId) return
+  draftLoading.value = true
+  try {
+    const drafts = await studentDraftService.getDrafts(schoolStore.activeSchoolId)
+    if (drafts.length > 0) {
+      const draft = drafts[0]
+      currentDraft.value = draft
+      // Populate form from draft
+      Object.keys(form.value).forEach(key => {
+        if (draft[key] !== undefined && draft[key] !== null) {
+          form.value[key] = draft[key]
+        }
+      })
+      step.value = draft.current_step || 1
+    }
+  } catch (e) {
+    console.error('Failed to load draft:', e)
+  } finally {
+    draftLoading.value = false
+  }
+}
+
+function setupAutoSave() {
+  if (!schoolStore.activeSchoolId) return
+  autoSaveFn.value = studentDraftService.createAutoSaveFn(
+    schoolStore.activeSchoolId,
+    (saved) => {
+      currentDraft.value = saved
+      draftSaved.value = true
+      setTimeout(() => { draftSaved.value = false }, 2000)
+    }
+  )
+}
+
+async function saveDraftNow() {
+  if (!autoSaveFn.value || !schoolStore.activeSchoolId) return
+  try {
+    const draftData = {
+      ...form.value,
+      current_step: step.value,
+    }
+    await studentDraftService.saveDraft(schoolStore.activeSchoolId, draftData)
+  } catch (e) {
+    console.error('Failed to save draft:', e)
+  }
+}
+
+async function deleteDraft() {
+  if (!currentDraft.value) return
+  try {
+    await studentDraftService.deleteDraft(currentDraft.value.id)
+    currentDraft.value = null
+  } catch (e) {
+    console.error('Failed to delete draft:', e)
+  }
+}
+
+// Auto-save on form changes
+watch(() => form.value, (newForm) => {
+  if (!schoolStore.activeSchoolId || !autoSaveFn.value) return
+  const draftData = {
+    ...newForm,
+    current_step: step.value,
+  }
+  autoSaveFn.value(draftData)
+}, { deep: true, throttle: 500 })
+
+watch(() => step.value, () => {
+  saveDraftNow()
+}, { throttle: 500 })
+
 onMounted(async () => {
   try { await schoolsStore.fetchSchools() } catch {}
   try { await fetchRegions() } catch {}
@@ -1548,6 +1636,10 @@ onMounted(async () => {
 
     const currentYear = academicYears.value.find(y => y.is_current) || academicYears.value[0]
     if (currentYear) form.value.academic_year_id = currentYear.id
+
+    // Setup draft functionality
+    setupAutoSave()
+    await loadDraft()
   } catch {}
 })
 </script>
