@@ -1957,3 +1957,24 @@ matching the existing pattern in the wipe_demo_data migration."
 [0;36m[2026-08-24 18:30:05][0m   ShulePay — Release
 [0;36m[2026-08-24 18:30:05][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 18:30:05][0m Checking working tree...
+[0;36m[2026-08-24 18:30:05][0m Files staged for commit:
+[0;36m[2026-08-24 18:30:05][0m Committing: "feat(receipts): print receipt from invoice list; rebuild receipt with full particulars
+
+- /ada-madeni Actions column now offers Print Receipt for any invoice with a
+  receipted payment (paid and partial); multiple payments get a picker
+- Eager-load payments.receipt on the invoice list so no extra request is needed
+- Receipt view used display:flex, which DomPDF does not implement — every
+  label/value row was rendering stacked. Rebuilt on tables.
+- Receipt now shows class, academic year, payment date, invoice particulars
+  (line items), invoice total, total paid, running balance and recorded-by
+- Fix admission number printing blank (it lives on the enrollment, not student)
+- Raise paper 160mm -> 240mm so the fuller receipt stays on one page"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 18:30:05][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 18:30:10][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 18:38:04][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 18:38:04][0m   ShulePay — Release
+[0;36m[2026-08-24 18:38:04][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 18:38:04][0m Checking working tree...

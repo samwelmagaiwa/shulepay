@@ -37,7 +37,7 @@ class CleanupOrphanedInvoices extends Command
                 $inv->invoice_number,
                 $inv->student_id,
                 $inv->school_id,
-                number_format($inv->total_amount_cents / 100),
+                number_format($inv->total_amount_cents->cents() / 100),
                 $inv->payments_count,
             ])
         );

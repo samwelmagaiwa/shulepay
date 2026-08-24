@@ -280,7 +280,12 @@
       "Bash(php -l app/Services/Reporting/DashboardService.php)",
       "Bash(vendor/bin/pint app/Http/Controllers/Accountant/StudentController.php app/Services/Reporting/DashboardService.php --test)",
       "Bash(vendor/bin/pint app/Http/Controllers/Accountant/StudentController.php --test)",
-      "Bash(bash deploy.sh release \"feat: cascade-delete a student's invoices and payments when the student is deleted - force-deletes payments first to satisfy the restrictOnDelete FK, then removes the invoices; all wrapped in one transaction with enrollment/student deletion\")"
+      "Bash(bash deploy.sh release \"feat: cascade-delete a student's invoices and payments when the student is deleted - force-deletes payments first to satisfy the restrictOnDelete FK, then removes the invoices; all wrapped in one transaction with enrollment/student deletion\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@169.58.188.122 \"hostname && ls /www/shulepay 2>&1 | head -20 && echo '---' && cat /www/shulepay/.env 2>/dev/null | grep -i APP_URL\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@169.58.188.122 \"cd /www/shulepay && docker compose -f docker-compose.prod.yml exec -T backend php artisan invoices:cleanup-orphaned\")",
+      "Bash(php -l app/Console/Commands/CleanupOrphanedInvoices.php)",
+      "Bash(vendor/bin/pint app/Console/Commands/CleanupOrphanedInvoices.php --test)",
+      "Bash(bash deploy.sh release \"fix: CleanupOrphanedInvoices audit command crashed on MoneyCast object - use ->cents\\(\\) accessor instead of raw division, matching the existing pattern used elsewhere\")"
     ]
   }
 }
