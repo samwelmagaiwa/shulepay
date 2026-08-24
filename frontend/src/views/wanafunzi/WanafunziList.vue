@@ -179,7 +179,7 @@ const studentsStore = useStudentsStore()
 const schoolsStore  = useSchoolsStore()
 const schoolStore   = useSchoolStore()
 
-const filters        = ref({ search: '', school_id: schoolStore.activeSchoolId ? String(schoolStore.activeSchoolId) : '', status: '', has_debt: '' })
+const filters        = ref({ search: '', school_id: '', status: '', has_debt: '' })
 const selectedStudent  = ref(null)
 const showAddModal     = ref(false)
 const showEditModal    = ref(false)
@@ -277,6 +277,10 @@ function onDocClick() { activeRow.value = null }
 
 onMounted(async () => {
   document.addEventListener('click', onDocClick)
+  // Initialize school_id filter from store
+  if (schoolStore.activeSchoolId) {
+    filters.value.school_id = String(schoolStore.activeSchoolId)
+  }
   try { await schoolsStore.fetchSchools() } catch {}
   try { await fetchData() } catch {}
 })
