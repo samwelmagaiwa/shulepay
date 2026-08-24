@@ -12,6 +12,12 @@ class UpdateStudentRequest extends FormRequest
         if (! $user) {
             return false;
         }
+
+        // Only superadmin, accountant, and owner can edit students
+        if (! ($user->hasRole('superadmin') || $user->hasRole('accountant') || $user->hasRole('owner'))) {
+            return false;
+        }
+
         if ($user->school_id === null) {
             return true;
         } // superadmin

@@ -277,6 +277,7 @@ export default {
     title:        'Students',
     add:          'Add Student',
     register:     'Register Student',
+    edit:         'Edit Student',
     admission:    'Admission No.',
     fullName:     'Full Name',
     firstName:    'First Name',

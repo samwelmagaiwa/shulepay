@@ -226,7 +226,10 @@
       "Bash(bash deploy.sh release \"fix: allow term deletion while preserving invoices and related data\")",
       "Bash(xargs grep -l \"register.*student\\\\|student.*register\")",
       "Bash(bash deploy.sh release \"feat: add total tuition fee field with robust invoice generation — creates invoices even without fee structure\")",
-      "Bash(bash deploy.sh release \"feat: add dual-mode payment history \\(detailed by term + annual summary\\) with powerful backend invoice creation\")"
+      "Bash(bash deploy.sh release \"feat: add dual-mode payment history \\(detailed by term + annual summary\\) with powerful backend invoice creation\")",
+      "Bash(docker compose *)",
+      "Bash(bash deploy.sh)",
+      "Bash(bash deploy.sh release \"feat: add edit student functionality\")"
     ]
   }
 }

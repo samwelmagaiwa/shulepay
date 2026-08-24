@@ -110,6 +110,7 @@
                      style="position:absolute; bottom:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
                      @click.stop>
                   <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openDetail(s); activeRow = null">👁️ {{ t('common.view') }}</CButton>
+                  <CButton size="sm" color="primary" variant="ghost" class="text-start" @click="openEdit(s); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
                   <CButton size="sm" color="warning" variant="ghost" class="text-start" @click="router.push({ name: 'MwanafunziDetail', params: { id: s.id }, query: { tab: 'ahadi' } }); activeRow = null">🤝 {{ t('students.summary.recordPromise') }}</CButton>
                   <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(s); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                 </div>
@@ -148,6 +149,14 @@
       @saved="onStudentSaved"
       @registered="onStudentSaved"
     />
+
+    <!-- Edit Student Modal -->
+    <EditStudentModal
+      :visible="showEditModal"
+      :student="editStudent"
+      @close="showEditModal = false"
+      @saved="onStudentSaved"
+    />
   </CContainer>
 </template>
 
@@ -162,6 +171,7 @@ import { useSchoolStore }   from '@/stores/school'
 import StatusBadge         from '@/components/StatusBadge.vue'
 import MwanafunziDrawer    from '@/components/MwanafunziDrawer.vue'
 import AddStudentModal     from '@/components/AddStudentModal.vue'
+import EditStudentModal    from '@/components/EditStudentModal.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -172,6 +182,8 @@ const schoolStore   = useSchoolStore()
 const filters        = ref({ search: '', school_id: schoolStore.activeSchoolId ? String(schoolStore.activeSchoolId) : '', status: '', has_debt: '' })
 const selectedStudent  = ref(null)
 const showAddModal     = ref(false)
+const showEditModal    = ref(false)
+const editStudent      = ref(null)
 const activeRow        = ref(null)
 const showDeleteModal  = ref(false)
 const deleteTarget     = ref(null)
@@ -231,6 +243,11 @@ function resetFilters() {
 
 function openDetail(student) {
   selectedStudent.value = student
+}
+
+function openEdit(student) {
+  editStudent.value = student
+  showEditModal.value = true
 }
 
 function confirmDelete(student) {

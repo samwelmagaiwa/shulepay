@@ -1471,3 +1471,14 @@
 [0;36m[2026-08-24 12:41:52][0m   ShulePay — Release
 [0;36m[2026-08-24 12:41:52][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 12:41:52][0m Checking working tree...
+[0;36m[2026-08-24 12:41:53][0m Files staged for commit:
+[0;36m[2026-08-24 12:41:53][0m Committing: "feat: add dual-mode payment history (detailed by term + annual summary) with powerful backend invoice creation"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 12:41:53][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 12:42:04][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 13:01:15][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 13:01:16][0m   ShulePay — Release
+[0;36m[2026-08-24 13:01:16][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 13:01:16][0m Checking working tree...

@@ -277,6 +277,7 @@ export default {
     title:        'Wanafunzi',
     add:          'Ongeza Mwanafunzi',
     register:     'Sajili Mwanafunzi',
+    edit:         'Hariri Mwanafunzi',
     admission:    'Namba ya Usajili',
     fullName:     'Jina Kamili',
     firstName:    'Jina la Kwanza',
