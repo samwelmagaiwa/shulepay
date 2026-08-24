@@ -2113,3 +2113,11 @@ column. Switch to A5 and scale the typography up to suit the wider page."
 [0;36m[2026-08-24 20:08:52][0m   ShulePay — Release
 [0;36m[2026-08-24 20:08:52][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 20:08:52][0m Checking working tree...
+[0;36m[2026-08-24 20:08:52][0m Files staged for commit:
+[0;36m[2026-08-24 20:08:52][0m Committing: "fix: Ada Madeni's sticky filter bar was overlapping and hiding the first table row(s) - it relied on a CSS variable (--summary-height) that was never actually set, so its sticky top offset never matched the real summary-cards height; move the Showing X-Y indicator into the summary sticky block and make the filters bar non-sticky instead of stacking two independently-sized sticky elements"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 20:08:53][0m Pushing to origin/master...
+[0;36m[2026-08-24 20:08:56][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 20:08:56][0m   ShulePay — Release
+[0;36m[2026-08-24 20:08:56][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 20:08:56][0m Checking working tree...
