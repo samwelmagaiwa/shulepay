@@ -867,9 +867,11 @@
                   @input="form.lumpsum_total_charged = parseAmount($event.target.value)"
                   placeholder="0"
                   class="fw-semibold"
+                  :class="{'is-invalid': errors.lumpsum_total_charged}"
                 />
                 <span class="input-group-text">TZS</span>
               </div>
+              <div class="invalid-feedback d-block" v-if="errors.lumpsum_total_charged">{{ errors.lumpsum_total_charged }}</div>
               <small class="d-block mt-2 text-success fw-bold">{{ formatMoney((form.lumpsum_total_charged || 0) * 100) }}</small>
             </CCol>
             <CCol md="6">
@@ -881,9 +883,11 @@
                   @input="form.lumpsum_total_paid = parseAmount($event.target.value)"
                   placeholder="0"
                   class="fw-semibold"
+                  :class="{'is-invalid': errors.lumpsum_total_paid}"
                 />
                 <span class="input-group-text">TZS</span>
               </div>
+              <div class="invalid-feedback d-block" v-if="errors.lumpsum_total_paid">{{ errors.lumpsum_total_paid }}</div>
               <small class="d-block mt-2 text-success fw-bold">{{ formatMoney((form.lumpsum_total_paid || 0) * 100) }}</small>
             </CCol>
           </CRow>
@@ -1483,7 +1487,13 @@ function nextStep() {
 // ── Submit ────────────────────────────────────────────────────────────────────
 async function submit() {
   if (saving.value) return  // guard against double-submit (fast double-click/tap)
-  if (!validateStep()) return
+  if (!validateStep()) {
+    // Always surface SOME visible feedback — a silent early-return here looks
+    // exactly like "the button isn't working" if the failing field has no
+    // inline error UI of its own.
+    submitError.value = t('common.fixErrors')
+    return
+  }
   saving.value = true
   submitError.value = ''
   errors.value = {}

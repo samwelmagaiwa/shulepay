@@ -260,7 +260,9 @@
       "Bash(vendor/bin/pint app/Services/Students/StudentRegistrationService.php --test)",
       "Bash(bash deploy.sh release \"fix: prevent duplicate student creation on double-submit - add frontend re-entrancy guard and backend idempotency check\")",
       "Bash(curl -sI https://magrethschools.sc.tz/assets/index-*.js)",
-      "Bash(xargs -I{} echo {})"
+      "Bash(xargs -I{} echo {})",
+      "Bash(curl -s -o /dev/null -w \"schools with Accept header: %{http_code}\\\\n\" -H \"Accept: application/json\" https://magrethschools.sc.tz/api/schools)",
+      "Bash(bash deploy.sh release \"fix: Save Student button appeared unresponsive when lumpsum total fields were empty - validation errors were set but never rendered; add visible field errors and a fallback banner for any silent validation failure\")"
     ]
   }
 }
