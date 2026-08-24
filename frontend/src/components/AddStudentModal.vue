@@ -1612,7 +1612,11 @@ async function submit() {
         fd.append(`payment_history[${ei}][term_id]`, entry.term_id)
         fd.append(`payment_history[${ei}][academic_year_id]`, entry.academic_year_id)
         fd.append(`payment_history[${ei}][fee_amount_cents]`, Math.round((entry.fee_amount || 0) * 100))
-        ;(entry.payments || []).forEach((p, pi) => {
+        // A payment row with amount 0 carries no information — the term's fee_amount
+        // alone already represents the outstanding debt. Sending it would fail the
+        // backend's own `min:1` validation on amount_cents, so it's dropped here
+        // rather than submitted as a meaningless zero-value payment record.
+        ;(entry.payments || []).filter(p => p.amount && p.amount > 0).forEach((p, pi) => {
           fd.append(`payment_history[${ei}][payments][${pi}][amount_cents]`, Math.round((p.amount || 0) * 100))
           fd.append(`payment_history[${ei}][payments][${pi}][paid_at]`, p.paid_at)
           fd.append(`payment_history[${ei}][payments][${pi}][method]`, p.method || 'cash')

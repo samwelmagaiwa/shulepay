@@ -78,7 +78,10 @@ class RegisterStudentRequest extends FormRequest
             'payment_history.*.academic_year_id' => 'nullable|exists:academic_years,id',
             'payment_history.*.fee_amount_cents' => 'nullable|integer|min:1',
             'payment_history.*.payments' => 'nullable|array',
-            'payment_history.*.payments.*.amount_cents' => 'nullable|integer|min:1',
+            // min:0, not min:1 — a payment row with amount 0 means "nothing paid yet
+            // for this term" and is a valid state; the import service already skips
+            // creating a Payment record for it (StudentRegistrationService::importPaymentHistory).
+            'payment_history.*.payments.*.amount_cents' => 'nullable|integer|min:0',
             'payment_history.*.payments.*.paid_at' => 'nullable|date|before_or_equal:today',
             'payment_history.*.payments.*.method' => 'nullable|in:cash,mpesa,bank,cheque',
             'payment_history.*.payments.*.notes' => 'nullable|string|max:300',

@@ -267,7 +267,8 @@
       "Bash(vendor/bin/pint app/Services/Students/StudentRegistrationService.php app/Http/Requests/Student/RegisterStudentRequest.php --test)",
       "Bash(php -l app/Services/Students/StudentRegistrationService.php)",
       "Bash(php -l app/Http/Requests/Student/RegisterStudentRequest.php)",
-      "Bash(bash deploy.sh release \"feat: require Total Tuition Fee at Step 5 and cap Step 6 term fees against it; fix dashboard Today's Collections being polluted by historical Annual Summary payments hardcoded to today's date - add explicit payment date field\")"
+      "Bash(bash deploy.sh release \"feat: require Total Tuition Fee at Step 5 and cap Step 6 term fees against it; fix dashboard Today's Collections being polluted by historical Annual Summary payments hardcoded to today's date - add explicit payment date field\")",
+      "Bash(bash deploy.sh release \"fix: 422 'amount_cents must be at least 1' on zero-payment terms - frontend was allowing zero-amount rows client-side but backend's own min:1 rule still rejected them; drop zero-amount rows before submit and relax backend rule to match its own skip-on-zero import logic\")"
     ]
   }
 }
