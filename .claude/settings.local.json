@@ -287,7 +287,9 @@
       "Bash(vendor/bin/pint app/Console/Commands/CleanupOrphanedInvoices.php --test)",
       "Bash(bash deploy.sh release \"fix: CleanupOrphanedInvoices audit command crashed on MoneyCast object - use ->cents\\(\\) accessor instead of raw division, matching the existing pattern used elsewhere\")",
       "Bash(grep -n \"^use App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\School\" app/Services/Students/StudentRegistrationService.php)",
-      "Bash(bash deploy.sh release \"feat: add 'Showing X-Y of Z' indicator and per-page selector to Ada Madeni page, matching the existing pattern on the students list - the page never sent per_page to the backend and had no size control at all\")"
+      "Bash(bash deploy.sh release \"feat: add 'Showing X-Y of Z' indicator and per-page selector to Ada Madeni page, matching the existing pattern on the students list - the page never sent per_page to the backend and had no size control at all\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@169.58.188.122 \"cd /www/shulepay && docker compose -f docker-compose.prod.yml exec -T backend php artisan tinker --execute=\\\\\"print_r\\(DB::table\\('invoices'\\)->where\\('school_id',2\\)->orderByDesc\\('created_at'\\)->orderByDesc\\('id'\\)->paginate\\(20\\)->pluck\\('invoice_number'\\)->toArray\\(\\)\\);\\\\\"\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@169.58.188.122 \"cd /www/shulepay && docker compose -f docker-compose.prod.yml exec -T backend php artisan tinker --execute=\\\\\"print_r\\(DB::table\\('invoices'\\)->where\\('invoice_number','like','MIG-%'\\)->orderBy\\('school_id'\\)->orderBy\\('id'\\)->get\\(['id','school_id','invoice_number','created_at']\\)->toArray\\(\\)\\);\\\\\"\")"
     ]
   }
 }

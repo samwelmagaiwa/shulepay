@@ -2031,3 +2031,24 @@ matching the existing pattern in the wipe_demo_data migration."
 [0;36m[2026-08-24 18:59:16][0m   ShulePay — Release
 [0;36m[2026-08-24 18:59:16][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 18:59:16][0m Checking working tree...
+[0;36m[2026-08-24 18:59:16][0m Files staged for commit:
+[0;36m[2026-08-24 18:59:16][0m Committing: "feat: add students:purge-deleted-invoices to clean billing records of soft-deleted students
+
+Soft-deleting a student left its invoices and payments behind: they showed as
+blank Student/Class rows in the invoice list and still counted toward dashboard
+totals. The command deletes invoices, payments, lines, plans, promises and
+receipts for soft-deleted students, nulls discount links, and marks their stale
+'active' enrollments as dropped.
+
+Destructive and irreversible, so: --dry-run, an interactive confirmation, an
+abort if any refund references the payments (restrictOnDelete), and an audit_log
+entry recording every id removed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 18:59:16][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 18:59:20][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 19:14:18][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 19:14:18][0m   ShulePay — Release
+[0;36m[2026-08-24 19:14:18][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 19:14:18][0m Checking working tree...
