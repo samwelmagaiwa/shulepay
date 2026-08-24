@@ -13,7 +13,7 @@ class RegisterStudentRequest extends FormRequest
 
     public function rules(): array
     {
-        $rules = [
+        return [
             // Student identity
             'first_name' => 'required|string|max:100',
             'middle_name' => 'nullable|string|max:100',
@@ -72,26 +72,20 @@ class RegisterStudentRequest extends FormRequest
             // Migration: existing student payment history
             'is_existing_student' => 'nullable|boolean',
             'migration_mode' => 'nullable|in:detailed,lumpsum',
+            // Payment history — lenient validation, detailed mode only enforced in controller
+            'payment_history' => 'nullable|array',
+            'payment_history.*.term_id' => 'nullable|exists:terms,id',
+            'payment_history.*.academic_year_id' => 'nullable|exists:academic_years,id',
+            'payment_history.*.fee_amount_cents' => 'nullable|integer|min:1',
+            'payment_history.*.payments' => 'nullable|array',
+            'payment_history.*.payments.*.amount_cents' => 'nullable|integer|min:1',
+            'payment_history.*.payments.*.paid_at' => 'nullable|date|before_or_equal:today',
+            'payment_history.*.payments.*.method' => 'nullable|in:cash,mpesa,bank,cheque',
+            'payment_history.*.payments.*.notes' => 'nullable|string|max:300',
             // Lump sum mode: annual summary
             'lumpsum_total_charged_cents' => 'nullable|integer|min:0',
             'lumpsum_total_paid_cents' => 'nullable|integer|min:0',
         ];
-
-        // Only validate payment_history if NOT in lumpsum mode
-        // In lumpsum mode, use lumpsum_total_charged and lumpsum_total_paid instead
-        if ($this->input('migration_mode') !== 'lumpsum') {
-            $rules['payment_history'] = 'nullable|array';
-            $rules['payment_history.*.term_id'] = 'required_with:payment_history|exists:terms,id';
-            $rules['payment_history.*.academic_year_id'] = 'required_with:payment_history|exists:academic_years,id';
-            $rules['payment_history.*.fee_amount_cents'] = 'required_with:payment_history|integer|min:1';
-            $rules['payment_history.*.payments'] = 'nullable|array';
-            $rules['payment_history.*.payments.*.amount_cents'] = 'required_with:payment_history.*.payments|integer|min:1';
-            $rules['payment_history.*.payments.*.paid_at'] = 'required_with:payment_history.*.payments|date|before_or_equal:today';
-            $rules['payment_history.*.payments.*.method'] = 'nullable|in:cash,mpesa,bank,cheque';
-            $rules['payment_history.*.payments.*.notes'] = 'nullable|string|max:300';
-        }
-
-        return $rules;
     }
 
     public function messages(): array
