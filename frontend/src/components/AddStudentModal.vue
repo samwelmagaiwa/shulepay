@@ -692,14 +692,35 @@
 
       <!-- ═══════════════ STEP 6: Migration History (existing students only) ═══════════════ -->
       <div v-if="step === 6">
-        <div class="d-flex align-items-center gap-2 mb-3">
-          <div class="fw-semibold text-muted small text-uppercase" style="letter-spacing:.05em;">📚 {{ t('students.stepMigration') }}</div>
-          <CBadge color="warning" class="ms-1">{{ t('students.migrationTerms', { count: form.payment_history.length }) }}</CBadge>
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div>
+            <div class="fw-semibold text-muted small text-uppercase" style="letter-spacing:.05em;">📚 {{ t('students.stepMigration') }}</div>
+            <div class="text-muted small">{{ t('students.migrationHint') }}</div>
+          </div>
         </div>
-        <div class="text-muted small mb-3">{{ t('students.migrationHint') }}</div>
 
-        <!-- Term entries -->
-        <div v-for="(entry, ei) in form.payment_history" :key="ei"
+        <!-- ── Entry Mode Toggle ─────────────────────────────────────────── -->
+        <div class="d-flex gap-2 mb-4">
+          <div class="btn-group w-100" role="group">
+            <input type="radio" class="btn-check" name="migrationMode" id="modeDetailed" v-model="migrationMode" value="detailed" />
+            <label class="btn btn-outline-primary" for="modeDetailed" style="cursor:pointer;">
+              📋 {{ t('students.detailedByTerm') || 'Detailed by Term' }}
+            </label>
+            <input type="radio" class="btn-check" name="migrationMode" id="modeLumpSum" v-model="migrationMode" value="lumpsum" />
+            <label class="btn btn-outline-success" for="modeLumpSum" style="cursor:pointer;">
+              💰 {{ t('students.annualSummary') || 'Annual Summary' }}
+            </label>
+          </div>
+        </div>
+
+        <!-- ── DETAILED MODE: Term by Term ──────────────────────────────── -->
+        <div v-if="migrationMode === 'detailed'">
+          <div class="mb-3">
+            <CBadge color="warning">{{ form.payment_history.length }} {{ t('students.terms') || 'Terms' }}</CBadge>
+          </div>
+
+          <!-- Term entries -->
+          <div v-for="(entry, ei) in form.payment_history" :key="ei"
              class="border rounded-3 p-3 mb-3 position-relative"
              style="border-color:#ffc107!important;background:#fffdf0;">
 
@@ -786,9 +807,73 @@
           </div>
         </div>
 
-        <CButton color="warning" variant="outline" @click="addTermHistory" style="min-height:44px;">
-          + {{ t('students.addTermHistory') }}
-        </CButton>
+          <CButton color="warning" variant="outline" @click="addTermHistory" style="min-height:44px;">
+            + {{ t('students.addTermHistory') }}
+          </CButton>
+        </div>
+
+        <!-- ── ANNUAL SUMMARY MODE: Lump Sum ───────────────────────────── -->
+        <div v-if="migrationMode === 'lumpsum'" class="border rounded-3 p-4" style="border-color:#007f3e!important;background:#f8fff8;">
+          <div class="fw-semibold text-success mb-4" style="font-size:1.05rem;">📊 {{ t('students.annualPaymentSummary') || 'Annual Payment Summary' }}</div>
+
+          <CRow class="g-3 mb-4">
+            <CCol md="6">
+              <label class="form-label fw-bold mb-2">{{ t('students.totalFeesCharged') || 'Total Fees Charged (All Years)' }} <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <CFormInput
+                  type="text" inputmode="numeric"
+                  :value="formatAmount(form.lumpsum_total_charged || 0)"
+                  @input="form.lumpsum_total_charged = parseAmount($event.target.value)"
+                  placeholder="0"
+                  class="fw-semibold"
+                />
+                <span class="input-group-text">TZS</span>
+              </div>
+              <small class="d-block mt-2 text-success fw-bold">{{ formatMoney((form.lumpsum_total_charged || 0) * 100) }}</small>
+            </CCol>
+            <CCol md="6">
+              <label class="form-label fw-bold mb-2">{{ t('students.totalAmountPaid') || 'Total Amount Already Paid' }} <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <CFormInput
+                  type="text" inputmode="numeric"
+                  :value="formatAmount(form.lumpsum_total_paid || 0)"
+                  @input="form.lumpsum_total_paid = parseAmount($event.target.value)"
+                  placeholder="0"
+                  class="fw-semibold"
+                />
+                <span class="input-group-text">TZS</span>
+              </div>
+              <small class="d-block mt-2 text-success fw-bold">{{ formatMoney((form.lumpsum_total_paid || 0) * 100) }}</small>
+            </CCol>
+          </CRow>
+
+          <!-- Outstanding Balance Summary -->
+          <CCard class="border-0 p-3" style="background:#e3f2fd;">
+            <CRow class="g-3">
+              <CCol md="4" class="text-center">
+                <div class="small text-muted mb-1">💰 Charged</div>
+                <div class="fw-bold text-dark" style="font-size:1.1rem;">{{ formatMoney((form.lumpsum_total_charged || 0) * 100) }}</div>
+              </CCol>
+              <CCol md="4" class="text-center">
+                <div class="small text-muted mb-1">✅ Paid</div>
+                <div class="fw-bold text-success" style="font-size:1.1rem;">{{ formatMoney((form.lumpsum_total_paid || 0) * 100) }}</div>
+              </CCol>
+              <CCol md="4" class="text-center">
+                <div class="small text-muted mb-1">⚠️ Outstanding</div>
+                <div class="fw-bold" :class="lumpsumBalance() > 0 ? 'text-danger' : 'text-success'" style="font-size:1.1rem;">
+                  {{ formatMoney(lumpsumBalance()) }}
+                </div>
+              </CCol>
+            </CRow>
+          </CCard>
+
+          <CAlert v-if="lumpsumBalance() > 0" color="warning" class="mt-3 mb-0 small">
+            ⚠️ {{ t('students.studentOwes') || 'Student owes' }} <strong>{{ formatMoney(lumpsumBalance()) }}</strong> {{ t('students.toCompleteAnnualFees') || 'to complete annual tuition fees' }}
+          </CAlert>
+          <CAlert v-else color="success" class="mt-3 mb-0 small">
+            ✅ {{ t('students.allFeesPaidInFull') || 'All fees paid in full' }}
+          </CAlert>
+        </div>
 
         <!-- Annual Debt Summary -->
         <CCard v-if="form.payment_history.length > 0" class="mt-4 border-0" style="background:#f0f8ff;border-left:4px solid #d32f2f!important;">
@@ -904,6 +989,9 @@ const allClasses    = ref([])
 // Allergies toggle (Step 2)
 const hasAllergies = ref(false)
 
+// Migration mode: detailed by term or lump sum annual
+const migrationMode = ref('detailed')
+
 // Guardian document types (adults only — no Student ID Card)
 const idTypes = {
   nida:             t('students.idTypes.nida'),
@@ -1017,6 +1105,9 @@ function blankForm() {
     // Migration
     is_existing_student: false,
     payment_history: [],
+    // Annual summary (lump sum mode)
+    lumpsum_total_charged: 0,
+    lumpsum_total_paid: 0,
   }
 }
 
@@ -1202,6 +1293,13 @@ function completionPercentage() {
   return Math.round((totalPaid / totalFees) * 100)
 }
 
+// ── Lump sum balance calculation ──────────────────────────────────────────
+function lumpsumBalance() {
+  const totalCharged = (form.value.lumpsum_total_charged || 0) * 100
+  const totalPaid = (form.value.lumpsum_total_paid || 0) * 100
+  return Math.max(0, totalCharged - totalPaid)
+}
+
 async function autoFillFee(ei) {
   const entry = form.value.payment_history[ei]
   const f = form.value
@@ -1336,6 +1434,9 @@ async function submit() {
       discount_amount_cents:  Math.round((f.discount_amount || 0) * 100),
       generate_first_invoice: f.generate_first_invoice ? 1 : 0,
       is_existing_student: f.is_existing_student ? 1 : 0,
+      migration_mode: migrationMode.value || 'detailed',
+      lumpsum_total_charged_cents: Math.round((f.lumpsum_total_charged || 0) * 100),
+      lumpsum_total_paid_cents: Math.round((f.lumpsum_total_paid || 0) * 100),
     }
 
     Object.entries(fields).forEach(([k, v]) => fd.append(k, v ?? ''))
@@ -1345,7 +1446,7 @@ async function submit() {
       })
     })
     // Migration history
-    if (f.is_existing_student && f.payment_history.length) {
+    if (f.is_existing_student && (migrationMode.value === 'detailed' ? f.payment_history.length : true)) {
       f.payment_history.forEach((entry, ei) => {
         fd.append(`payment_history[${ei}][term_id]`, entry.term_id)
         fd.append(`payment_history[${ei}][academic_year_id]`, entry.academic_year_id)

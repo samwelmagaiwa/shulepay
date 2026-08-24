@@ -71,6 +71,8 @@ class RegisterStudentRequest extends FormRequest
 
             // Migration: existing student payment history
             'is_existing_student' => 'nullable|boolean',
+            'migration_mode' => 'nullable|in:detailed,lumpsum',
+            // Detailed mode: payment by term
             'payment_history' => 'nullable|array',
             'payment_history.*.term_id' => 'required_with:payment_history|exists:terms,id',
             'payment_history.*.academic_year_id' => 'required_with:payment_history|exists:academic_years,id',
@@ -80,6 +82,9 @@ class RegisterStudentRequest extends FormRequest
             'payment_history.*.payments.*.paid_at' => 'required_with:payment_history.*.payments|date|before_or_equal:today',
             'payment_history.*.payments.*.method' => 'nullable|in:cash,mpesa,bank,cheque',
             'payment_history.*.payments.*.notes' => 'nullable|string|max:300',
+            // Lump sum mode: annual summary
+            'lumpsum_total_charged_cents' => 'nullable|integer|min:0',
+            'lumpsum_total_paid_cents' => 'nullable|integer|min:0',
         ];
     }
 

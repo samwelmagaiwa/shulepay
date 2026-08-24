@@ -104,8 +104,16 @@ class StudentRegistrationService
 
             // 6. Migration: create backdated invoices + payments for existing students
             $isExisting = ! empty($data['is_existing_student']);
-            if ($isExisting && ! empty($data['payment_history'])) {
-                $this->importPaymentHistory($student, $data['school_id'], $data['payment_history']);
+            $migrationMode = $data['migration_mode'] ?? 'detailed';
+
+            if ($isExisting) {
+                if ($migrationMode === 'lumpsum') {
+                    // Annual summary mode: create single consolidated invoice
+                    $this->importLumpsumPaymentHistory($student, $data);
+                } elseif (! empty($data['payment_history'])) {
+                    // Detailed mode: invoice per term
+                    $this->importPaymentHistory($student, $data['school_id'], $data['payment_history']);
+                }
             }
 
             // 7. Generate first invoice if requested (skip for existing — history covers it)
@@ -390,6 +398,66 @@ class StudentRegistrationService
             $invoice->save();
         }
 
+        $invoice->syncStatus();
+    }
+
+    /**
+     * Powerful lump-sum migration: Create single consolidated invoice for annual summary
+     * Handles payments made all at once or in chunks, without needing term-by-term breakdown
+     */
+    private function importLumpsumPaymentHistory(Student $student, array $data): void
+    {
+        $schoolId = $data['school_id'];
+        $totalChargedCents = (int) ($data['lumpsum_total_charged_cents'] ?? 0);
+        $totalPaidCents = (int) ($data['lumpsum_total_paid_cents'] ?? 0);
+
+        // Validation: must have charged amount
+        if ($totalChargedCents <= 0) {
+            return;
+        }
+
+        // Create master invoice covering all historical years
+        $invoice = Invoice::withoutGlobalScope('school')->create([
+            'student_id' => $student->id,
+            'school_id' => $schoolId,
+            'term_id' => null,
+            'academic_year_id' => null,
+            'invoice_number' => $this->nextMigrationNumber(),
+            'total_amount_cents' => $totalChargedCents,
+            'arrears_cents' => 0,
+            'discount_cents' => 0,
+            'status' => 'unpaid',
+            'due_date' => null,
+            'generated_at' => now(),
+            'generated_by' => auth()->id(),
+        ]);
+
+        // Create single invoice line for complete history
+        $invoice->lines()->create([
+            'fee_item_id' => null,
+            'description' => 'Jumla ya ada kutoka vitabuni (Ada iliyohamishwa)',
+            'amount_cents' => $totalChargedCents,
+        ]);
+
+        // Record payment if amount was paid
+        if ($totalPaidCents > 0) {
+            // Cap payment to invoice total (no overpayment)
+            $paymentAmount = min($totalPaidCents, $totalChargedCents);
+
+            Payment::create([
+                'invoice_id' => $invoice->id,
+                'student_id' => $student->id,
+                'school_id' => $schoolId,
+                'amount_cents' => $paymentAmount,
+                'method' => 'cash',
+                'reference_number' => null,
+                'paid_at' => now()->toDateString(),
+                'recorded_by' => auth()->id(),
+                'notes' => 'Imehamishwa kutoka vitabuni - Jumla ya malipo ya juu',
+            ]);
+        }
+
+        // Sync invoice status based on payment
         $invoice->syncStatus();
     }
 }
