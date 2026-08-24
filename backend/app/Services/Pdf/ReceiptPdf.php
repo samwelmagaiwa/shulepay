@@ -38,10 +38,10 @@ class ReceiptPdf
         }
 
         return Pdf::loadView('pdf.receipt', compact('receipt', 'appName', 'appTagline', 'logoBase64'))
-            // 80mm roll. Height raised from 160mm to 240mm so the fuller receipt
-            // (particulars + running balance) fits on one page instead of spilling
-            // onto a second. Switch to 'A5' here if printing to office paper.
-            ->setPaper([0, 0, 226.77, 680.31]) // 80mm × 240mm thermal
+            // A5 (148mm × 210mm) — printed from the browser to office paper rather
+            // than a thermal roll. Replaces the earlier 80mm strip, which left the
+            // page mostly empty and the content squeezed into a narrow column.
+            ->setPaper('a5')
             ->output();
     }
 }

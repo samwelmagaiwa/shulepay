@@ -24,39 +24,42 @@
 <head>
 <meta charset="utf-8">
 <style>
+  /* Sized for A5 (148mm x 210mm). Scaled up from the original 80mm thermal
+     layout, where 9px body text was appropriate but looks tiny on office paper. */
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: DejaVu Sans, sans-serif; font-size: 9.5px; color: #111; padding: 10px; }
+  body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #111; padding: 26px 30px; }
   .center { text-align: center; }
   .right  { text-align: right; }
   .bold   { font-weight: bold; }
-  .hr     { border-top: 1px dashed #555; margin: 5px 0; }
-  .hr-solid { border-top: 1px solid #111; margin: 5px 0; }
-  .logo-img { max-width: 70px; max-height: 50px; margin-bottom: 4px; }
-  .app-name { font-size: 14px; font-weight: bold; color: #007f3e; }
-  .sub    { font-size: 8px; color: #555; }
-  .doc-title { font-size: 9px; letter-spacing: 1px; color: #333; }
-  .receipt-no { font-size: 12px; font-weight: bold; margin: 3px 0; }
+  .hr     { border-top: 1px dashed #555; margin: 10px 0; }
+  .hr-solid { border-top: 1.5px solid #111; margin: 8px 0; }
+  .logo-img { max-width: 110px; max-height: 78px; margin-bottom: 6px; }
+  .app-name { font-size: 21px; font-weight: bold; color: #007f3e; letter-spacing: .5px; }
+  .sub    { font-size: 11px; color: #555; }
+  .doc-title { font-size: 12px; letter-spacing: 3px; color: #333; }
+  .receipt-no { font-size: 18px; font-weight: bold; margin: 5px 0; }
 
   /* Two-column label/value row */
   table.kv { width: 100%; border-collapse: collapse; }
-  table.kv td { padding: 1.5px 0; vertical-align: top; font-size: 9px; }
+  table.kv td { padding: 3.5px 0; vertical-align: top; font-size: 12px; }
   table.kv td.k { color: #555; }
   table.kv td.v { text-align: right; font-weight: bold; }
 
   /* Particulars (invoice line items) */
-  table.items { width: 100%; border-collapse: collapse; margin-top: 2px; }
-  table.items th { font-size: 8px; text-transform: uppercase; color: #555;
-                   border-bottom: 1px solid #999; padding: 2px 0; text-align: left; }
+  table.items { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  table.items th { font-size: 10px; letter-spacing: .5px; text-transform: uppercase; color: #555;
+                   border-bottom: 1.5px solid #999; padding: 5px 0; text-align: left; }
   table.items th.amt, table.items td.amt { text-align: right; }
-  table.items td { font-size: 9px; padding: 2px 0; border-bottom: 1px dotted #ccc; }
+  table.items td { font-size: 12px; padding: 5px 0; border-bottom: 1px dotted #ccc; }
 
-  .amount-box { border: 1.5px solid #007f3e; padding: 5px; margin: 6px 0; }
-  .amount-lbl { font-size: 8px; color: #555; text-align: center; }
-  .amount { font-size: 16px; font-weight: bold; color: #007f3e; text-align: center; }
+  .amount-box { border: 2px solid #007f3e; border-radius: 4px; padding: 10px; margin: 14px 0; }
+  .amount-lbl { font-size: 10px; letter-spacing: 1.5px; color: #555; text-align: center; }
+  .amount { font-size: 26px; font-weight: bold; color: #007f3e; text-align: center; margin-top: 2px; }
 
   .balance-paid { color: #007f3e; font-weight: bold; }
   .balance-due  { color: #c0292b; font-weight: bold; }
-  .footer { font-size: 7.5px; color: #777; text-align: center; margin-top: 6px; line-height: 1.4; }
+  .settled { font-size: 12px; letter-spacing: 1px; }
+  .footer { font-size: 10px; color: #777; text-align: center; margin-top: 14px; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -192,7 +195,7 @@
   </table>
 
   @if($invoiceDue <= 0)
-    <div class="center sub bold" style="color:#007f3e; margin-top:4px;">
+    <div class="center bold settled" style="color:#007f3e; margin-top:8px;">
       ✓ ANKARA IMELIPWA YOTE
     </div>
   @endif

@@ -2074,3 +2074,27 @@ entry recording every id removed."
 [0;36m[2026-08-24 19:35:01][0m   ShulePay — Release
 [0;36m[2026-08-24 19:35:01][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 19:35:01][0m Checking working tree...
+[0;36m[2026-08-24 19:35:01][0m Files staged for commit:
+[0;36m[2026-08-24 19:35:01][0m Committing: "fix(receipts): print/download failed with a 500 — request carried no auth token
+
+The PDF sits behind auth:sanctum and the token is attached by the axios
+interceptor, but an iframe src / window.open is a browser navigation and sends
+no Authorization header. The request was rejected as unauthenticated, and
+Authenticate::redirectTo() then called route('login') — which does not exist on
+this API-only backend — so RouteNotFoundException surfaced as a 500 before the
+JSON-401 handler could run.
+
+- Add utils/receipt.js: fetch the PDF via axios (token attached), print/save
+  from a blob: URL. Replaces three broken call sites, including
+  MwanafunziDetail's downloadReceipt which had never worked.
+- redirectGuestsTo(null) so an unauthenticated API call returns 401 JSON
+- Surface receipt failures in the UI instead of failing silently"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 19:35:02][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 19:35:06][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 19:43:52][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 19:43:52][0m   ShulePay — Release
+[0;36m[2026-08-24 19:43:52][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 19:43:52][0m Checking working tree...
