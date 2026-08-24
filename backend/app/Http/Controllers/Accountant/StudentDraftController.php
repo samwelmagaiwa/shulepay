@@ -50,7 +50,18 @@ class StudentDraftController extends Controller
     {
         $user = $request->user();
         if (! $user || (int) $draft->user_id !== (int) $user->id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            // TEMPORARY diagnostic fields — remove once the repeated 403 on
+            // student-drafts is root-caused. Reveals only IDs, not sensitive data.
+            return response()->json([
+                'error' => 'Unauthorized',
+                'debug' => [
+                    'draft_id' => $draft->id,
+                    'draft_user_id' => $draft->user_id,
+                    'draft_user_id_type' => gettype($draft->getRawOriginal('user_id')),
+                    'auth_user_id' => $user?->id,
+                    'auth_user_id_type' => gettype($user?->id),
+                ],
+            ], 403);
         }
 
         $allowed = $this->userSchoolIds($request);
@@ -133,7 +144,18 @@ class StudentDraftController extends Controller
     {
         $user = $request->user();
         if (! $user || (int) $draft->user_id !== (int) $user->id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            // TEMPORARY diagnostic fields — remove once the repeated 403 on
+            // student-drafts is root-caused. Reveals only IDs, not sensitive data.
+            return response()->json([
+                'error' => 'Unauthorized',
+                'debug' => [
+                    'draft_id' => $draft->id,
+                    'draft_user_id' => $draft->user_id,
+                    'draft_user_id_type' => gettype($draft->getRawOriginal('user_id')),
+                    'auth_user_id' => $user?->id,
+                    'auth_user_id_type' => gettype($user?->id),
+                ],
+            ], 403);
         }
 
         $allowed = $this->userSchoolIds($request);
@@ -191,7 +213,18 @@ class StudentDraftController extends Controller
     {
         $user = $request->user();
         if (! $user || (int) $draft->user_id !== (int) $user->id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            // TEMPORARY diagnostic fields — remove once the repeated 403 on
+            // student-drafts is root-caused. Reveals only IDs, not sensitive data.
+            return response()->json([
+                'error' => 'Unauthorized',
+                'debug' => [
+                    'draft_id' => $draft->id,
+                    'draft_user_id' => $draft->user_id,
+                    'draft_user_id_type' => gettype($draft->getRawOriginal('user_id')),
+                    'auth_user_id' => $user?->id,
+                    'auth_user_id_type' => gettype($user?->id),
+                ],
+            ], 403);
         }
 
         $allowed = $this->userSchoolIds($request);

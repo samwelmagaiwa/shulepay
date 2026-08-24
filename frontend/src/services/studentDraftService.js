@@ -83,6 +83,9 @@ export default {
         } catch (putError) {
           // If 403 (unauthorized), fall back to creating a new draft
           if (putError.response?.status === 403) {
+            // TEMPORARY: surface the backend's diagnostic payload so the actual
+            // ownership mismatch is visible directly in console, not just "403".
+            console.error('[draft 403 diagnostic]', putError.response?.data)
             // Clear the old draft cache and create new one
             res = await api.post('/student-drafts', payload)
           } else {
@@ -107,6 +110,11 @@ export default {
       return true
     } catch (e) {
       console.error('Failed to delete draft:', e)
+      if (e.response?.status === 403) {
+        // TEMPORARY: surface the backend's diagnostic payload for the same
+        // investigation as the save-draft 403 above.
+        console.error('[draft 403 diagnostic]', e.response?.data)
+      }
       return false
     }
   },
