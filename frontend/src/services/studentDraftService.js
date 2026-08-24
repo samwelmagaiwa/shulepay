@@ -77,7 +77,16 @@ export default {
 
       let res
       if (existing) {
-        res = await api.put(`/student-drafts/${existing.id}`, payload)
+        try {
+          res = await api.put(`/student-drafts/${existing.id}`, payload)
+        } catch (putError) {
+          // If 403 (unauthorized), fall back to creating a new draft
+          if (putError.response?.status === 403) {
+            res = await api.post('/student-drafts', payload)
+          } else {
+            throw putError
+          }
+        }
       } else {
         res = await api.post('/student-drafts', payload)
       }
@@ -142,9 +151,13 @@ export default {
           }
         } catch (e) {
           // Silently fail for draft auto-saves to avoid console spam
-          // Only log in debug mode
+          // 502/503 errors are infrastructure issues, not data problems
+          // 403 is handled by fallback to POST, other errors are transient
           if (process.env.NODE_ENV === 'development') {
-            console.debug('Draft auto-save skipped:', e.response?.status)
+            console.debug('Draft auto-save failed:', {
+              status: e.response?.status,
+              message: e.message,
+            })
           }
         }
       }, DEBOUNCE_DELAY)
