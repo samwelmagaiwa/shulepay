@@ -39,6 +39,28 @@
         </CCard>
       </CCol>
     </CRow>
+
+    <!-- Showing X-Y of Z + per-page — part of the same sticky block as the summary
+         cards, not the filters bar below, so this bar's height doesn't have to be
+         predicted via a CSS variable that was never actually being set. -->
+    <div class="d-flex align-items-center justify-content-between gap-2 mt-2 flex-wrap">
+      <small class="text-medium-emphasis text-nowrap">
+        {{ t('common.showing', {
+          from: (pagination.total || 0) === 0 ? 0 : ((pagination.current_page || 1) - 1) * (pagination.per_page || perPage) + 1,
+          to: Math.min((pagination.current_page || 1) * (pagination.per_page || perPage), pagination.total || 0),
+          total: pagination.total || 0,
+        }) }}
+      </small>
+      <div class="d-flex align-items-center gap-2">
+        <CFormSelect v-model="perPage" @update:modelValue="fetchData(1)" size="sm" style="width:80px;">
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </CFormSelect>
+        <small class="text-medium-emphasis text-nowrap">{{ t('common.perPage') }}</small>
+      </div>
+    </div>
     </div><!-- end sticky wrapper -->
 
     <CAlert v-if="receiptError" color="danger" dismissible class="mt-2 py-2"
@@ -48,26 +70,13 @@
 
     <!-- Filters + Table unified card -->
     <CCard style="margin-top:-2px; border-top-left-radius:0; border-top-right-radius:0;">
-      <!-- Filters bar — sticky below the summary cards -->
-      <CCardBody class="p-2 border-bottom" style="position:sticky; top:var(--summary-height, 90px); z-index:15; background:var(--cui-card-bg, #fff); border-radius:0;">
-        <div class="d-flex align-items-center justify-content-between gap-2 mb-2 flex-wrap">
-          <small class="text-medium-emphasis text-nowrap">
-            {{ t('common.showing', {
-              from: (pagination.total || 0) === 0 ? 0 : ((pagination.current_page || 1) - 1) * (pagination.per_page || perPage) + 1,
-              to: Math.min((pagination.current_page || 1) * (pagination.per_page || perPage), pagination.total || 0),
-              total: pagination.total || 0,
-            }) }}
-          </small>
-          <div class="d-flex align-items-center gap-2">
-            <CFormSelect v-model="perPage" @update:modelValue="fetchData(1)" size="sm" style="width:80px;">
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </CFormSelect>
-            <small class="text-medium-emphasis text-nowrap">{{ t('common.perPage') }}</small>
-          </div>
-        </div>
+      <!-- Filters bar — no longer sticky on its own. Stacking two independent sticky
+           elements (this one + the summary block above) required predicting the exact
+           pixel height of the first to offset the second, which broke as soon as either
+           block's content changed height — the filter bar would then cover the first
+           table row(s). A single sticky block (the summary bar above) is robust; this
+           one simply scrolls with the table. -->
+      <CCardBody class="p-2 border-bottom">
         <div class="d-flex align-items-center gap-2 flex-nowrap overflow-auto">
           <CFormSelect v-model="filters.school_id" @update:modelValue="fetchData(1)" size="sm" style="min-width:160px; flex:2;">
             <option value="">{{ t('common.allSchools') }}</option>
@@ -138,8 +147,10 @@
               {{ t('invoices.payNow') }}
             </CButton>
             <CButton v-for="r in receiptsFor(inv)" :key="r.id" size="sm" color="success" variant="outline"
-                     @click="printReceipt(r.id)" style="min-height:44px;">
-              🖨 {{ t('payments.printReceipt') }}
+                     @click="printReceipt(r.id)" :disabled="printingReceiptId === r.id"
+                     style="min-height:44px;">
+              <CSpinner v-if="printingReceiptId === r.id" size="sm" class="me-1" />
+              <span v-else>🖨 </span>{{ t('payments.printReceipt') }}
               <span v-if="receiptsFor(inv).length > 1" class="small ms-1">{{ formatMoney(r.amount_cents) }}</span>
             </CButton>
           </div>
@@ -189,8 +200,10 @@
                        partials — a parent who paid half still needs their receipt. -->
                   <CButton v-if="receiptsFor(inv).length === 1" size="sm" color="success" variant="outline"
                            @click="printReceipt(receiptsFor(inv)[0].id)"
-                           :title="t('payments.printReceipt')" style="min-height:36px;">
-                    🖨
+                           :disabled="printingReceiptId === receiptsFor(inv)[0].id"
+                           :title="t('payments.printReceipt')" style="min-height:36px; min-width:40px;">
+                    <CSpinner v-if="printingReceiptId === receiptsFor(inv)[0].id" size="sm" />
+                    <span v-else>🖨</span>
                   </CButton>
                   <CDropdown v-else-if="receiptsFor(inv).length > 1" variant="btn-group">
                     <CDropdownToggle size="sm" color="success" variant="outline" style="min-height:36px;">
@@ -200,6 +213,7 @@
                       <CDropdownHeader>{{ t('payments.receipt') }}</CDropdownHeader>
                       <CDropdownItem v-for="r in receiptsFor(inv)" :key="r.id"
                                      style="cursor:pointer;" @click="printReceipt(r.id)">
+                        <CSpinner v-if="printingReceiptId === r.id" size="sm" class="me-1" />
                         {{ r.receipt_number }}
                         <span class="text-muted small ms-1">{{ formatMoney(r.amount_cents) }}</span>
                       </CDropdownItem>

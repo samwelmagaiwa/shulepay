@@ -18,6 +18,17 @@
     $invoiceDue   = $invoice ? $invoice->balanceDueCents() : 0;
 
     $guardian = $receipt->student?->guardians?->first();
+
+    // The receipt must stay on a single A5 page. At the default sizing five fee
+    // lines fit; beyond that the layout condenses, and past MAX_LINES the tail is
+    // collapsed into one "other items" row so the footer can never spill over.
+    $allLines = $invoice?->lines ?? collect();
+    $dense = $allLines->count() > 5;
+    $maxLines = 5;
+
+    $shownLines = $allLines->take($maxLines);
+    $hiddenLines = $allLines->slice($maxLines);
+    $hiddenTotal = $hiddenLines->sum(fn ($l) => $l->amount_cents->cents());
 @endphp
 <!DOCTYPE html>
 <html lang="sw">
@@ -27,39 +38,42 @@
   /* Sized for A5 (148mm x 210mm). Scaled up from the original 80mm thermal
      layout, where 9px body text was appropriate but looks tiny on office paper. */
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #111; padding: 26px 30px; }
+  body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #111; padding: 16px 24px; }
   .center { text-align: center; }
   .right  { text-align: right; }
   .bold   { font-weight: bold; }
-  .hr     { border-top: 1px dashed #555; margin: 10px 0; }
-  .hr-solid { border-top: 1.5px solid #111; margin: 8px 0; }
-  .logo-img { max-width: 110px; max-height: 78px; margin-bottom: 6px; }
-  .app-name { font-size: 21px; font-weight: bold; color: #007f3e; letter-spacing: .5px; }
-  .sub    { font-size: 11px; color: #555; }
-  .doc-title { font-size: 12px; letter-spacing: 3px; color: #333; }
-  .receipt-no { font-size: 18px; font-weight: bold; margin: 5px 0; }
+  .hr     { border-top: 1px dashed #555; margin: 6px 0; }
+  .hr-solid { border-top: 1.5px solid #111; margin: 5px 0; }
+  .logo-img { max-width: 90px; max-height: 60px; margin-bottom: 3px; }
+  .app-name { font-size: 19px; font-weight: bold; color: #007f3e; letter-spacing: .5px; }
+  .sub    { font-size: 10px; color: #555; }
+  .doc-title { font-size: 11px; letter-spacing: 3px; color: #333; }
+  .receipt-no { font-size: 17px; font-weight: bold; margin: 3px 0; }
 
   /* Two-column label/value row */
   table.kv { width: 100%; border-collapse: collapse; }
-  table.kv td { padding: 3.5px 0; vertical-align: top; font-size: 12px; }
+  table.kv td { padding: 2px 0; vertical-align: top; font-size: 11px; }
   table.kv td.k { color: #555; }
   table.kv td.v { text-align: right; font-weight: bold; }
 
   /* Particulars (invoice line items) */
-  table.items { width: 100%; border-collapse: collapse; margin-top: 4px; }
-  table.items th { font-size: 10px; letter-spacing: .5px; text-transform: uppercase; color: #555;
-                   border-bottom: 1.5px solid #999; padding: 5px 0; text-align: left; }
+  table.items { width: 100%; border-collapse: collapse; margin-top: 2px; }
+  table.items th { font-size: 9px; letter-spacing: .5px; text-transform: uppercase; color: #555;
+                   border-bottom: 1.5px solid #999; padding: 3px 0; text-align: left; }
   table.items th.amt, table.items td.amt { text-align: right; }
-  table.items td { font-size: 12px; padding: 5px 0; border-bottom: 1px dotted #ccc; }
+  table.items td { font-size: 11px; padding: 3px 0; border-bottom: 1px dotted #ccc; }
+  /* Applied when there are many fee lines, to keep everything on one page */
+  table.items.dense th { font-size: 8px; padding: 2px 0; }
+  table.items.dense td { font-size: 9.5px; padding: 1px 0; }
 
-  .amount-box { border: 2px solid #007f3e; border-radius: 4px; padding: 10px; margin: 14px 0; }
-  .amount-lbl { font-size: 10px; letter-spacing: 1.5px; color: #555; text-align: center; }
-  .amount { font-size: 26px; font-weight: bold; color: #007f3e; text-align: center; margin-top: 2px; }
+  .amount-box { border: 2px solid #007f3e; border-radius: 4px; padding: 7px; margin: 8px 0; }
+  .amount-lbl { font-size: 9px; letter-spacing: 1.5px; color: #555; text-align: center; }
+  .amount { font-size: 23px; font-weight: bold; color: #007f3e; text-align: center; margin-top: 1px; }
 
   .balance-paid { color: #007f3e; font-weight: bold; }
   .balance-due  { color: #c0292b; font-weight: bold; }
-  .settled { font-size: 12px; letter-spacing: 1px; }
-  .footer { font-size: 10px; color: #777; text-align: center; margin-top: 14px; line-height: 1.5; }
+  .settled { font-size: 11px; letter-spacing: 1px; }
+  .footer { font-size: 9px; color: #777; text-align: center; margin-top: 8px; line-height: 1.4; }
 </style>
 </head>
 <body>
@@ -147,9 +161,9 @@
   </table>
 
   {{-- ── Particulars: what the invoice is made of ───────────── --}}
-  @if($invoice && $invoice->lines->isNotEmpty())
+  @if($allLines->isNotEmpty())
   <div class="hr"></div>
-  <table class="items">
+  <table class="items {{ $dense ? 'dense' : '' }}">
     <thead>
       <tr>
         <th>Maelezo</th>
@@ -157,12 +171,18 @@
       </tr>
     </thead>
     <tbody>
-      @foreach($invoice->lines as $line)
+      @foreach($shownLines as $line)
       <tr>
         <td>{{ $line->description }}</td>
         <td class="amt">{{ $money($line->amount_cents->cents()) }}</td>
       </tr>
       @endforeach
+      @if($hiddenLines->isNotEmpty())
+      <tr>
+        <td>Vipengele vingine ({{ $hiddenLines->count() }})</td>
+        <td class="amt">{{ $money($hiddenTotal) }}</td>
+      </tr>
+      @endif
     </tbody>
   </table>
   @endif

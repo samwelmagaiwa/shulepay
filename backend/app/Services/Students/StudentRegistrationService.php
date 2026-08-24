@@ -293,7 +293,7 @@ class StudentRegistrationService
 
             $invoice->lines()->create([
                 'fee_item_id' => null,
-                'description' => 'Ada iliyohamishwa (kutoka vitabuni)',
+                'description' => 'Ada ya muhula',
                 'amount_cents' => $feeCents,
             ]);
 
