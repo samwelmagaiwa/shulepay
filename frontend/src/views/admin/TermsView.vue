@@ -2,8 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
+import { useSchoolStore } from '@/stores/school'
 
 const { t } = useI18n()
+const schoolStore = useSchoolStore()
 
 const terms        = ref([])
 const academicYears= ref([])
@@ -26,7 +28,8 @@ async function load() {
   loading.value = true
   error.value   = ''
   try {
-    const ayRes = await api.get('/academic-years')
+    const schoolId = schoolStore.activeSchoolId
+    const ayRes = await api.get('/academic-years', { params: schoolId ? { school_id: schoolId } : {} })
     const ay = ayRes.data.data ?? ayRes.data
     academicYears.value = ay
 
