@@ -510,6 +510,9 @@ export default {
       termRequired:           'Chagua muhula',
       enrollmentDateRequired: 'Tarehe ya kuandikishwa inahitajika',
       feeAmountRequired:      'Ingiza kiasi cha ada',
+      paymentHistoryRequired: 'Ongeza angalau ingizo moja la historia ya muhula',
+      totalChargedRequired:   'Ingiza jumla ya kiasi kilichochajiwa',
+      totalPaidRequired:      'Ingiza jumla ya kiasi kilicholipwa',
     },
   },
   terms: {

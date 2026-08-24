@@ -1376,16 +1376,33 @@ function validateStep() {
     if (!g?.relationship) errors.value['guardians.0.relationship'] = t('guardians.errors.relationshipRequired')
   }
   if (step.value === 6) {
-    form.value.payment_history.forEach((entry, ei) => {
-      if (!entry.academic_year_id) errors.value[`payment_history.${ei}.academic_year_id`] = t('students.errors.yearRequired')
-      if (!entry.term_id)          errors.value[`payment_history.${ei}.term_id`]          = t('students.errors.termRequired')
-      if (!entry.fee_amount || entry.fee_amount <= 0)
-        errors.value[`payment_history.${ei}.fee_amount_cents`] = t('students.errors.feeAmountRequired')
-      entry.payments.forEach((p, pi) => {
-        if (!p.paid_at)  errors.value[`payment_history.${ei}.payments.${pi}.paid_at`]     = t('students.paidDate') + ' ' + t('common.required')
-        if (!p.amount || p.amount <= 0) errors.value[`payment_history.${ei}.payments.${pi}.amount_cents`] = t('students.paidAmount') + ' ' + t('common.required')
-      })
-    })
+    // Only validate if existing student
+    if (form.value.is_existing_student) {
+      // Detailed mode: validate payment_history
+      if (migrationMode.value === 'detailed') {
+        if (!form.value.payment_history || form.value.payment_history.length === 0) {
+          errors.value['payment_history'] = t('students.errors.paymentHistoryRequired')
+        } else {
+          form.value.payment_history.forEach((entry, ei) => {
+            if (!entry.academic_year_id) errors.value[`payment_history.${ei}.academic_year_id`] = t('students.errors.yearRequired')
+            if (!entry.term_id)          errors.value[`payment_history.${ei}.term_id`]          = t('students.errors.termRequired')
+            if (!entry.fee_amount || entry.fee_amount <= 0)
+              errors.value[`payment_history.${ei}.fee_amount_cents`] = t('students.errors.feeAmountRequired')
+            entry.payments.forEach((p, pi) => {
+              if (!p.paid_at)  errors.value[`payment_history.${ei}.payments.${pi}.paid_at`]     = t('students.paidDate') + ' ' + t('common.required')
+              if (!p.amount || p.amount <= 0) errors.value[`payment_history.${ei}.payments.${pi}.amount_cents`] = t('students.paidAmount') + ' ' + t('common.required')
+            })
+          })
+        }
+      }
+      // Lumpsum mode: validate lumpsum fields
+      else if (migrationMode.value === 'lumpsum') {
+        if (!form.value.lumpsum_total_charged || form.value.lumpsum_total_charged <= 0)
+          errors.value['lumpsum_total_charged'] = t('students.errors.totalChargedRequired')
+        if (!form.value.lumpsum_total_paid || form.value.lumpsum_total_paid < 0)
+          errors.value['lumpsum_total_paid'] = t('students.errors.totalPaidRequired')
+      }
+    }
   }
   return Object.keys(errors.value).length === 0
 }
@@ -1607,6 +1624,16 @@ async function deleteDraft() {
     console.error('Failed to delete draft:', e)
   }
 }
+
+// Auto-populate lumpsum_total_charged from total_tuition_fee
+watch(() => migrationMode.value, (newMode) => {
+  if (newMode === 'lumpsum' && form.value.total_tuition_fee && form.value.total_tuition_fee > 0) {
+    // Auto-fill charged amount from step 5 total tuition fee
+    if (!form.value.lumpsum_total_charged || form.value.lumpsum_total_charged === 0) {
+      form.value.lumpsum_total_charged = form.value.total_tuition_fee
+    }
+  }
+})
 
 // Auto-save on form changes
 watch(() => form.value, (newForm) => {

@@ -510,6 +510,9 @@ export default {
       termRequired:           'Select term',
       enrollmentDateRequired: 'Enrollment date is required',
       feeAmountRequired:      'Enter the fee amount',
+      paymentHistoryRequired: 'Add at least one term history entry',
+      totalChargedRequired:   'Enter total amount charged',
+      totalPaidRequired:      'Enter total amount paid',
     },
   },
   terms: {
