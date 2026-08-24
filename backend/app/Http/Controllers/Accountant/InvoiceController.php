@@ -69,7 +69,15 @@ class InvoiceController extends Controller
             }
         }
 
-        return InvoiceResource::collection($query->latest()->paginate($request->input('per_page', 20)));
+        // created_at alone is not unique — a migration import writes every term's invoice
+        // in one transaction, so they share a timestamp. Without a unique tiebreaker MySQL
+        // may order those ties differently for each page, letting a row appear twice or
+        // vanish across a pagination boundary. id breaks the tie deterministically.
+        return InvoiceResource::collection(
+            $query->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->paginate($request->input('per_page', 20))
+        );
     }
 
     public function show(Invoice $invoice): InvoiceResource
