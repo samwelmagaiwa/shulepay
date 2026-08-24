@@ -2,7 +2,7 @@
   <CModal :visible="visible" @close="$emit('close')" size="xl" class="modal-fullscreen-sm-down" :backdrop="'static'" scrollable>
     <CModalHeader style="border-bottom:2px solid #007f3e;">
       <CModalTitle class="fw-bold">{{ t('students.register') }}</CModalTitle>
-      <div class="text-end" style="font-size:.75rem;" v-if="draftSaved" class="text-success">
+      <div v-if="draftSaved" class="text-end text-success" style="font-size:.75rem;">
         ✓ {{ t('students.draftSaved') || 'Draft saved' }}
       </div>
     </CModalHeader>
