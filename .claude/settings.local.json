@@ -241,7 +241,8 @@
       "Bash(bash deploy.sh release \"fix: remove duplicate class attribute in AddStudentModal\")",
       "Bash(bash deploy.sh release \"fix: exclude payment_history from draft save in lumpsum mode and prevent empty array validation\")",
       "Bash(bash deploy.sh release \"fix: powerfully improve draft auto-save with validation guards and error silencing\")",
-      "Bash(bash deploy.sh release \"fix: add 403 fallback to POST and improve draft save error handling\")"
+      "Bash(bash deploy.sh release \"fix: add 403 fallback to POST and improve draft save error handling\")",
+      "Bash(bash deploy.sh release \"feat: add resume/start fresh choice dialog for student registration with draft preservation\")"
     ]
   }
 }

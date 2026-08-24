@@ -9,8 +9,31 @@
 
     <CModalBody class="p-2 p-md-3">
 
+      <!-- ── Resume vs Fresh Choice Dialog ──────────────────────────────── -->
+      <div v-if="showResumeDialog" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+           style="background:rgba(0,0,0,.5);z-index:2000;">
+        <div class="bg-white rounded-3 shadow-lg p-4" style="max-width:500px;width:90%;">
+          <div class="text-center mb-4">
+            <div style="font-size:3rem;margin-bottom:1rem;">📋</div>
+            <h5 class="fw-bold mb-2">{{ t('students.resumeRegistration') || 'Resume Registration?' }}</h5>
+            <p class="text-muted small mb-0">{{ t('students.resumeHint') || 'You have an incomplete registration in progress. Would you like to continue where you left off, or start fresh?' }}</p>
+          </div>
+
+          <div class="d-grid gap-2">
+            <CButton color="success" size="lg" @click="onResume()" class="fw-semibold">
+              ↩️ {{ t('students.goWhereYouEnded') || 'Go Where You Ended' }}
+              <div class="small text-muted mt-1">Continue from step {{ hasDraft ? '...' : '1' }}</div>
+            </CButton>
+            <CButton color="secondary" size="lg" @click="onStartFresh()" class="fw-semibold">
+              🆕 {{ t('students.startFresh') || 'Start Fresh' }}
+              <div class="small text-muted mt-1">Begin new registration</div>
+            </CButton>
+          </div>
+        </div>
+      </div>
+
       <!-- ── New / Existing toggle ──────────────────────────────────────── -->
-      <div class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3 border"
+      <div v-if="!showResumeDialog" class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3 border"
            :style="form.is_existing_student ? 'border-color:#ffc107!important;background:#fffdf0;' : 'border-color:#007f3e!important;background:#f8fff8;'">
         <div class="flex-grow-1">
           <div class="fw-semibold small">
@@ -23,6 +46,9 @@
         <CFormSwitch v-model="form.is_existing_student" id="existingStudentToggle"
                      @update:modelValue="onExistingToggle" />
       </div>
+
+      <!-- Form content (hidden when resume dialog showing) -->
+      <div v-if="!showResumeDialog">
 
       <!-- Step indicator — desktop -->
       <div class="d-none d-md-flex justify-content-center mb-4">
@@ -941,6 +967,8 @@
           <li v-for="(msg, field) in errors" :key="field">{{ msg }}</li>
         </ul>
       </CAlert>
+
+      </div> <!-- End form content div -->
     </CModalBody>
 
     <CModalFooter>
@@ -1537,16 +1565,46 @@ function resetForm() {
   draftSaved.value   = false
 }
 
+const showResumeDialog = ref(false)
+const hasDraft = ref(false)
+
 watch(() => props.visible, async (v) => {
   if (v) {
     resetForm()
-    // Re-fetch regions each time the modal opens so IDs are always fresh
-    try { await fetchRegions() } catch {}
-    // resetForm() blanks the year — restore the current-year default and its terms
-    const currentYear = academicYears.value.find(y => y.is_current) || academicYears.value[0]
-    if (currentYear) form.value.academic_year_id = currentYear.id
+    // Check if there's a draft available
+    if (schoolStore.activeSchoolId) {
+      const drafts = await studentDraftService.getDrafts(schoolStore.activeSchoolId)
+      hasDraft.value = drafts && drafts.length > 0
+      if (hasDraft.value) {
+        showResumeDialog.value = true
+        return // Don't proceed with normal init until user chooses
+      }
+    }
+    // If no draft, proceed with normal initialization
+    await initializeModal()
   }
 })
+
+async function initializeModal() {
+  // Re-fetch regions each time the modal opens so IDs are always fresh
+  try { await fetchRegions() } catch {}
+  // Restore the current-year default and its terms
+  const currentYear = academicYears.value.find(y => y.is_current) || academicYears.value[0]
+  if (currentYear) form.value.academic_year_id = currentYear.id
+}
+
+function onResume() {
+  showResumeDialog.value = false
+  loadDraft()
+  setupAutoSave()
+}
+
+function onStartFresh() {
+  showResumeDialog.value = false
+  hasDraft.value = false
+  initializeModal()
+  setupAutoSave()
+}
 
 // Terms belong to an academic year — reload them whenever the selected year changes
 async function loadTerms(yearId) {
