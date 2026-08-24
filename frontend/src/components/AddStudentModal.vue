@@ -462,6 +462,56 @@
           ⚠ {{ t('fees.noFees') }} — {{ t('students.generateFirstInvoiceHint') }}
         </CAlert>
 
+        <!-- ── Total Tuition Fee (manual override) ───────────────────── -->
+        <CRow class="g-3 mb-3">
+          <CCol md="6">
+            <div class="p-3 rounded-3 border" style="background:#f0f8ff;border-color:#4A9FD4!important;">
+              <label class="form-label fw-bold small mb-2 d-flex align-items-center gap-2">
+                💵 {{ t('students.totalTuitionFee') || 'Total Tuition Fee' }}
+                <CBadge color="info" style="font-size:.65rem;">{{ t('common.optional') || 'Optional' }}</CBadge>
+              </label>
+              <div class="text-muted small mb-2" style="font-size:.7rem;">{{ t('students.totalTuitionFeeHint') || 'Define the total tuition fee if no fee structure exists' }}</div>
+              <CFormInput
+                type="text"
+                inputmode="numeric"
+                :value="formatAmount(form.total_tuition_fee || 0)"
+                @input="form.total_tuition_fee = parseAmount($event.target.value)"
+                placeholder="0"
+                class="fw-semibold"
+              />
+              <small v-if="form.total_tuition_fee > 0" class="d-block mt-2 text-info">
+                <strong>{{ formatMoney((form.total_tuition_fee || 0) * 100) }}</strong>
+              </small>
+            </div>
+          </CCol>
+          <CCol md="6" class="d-flex align-items-center">
+            <div class="w-100 p-3 rounded-3 border" style="background:#f8fff8;border-color:#007f3e!important;">
+              <div class="fw-semibold text-success mb-2" style="font-size:.9rem;">📊 {{ t('students.invoiceCalculation') || 'Calculated Invoice' }}</div>
+              <div class="d-flex justify-content-between mb-1">
+                <span class="small text-muted">{{ t('students.baseFee') || 'Base Fee' }}:</span>
+                <span class="fw-semibold">{{ formatMoney(feePreview?.total_cents || form.total_tuition_fee * 100 || 0) }}</span>
+              </div>
+              <div v-if="hasOpeningBalance && form.opening_balance > 0" class="d-flex justify-content-between mb-1">
+                <span class="small text-warning">+ {{ t('students.openingBalance') }}:</span>
+                <span class="fw-semibold text-warning">+ {{ formatMoney(form.opening_balance * 100) }}</span>
+              </div>
+              <div v-if="form.discount_type && form.discount_amount > 0" class="d-flex justify-content-between mb-2">
+                <span class="small text-danger">− {{ t('students.discount') }}:</span>
+                <span class="fw-semibold text-danger">− {{ formatMoney(form.discount_amount * 100) }}</span>
+              </div>
+              <hr class="my-1" />
+              <div class="d-flex justify-content-between fw-bold text-success" style="font-size:.95rem;">
+                <span>{{ t('fees.total') }}:</span>
+                <span>{{ formatMoney(
+                  (feePreview?.total_cents || form.total_tuition_fee * 100 || 0)
+                  + (hasOpeningBalance ? form.opening_balance * 100 : 0)
+                  - (form.discount_amount ? form.discount_amount * 100 : 0)
+                ) }}</span>
+              </div>
+            </div>
+          </CCol>
+        </CRow>
+
         <!-- ── Controls: 3-column grid ───────────────────────────────── -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;">
 
@@ -910,7 +960,7 @@ function blankForm() {
     // Guardians
     guardians: [defaultGuardian()],
     // Financial
-    opening_balance: 0, discount_type: '', discount_amount: 0,
+    total_tuition_fee: 0, opening_balance: 0, discount_type: '', discount_amount: 0,
     generate_first_invoice: true,
     // Migration
     is_existing_student: false,
@@ -1203,6 +1253,7 @@ async function submit() {
       term_id:                f.term_id,
       enrollment_date:        f.enrollment_date,
       previous_school:        f.previous_school,
+      total_tuition_fee_cents: Math.round((f.total_tuition_fee || 0) * 100),
       opening_balance_cents:  Math.round((f.opening_balance || 0) * 100),
       discount_type:          f.discount_type || '',
       discount_amount_cents:  Math.round((f.discount_amount || 0) * 100),

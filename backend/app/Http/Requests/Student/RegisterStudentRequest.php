@@ -63,6 +63,7 @@ class RegisterStudentRequest extends FormRequest
             'guardians.*.is_primary_contact' => 'nullable|in:true,false,1,0,yes,no',
 
             // Financial
+            'total_tuition_fee_cents' => 'nullable|integer|min:0',
             'discount_type' => 'nullable|in:sibling,staff,sponsor,other',
             'discount_amount_cents' => 'nullable|integer|min:0',
             'opening_balance_cents' => 'nullable|integer|min:0',

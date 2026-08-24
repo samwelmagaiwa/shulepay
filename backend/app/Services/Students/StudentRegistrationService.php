@@ -317,6 +317,11 @@ class StudentRegistrationService
 
     private function generateInvoice(Student $student, array $data): void
     {
+        $openingBalance = (int) ($data['opening_balance_cents'] ?? 0);
+        $discountCents = (int) ($data['discount_amount_cents'] ?? 0);
+        $manualTuitionCents = (int) ($data['total_tuition_fee_cents'] ?? 0);
+
+        // Try to load fee structure from class/term
         $feeStructure = FeeStructure::where('school_id', $data['school_id'])
             ->where('school_class_id', $data['school_class_id'])
             ->where('academic_year_id', $data['academic_year_id'])
@@ -325,13 +330,17 @@ class StudentRegistrationService
             ->with('feeItems')
             ->first();
 
-        if (! $feeStructure) {
-            return; // No fee structure configured — skip silently
+        // Determine total amount: use fee structure if available, otherwise use manual input
+        $totalCents = $feeStructure
+            ? $feeStructure->totalCents()
+            : ($manualTuitionCents > 0 ? $manualTuitionCents : null);
+
+        // Skip if no fee structure AND no manual tuition fee provided
+        if ($totalCents === null) {
+            return;
         }
 
-        $totalCents = $feeStructure->totalCents();
-        $openingBalance = (int) ($data['opening_balance_cents'] ?? 0);
-
+        // Create invoice
         $invoice = Invoice::create([
             'student_id' => $student->id,
             'school_id' => $data['school_id'],
@@ -347,28 +356,37 @@ class StudentRegistrationService
             'generated_by' => auth()->id(),
         ]);
 
-        // Create invoice lines from fee structure items
-        foreach ($feeStructure->feeItems as $item) {
+        // Create invoice lines from fee structure items (if exists)
+        if ($feeStructure) {
+            foreach ($feeStructure->feeItems as $item) {
+                $invoice->lines()->create([
+                    'fee_item_id' => $item->id,
+                    'description' => $item->name,
+                    'amount_cents' => $item->amount_cents->cents(),
+                ]);
+            }
+        } else {
+            // Fallback: create a single generic line item when using manual tuition fee
             $invoice->lines()->create([
-                'fee_item_id' => $item->id,
-                'description' => $item->name,
-                'amount_cents' => $item->amount_cents->cents(),
+                'fee_item_id' => null,
+                'description' => 'Manual Tuition Fee',
+                'amount_cents' => $totalCents,
             ]);
         }
 
         // Apply discount if provided
-        if (! empty($data['discount_type']) && ! empty($data['discount_amount_cents'])) {
+        if (! empty($data['discount_type']) && $discountCents > 0) {
             Discount::create([
                 'student_id' => $student->id,
                 'invoice_id' => $invoice->id,
                 'type' => $data['discount_type'],
-                'amount_cents' => (int) $data['discount_amount_cents'],
+                'amount_cents' => $discountCents,
                 'is_percentage' => false,
                 'reason' => $data['discount_type'],
                 'applied_by' => auth()->id(),
             ]);
 
-            $invoice->discount_cents = (int) $data['discount_amount_cents'];
+            $invoice->discount_cents = $discountCents;
             $invoice->save();
         }
 
