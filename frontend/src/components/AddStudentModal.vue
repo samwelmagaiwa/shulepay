@@ -1456,6 +1456,11 @@ async function submit() {
     const fd = new FormData()
     const f  = form.value
 
+    // In lumpsum mode, explicitly clear payment_history before sending
+    if (f.is_existing_student && migrationMode.value === 'lumpsum') {
+      f.payment_history = []
+    }
+
     const fields = {
       admission_no:           f.admission_no,
       first_name:             f.first_name,
