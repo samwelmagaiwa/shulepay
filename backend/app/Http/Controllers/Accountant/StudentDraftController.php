@@ -15,6 +15,7 @@ class StudentDraftController extends Controller
         if (! $user || $user->isSuperAdmin()) {
             return null;
         }
+
         return $user->allAccessibleSchoolIds();
     }
 
