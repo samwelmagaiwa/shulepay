@@ -57,6 +57,12 @@ async function load() {
   }
 }
 
+// Reload terms when school changes
+import { watch } from 'vue'
+watch(() => schoolStore.activeSchoolId, () => {
+  load()
+}, { immediate: false })
+
 onMounted(load)
 
 function openCreate() {
@@ -140,6 +146,10 @@ function termNumberLabel(n) {
     </CCard>
 
     <CAlert v-if="error" color="danger" dismissible @close="error=''">{{ error }}</CAlert>
+    <CAlert v-if="!loading && academicYears.length === 0" color="info" class="d-flex align-items-center gap-2">
+      <span>📅</span>
+      <span>{{ t('terms.selectYear') }} — <router-link to="/admin/academic-years" class="alert-link">{{ t('academicYears.add') }}</router-link></span>
+    </CAlert>
     <div v-if="loading" class="text-center py-5"><CSpinner /></div>
 
     <CCard v-else class="border-0 shadow-sm">
@@ -179,7 +189,14 @@ function termNumberLabel(n) {
                 </CTableDataCell>
               </CTableRow>
               <CTableRow v-if="!terms.length">
-                <CTableDataCell colspan="7" class="text-center text-muted py-4">{{ t('terms.empty') }}</CTableDataCell>
+                <CTableDataCell colspan="7" class="text-center py-4">
+                  <div class="text-muted">
+                    <p>{{ t('terms.empty') }}</p>
+                    <small v-if="academicYears.length === 0" class="text-warning">
+                      💡 {{ t('academicYears.add') }} {{ t('terms.termNamePlaceholder', { count: 1 }).toLowerCase() }}
+                    </small>
+                  </div>
+                </CTableDataCell>
               </CTableRow>
             </CTableBody>
           </CTable>
