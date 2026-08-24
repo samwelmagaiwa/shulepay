@@ -258,7 +258,9 @@
       "Bash(vendor/bin/pint app/Http/Controllers/Accountant/StudentDraftController.php app/Models/StudentDraft.php --test)",
       "Bash(bash deploy.sh release \"fix: resolve draft 403 error caused by strict type comparison between uncast user_id column and authenticated user id\")",
       "Bash(vendor/bin/pint app/Services/Students/StudentRegistrationService.php --test)",
-      "Bash(bash deploy.sh release \"fix: prevent duplicate student creation on double-submit - add frontend re-entrancy guard and backend idempotency check\")"
+      "Bash(bash deploy.sh release \"fix: prevent duplicate student creation on double-submit - add frontend re-entrancy guard and backend idempotency check\")",
+      "Bash(curl -sI https://magrethschools.sc.tz/assets/index-*.js)",
+      "Bash(xargs -I{} echo {})"
     ]
   }
 }

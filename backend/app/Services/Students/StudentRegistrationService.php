@@ -431,12 +431,16 @@ class StudentRegistrationService
             return;
         }
 
-        // Create master invoice covering all historical years
+        // Create master invoice covering all historical years.
+        // term_id/academic_year_id are NOT NULL foreign keys on the invoices table, so we
+        // anchor the migrated lumpsum invoice to the student's current enrollment term/year
+        // (collected in Step 3) rather than null — it represents when the migration record
+        // was entered, since the underlying history predates term-by-term tracking.
         $invoice = Invoice::withoutGlobalScope('school')->create([
             'student_id' => $student->id,
             'school_id' => $schoolId,
-            'term_id' => null,
-            'academic_year_id' => null,
+            'term_id' => $data['term_id'],
+            'academic_year_id' => $data['academic_year_id'],
             'invoice_number' => $this->nextMigrationNumber(),
             'total_amount_cents' => $totalChargedCents,
             'arrears_cents' => 0,
