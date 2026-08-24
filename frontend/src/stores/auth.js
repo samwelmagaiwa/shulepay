@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/services/api'
-import { useBrandingStore } from '@/stores/branding'
-import { useSchoolStore } from '@/stores/school'
 
 export const useAuthStore = defineStore('auth', () => {
   // Read from localStorage once at init — guard against 'undefined' string
@@ -61,11 +59,14 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = u
 
     // Force the login-selected school as active (override any stale localStorage value)
-    const schoolStore = useSchoolStore()
+    // Use lazy imports to avoid circular dependencies
+    const { useSchoolStore: getSchoolStore } = await import('@/stores/school')
+    const schoolStore = getSchoolStore()
     if (u.school_id) schoolStore.setActive(u.school_id)
 
     // Set active school first, then start watcher (immediate:true fires for it)
-    const brandingStore = useBrandingStore()
+    const { useBrandingStore: getBrandingStore } = await import('@/stores/branding')
+    const brandingStore = getBrandingStore()
     brandingStore.watchSchool()   // installs once; immediate watcher fires for activeSchoolId
     schoolStore.fetchSchools()
 
