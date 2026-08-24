@@ -22,7 +22,12 @@ class InvoiceController extends Controller
     {
         // BelongsToSchool global scope handles school_id filtering automatically.
         // "Shule Zote" mode: SetActiveSchool leaves active_school unbound → no filter.
-        $query = Invoice::with(['student.currentEnrollment.schoolClass', 'term', 'academicYear', 'lines', 'payments']);
+        // payments.receipt is needed so the list can offer a "Print Receipt" action
+        // without a follow-up request per row.
+        $query = Invoice::with([
+            'student.currentEnrollment.schoolClass', 'term', 'academicYear',
+            'lines', 'payments.receipt',
+        ]);
 
         if ($request->filled('school_id') && (int) $request->school_id !== 0) {
             $query->where('school_id', $request->school_id);

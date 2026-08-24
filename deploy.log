@@ -1946,3 +1946,14 @@ matching the existing pattern in the wipe_demo_data migration."
 [0;36m[2026-08-24 18:20:13][0m   ShulePay — Release
 [0;36m[2026-08-24 18:20:13][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 18:20:13][0m Checking working tree...
+[0;36m[2026-08-24 18:20:13][0m Files staged for commit:
+[0;36m[2026-08-24 18:20:13][0m Committing: "feat: cascade-delete a student's invoices and payments when the student is deleted - force-deletes payments first to satisfy the restrictOnDelete FK, then removes the invoices; all wrapped in one transaction with enrollment/student deletion"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 18:20:14][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 18:20:17][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 18:30:05][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 18:30:05][0m   ShulePay — Release
+[0;36m[2026-08-24 18:30:05][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 18:30:05][0m Checking working tree...

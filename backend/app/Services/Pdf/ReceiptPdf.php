@@ -10,6 +10,19 @@ class ReceiptPdf
 {
     public function generate(Receipt $receipt): string
     {
+        // Everything the receipt prints, loaded up front so the Blade view never
+        // triggers a lazy query (and never silently renders a blank particular).
+        $receipt->loadMissing([
+            'student.currentEnrollment.schoolClass',
+            'student.currentEnrollment.school',
+            'student.guardians',
+            'payment.invoice.term',
+            'payment.invoice.academicYear',
+            'payment.invoice.lines',
+            'payment.invoice.payments',
+            'payment.recorder',
+        ]);
+
         $school = $receipt->student?->school ?? $receipt->student?->currentEnrollment?->school;
         $settings = $school?->settings ?? [];
         $branding = $settings['branding'] ?? [];
@@ -25,7 +38,10 @@ class ReceiptPdf
         }
 
         return Pdf::loadView('pdf.receipt', compact('receipt', 'appName', 'appTagline', 'logoBase64'))
-            ->setPaper([0, 0, 226.77, 453.54]) // 80mm × 160mm thermal
+            // 80mm roll. Height raised from 160mm to 240mm so the fuller receipt
+            // (particulars + running balance) fits on one page instead of spilling
+            // onto a second. Switch to 'A5' here if printing to office paper.
+            ->setPaper([0, 0, 226.77, 680.31]) // 80mm × 240mm thermal
             ->output();
     }
 }

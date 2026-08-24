@@ -105,7 +105,7 @@
               {{ formatMoney(inv.balance_due_cents) }}
             </span>
           </div>
-          <div class="d-flex gap-2">
+          <div class="d-flex gap-2 flex-wrap">
             <CButton size="sm" color="info" variant="outline" @click="openDrawer(inv.student)"
                      style="min-height:44px; min-width:44px;">
               <CIcon icon="cilMagnifyingGlass" />
@@ -113,6 +113,11 @@
             <CButton v-if="inv.status !== 'paid'" size="sm" color="primary"
                      @click="openPayment(inv)" style="min-height:44px;">
               {{ t('invoices.payNow') }}
+            </CButton>
+            <CButton v-for="r in receiptsFor(inv)" :key="r.id" size="sm" color="success" variant="outline"
+                     @click="printReceipt(r.id)" style="min-height:44px;">
+              🖨 {{ t('payments.printReceipt') }}
+              <span v-if="receiptsFor(inv).length > 1" class="small ms-1">{{ formatMoney(r.amount_cents) }}</span>
             </CButton>
           </div>
         </div>
@@ -157,6 +162,26 @@
                            @click="openPayment(inv)" style="min-height:36px;">
                     {{ t('invoices.payNow') }}
                   </CButton>
+                  <!-- Any invoice with a receipted payment can be reprinted, including
+                       partials — a parent who paid half still needs their receipt. -->
+                  <CButton v-if="receiptsFor(inv).length === 1" size="sm" color="success" variant="outline"
+                           @click="printReceipt(receiptsFor(inv)[0].id)"
+                           :title="t('payments.printReceipt')" style="min-height:36px;">
+                    🖨
+                  </CButton>
+                  <CDropdown v-else-if="receiptsFor(inv).length > 1" variant="btn-group">
+                    <CDropdownToggle size="sm" color="success" variant="outline" style="min-height:36px;">
+                      🖨 {{ receiptsFor(inv).length }}
+                    </CDropdownToggle>
+                    <CDropdownMenu>
+                      <CDropdownHeader>{{ t('payments.receipt') }}</CDropdownHeader>
+                      <CDropdownItem v-for="r in receiptsFor(inv)" :key="r.id"
+                                     style="cursor:pointer;" @click="printReceipt(r.id)">
+                        {{ r.receipt_number }}
+                        <span class="text-muted small ms-1">{{ formatMoney(r.amount_cents) }}</span>
+                      </CDropdownItem>
+                    </CDropdownMenu>
+                  </CDropdown>
                 </div>
               </CTableDataCell>
             </CTableRow>
@@ -219,7 +244,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useInvoicesStore } from '@/stores/invoices'
 import { useSchoolsStore }  from '@/stores/schools'
@@ -309,6 +334,46 @@ function openPayment(inv) {
   selectedInvoice.value = inv
   showPayModal.value = true
 }
+
+// ── Receipts ────────────────────────────────────────────────────────────────
+// A receipt belongs to a payment, not to the invoice, so an invoice settled in
+// instalments has one receipt per instalment.
+function receiptsFor(inv) {
+  return (inv?.payments ?? [])
+    .filter(p => p.receipt?.id)
+    .map(p => ({
+      id: p.receipt.id,
+      receipt_number: p.receipt.receipt_number,
+      amount_cents: p.amount_cents,
+    }))
+}
+
+let printFrame = null
+
+function printReceipt(receiptId) {
+  if (!receiptId) return
+  const url = `/api/receipts/${receiptId}/download`
+
+  // Same-origin PDF printed from a hidden iframe: no extra tab, and the printed
+  // page is the real branded receipt rather than a screen-styled copy.
+  if (printFrame) printFrame.remove()
+  const frame = document.createElement('iframe')
+  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
+  frame.src = url
+  frame.onload = () => {
+    try {
+      frame.contentWindow.focus()
+      frame.contentWindow.print()
+    } catch {
+      window.open(url, '_blank', 'noopener')
+    }
+  }
+  frame.onerror = () => window.open(url, '_blank', 'noopener')
+  document.body.appendChild(frame)
+  printFrame = frame
+}
+
+onBeforeUnmount(() => { if (printFrame) printFrame.remove() })
 function closePayModal() {
   showPayModal.value = false
   selectedInvoice.value = null
