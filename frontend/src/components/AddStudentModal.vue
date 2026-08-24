@@ -1572,7 +1572,7 @@ async function loadDraft() {
   draftLoading.value = true
   try {
     const drafts = await studentDraftService.getDrafts(schoolStore.activeSchoolId)
-    if (drafts.length > 0) {
+    if (drafts && drafts.length > 0) {
       const draft = drafts[0]
       currentDraft.value = draft
       // Populate form from draft
@@ -1584,7 +1584,8 @@ async function loadDraft() {
       step.value = draft.current_step || 1
     }
   } catch (e) {
-    console.error('Failed to load draft:', e)
+    // Silently ignore draft load errors - not critical
+    currentDraft.value = null
   } finally {
     draftLoading.value = false
   }
@@ -1603,7 +1604,11 @@ function setupAutoSave() {
 }
 
 async function saveDraftNow() {
-  if (!autoSaveFn.value || !schoolStore.activeSchoolId) return
+  if (!schoolStore.activeSchoolId) return
+
+  // Only save if we have at least name and step
+  if (!form.value.first_name || !form.value.last_name) return
+
   try {
     const draftData = {
       ...form.value,
@@ -1611,7 +1616,7 @@ async function saveDraftNow() {
     }
     await studentDraftService.saveDraft(schoolStore.activeSchoolId, draftData)
   } catch (e) {
-    console.error('Failed to save draft:', e)
+    // Silently ignore draft save failures
   }
 }
 
@@ -1635,9 +1640,11 @@ watch(() => migrationMode.value, (newMode) => {
   }
 })
 
-// Auto-save on form changes
+// Auto-save on form changes (with guards to prevent invalid saves)
 watch(() => form.value, (newForm) => {
   if (!schoolStore.activeSchoolId || !autoSaveFn.value) return
+  if (!newForm.first_name || !newForm.last_name) return
+
   const draftData = {
     ...newForm,
     current_step: step.value,
@@ -1646,6 +1653,8 @@ watch(() => form.value, (newForm) => {
 }, { deep: true, throttle: 500 })
 
 watch(() => step.value, () => {
+  if (!schoolStore.activeSchoolId) return
+  if (!form.value.first_name || !form.value.last_name) return
   saveDraftNow()
 }, { throttle: 500 })
 

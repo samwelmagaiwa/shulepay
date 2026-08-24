@@ -100,11 +100,35 @@ export default {
     }
   },
 
-  // Create a debounced auto-save function
+  // Create a debounced auto-save function with guards
   createAutoSaveFn(schoolId, onSave) {
     let timeoutId = null
+    let lastSavedHash = null
 
     return (draftData) => {
+      // Don't save if school_id is missing
+      if (!schoolId) {
+        return
+      }
+
+      // Don't save if draftData is empty or minimal
+      if (!draftData || Object.keys(draftData).length === 0) {
+        return
+      }
+
+      // Don't save if only basic fields are filled
+      const requiredFields = ['first_name', 'last_name']
+      const hasRequiredFields = requiredFields.some(f => draftData[f])
+      if (!hasRequiredFields) {
+        return
+      }
+
+      // Skip if data hasn't changed
+      const dataHash = JSON.stringify(draftData)
+      if (dataHash === lastSavedHash) {
+        return
+      }
+
       if (timeoutId) {
         clearTimeout(timeoutId)
       }
@@ -112,11 +136,16 @@ export default {
       timeoutId = setTimeout(async () => {
         try {
           const saved = await this.saveDraft(schoolId, draftData)
+          lastSavedHash = dataHash
           if (onSave) {
             onSave(saved)
           }
         } catch (e) {
-          console.error('Auto-save failed:', e)
+          // Silently fail for draft auto-saves to avoid console spam
+          // Only log in debug mode
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('Draft auto-save skipped:', e.response?.status)
+          }
         }
       }, DEBOUNCE_DELAY)
     }
