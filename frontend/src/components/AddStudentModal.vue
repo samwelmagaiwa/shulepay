@@ -1505,7 +1505,9 @@ async function submit() {
         if (!k.startsWith('_')) fd.append(`guardians[${i}][${k}]`, v ?? '')
       })
     })
-    // Migration history — ONLY in detailed mode, NOT in lumpsum mode
+
+    // Migration history — ONLY in detailed mode, NEVER in lumpsum mode
+    // In lumpsum mode, payment_history must not be appended to FormData at all
     if (f.is_existing_student && migrationMode.value === 'detailed' && f.payment_history.length > 0) {
       f.payment_history.forEach((entry, ei) => {
         fd.append(`payment_history[${ei}][term_id]`, entry.term_id)
@@ -1518,7 +1520,11 @@ async function submit() {
           fd.append(`payment_history[${ei}][payments][${pi}][notes]`, p.notes || 'Migrated from books')
         })
       })
+    } else if (migrationMode.value === 'lumpsum') {
+      // SAFETY CHECK: In lumpsum mode, explicitly do NOT append payment_history
+      // This prevents the required_with:payment_history validation from triggering
     }
+
     if (photoFile.value) fd.append('photo', photoFile.value)
 
     await api.post('/students/register', fd, { headers: { 'Content-Type': 'multipart/form-data' } })

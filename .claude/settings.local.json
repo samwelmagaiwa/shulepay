@@ -244,7 +244,8 @@
       "Bash(bash deploy.sh release \"fix: add 403 fallback to POST and improve draft save error handling\")",
       "Bash(bash deploy.sh release \"feat: add resume/start fresh choice dialog for student registration with draft preservation\")",
       "Bash(bash deploy.sh release \"fix: prevent payment_history from being sent in lumpsum mode - resolves validation error\")",
-      "Bash(bash deploy.sh release \"fix: explicitly clear payment_history in lumpsum mode before submission\")"
+      "Bash(bash deploy.sh release \"fix: explicitly clear payment_history in lumpsum mode before submission\")",
+      "Bash(bash deploy.sh release \"fix: comprehensive lumpsum validation - frontend never sends + backend skips payment_history in lumpsum mode\")"
     ]
   }
 }
