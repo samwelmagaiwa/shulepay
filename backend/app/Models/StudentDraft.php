@@ -42,6 +42,8 @@ class StudentDraft extends Model
     ];
 
     protected $casts = [
+        'user_id' => 'integer',
+        'school_id' => 'integer',
         'identifications' => 'array',
         'guardians' => 'array',
         'payment_history' => 'array',

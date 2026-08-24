@@ -49,7 +49,7 @@ class StudentDraftController extends Controller
     public function show(Request $request, StudentDraft $draft): JsonResponse
     {
         $user = $request->user();
-        if (! $user || $draft->user_id !== $user->id) {
+        if (! $user || (int) $draft->user_id !== (int) $user->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -132,7 +132,7 @@ class StudentDraftController extends Controller
     public function update(Request $request, StudentDraft $draft): JsonResponse
     {
         $user = $request->user();
-        if (! $user || $draft->user_id !== $user->id) {
+        if (! $user || (int) $draft->user_id !== (int) $user->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -190,7 +190,7 @@ class StudentDraftController extends Controller
     public function destroy(Request $request, StudentDraft $draft): JsonResponse
     {
         $user = $request->user();
-        if (! $user || $draft->user_id !== $user->id) {
+        if (! $user || (int) $draft->user_id !== (int) $user->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
