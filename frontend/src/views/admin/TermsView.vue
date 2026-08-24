@@ -28,40 +28,20 @@ async function load() {
   loading.value = true
   error.value   = ''
   try {
-    const schoolId = schoolStore.activeSchoolId
-    const ayRes = await api.get('/academic-years', { params: schoolId ? { school_id: schoolId } : {} })
-    const ay = ayRes.data.data ?? ayRes.data
-    academicYears.value = ay
+    // Load all academic years and terms (not filtered by school, like AcademicYearsView)
+    const [ayRes, tmRes] = await Promise.all([
+      api.get('/academic-years'),
+      api.get('/terms'),
+    ])
 
-    // fetch each year's terms in parallel — one failing year must not blank the whole list
-    const results = await Promise.allSettled(
-      ay.map(y => api.get('/terms', { params: { academic_year_id: y.id } })),
-    )
-    const allTerms = []
-    results.forEach((res, i) => {
-      if (res.status !== 'fulfilled') return
-      const rows = res.value.data.data ?? res.value.data ?? []
-      rows.forEach(t => allTerms.push({ ...t, academic_year: ay[i] }))
-    })
-    terms.value = allTerms
-
-    // Every request failing must not look like "no terms exist"
-    const firstFailure = results.find(r => r.status === 'rejected')
-    if (results.length && firstFailure && !results.some(r => r.status === 'fulfilled')) {
-      error.value = firstFailure.reason?.response?.data?.message || t('common.loadFailed')
-    }
+    academicYears.value = ayRes.data.data ?? ayRes.data ?? []
+    terms.value         = tmRes.data.data ?? tmRes.data ?? []
   } catch (e) {
     error.value = e?.response?.data?.message || t('common.loadFailed')
   } finally {
     loading.value = false
   }
 }
-
-// Reload terms when school changes
-import { watch } from 'vue'
-watch(() => schoolStore.activeSchoolId, () => {
-  load()
-}, { immediate: false })
 
 onMounted(load)
 
