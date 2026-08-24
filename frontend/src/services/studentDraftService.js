@@ -72,6 +72,7 @@ export default {
       }
 
       // Check if draft exists for this user + school combination
+      // Always refresh to get latest draft for current user
       const drafts = await this.getDrafts(schoolId)
       const existing = drafts.length > 0 ? drafts[0] : null
 
@@ -82,6 +83,7 @@ export default {
         } catch (putError) {
           // If 403 (unauthorized), fall back to creating a new draft
           if (putError.response?.status === 403) {
+            // Clear the old draft cache and create new one
             res = await api.post('/student-drafts', payload)
           } else {
             throw putError

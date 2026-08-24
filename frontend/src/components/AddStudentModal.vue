@@ -1665,7 +1665,9 @@ function setupAutoSave() {
   autoSaveFn.value = studentDraftService.createAutoSaveFn(
     schoolStore.activeSchoolId,
     (saved) => {
-      currentDraft.value = saved
+      // Update tracked draft with latest version (important for fallback scenarios)
+      if (saved && saved.id) {
+        currentDraft.value = saved
       draftSaved.value = true
       setTimeout(() => { draftSaved.value = false }, 2000)
     }
