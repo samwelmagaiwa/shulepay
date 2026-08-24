@@ -87,10 +87,6 @@ class TermController extends Controller
 
     public function destroy(Term $term): JsonResponse
     {
-        if ($term->invoices()->exists()) {
-            return response()->json(['message' => 'Cannot delete a term that has invoices.'], 422);
-        }
-
         $term->delete();
 
         return response()->json(null, 204);

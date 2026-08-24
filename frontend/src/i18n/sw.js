@@ -524,7 +524,7 @@ export default {
     isCurrent:        'Muhula huu ndio wa sasa hivi',
     isCurrentHint:    'Ukiweka hivi, mihula mingine ya mwaka huo itawekwa kuwa imepita.',
     deleteTitle:      'Futa Muhula',
-    deleteWarning:    'Muhula wenye ankara hauwezi kufutwa.',
+    deleteWarning:    'Muhula utafutwa kutoka kwenye orodha. Ankara zozote au data zilizounganishwa kwa muhula huu zitahifadhiwa.',
     confirmDeleteMsg: 'Futa muhula {name}?',
     current:          'Sasa Hivi',
     past:             'Imepita',

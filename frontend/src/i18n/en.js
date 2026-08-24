@@ -524,7 +524,7 @@ export default {
     isCurrent:        'This is the current term',
     isCurrentHint:    'Setting this will mark other terms in the same year as past.',
     deleteTitle:      'Delete Term',
-    deleteWarning:    'A term with invoices cannot be deleted.',
+    deleteWarning:    'The term will be deleted from the list. Any invoices or data linked to this term will be preserved.',
     confirmDeleteMsg: 'Delete term {name}?',
     current:          'Current',
     past:             'Past',
