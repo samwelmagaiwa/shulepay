@@ -285,7 +285,8 @@
       "Bash(ssh -o StrictHostKeyChecking=no root@169.58.188.122 \"cd /www/shulepay && docker compose -f docker-compose.prod.yml exec -T backend php artisan invoices:cleanup-orphaned\")",
       "Bash(php -l app/Console/Commands/CleanupOrphanedInvoices.php)",
       "Bash(vendor/bin/pint app/Console/Commands/CleanupOrphanedInvoices.php --test)",
-      "Bash(bash deploy.sh release \"fix: CleanupOrphanedInvoices audit command crashed on MoneyCast object - use ->cents\\(\\) accessor instead of raw division, matching the existing pattern used elsewhere\")"
+      "Bash(bash deploy.sh release \"fix: CleanupOrphanedInvoices audit command crashed on MoneyCast object - use ->cents\\(\\) accessor instead of raw division, matching the existing pattern used elsewhere\")",
+      "Bash(grep -n \"^use App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\School\" app/Services/Students/StudentRegistrationService.php)"
     ]
   }
 }

@@ -1989,3 +1989,23 @@ matching the existing pattern in the wipe_demo_data migration."
 [0;36m[2026-08-24 18:43:52][0m   ShulePay — Release
 [0;36m[2026-08-24 18:43:52][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 18:43:52][0m Checking working tree...
+[0;36m[2026-08-24 18:43:52][0m Files staged for commit:
+[0;36m[2026-08-24 18:43:52][0m Committing: "fix(admission-numbers): keep sequence continuous across a school code change; map all school levels
+
+- nextAdmissionNumber() scoped the sequence by school code, so correcting a
+  code restarted numbering at 0001 mid-year. Now scoped by school + year, so
+  the series continues; issued numbers are never rewritten.
+- Level->prefix moved into SchoolLevel::admissionPrefix(); the old ternary only
+  matched Secondary, so a 'sekondari' school would have been prefixed PRM.
+- School::classLabel() had the same gap; now delegates to the enum.
+- Add schools:change-code with --dry-run, clash detection and a preview of the
+  next admission number."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 18:43:53][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 18:43:57][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 18:47:58][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 18:47:58][0m   ShulePay — Release
+[0;36m[2026-08-24 18:47:58][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 18:47:58][0m Checking working tree...

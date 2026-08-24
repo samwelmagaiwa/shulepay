@@ -281,7 +281,7 @@ class StudentRegistrationService
                 'school_id' => $schoolId,
                 'term_id' => $termId,
                 'academic_year_id' => $yearId,
-                'invoice_number' => $this->nextMigrationNumber(),
+                'invoice_number' => $this->nextMigrationNumber($schoolId),
                 'total_amount_cents' => $feeCents,
                 'arrears_cents' => 0,
                 'discount_cents' => 0,
@@ -331,15 +331,25 @@ class StudentRegistrationService
         }
     }
 
-    private function nextMigrationNumber(): string
+    /** Generate the next migration invoice number for this school.
+     *  Format: MIG/{code}/{0001}/{year} — mirrors School::nextAdmissionNumber().
+     */
+    private function nextMigrationNumber(int $schoolId): string
     {
         $year = date('Y');
-        $last = Invoice::allSchools()
-            ->where('invoice_number', 'like', "MIG-{$year}-%")
-            ->max('invoice_number');
-        $seq = $last ? ((int) substr($last, -6)) + 1 : 1;
+        $school = School::find($schoolId);
+        $code = strtoupper($school->code ?? 'SCH');
 
-        return sprintf('MIG-%s-%06d', $year, $seq);
+        // Scoped to school_id, not the code string, for the same reason admission
+        // numbers are — renaming a school's code later must not reset the sequence.
+        $seq = Invoice::allSchools()
+            ->where('school_id', $schoolId)
+            ->where('invoice_number', 'like', "MIG/%/{$year}")
+            ->get(['invoice_number'])
+            ->map(fn ($inv) => preg_match('#^MIG/[A-Z0-9]+/(\d+)/'.$year.'$#', $inv->invoice_number, $m) ? (int) $m[1] : 0)
+            ->max();
+
+        return sprintf('MIG/%s/%04d/%d', $code, ((int) $seq) + 1, $year);
     }
 
     private function generateInvoice(Student $student, array $data): void
@@ -445,7 +455,7 @@ class StudentRegistrationService
             'school_id' => $schoolId,
             'term_id' => $data['term_id'],
             'academic_year_id' => $data['academic_year_id'],
-            'invoice_number' => $this->nextMigrationNumber(),
+            'invoice_number' => $this->nextMigrationNumber($schoolId),
             'total_amount_cents' => $totalChargedCents,
             'arrears_cents' => 0,
             'discount_cents' => 0,
