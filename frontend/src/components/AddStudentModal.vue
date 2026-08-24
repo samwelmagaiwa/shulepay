@@ -1154,7 +1154,7 @@ function blankForm() {
     generate_first_invoice: false,  // Existing students don't generate first invoice
     // Migration
     is_existing_student: true,  // Default: all students are existing (migrating from books)
-    payment_history: [defaultTermEntry()],  // Start with one term entry ready to fill
+    payment_history: [{ academic_year_id: '', term_id: '', fee_amount: 0, payments: [] }],  // Start with one term entry ready to fill
     // Annual summary (lump sum mode)
     lumpsum_total_charged: 0,
     lumpsum_total_paid: 0,
