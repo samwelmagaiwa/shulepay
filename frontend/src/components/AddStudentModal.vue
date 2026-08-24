@@ -1500,8 +1500,8 @@ async function submit() {
         if (!k.startsWith('_')) fd.append(`guardians[${i}][${k}]`, v ?? '')
       })
     })
-    // Migration history
-    if (f.is_existing_student && (migrationMode.value === 'detailed' ? f.payment_history.length : true)) {
+    // Migration history — ONLY in detailed mode, NOT in lumpsum mode
+    if (f.is_existing_student && migrationMode.value === 'detailed' && f.payment_history.length > 0) {
       f.payment_history.forEach((entry, ei) => {
         fd.append(`payment_history[${ei}][term_id]`, entry.term_id)
         fd.append(`payment_history[${ei}][academic_year_id]`, entry.academic_year_id)
