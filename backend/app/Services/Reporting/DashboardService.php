@@ -18,8 +18,13 @@ class DashboardService
         $today = Carbon::today();
 
         // ── Student count ──────────────────────────────────────────────────────
+        // whereHas('student') excludes enrollments whose student was soft-deleted —
+        // deleting a student doesn't touch their enrollments directly (see
+        // StudentController::destroy), and older deletions predating that fix left
+        // enrollments behind still marked 'active'. This check guards against both.
         $studentCount = Enrollment::withoutGlobalScope('school')
             ->where('status', 'active')
+            ->whereHas('student')
             ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
             ->distinct('student_id')
             ->count('student_id');

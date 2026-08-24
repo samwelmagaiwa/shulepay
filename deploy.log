@@ -1909,3 +1909,18 @@
 [0;36m[2026-08-24 17:56:01][0m   ShulePay — Release
 [0;36m[2026-08-24 17:56:01][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 17:56:01][0m Checking working tree...
+[0;36m[2026-08-24 17:56:02][0m Files staged for commit:
+[0;36m[2026-08-24 17:56:02][0m Committing: "fix(migration): skip MySQL-only ENUM widening on non-MySQL drivers
+
+ALTER TABLE ... MODIFY is MySQL syntax; the test suite runs on in-memory SQLite,
+so all 9 feature tests failed at migration time. Guarded with a driver check,
+matching the existing pattern in the wipe_demo_data migration."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 17:56:02][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 17:56:06][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 18:16:48][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 18:16:48][0m   ShulePay — Release
+[0;36m[2026-08-24 18:16:48][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 18:16:48][0m Checking working tree...

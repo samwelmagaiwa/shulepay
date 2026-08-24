@@ -11,6 +11,7 @@ use App\Models\School;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\Payments\ReceiptService;
 use App\Services\Sms\SmsService;
 use App\Services\Sms\SmsTemplates;
 use Illuminate\Http\UploadedFile;
@@ -314,6 +315,9 @@ class StudentRegistrationService
                     'invoice_id' => $invoice->id,
                     'student_id' => $student->id,
                     'school_id' => $schoolId,
+                    // Migrated payments get a receipt too, otherwise the receipt button
+                    // is permanently unavailable for every student brought over from books.
+                    'receipt_id' => app(ReceiptService::class)->issue($student->id)->id,
                     'amount_cents' => $amountCents,
                     'method' => $p['method'] ?? 'cash',
                     'reference_number' => null,
@@ -473,6 +477,7 @@ class StudentRegistrationService
                 'invoice_id' => $invoice->id,
                 'student_id' => $student->id,
                 'school_id' => $schoolId,
+                'receipt_id' => app(ReceiptService::class)->issue($student->id)->id,
                 'amount_cents' => $paymentAmount,
                 'method' => 'cash',
                 'reference_number' => null,

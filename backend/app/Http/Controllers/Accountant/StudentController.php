@@ -195,6 +195,15 @@ class StudentController extends Controller
     public function destroy(Student $student): JsonResponse
     {
         AuditLog::record('student_deleted', $student, $student->toArray(), []);
+
+        // Soft-deleting the student alone does not cascade to enrollments — the FK's
+        // cascadeOnDelete only fires on a real SQL DELETE, never on a soft delete.
+        // Left untouched, the enrollment stays status='active' forever, so every count
+        // based on active enrollments (dashboard "All Students", etc.) keeps including
+        // a student that was supposedly deleted. Mark enrollments dropped so deletion
+        // actually takes effect everywhere, not just in the students list.
+        $student->enrollments()->where('status', 'active')->update(['status' => 'dropped']);
+
         $student->delete();
 
         return response()->json(['message' => 'Student deleted.']);
