@@ -13,6 +13,7 @@ const props = defineProps({
 const form = ref(initForm())
 const errors = ref({})
 const saving = ref(false)
+const loading = ref(false)
 const photoPreview = ref('')
 const photoInput = ref(null)
 
@@ -41,6 +42,8 @@ watch(() => props.visible, (val) => {
 })
 
 async function loadStudentData() {
+  loading.value = true
+  errors.value = {}
   try {
     const res = await api.get(`/students/${props.student.id}`)
     const student = res.data.data || res.data
@@ -64,9 +67,12 @@ async function loadStudentData() {
     if (student.photo) {
       photoPreview.value = student.photo
     }
-    errors.value = {}
   } catch (e) {
-    errors.value = { general: e?.response?.data?.message || t('common.loadFailed') }
+    const msg = e?.response?.data?.message || e?.message || t('common.loadFailed')
+    errors.value = { general: msg }
+    console.error('Failed to load student:', msg)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -89,6 +95,11 @@ function removePhoto() {
 }
 
 async function submit() {
+  if (!props.student?.id) {
+    errors.value = { general: 'Student ID is missing' }
+    return
+  }
+
   saving.value = true
   errors.value = {}
 
@@ -97,8 +108,8 @@ async function submit() {
 
     // Add regular fields
     Object.keys(form.value).forEach(key => {
-      if (key !== 'photo') {
-        formData.append(key, form.value[key] || '')
+      if (key !== 'photo' && form.value[key] !== null) {
+        formData.append(key, form.value[key])
       }
     })
 
@@ -109,18 +120,20 @@ async function submit() {
 
     formData.append('_method', 'PUT')
 
-    await api.post(`/students/${props.student.id}`, formData, {
+    const response = await api.post(`/students/${props.student.id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
 
     emit('saved')
     emit('close')
   } catch (e) {
+    console.error('Save error:', e)
     const errs = e?.response?.data?.errors
     if (errs) {
       errors.value = errs
     } else {
-      errors.value = { general: e?.response?.data?.message || t('common.saveFailed') }
+      const msg = e?.response?.data?.message || e?.message || t('common.saveFailed')
+      errors.value = { general: msg }
     }
   } finally {
     saving.value = false
@@ -247,12 +260,17 @@ async function submit() {
     </CModalBody>
 
     <CModalFooter class="gap-2">
-      <CButton color="secondary" @click="$emit('close')" style="min-height:44px;">
+      <CButton color="secondary" @click="$emit('close')" style="min-height:44px;" :disabled="saving">
         {{ t('common.cancel') }}
       </CButton>
-      <CButton color="success" :disabled="saving || !form.first_name || !form.last_name || !form.gender || !form.date_of_birth || !form.birth_certificate_no || !form.status" @click="submit" style="min-height:44px;">
+      <CButton
+        color="success"
+        :disabled="saving || loading || !form.first_name || !form.last_name || !form.gender || !form.date_of_birth || !form.birth_certificate_no || !form.status"
+        @click="submit"
+        style="min-height:44px;"
+      >
         <CSpinner v-if="saving" size="sm" class="me-1" />
-        {{ t('common.save') }}
+        {{ saving ? t('common.saving') : t('common.save') }}
       </CButton>
     </CModalFooter>
   </CModal>

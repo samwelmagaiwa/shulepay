@@ -229,7 +229,8 @@
       "Bash(bash deploy.sh release \"feat: add dual-mode payment history \\(detailed by term + annual summary\\) with powerful backend invoice creation\")",
       "Bash(docker compose *)",
       "Bash(bash deploy.sh)",
-      "Bash(bash deploy.sh release \"feat: add edit student functionality\")"
+      "Bash(bash deploy.sh release \"feat: add edit student functionality\")",
+      "Bash(bash deploy.sh status)"
     ]
   }
 }
