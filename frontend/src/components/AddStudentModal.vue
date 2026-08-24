@@ -775,6 +775,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSchoolsStore } from '@/stores/schools'
+import { useSchoolStore } from '@/stores/school'
 import api from '@/services/api'
 
 const { t } = useI18n()
@@ -783,6 +784,7 @@ const props = defineProps({ visible: Boolean })
 const emit  = defineEmits(['close', 'registered'])
 
 const schoolsStore = useSchoolsStore()
+const schoolStore  = useSchoolStore()
 const schools      = computed(() => schoolsStore.schools)
 
 const step          = ref(1)
@@ -1274,6 +1276,15 @@ function resetForm() {
   hasAllergies.value = false
 }
 
+watch(() => form.value.academic_year_id, async (yearId) => {
+  if (yearId) {
+    try {
+      const { data } = await api.get('/terms', { params: { academic_year_id: yearId } })
+      terms.value = data.data || data || []
+    } catch {}
+  }
+})
+
 watch(() => props.visible, async (v) => {
   if (v) {
     resetForm()
@@ -1282,23 +1293,38 @@ watch(() => props.visible, async (v) => {
   }
 })
 
+// Terms belong to an academic year — reload them whenever the selected year changes
+async function loadTerms(yearId) {
+  if (!yearId) { terms.value = []; return }
+  try {
+    const { data } = await api.get('/terms', { params: { academic_year_id: yearId } })
+    terms.value = data.data || data || []
+  } catch { terms.value = [] }
+}
+
+watch(() => form.value.academic_year_id, async (yearId) => {
+  await loadTerms(yearId)
+  // keep the selected term valid for the new year
+  if (!terms.value.some(tm => String(tm.id) === String(form.value.term_id))) {
+    const currentTerm = terms.value.find(tm => tm.is_current) || terms.value[0]
+    form.value.term_id = currentTerm ? currentTerm.id : ''
+  }
+})
+
 onMounted(async () => {
   try { await schoolsStore.fetchSchools() } catch {}
   try { await fetchRegions() } catch {}
   try {
-    const [yrRes, tmRes, clRes] = await Promise.all([
-      api.get('/academic-years'),
-      api.get('/terms'),
+    const schoolId = schoolStore.activeSchoolId
+    const [yrRes, clRes] = await Promise.all([
+      api.get('/academic-years', { params: schoolId ? { school_id: schoolId } : {} }),
       api.get('/school-classes', { params: { all: 1 } }),
     ])
     academicYears.value = yrRes.data.data || yrRes.data || []
-    terms.value         = tmRes.data.data || tmRes.data || []
     allClasses.value    = clRes.data.data || clRes.data || []
 
     const currentYear = academicYears.value.find(y => y.is_current) || academicYears.value[0]
-    const currentTerm = terms.value.find(tm => tm.is_current) || terms.value[0]
     if (currentYear) form.value.academic_year_id = currentYear.id
-    if (currentTerm) form.value.term_id = currentTerm.id
   } catch {}
 })
 </script>

@@ -22,10 +22,6 @@ class TermController extends Controller
 
         if ($request->filled('academic_year_id')) {
             $query->where('academic_year_id', $request->academic_year_id);
-        } else {
-            $query->whereHas('academicYear', function ($q) {
-                $q->where('is_current', true);
-            });
         }
 
         $terms = $query->orderBy('number')->get();
