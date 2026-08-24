@@ -332,7 +332,9 @@ class StudentRegistrationService
     }
 
     /** Generate the next migration invoice number for this school.
-     *  Format: MIG/{code}/{0001}/{year} — mirrors School::nextAdmissionNumber().
+     *  Format: {code}-{year}-{000001} — the school code stands in for "MIG"
+     *  entirely (e.g. MGRTHMR-2026-000001 for secondary, MGRTH-2026-000001 for
+     *  primary), keeping the original dash-separated, 6-digit sequence style.
      */
     private function nextMigrationNumber(int $schoolId): string
     {
@@ -344,12 +346,12 @@ class StudentRegistrationService
         // numbers are — renaming a school's code later must not reset the sequence.
         $seq = Invoice::allSchools()
             ->where('school_id', $schoolId)
-            ->where('invoice_number', 'like', "MIG/%/{$year}")
+            ->where('invoice_number', 'like', "{$code}-{$year}-%")
             ->get(['invoice_number'])
-            ->map(fn ($inv) => preg_match('#^MIG/[A-Z0-9]+/(\d+)/'.$year.'$#', $inv->invoice_number, $m) ? (int) $m[1] : 0)
+            ->map(fn ($inv) => preg_match('#^'.$code.'-'.$year.'-(\d+)$#', $inv->invoice_number, $m) ? (int) $m[1] : 0)
             ->max();
 
-        return sprintf('MIG/%s/%04d/%d', $code, ((int) $seq) + 1, $year);
+        return sprintf('%s-%s-%06d', $code, $year, ((int) $seq) + 1);
     }
 
     private function generateInvoice(Student $student, array $data): void

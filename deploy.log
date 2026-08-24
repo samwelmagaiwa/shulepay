@@ -2052,3 +2052,14 @@ entry recording every id removed."
 [0;36m[2026-08-24 19:14:18][0m   ShulePay — Release
 [0;36m[2026-08-24 19:14:18][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 19:14:18][0m Checking working tree...
+[0;36m[2026-08-24 19:14:19][0m Files staged for commit:
+[0;36m[2026-08-24 19:14:19][0m Committing: "chore: add dry-run-first command to renumber old MIG-YYYY-NNNNNN invoices to MIG/{school code}/NNNN/YYYY, matching the format new migration invoices already use - renames invoice_number only, no financial data touched"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 19:14:19][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 19:14:24][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 19:22:56][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 19:22:56][0m   ShulePay — Release
+[0;36m[2026-08-24 19:22:56][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 19:22:56][0m Checking working tree...
