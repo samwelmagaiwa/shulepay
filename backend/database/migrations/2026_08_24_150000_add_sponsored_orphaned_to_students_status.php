@@ -16,7 +16,7 @@ return new class extends Migration
     public function up(): void
     {
         DB::statement(
-            "ALTER TABLE `students` MODIFY `status` ".
+            'ALTER TABLE `students` MODIFY `status` '.
             "ENUM('active','transferred','graduated','dropped','sponsored','orphaned') ".
             "NOT NULL DEFAULT 'active'"
         );
@@ -29,7 +29,7 @@ return new class extends Migration
         DB::table('students')->whereIn('status', ['sponsored', 'orphaned'])->update(['status' => 'active']);
 
         DB::statement(
-            "ALTER TABLE `students` MODIFY `status` ".
+            'ALTER TABLE `students` MODIFY `status` '.
             "ENUM('active','transferred','graduated','dropped') ".
             "NOT NULL DEFAULT 'active'"
         );

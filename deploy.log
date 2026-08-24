@@ -1880,3 +1880,21 @@
 [0;36m[2026-08-24 17:38:29][0m   ShulePay — Release
 [0;36m[2026-08-24 17:38:29][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 17:38:29][0m Checking working tree...
+[0;36m[2026-08-24 17:38:29][0m Files staged for commit:
+[0;36m[2026-08-24 17:38:30][0m Committing: "feat(students): full field parity in Edit Student; fix sponsored/orphaned status failing at DB level
+
+- Edit modal now exposes every backend-supported field: nationality, religion,
+  blood group, allergies, medical conditions, place, notes and class
+- Fix labels rendering as raw keys (common.region -> students.region, etc.)
+- StudentResource was omitting 'place', so editing silently blanked it
+- Widen students.status enum to include sponsored/orphaned, which the
+  registration form and RegisterStudentRequest already accepted"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 17:38:30][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 17:38:34][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 17:50:42][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 17:50:42][0m   ShulePay — Release
+[0;36m[2026-08-24 17:50:42][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 17:50:42][0m Checking working tree...
