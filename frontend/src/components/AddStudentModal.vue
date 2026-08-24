@@ -790,6 +790,58 @@
           + {{ t('students.addTermHistory') }}
         </CButton>
 
+        <!-- Annual Debt Summary -->
+        <CCard v-if="form.payment_history.length > 0" class="mt-4 border-0" style="background:#f0f8ff;border-left:4px solid #d32f2f!important;">
+          <CCardBody class="py-3">
+            <div class="fw-bold text-danger mb-3" style="font-size:1.05rem;">
+              📊 {{ t('students.annualDebtSummary') || 'Annual Debt Summary' }}
+            </div>
+            <CRow class="g-3">
+              <CCol md="3">
+                <div class="text-center">
+                  <div class="small text-muted mb-1">💰 {{ t('students.totalChargedFees') || 'Total Charged' }}</div>
+                  <div class="fw-bold text-dark" style="font-size:1.15rem;">
+                    {{ formatMoney(totalHistoryFees() * 100) }}
+                  </div>
+                </div>
+              </CCol>
+              <CCol md="3">
+                <div class="text-center">
+                  <div class="small text-muted mb-1">✅ {{ t('students.totalPaidAmount') || 'Total Paid' }}</div>
+                  <div class="fw-bold text-success" style="font-size:1.15rem;">
+                    {{ formatMoney(totalHistoryPaid()) }}
+                  </div>
+                </div>
+              </CCol>
+              <CCol md="3">
+                <div class="text-center">
+                  <div class="small text-muted mb-1">⚠️ {{ t('students.outstandingBalance') || 'Outstanding Balance' }}</div>
+                  <div class="fw-bold text-danger" style="font-size:1.15rem;">
+                    {{ formatMoney(totalHistoryBalance()) }}
+                  </div>
+                </div>
+              </CCol>
+              <CCol md="3">
+                <div class="text-center">
+                  <div class="small text-muted mb-1">📈 {{ t('students.completionRate') || 'Paid %' }}</div>
+                  <div class="fw-bold" :class="completionPercentage() >= 50 ? 'text-success' : 'text-warning'" style="font-size:1.15rem;">
+                    {{ completionPercentage() }}%
+                  </div>
+                </div>
+              </CCol>
+            </CRow>
+            <hr class="my-2" />
+            <div class="small text-muted" style="font-size:.85rem;">
+              <span v-if="totalHistoryBalance() > 0" class="text-danger">
+                🔴 {{ t('students.studentStillOwes') || 'Student still owes' }} <strong>{{ formatMoney(totalHistoryBalance()) }}</strong> {{ t('students.toCompleteAnnualFees') || 'to complete annual tuition fees' }}
+              </span>
+              <span v-else class="text-success">
+                ✅ {{ t('students.allFeesCleared') || 'All historical fees have been cleared' }}
+              </span>
+            </div>
+          </CCardBody>
+        </CCard>
+
         <CAlert v-if="form.payment_history.length === 0" color="secondary" class="mt-3 small">
           ℹ️ {{ t('students.noHistoryHint') }}
         </CAlert>
@@ -1124,6 +1176,31 @@ function addTermHistory() { form.value.payment_history.push(defaultTermEntry()) 
 function removeTermHistory(i) { form.value.payment_history.splice(i, 1) }
 function addPayment(ei) { form.value.payment_history[ei].payments.push(defaultPayment()) }
 function removePayment(ei, pi) { form.value.payment_history[ei].payments.splice(pi, 1) }
+
+// ── Annual debt summary calculations ──────────────────────────────────────────
+function totalHistoryFees() {
+  return form.value.payment_history.reduce((sum, entry) => sum + (entry.fee_amount || 0), 0)
+}
+
+function totalHistoryPaid() {
+  return form.value.payment_history.reduce((sum, entry) => {
+    const paid = entry.payments.reduce((s, p) => s + ((p.amount || 0) * 100), 0)
+    return sum + paid
+  }, 0)
+}
+
+function totalHistoryBalance() {
+  const totalFees = totalHistoryFees() * 100
+  const totalPaid = totalHistoryPaid()
+  return Math.max(0, totalFees - totalPaid)
+}
+
+function completionPercentage() {
+  const totalFees = totalHistoryFees()
+  if (totalFees === 0) return 0
+  const totalPaid = totalHistoryPaid() / 100
+  return Math.round((totalPaid / totalFees) * 100)
+}
 
 async function autoFillFee(ei) {
   const entry = form.value.payment_history[ei]
