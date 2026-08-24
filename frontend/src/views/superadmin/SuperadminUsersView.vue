@@ -45,7 +45,7 @@ const savingRestrict  = ref(false)
 const confirmDelete = ref(null)
 
 function blankForm() {
-  return { name: '', email: '', password: '', phone: '', school_id: '', role: '', permissions: [] }
+  return { name: '', email: '', phone: '', school_id: '', role: '', permissions: [] }
 }
 
 // ── Computed ──────────────────────────────────────────────────────────────────
@@ -100,7 +100,6 @@ function openEdit(user) {
   form.value = {
     name:      user.name,
     email:     user.email,
-    password:  '',
     phone:     user.phone ?? '',
     school_id: user.school_id ?? '',
     role:      user.roles?.[0]?.name ?? '',
@@ -119,7 +118,7 @@ async function saveUser() {
       ...form.value,
       permissions: [...formPerms.value],
     }
-    if (!payload.password) delete payload.password
+    delete payload.password
 
     if (editTarget.value) {
       await api.put(`/superadmin/users/${editTarget.value.id}`, payload)
@@ -469,12 +468,10 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
             <CFormLabel class="fw-semibold">Email <span class="text-danger">*</span></CFormLabel>
             <CFormInput v-model="form.email" type="email" />
           </CCol>
-          <CCol md="6">
-            <CFormLabel class="fw-semibold">
-              Password {{ editTarget ? '(leave blank to keep current)' : '' }}
-              <span v-if="!editTarget" class="text-danger">*</span>
-            </CFormLabel>
-            <CFormInput v-model="form.password" type="password" placeholder="Min 8 characters" />
+          <CCol v-if="!editTarget" md="6">
+            <CFormLabel class="fw-semibold">Password</CFormLabel>
+            <CFormInput value="SCHOOL" type="text" readonly class="bg-light text-muted fw-bold" />
+            <div class="text-muted small mt-1">User will be prompted to change this on first login</div>
           </CCol>
           <CCol md="6">
             <CFormLabel class="fw-semibold">School</CFormLabel>

@@ -220,7 +220,8 @@
       "PowerShell(Get-Process -Id 28472)",
       "Bash(bash deploy.sh release \"fix: migration feature — enum bug, step orphan, validation, auto-fee, sequential numbers\")",
       "PowerShell(docker exec shulepay_backend bash -c \"cd /var/www/html && php vendor/bin/pint app/Services/Reporting/DashboardService.php app/Services/Students/StudentRegistrationService.php\")",
-      "PowerShell(docker exec shulepay_backend bash -c \"find /var/www/html -name 'pint' 2>/dev/null | head -5\")"
+      "PowerShell(docker exec shulepay_backend bash -c \"find /var/www/html -name 'pint' 2>/dev/null | head -5\")",
+      "PowerShell(docker exec shulepay_backend php artisan tinker --execute=\"echo json_encode\\(['invoices'=>App\\\\Models\\\\Invoice::withoutGlobalScopes\\(\\)->where\\('student_id',950\\)->get\\(['id','invoice_number','total_amount_cents','status']\\)->toArray\\(\\),'payments'=>App\\\\Models\\\\Payment::withoutGlobalScopes\\(\\)->where\\('student_id',950\\)->get\\(['id','amount_cents','method','paid_at']\\)->toArray\\(\\)]\\);\")"
     ]
   }
 }
