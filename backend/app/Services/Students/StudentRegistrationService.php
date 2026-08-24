@@ -24,6 +24,21 @@ class StudentRegistrationService
     {
         return DB::transaction(function () use ($data, $photo) {
 
+            // 0. Idempotency guard: if an identical student (same name + DOB, same school)
+            // was created moments ago, this is almost certainly a duplicate submission
+            // (double-click, slow-network retry) — return the existing record instead of
+            // creating a second one.
+            $duplicate = Student::where('first_name', $data['first_name'])
+                ->where('last_name', $data['last_name'])
+                ->where('date_of_birth', $data['date_of_birth'])
+                ->whereHas('enrollments', fn ($q) => $q->where('school_id', $data['school_id']))
+                ->where('created_at', '>=', now()->subSeconds(30))
+                ->first();
+
+            if ($duplicate) {
+                return $duplicate->load(['enrollments', 'guardians.user', 'currentEnrollment.schoolClass']);
+            }
+
             // 1. Handle photo upload
             $photoPath = null;
             if ($photo) {

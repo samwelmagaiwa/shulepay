@@ -1759,3 +1759,14 @@
 [0;36m[2026-08-24 15:59:34][0m   ShulePay — Release
 [0;36m[2026-08-24 15:59:34][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 15:59:34][0m Checking working tree...
+[0;36m[2026-08-24 15:59:34][0m Files staged for commit:
+[0;36m[2026-08-24 15:59:34][0m Committing: "fix: resolve draft 403 error caused by strict type comparison between uncast user_id column and authenticated user id"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 15:59:34][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 15:59:38][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 16:02:57][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 16:02:57][0m   ShulePay — Release
+[0;36m[2026-08-24 16:02:57][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 16:02:57][0m Checking working tree...

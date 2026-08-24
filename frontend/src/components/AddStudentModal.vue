@@ -1482,6 +1482,7 @@ function nextStep() {
 
 // ── Submit ────────────────────────────────────────────────────────────────────
 async function submit() {
+  if (saving.value) return  // guard against double-submit (fast double-click/tap)
   if (!validateStep()) return
   saving.value = true
   submitError.value = ''
