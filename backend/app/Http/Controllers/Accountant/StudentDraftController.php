@@ -76,7 +76,7 @@ class StudentDraftController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $validated = $request->validate([
+        $rules = [
             'school_id' => 'required|integer|exists:schools,id',
             'current_step' => 'nullable|integer|between:1,6',
             'first_name' => 'nullable|string|max:100',
@@ -114,7 +114,9 @@ class StudentDraftController extends Controller
             'payment_history' => 'nullable|array',
             'lumpsum_total_charged_cents' => 'nullable|integer|min:0',
             'lumpsum_total_paid_cents' => 'nullable|integer|min:0',
-        ]);
+        ];
+
+        $validated = $request->validate($rules);
 
         $validated['user_id'] = $user->id;
         $validated['last_accessed_at'] = now();
@@ -139,7 +141,7 @@ class StudentDraftController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $validated = $request->validate([
+        $rules = [
             'current_step' => 'nullable|integer|between:1,6',
             'first_name' => 'nullable|string|max:100',
             'middle_name' => 'nullable|string|max:100',
@@ -176,8 +178,9 @@ class StudentDraftController extends Controller
             'payment_history' => 'nullable|array',
             'lumpsum_total_charged_cents' => 'nullable|integer|min:0',
             'lumpsum_total_paid_cents' => 'nullable|integer|min:0',
-        ]);
+        ];
 
+        $validated = $request->validate($rules);
         $validated['last_accessed_at'] = now();
         $draft->update($validated);
 

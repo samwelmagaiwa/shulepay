@@ -50,6 +50,16 @@ export default {
     // Remove photo from draft (not sent to API during auto-save)
     delete converted.photo
 
+    // In lumpsum mode, don't send payment_history (use lumpsum fields instead)
+    if (converted.migration_mode === 'lumpsum') {
+      converted.payment_history = []
+    }
+
+    // Don't send empty payment_history arrays
+    if (!converted.payment_history || converted.payment_history.length === 0) {
+      delete converted.payment_history
+    }
+
     return converted
   },
 

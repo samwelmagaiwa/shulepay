@@ -238,7 +238,8 @@
       "Bash(bash deploy.sh release \"feat: add draft save system for student registration - preserve data across all 6 steps on page refresh\")",
       "Bash(bash deploy.sh release \"fix: correct validation for annual summary mode and auto-populate lumpsum fields from step 5\")",
       "Bash(bash deploy.sh release \"fix: correct PHP formatting with Pint linter\")",
-      "Bash(bash deploy.sh release \"fix: remove duplicate class attribute in AddStudentModal\")"
+      "Bash(bash deploy.sh release \"fix: remove duplicate class attribute in AddStudentModal\")",
+      "Bash(bash deploy.sh release \"fix: exclude payment_history from draft save in lumpsum mode and prevent empty array validation\")"
     ]
   }
 }
