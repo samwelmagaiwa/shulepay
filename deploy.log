@@ -2020,3 +2020,14 @@ matching the existing pattern in the wipe_demo_data migration."
 [0;36m[2026-08-24 18:55:03][0m   ShulePay — Release
 [0;36m[2026-08-24 18:55:03][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 18:55:03][0m Checking working tree...
+[0;36m[2026-08-24 18:55:04][0m Files staged for commit:
+[0;36m[2026-08-24 18:55:04][0m Committing: "feat: add 'Showing X-Y of Z' indicator and per-page selector to Ada Madeni page, matching the existing pattern on the students list - the page never sent per_page to the backend and had no size control at all"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 18:55:04][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 18:55:08][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 18:59:16][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 18:59:16][0m   ShulePay — Release
+[0;36m[2026-08-24 18:59:16][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 18:59:16][0m Checking working tree...
