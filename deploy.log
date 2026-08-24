@@ -1924,3 +1924,14 @@ matching the existing pattern in the wipe_demo_data migration."
 [0;36m[2026-08-24 18:16:48][0m   ShulePay — Release
 [0;36m[2026-08-24 18:16:48][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 18:16:48][0m Checking working tree...
+[0;36m[2026-08-24 18:16:48][0m Files staged for commit:
+[0;36m[2026-08-24 18:16:48][0m Committing: "fix: deleting a student left enrollments status='active' forever (no cascade on soft delete), inflating dashboard All Students count - mark enrollments 'dropped' on delete going forward, exclude soft-deleted students from dashboard count, add dry-run command to correct existing orphaned enrollments"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 18:16:48][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 18:16:52][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 18:18:38][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 18:18:38][0m   ShulePay — Release
+[0;36m[2026-08-24 18:18:38][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 18:18:38][0m Checking working tree...
