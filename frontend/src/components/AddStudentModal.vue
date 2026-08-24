@@ -1276,20 +1276,14 @@ function resetForm() {
   hasAllergies.value = false
 }
 
-watch(() => form.value.academic_year_id, async (yearId) => {
-  if (yearId) {
-    try {
-      const { data } = await api.get('/terms', { params: { academic_year_id: yearId } })
-      terms.value = data.data || data || []
-    } catch {}
-  }
-})
-
 watch(() => props.visible, async (v) => {
   if (v) {
     resetForm()
     // Re-fetch regions each time the modal opens so IDs are always fresh
     try { await fetchRegions() } catch {}
+    // resetForm() blanks the year — restore the current-year default and its terms
+    const currentYear = academicYears.value.find(y => y.is_current) || academicYears.value[0]
+    if (currentYear) form.value.academic_year_id = currentYear.id
   }
 })
 

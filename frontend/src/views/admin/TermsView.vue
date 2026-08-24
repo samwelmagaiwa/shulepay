@@ -33,15 +33,23 @@ async function load() {
     const ay = ayRes.data.data ?? ayRes.data
     academicYears.value = ay
 
-    // fetch each year's terms
+    // fetch each year's terms in parallel — one failing year must not blank the whole list
+    const results = await Promise.allSettled(
+      ay.map(y => api.get('/terms', { params: { academic_year_id: y.id } })),
+    )
     const allTerms = []
-    for (const y of ay) {
-      const r = await api.get('/terms', { params: { academic_year_id: y.id } })
-      ;(r.data.data ?? r.data).forEach(t => {
-        allTerms.push({ ...t, academic_year: y })
-      })
-    }
+    results.forEach((res, i) => {
+      if (res.status !== 'fulfilled') return
+      const rows = res.value.data.data ?? res.value.data ?? []
+      rows.forEach(t => allTerms.push({ ...t, academic_year: ay[i] }))
+    })
     terms.value = allTerms
+
+    // Every request failing must not look like "no terms exist"
+    const firstFailure = results.find(r => r.status === 'rejected')
+    if (results.length && firstFailure && !results.some(r => r.status === 'fulfilled')) {
+      error.value = firstFailure.reason?.response?.data?.message || t('common.loadFailed')
+    }
   } catch (e) {
     error.value = e?.response?.data?.message || t('common.loadFailed')
   } finally {
