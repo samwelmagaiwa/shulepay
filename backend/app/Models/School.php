@@ -85,27 +85,29 @@ class School extends Model
     public function nextAdmissionNumber(): string
     {
         $year = now()->year;
-        $prefix = $this->level === SchoolLevel::Secondary ? 'SEC' : 'PRM';
+        $prefix = $this->level?->admissionPrefix() ?? 'PRM';
         $code = strtoupper($this->code);
 
-        // Match numbers generated with the new format for this school/prefix/year
-        $last = Enrollment::withoutGlobalScope('school')
+        // The sequence is scoped to this school and year — deliberately NOT to the
+        // school code. Matching on the code meant that renaming a school's code
+        // restarted numbering at 0001 mid-year, because the old numbers no longer
+        // matched the LIKE. Existing admission numbers are never rewritten (they are
+        // printed on receipts and certificates), so the series simply continues.
+        $seq = Enrollment::withoutGlobalScope('school')
             ->where('school_id', $this->id)
-            ->where('admission_number', 'like', "{$prefix}/{$code}/%/{$year}")
-            ->max('admission_number');
+            ->where('admission_number', 'like', "%/{$year}")
+            ->get(['admission_number'])
+            ->map(fn ($e) => preg_match('#/(\d+)/'.$year.'$#', $e->admission_number, $m) ? (int) $m[1] : 0)
+            ->max();
 
-        if ($last && preg_match('/\/(\d+)\/'.$year.'$/', $last, $m)) {
-            $seq = (int) $m[1] + 1;
-        } else {
-            $seq = 1;
-        }
-
-        return sprintf('%s/%s/%04d/%d', $prefix, $code, $seq, $year);
+        return sprintf('%s/%s/%04d/%d', $prefix, $code, ((int) $seq) + 1, $year);
     }
 
     /** Return label suitable for class levels — "Darasa" or "Kidato" */
     public function classLabel(): string
     {
-        return $this->level === SchoolLevel::Primary ? 'Darasa' : 'Kidato';
+        // Delegate to the enum, which already covers the Swahili cases; the old
+        // `=== SchoolLevel::Primary` comparison labelled a 'msingi' school "Kidato".
+        return $this->level?->classPrefix() ?? 'Darasa';
     }
 }
