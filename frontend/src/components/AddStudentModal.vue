@@ -32,19 +32,31 @@
         </div>
       </div>
 
-      <!-- ── New / Existing toggle ──────────────────────────────────────── -->
+      <!-- ── New / Existing toggle (STRONG DEFAULT) ──────────────────────────────────────── -->
       <div v-if="!showResumeDialog" class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3 border"
-           :style="form.is_existing_student ? 'border-color:#ffc107!important;background:#fffdf0;' : 'border-color:#007f3e!important;background:#f8fff8;'">
+           :style="form.is_existing_student
+             ? 'border-color:#007f3e!important;background:#f0f9f5;border-width:2px!important;box-shadow:0 0 0 3px rgba(0,127,62,.1);'
+             : 'border-color:#e0e0e0!important;background:#f9f9f9;'">
         <div class="flex-grow-1">
-          <div class="fw-semibold small">
-            {{ form.is_existing_student ? '📚 ' + t('students.isExistingStudent') : '🆕 ' + t('students.isNewStudent') }}
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <div class="fw-bold" :style="form.is_existing_student ? 'color:#007f3e;font-size:1rem;' : 'font-size:.9rem;'">
+              {{ form.is_existing_student ? '📚 ' + t('students.isExistingStudent') : '🆕 ' + t('students.isNewStudent') }}
+            </div>
+            <CBadge v-if="form.is_existing_student" color="success" style="font-size:.7rem;">DEFAULT</CBadge>
           </div>
           <div class="text-muted" style="font-size:.72rem;">
-            {{ form.is_existing_student ? t('students.migrationHint') : t('students.isNewStudentHint') }}
+            {{ form.is_existing_student
+              ? 'Record previous terms\' fees and payments as written in the books. The system will automatically calculate the current balance.'
+              : t('students.isNewStudentHint') }}
           </div>
         </div>
-        <CFormSwitch v-model="form.is_existing_student" id="existingStudentToggle"
-                     @update:modelValue="onExistingToggle" />
+        <div class="d-flex flex-column align-items-center gap-2">
+          <CFormSwitch v-model="form.is_existing_student" id="existingStudentToggle"
+                       @update:modelValue="onExistingToggleWithWarning" />
+          <div class="small" :style="form.is_existing_student ? 'color:#007f3e;font-weight:600;' : 'color:#999;'">
+            {{ form.is_existing_student ? '✓ ACTIVE' : 'Inactive' }}
+          </div>
+        </div>
       </div>
 
       <!-- Form content (hidden when resume dialog showing) -->
@@ -1275,7 +1287,30 @@ function addGuardian()     { form.value.guardians.push(defaultGuardian()) }
 function removeGuardian(i) { form.value.guardians.splice(i, 1) }
 function setPrimary(idx)   { form.value.guardians.forEach((g, i) => { if (i !== idx) g.is_primary_contact = false }) }
 
-// ── Existing student toggle ───────────────────────────────────────────────────
+// ── Existing student toggle with warning ───────────────────────────────────────────────────
+function onExistingToggleWithWarning(isExisting) {
+  // If toggling TO new student (false), show confirmation
+  if (!isExisting) {
+    const confirmed = confirm(
+      '⚠️ WARNING!\n\n' +
+      'You are switching to "New Student" mode.\n\n' +
+      'This will:\n' +
+      '✗ Remove all payment history entries\n' +
+      '✗ Enable "Generate First Invoice"\n' +
+      '✗ Return to Step 5\n\n' +
+      'Most students are existing (migrating from books).\n\n' +
+      'Continue?'
+    )
+    if (!confirmed) {
+      // Revert the toggle
+      form.value.is_existing_student = true
+      return
+    }
+  }
+  // Proceed with the toggle
+  onExistingToggle(isExisting)
+}
+
 function onExistingToggle(isExisting) {
   if (!isExisting) {
     form.value.payment_history = []
