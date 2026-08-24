@@ -12,6 +12,12 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // This migration only makes sense on the production MySQL database.
+        // SQLite (used by the test suite) doesn't support FK checks or truncate the same way.
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
         $truncate = fn (string $table) => Schema::hasTable($table) && DB::table($table)->truncate();
