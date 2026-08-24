@@ -246,7 +246,8 @@
       "Bash(bash deploy.sh release \"fix: prevent payment_history from being sent in lumpsum mode - resolves validation error\")",
       "Bash(bash deploy.sh release \"fix: explicitly clear payment_history in lumpsum mode before submission\")",
       "Bash(bash deploy.sh release \"fix: comprehensive lumpsum validation - frontend never sends + backend skips payment_history in lumpsum mode\")",
-      "Bash(bash deploy.sh release \"fix: improve 403 fallback tracking and ensure currentDraft updates after fallback to POST\")"
+      "Bash(bash deploy.sh release \"fix: improve 403 fallback tracking and ensure currentDraft updates after fallback to POST\")",
+      "Bash(bash deploy.sh release \"feat: make existing student \\(migrating from books\\) the default for all registrations\")"
     ]
   }
 }

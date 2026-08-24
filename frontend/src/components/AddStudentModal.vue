@@ -1139,10 +1139,10 @@ function blankForm() {
     guardians: [defaultGuardian()],
     // Financial
     total_tuition_fee: 0, opening_balance: 0, discount_type: '', discount_amount: 0,
-    generate_first_invoice: true,
+    generate_first_invoice: false,  // Existing students don't generate first invoice
     // Migration
-    is_existing_student: false,
-    payment_history: [],
+    is_existing_student: true,  // Default: all students are existing (migrating from books)
+    payment_history: [defaultTermEntry()],  // Start with one term entry ready to fill
     // Annual summary (lump sum mode)
     lumpsum_total_charged: 0,
     lumpsum_total_paid: 0,
@@ -1279,10 +1279,11 @@ function setPrimary(idx)   { form.value.guardians.forEach((g, i) => { if (i !== 
 function onExistingToggle(isExisting) {
   if (!isExisting) {
     form.value.payment_history = []
+    form.value.generate_first_invoice = true  // New students generate invoice
     // If user was on step 6 (migration), drop back to step 5
     if (step.value > 5) step.value = 5
   } else {
-    form.value.generate_first_invoice = false
+    form.value.generate_first_invoice = false  // Existing students don't generate invoice
     if (form.value.payment_history.length === 0) addTermHistory()
   }
 }
