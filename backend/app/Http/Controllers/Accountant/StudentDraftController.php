@@ -77,8 +77,8 @@ class StudentDraftController extends Controller
         }
 
         $validated = $request->validate([
-            'school_id' => 'required|exists:schools,id',
-            'current_step' => 'required|integer|between:1,6',
+            'school_id' => 'required|integer|exists:schools,id',
+            'current_step' => 'nullable|integer|between:1,6',
             'first_name' => 'nullable|string|max:100',
             'middle_name' => 'nullable|string|max:100',
             'last_name' => 'nullable|string|max:100',
@@ -95,9 +95,9 @@ class StudentDraftController extends Controller
             'district' => 'nullable|string|max:100',
             'ward' => 'nullable|string|max:100',
             'street' => 'nullable|string|max:100',
-            'school_class_id' => 'nullable|exists:school_classes,id',
-            'academic_year_id' => 'nullable|exists:academic_years,id',
-            'term_id' => 'nullable|exists:terms,id',
+            'school_class_id' => 'nullable|integer|exists:school_classes,id',
+            'academic_year_id' => 'nullable|integer|exists:academic_years,id',
+            'term_id' => 'nullable|integer|exists:terms,id',
             'enrollment_date' => 'nullable|date',
             'previous_school' => 'nullable|string|max:200',
             'status' => 'nullable|in:active,transferred,graduated,dropped,sponsored,orphaned',
@@ -140,7 +140,7 @@ class StudentDraftController extends Controller
         }
 
         $validated = $request->validate([
-            'current_step' => 'sometimes|integer|between:1,6',
+            'current_step' => 'nullable|integer|between:1,6',
             'first_name' => 'nullable|string|max:100',
             'middle_name' => 'nullable|string|max:100',
             'last_name' => 'nullable|string|max:100',
@@ -157,9 +157,9 @@ class StudentDraftController extends Controller
             'district' => 'nullable|string|max:100',
             'ward' => 'nullable|string|max:100',
             'street' => 'nullable|string|max:100',
-            'school_class_id' => 'nullable|exists:school_classes,id',
-            'academic_year_id' => 'nullable|exists:academic_years,id',
-            'term_id' => 'nullable|exists:terms,id',
+            'school_class_id' => 'nullable|integer|exists:school_classes,id',
+            'academic_year_id' => 'nullable|integer|exists:academic_years,id',
+            'term_id' => 'nullable|integer|exists:terms,id',
             'enrollment_date' => 'nullable|date',
             'previous_school' => 'nullable|string|max:200',
             'status' => 'nullable|in:active,transferred,graduated,dropped,sponsored,orphaned',

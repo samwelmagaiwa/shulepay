@@ -26,12 +26,39 @@ export default {
     }
   },
 
+  // Convert form data to API format (convert fees to cents)
+  convertToApiFormat(draftData) {
+    const converted = { ...draftData }
+
+    // Convert currency fields to cents
+    if (converted.total_tuition_fee !== undefined && converted.total_tuition_fee !== null) {
+      converted.total_tuition_fee_cents = Math.round((converted.total_tuition_fee || 0) * 100)
+    }
+    if (converted.discount_amount !== undefined && converted.discount_amount !== null) {
+      converted.discount_amount_cents = Math.round((converted.discount_amount || 0) * 100)
+    }
+    if (converted.opening_balance !== undefined && converted.opening_balance !== null) {
+      converted.opening_balance_cents = Math.round((converted.opening_balance || 0) * 100)
+    }
+    if (converted.lumpsum_total_charged !== undefined && converted.lumpsum_total_charged !== null) {
+      converted.lumpsum_total_charged_cents = Math.round((converted.lumpsum_total_charged || 0) * 100)
+    }
+    if (converted.lumpsum_total_paid !== undefined && converted.lumpsum_total_paid !== null) {
+      converted.lumpsum_total_paid_cents = Math.round((converted.lumpsum_total_paid || 0) * 100)
+    }
+
+    // Remove photo from draft (not sent to API during auto-save)
+    delete converted.photo
+
+    return converted
+  },
+
   // Save/update a draft (creates new or updates existing)
   async saveDraft(schoolId, draftData) {
     try {
       const payload = {
         school_id: schoolId,
-        ...draftData,
+        ...this.convertToApiFormat(draftData),
       }
 
       // Check if draft exists for this user + school combination
