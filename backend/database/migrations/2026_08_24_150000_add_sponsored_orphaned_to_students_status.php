@@ -15,6 +15,12 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // ALTER ... MODIFY is MySQL-only. SQLite (used by the test suite) has no native
+        // ENUM type, so there is no column to widen there.
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement(
             'ALTER TABLE `students` MODIFY `status` '.
             "ENUM('active','transferred','graduated','dropped','sponsored','orphaned') ".
@@ -24,6 +30,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         // The narrower enum cannot hold the two new values, so fold them back to 'active'
         // before shrinking — otherwise MySQL would truncate those rows to an empty string.
         DB::table('students')->whereIn('status', ['sponsored', 'orphaned'])->update(['status' => 'active']);
