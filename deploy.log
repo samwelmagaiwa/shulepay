@@ -1847,3 +1847,14 @@
 [0;36m[2026-08-24 17:10:02][0m   ShulePay — Release
 [0;36m[2026-08-24 17:10:02][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 17:10:02][0m Checking working tree...
+[0;36m[2026-08-24 17:10:03][0m Files staged for commit:
+[0;36m[2026-08-24 17:10:03][0m Committing: "diag: temporarily surface draft 403 ownership mismatch details in response body and console - to root-cause the recurring 403 despite the earlier type-cast fix being verified intact"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 17:10:03][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 17:10:07][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 17:19:38][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 17:19:38][0m   ShulePay — Release
+[0;36m[2026-08-24 17:19:38][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 17:19:38][0m Checking working tree...
