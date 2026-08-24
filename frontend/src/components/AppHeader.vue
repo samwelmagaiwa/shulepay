@@ -24,7 +24,7 @@ const isStudentsActive  = computed(() => ['/wanafunzi', '/walezi', '/wanafunzi/c
 const isFinanceActive   = computed(() => ['/ada-madeni', '/installments', '/malipo', '/ada'].some(p => route.path.startsWith(p)))
 const isExpensesActive  = computed(() => ['/matumizi', '/payroll', '/wasambazaji', '/mali', '/bajeti'].some(p => route.path.startsWith(p)))
 const isSchuleActive    = computed(() => ['/mahudhurio', '/usafiri', '/inventory'].some(p => route.path.startsWith(p)))
-const isAdminActive     = computed(() => ['/admin/schools', '/admin/wafanyakazi', '/admin/rollover', '/admin/academic-years', '/admin/branding', '/audit', '/superadmin'].some(p => route.path.startsWith(p)))
+const isAdminActive     = computed(() => ['/admin/schools', '/admin/wafanyakazi', '/admin/rollover', '/admin/academic-years', '/admin/terms', '/admin/branding', '/audit', '/superadmin'].some(p => route.path.startsWith(p)))
 const { t, locale } = useI18n()
 const { colorMode, setColorMode } = useColorModes('shulepay-theme')
 
@@ -107,7 +107,6 @@ function go(path) {
           <RouterLink class="btn btn-ghost-secondary text-start" to="/malipo/refunds" @click="mobileNavOpen=false">{{ t('nav.refunds') }}</RouterLink>
           <RouterLink class="btn btn-ghost-secondary text-start" to="/ada/muundo" @click="mobileNavOpen=false">{{ t('nav.feeStructures') }}</RouterLink>
           <RouterLink class="btn btn-ghost-secondary text-start" to="/malipo/rekodi" @click="mobileNavOpen=false">{{ t('nav.paymentRecord') }}</RouterLink>
-          <RouterLink class="btn btn-ghost-secondary text-start" to="/admin/terms" @click="mobileNavOpen=false">📅 {{ t('nav.terms') }}</RouterLink>
         </template>
 
         <!-- Expenses: accountant / owner -->
@@ -154,6 +153,7 @@ function go(path) {
           <RouterLink v-if="auth.isSuperAdmin" class="btn btn-ghost-secondary text-start" to="/superadmin/roles" @click="mobileNavOpen=false">🔐 {{ t('nav.rolesPermissions') }}</RouterLink>
           <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/bajeti" @click="mobileNavOpen=false">{{ t('nav.budgets') }}</RouterLink>
           <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/academic-years" @click="mobileNavOpen=false">📅 {{ t('nav.academicYears') }}</RouterLink>
+          <RouterLink v-if="auth.isOwner || auth.isAccountant" class="btn btn-ghost-secondary text-start" to="/admin/terms" @click="mobileNavOpen=false">🗓️ {{ t('nav.terms') }}</RouterLink>
           <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/rollover" @click="mobileNavOpen=false">{{ t('nav.rollover') }}</RouterLink>
         </template>
       </nav>
@@ -245,9 +245,6 @@ function go(path) {
             <CDropdownItem @click="router.push('/ada/muundo')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/ada/muundo') }">
               <CIcon icon="cilSettings" class="me-2" /> {{ t('nav.feeStructures') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/admin/terms')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/terms') }">
-              📅 {{ t('nav.terms') }}
-            </CDropdownItem>
           </CDropdownMenu>
         </CDropdown>
 
@@ -318,32 +315,35 @@ function go(path) {
           </RouterLink>
         </CNavItem>
 
-        <!-- Usimamizi (owner only) -->
-        <CDropdown v-if="auth.isOwner" variant="nav-item" :caret="false">
+        <!-- Usimamizi (owner / accountant / superadmin) -->
+        <CDropdown v-if="auth.isOwner || auth.isAccountant" variant="nav-item" :caret="false">
           <CDropdownToggle class="fw-semibold px-2" :class="{ 'nav-active': isAdminActive }" style="font-size:.9rem;">
             {{ t('nav.admin') }}
           </CDropdownToggle>
           <CDropdownMenu style="min-width:220px; border-radius:12px; border:none; box-shadow:0 8px 24px rgba(0,0,0,.12);">
-            <CDropdownItem @click="router.push('/admin/schools')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/schools') }">
+            <CDropdownItem v-if="auth.isOwner" @click="router.push('/admin/schools')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/schools') }">
               <CIcon icon="cilBuilding" class="me-2" /> {{ t('nav.schools') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/admin/wafanyakazi')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/wafanyakazi') }">
+            <CDropdownItem v-if="auth.isOwner" @click="router.push('/admin/wafanyakazi')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/wafanyakazi') }">
               👥 {{ t('nav.staff') }}
             </CDropdownItem>
-            <CDropdownDivider />
-            <CDropdownItem @click="router.push('/bajeti')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/bajeti') }">
+            <CDropdownDivider v-if="auth.isOwner" />
+            <CDropdownItem v-if="auth.isOwner" @click="router.push('/bajeti')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/bajeti') }">
               <CIcon icon="cilLibrary" class="me-2" /> {{ t('nav.budgets') }}
             </CDropdownItem>
             <CDropdownItem @click="router.push('/admin/academic-years')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/academic-years') }">
               📅 {{ t('nav.academicYears') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/admin/rollover')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/rollover') }">
+            <CDropdownItem @click="router.push('/admin/terms')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/terms') }">
+              🗓️ {{ t('nav.terms') }}
+            </CDropdownItem>
+            <CDropdownItem v-if="auth.isOwner" @click="router.push('/admin/rollover')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/rollover') }">
               <CIcon icon="cilReload" class="me-2" /> {{ t('nav.rollover') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/audit')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/audit') }">
+            <CDropdownItem v-if="auth.isOwner" @click="router.push('/audit')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/audit') }">
               <CIcon icon="cilHistory" class="me-2" /> {{ t('nav.audit') }}
             </CDropdownItem>
-            <CDropdownItem @click="router.push('/admin/branding')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/branding') }">
+            <CDropdownItem v-if="auth.isOwner" @click="router.push('/admin/branding')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/branding') }">
               🎨 {{ t('nav.branding') }}
             </CDropdownItem>
             <template v-if="auth.isSuperAdmin">
