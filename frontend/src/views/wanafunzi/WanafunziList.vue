@@ -236,7 +236,10 @@ function debouncedFetch() {
 }
 
 function resetFilters() {
-  filters.value = { search: '', school_id: schoolStore.activeSchoolId ? String(schoolStore.activeSchoolId) : '', status: '', has_debt: '' }
+  filters.value = { search: '', school_id: '', status: '', has_debt: '' }
+  if (schoolStore.activeSchoolId) {
+    filters.value.school_id = String(schoolStore.activeSchoolId)
+  }
   page.value = 1
   fetchData()
 }

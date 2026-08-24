@@ -1715,3 +1715,14 @@
 [0;36m[2026-08-24 15:28:58][0m   ShulePay — Release
 [0;36m[2026-08-24 15:28:58][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 15:28:58][0m Checking working tree...
+[0;36m[2026-08-24 15:28:58][0m Files staged for commit:
+[0;36m[2026-08-24 15:28:58][0m Committing: "fix: resolve WanafunziList initialization error by deferring store access to onMounted"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 15:28:58][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 15:29:02][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 15:34:34][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 15:34:34][0m   ShulePay — Release
+[0;36m[2026-08-24 15:34:34][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 15:34:34][0m Checking working tree...
