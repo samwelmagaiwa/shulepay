@@ -176,7 +176,7 @@
         <div class="fw-semibold text-muted small mb-2 text-uppercase" style="letter-spacing:.05em;">📄 {{ t('students.docsSection') }}</div>
         <CRow class="g-3">
           <CCol xs="12" sm="4">
-            <label class="form-label">{{ t('students.birthCertNo') }} <span class="text-danger">*</span></label>
+            <label class="form-label">{{ t('students.birthCertNo') }}</label>
             <CFormInput v-model="form.birth_certificate_no" placeholder="Nambari ya cheti cha kuzaliwa"
                         :class="{'is-invalid': errors.birth_certificate_no}" />
             <div class="invalid-feedback">{{ errors.birth_certificate_no }}</div>
@@ -1424,7 +1424,6 @@ function validateStep() {
     if (!form.value.last_name)          errors.value.last_name           = t('students.errors.lastNameRequired')
     if (!form.value.gender)             errors.value.gender              = t('students.errors.genderRequired')
     if (!form.value.date_of_birth)      errors.value.date_of_birth       = t('students.errors.dobRequired')
-    if (!form.value.birth_certificate_no) errors.value.birth_certificate_no = t('students.errors.birthCertRequired')
   }
   if (step.value === 3) {
     if (!form.value.school_id)        errors.value.school_id        = t('students.errors.schoolRequired')
@@ -1577,7 +1576,7 @@ async function submit() {
       submitError.value = t('common.fixErrors')
       // Navigate to step with first error
       const firstErr = Object.keys(errors.value)[0]
-      if (['first_name','last_name','gender','date_of_birth','admission_no','status','nationality','birth_certificate_no'].includes(firstErr)) {
+      if (['first_name','last_name','gender','date_of_birth','admission_no','status','nationality'].includes(firstErr)) {
         step.value = 1
       } else if (['blood_group','allergies','medical_conditions','address','region','district','ward','street','religion'].includes(firstErr)) {
         step.value = 2
