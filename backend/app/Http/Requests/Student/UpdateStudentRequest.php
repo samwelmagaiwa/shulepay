@@ -35,7 +35,9 @@ class UpdateStudentRequest extends FormRequest
             'last_name' => 'sometimes|string|max:100',
             'date_of_birth' => 'nullable|date|before:today',
             'gender' => 'nullable|in:male,female',
-            'status' => 'sometimes|in:active,transferred,graduated,dropped',
+            // Must mirror RegisterStudentRequest — a student registered as sponsored or
+            // orphaned was previously impossible to save from the edit form.
+            'status' => 'sometimes|in:active,transferred,graduated,dropped,sponsored,orphaned',
             'birth_certificate_no' => 'nullable|string|max:50',
             'nationality' => 'nullable|string|max:50',
             'religion' => 'nullable|string|max:50',

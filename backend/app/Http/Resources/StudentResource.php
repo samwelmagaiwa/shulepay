@@ -29,6 +29,7 @@ class StudentResource extends JsonResource
             'district' => $this->district,
             'ward' => $this->ward,
             'street' => $this->street,
+            'place' => $this->place,
             'religion' => $this->religion,
             'photo' => $this->photo ? url('storage/'.$this->photo) : null,
             'notes' => $this->notes,

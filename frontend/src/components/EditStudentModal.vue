@@ -17,20 +17,35 @@ const loading = ref(false)
 const photoPreview = ref('')
 const photoInput = ref(null)
 
+const classes = ref([])
+
 function initForm() {
   return {
+    // Identity
     first_name: '',
     middle_name: '',
     last_name: '',
     gender: '',
     date_of_birth: '',
     birth_certificate_no: '',
+    nationality: '',
+    religion: '',
     status: '',
+    // Health
+    blood_group: '',
+    allergies: '',
+    medical_conditions: '',
+    // Address
     address: '',
     region: '',
     district: '',
     ward: '',
     street: '',
+    place: '',
+    // Class
+    school_class_id: '',
+    // Other
+    notes: '',
     photo: null,
   }
 }
@@ -48,6 +63,8 @@ async function loadStudentData() {
     const res = await api.get(`/students/${props.student.id}`)
     const student = res.data.data || res.data
 
+    // StudentResource flattens the current enrollment onto the top level
+    // (school_id / school_class_id), so there is no nested enrollment object.
     form.value = {
       first_name: student.first_name || '',
       middle_name: student.middle_name || '',
@@ -55,17 +72,34 @@ async function loadStudentData() {
       gender: student.gender || '',
       date_of_birth: student.date_of_birth ? student.date_of_birth.substring(0, 10) : '',
       birth_certificate_no: student.birth_certificate_no || '',
+      nationality: student.nationality || '',
+      religion: student.religion || '',
       status: student.status || '',
+      blood_group: student.blood_group || '',
+      allergies: student.allergies || '',
+      medical_conditions: student.medical_conditions || '',
       address: student.address || '',
       region: student.region || '',
       district: student.district || '',
       ward: student.ward || '',
       street: student.street || '',
+      place: student.place || '',
+      school_class_id: student.school_class_id || student.school_class?.id || '',
+      notes: student.notes || '',
       photo: null,
     }
 
     if (student.photo) {
       photoPreview.value = student.photo
+    }
+
+    // Class list for the student's own school, so the class can be corrected here too
+    const schoolId = student.school_id || student.school?.id
+    if (schoolId) {
+      try {
+        const cr = await api.get('/school-classes', { params: { school_id: schoolId, all: 1 } })
+        classes.value = cr.data.data ?? cr.data ?? []
+      } catch { classes.value = [] }
     }
   } catch (e) {
     const msg = e?.response?.data?.message || e?.message || t('common.loadFailed')
@@ -108,9 +142,11 @@ async function submit() {
 
     // Add regular fields
     Object.keys(form.value).forEach(key => {
-      if (key !== 'photo' && form.value[key] !== null) {
-        formData.append(key, form.value[key])
-      }
+      if (key === 'photo' || form.value[key] === null) return
+      // school_class_id is validated with `exists`, so an empty value must be omitted
+      // entirely rather than sent as '' (which would fail validation).
+      if (key === 'school_class_id' && !form.value[key]) return
+      formData.append(key, form.value[key])
     })
 
     // Add photo if changed
@@ -233,26 +269,89 @@ async function submit() {
               <div v-if="errors.status" class="invalid-feedback d-block">{{ errors.status }}</div>
             </CCol>
 
-            <!-- Address -->
-            <CCol xs="12" sm="6">
-              <label class="form-label">{{ t('common.address') }}</label>
-              <CFormInput v-model="form.address" />
+            <!-- Nationality / Religion -->
+            <CCol xs="12" md="3">
+              <label class="form-label">{{ t('students.nationality') }}</label>
+              <CFormInput v-model="form.nationality" placeholder="Tanzanian" />
             </CCol>
-            <CCol xs="12" sm="3">
-              <label class="form-label">{{ t('common.region') }}</label>
+            <CCol xs="12" md="3">
+              <label class="form-label">{{ t('students.religion') }}</label>
+              <CFormSelect v-model="form.religion">
+                <option value="">— {{ t('common.select') }} —</option>
+                <option value="Ukristo">{{ t('students.religions.christianity') }}</option>
+                <option value="Uislamu">{{ t('students.religions.islam') }}</option>
+                <option value="Uhindu">{{ t('students.religions.hinduism') }}</option>
+                <option value="Nyingine">{{ t('students.religions.other') }}</option>
+              </CFormSelect>
+            </CCol>
+
+            <!-- Class -->
+            <CCol xs="12" md="6">
+              <label class="form-label fw-semibold">{{ t('students.class') }}</label>
+              <CFormSelect v-model="form.school_class_id" :class="{'is-invalid': errors.school_class_id}">
+                <option value="">— {{ t('students.selectClass') }} —</option>
+                <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.name }}</option>
+              </CFormSelect>
+              <div v-if="errors.school_class_id" class="invalid-feedback d-block">{{ errors.school_class_id }}</div>
+            </CCol>
+
+            <!-- Health -->
+            <CCol xs="12">
+              <div class="fw-semibold text-muted small mt-2 mb-1 text-uppercase" style="letter-spacing:.05em;">
+                🩺 {{ t('students.healthSection') }}
+              </div>
+            </CCol>
+            <CCol xs="12" md="4">
+              <label class="form-label">{{ t('students.bloodGroup') }}</label>
+              <CFormSelect v-model="form.blood_group">
+                <option value="">— {{ t('students.unknown') }} —</option>
+                <option v-for="bg in ['A+','A-','B+','B-','AB+','AB-','O+','O-']" :key="bg" :value="bg">{{ bg }}</option>
+              </CFormSelect>
+            </CCol>
+            <CCol xs="12" md="4">
+              <label class="form-label">{{ t('students.allergies') }}</label>
+              <CFormInput v-model="form.allergies" :placeholder="t('students.allergiesPlaceholder')" />
+            </CCol>
+            <CCol xs="12" md="4">
+              <label class="form-label">{{ t('students.medicalConditions') }}</label>
+              <CFormInput v-model="form.medical_conditions" :placeholder="t('students.medicalConditionsPlaceholder')" />
+            </CCol>
+
+            <!-- Address -->
+            <CCol xs="12">
+              <div class="fw-semibold text-muted small mt-2 mb-1 text-uppercase" style="letter-spacing:.05em;">
+                📍 {{ t('students.addressSection') }}
+              </div>
+            </CCol>
+            <CCol xs="12" sm="4">
+              <label class="form-label">{{ t('students.region') }}</label>
               <CFormInput v-model="form.region" />
             </CCol>
-            <CCol xs="12" sm="3">
-              <label class="form-label">{{ t('common.district') }}</label>
+            <CCol xs="12" sm="4">
+              <label class="form-label">{{ t('students.district') }}</label>
               <CFormInput v-model="form.district" />
             </CCol>
-            <CCol xs="12" sm="3">
-              <label class="form-label">{{ t('common.ward') }}</label>
+            <CCol xs="12" sm="4">
+              <label class="form-label">{{ t('students.ward') }}</label>
               <CFormInput v-model="form.ward" />
             </CCol>
-            <CCol xs="12" sm="9">
-              <label class="form-label">{{ t('common.street') }}</label>
+            <CCol xs="12" sm="4">
+              <label class="form-label">{{ t('students.street') }}</label>
               <CFormInput v-model="form.street" />
+            </CCol>
+            <CCol xs="12" sm="4">
+              <label class="form-label">{{ t('students.place') }}</label>
+              <CFormInput v-model="form.place" />
+            </CCol>
+            <CCol xs="12" sm="4">
+              <label class="form-label">{{ t('students.address') }}</label>
+              <CFormInput v-model="form.address" :placeholder="t('students.addressPlaceholder')" />
+            </CCol>
+
+            <!-- Notes -->
+            <CCol xs="12">
+              <label class="form-label">{{ t('students.notes') }}</label>
+              <CFormTextarea v-model="form.notes" rows="2" :placeholder="t('students.notesPlaceholder')" />
             </CCol>
           </CRow>
         </CCol>

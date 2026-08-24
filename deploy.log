@@ -1869,3 +1869,14 @@
 [0;36m[2026-08-24 17:23:52][0m   ShulePay — Release
 [0;36m[2026-08-24 17:23:52][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 17:23:52][0m Checking working tree...
+[0;36m[2026-08-24 17:23:53][0m Files staged for commit:
+[0;36m[2026-08-24 17:23:53][0m Committing: "fix(invoices): deterministic pagination — add id tiebreaker so migration invoices sharing a created_at cannot vanish across page boundaries"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 17:23:53][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 17:23:57][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 17:38:29][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 17:38:29][0m   ShulePay — Release
+[0;36m[2026-08-24 17:38:29][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 17:38:29][0m Checking working tree...
