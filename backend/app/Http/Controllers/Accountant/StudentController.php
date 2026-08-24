@@ -194,17 +194,31 @@ class StudentController extends Controller
 
     public function destroy(Student $student): JsonResponse
     {
-        AuditLog::record('student_deleted', $student, $student->toArray(), []);
+        DB::transaction(function () use ($student) {
+            AuditLog::record('student_deleted', $student, $student->toArray(), []);
 
-        // Soft-deleting the student alone does not cascade to enrollments — the FK's
-        // cascadeOnDelete only fires on a real SQL DELETE, never on a soft delete.
-        // Left untouched, the enrollment stays status='active' forever, so every count
-        // based on active enrollments (dashboard "All Students", etc.) keeps including
-        // a student that was supposedly deleted. Mark enrollments dropped so deletion
-        // actually takes effect everywhere, not just in the students list.
-        $student->enrollments()->where('status', 'active')->update(['status' => 'dropped']);
+            // Soft-deleting the student alone does not cascade to enrollments — the FK's
+            // cascadeOnDelete only fires on a real SQL DELETE, never on a soft delete.
+            // Left untouched, the enrollment stays status='active' forever, so every count
+            // based on active enrollments (dashboard "All Students", etc.) keeps including
+            // a student that was supposedly deleted. Mark enrollments dropped so deletion
+            // actually takes effect everywhere, not just in the students list.
+            $student->enrollments()->where('status', 'active')->update(['status' => 'dropped']);
 
-        $student->delete();
+            // Permanently remove the student's invoices. payments.invoice_id is a
+            // restrictOnDelete FK, and Payment uses SoftDeletes — a soft delete alone
+            // would leave the row in place and still block removing the invoice, so
+            // payments are force-deleted first. invoice_lines cascade automatically
+            // and discounts are nulled automatically (both declared at the DB FK level).
+            $invoices = $student->invoices()->withoutGlobalScope('school')->get();
+            foreach ($invoices as $invoice) {
+                $invoice->payments()->withoutGlobalScope('school')->withTrashed()->get()
+                    ->each(fn ($payment) => $payment->forceDelete());
+                $invoice->delete();
+            }
+
+            $student->delete();
+        });
 
         return response()->json(['message' => 'Student deleted.']);
     }

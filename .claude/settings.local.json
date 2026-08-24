@@ -278,7 +278,9 @@
       "Bash(bash deploy.sh release \"chore: add invoices:cleanup-orphaned command \\(dry-run by default\\) to find invoices whose student was soft-deleted - reports only unless --force is explicitly passed\")",
       "Bash(php -l app/Http/Controllers/Accountant/StudentController.php)",
       "Bash(php -l app/Services/Reporting/DashboardService.php)",
-      "Bash(vendor/bin/pint app/Http/Controllers/Accountant/StudentController.php app/Services/Reporting/DashboardService.php --test)"
+      "Bash(vendor/bin/pint app/Http/Controllers/Accountant/StudentController.php app/Services/Reporting/DashboardService.php --test)",
+      "Bash(vendor/bin/pint app/Http/Controllers/Accountant/StudentController.php --test)",
+      "Bash(bash deploy.sh release \"feat: cascade-delete a student's invoices and payments when the student is deleted - force-deletes payments first to satisfy the restrictOnDelete FK, then removes the invoices; all wrapped in one transaction with enrollment/student deletion\")"
     ]
   }
 }
