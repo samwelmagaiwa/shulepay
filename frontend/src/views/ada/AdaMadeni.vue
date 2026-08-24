@@ -41,6 +41,11 @@
     </CRow>
     </div><!-- end sticky wrapper -->
 
+    <CAlert v-if="receiptError" color="danger" dismissible class="mt-2 py-2"
+            @close="receiptError = ''">
+      {{ receiptError }}
+    </CAlert>
+
     <!-- Filters + Table unified card -->
     <CCard style="margin-top:-2px; border-top-left-radius:0; border-top-right-radius:0;">
       <!-- Filters bar — sticky below the summary cards -->
@@ -273,6 +278,7 @@ import MwanafunziDrawer      from '@/components/MwanafunziDrawer.vue'
 import GenerateInvoiceModal  from '@/components/GenerateInvoiceModal.vue'
 import SmsBlastModal         from '@/components/SmsBlastModal.vue'
 import api                   from '@/services/api'
+import { printReceipt as printReceiptPdf, cleanupReceiptFrame } from '@/utils/receipt'
 
 const { t } = useI18n()
 const invoicesStore = useInvoicesStore()
@@ -367,32 +373,23 @@ function receiptsFor(inv) {
     }))
 }
 
-let printFrame = null
+const printingReceiptId = ref(null)
+const receiptError = ref('')
 
-function printReceipt(receiptId) {
+async function printReceipt(receiptId) {
   if (!receiptId) return
-  const url = `/api/receipts/${receiptId}/download`
-
-  // Same-origin PDF printed from a hidden iframe: no extra tab, and the printed
-  // page is the real branded receipt rather than a screen-styled copy.
-  if (printFrame) printFrame.remove()
-  const frame = document.createElement('iframe')
-  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
-  frame.src = url
-  frame.onload = () => {
-    try {
-      frame.contentWindow.focus()
-      frame.contentWindow.print()
-    } catch {
-      window.open(url, '_blank', 'noopener')
-    }
+  printingReceiptId.value = receiptId
+  receiptError.value = ''
+  try {
+    await printReceiptPdf(receiptId)
+  } catch (e) {
+    receiptError.value = e?.response?.data?.message || t('payments.receiptPrintFailed')
+  } finally {
+    printingReceiptId.value = null
   }
-  frame.onerror = () => window.open(url, '_blank', 'noopener')
-  document.body.appendChild(frame)
-  printFrame = frame
 }
 
-onBeforeUnmount(() => { if (printFrame) printFrame.remove() })
+onBeforeUnmount(cleanupReceiptFrame)
 function closePayModal() {
   showPayModal.value = false
   selectedInvoice.value = null

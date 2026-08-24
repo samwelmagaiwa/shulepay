@@ -21,6 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(HandleCors::class);
+
+        // This backend has no `login` route. Laravel builds the redirect target
+        // while constructing the AuthenticationException, so route('login') threw
+        // RouteNotFoundException first and the guest saw a 500 instead of the JSON
+        // 401 configured below. Returning null skips the redirect entirely.
+        $middleware->redirectGuestsTo(fn () => null);
         $middleware->appendToGroup('api', SetActiveSchool::class);
         $middleware->appendToGroup('api', EnsureUserIsActive::class);
         $middleware->alias([

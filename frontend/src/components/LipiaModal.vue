@@ -67,17 +67,21 @@
       </CAlert>
     </CModalBody>
 
-    <CModalFooter v-if="result" class="gap-2">
+    <CModalFooter v-if="result" class="gap-2 flex-wrap">
+      <CAlert v-if="receiptError" color="danger" class="w-100 py-2 mb-1 small">
+        {{ receiptError }}
+      </CAlert>
       <CButton color="secondary" variant="outline" @click="closeAfterPayment" style="min-height:44px;">
         {{ t('common.close') }}
       </CButton>
-      <CButton color="primary" variant="outline" :disabled="!result.receipt?.id"
+      <CButton color="primary" variant="outline" :disabled="!result.receipt?.id || receiptBusy"
                @click="downloadReceipt" style="min-height:44px;">
         ⬇ {{ t('payments.downloadReceipt') }}
       </CButton>
-      <CButton color="success" :disabled="!result.receipt?.id"
+      <CButton color="success" :disabled="!result.receipt?.id || receiptBusy"
                @click="printReceipt" style="min-height:44px; min-width:140px;">
-        🖨 {{ t('payments.printReceipt') }}
+        <CSpinner v-if="receiptBusy" size="sm" class="me-1" />
+        <span v-else>🖨 {{ t('payments.printReceipt') }}</span>
       </CButton>
     </CModalFooter>
 
@@ -189,6 +193,11 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
 import ReceiptPreview from '@/components/ReceiptPreview.vue'
+import {
+  printReceipt as printReceiptPdf,
+  downloadReceipt as downloadReceiptPdf,
+  cleanupReceiptFrame,
+} from '@/utils/receipt'
 
 const { t } = useI18n()
 
@@ -252,49 +261,29 @@ watch(() => props.visible, (v) => {
 })
 
 // ── Receipt actions ─────────────────────────────────────────────────────────
-const printFrame = ref(null)
-
-function receiptUrl(asDownload = false) {
-  const id = result.value?.receipt?.id
-  return id ? `/api/receipts/${id}/download${asDownload ? '?download=1' : ''}` : null
-}
+const receiptBusy = ref(false)
+const receiptError = ref('')
 
 function cleanupPrintFrame() {
-  if (printFrame.value) {
-    printFrame.value.remove()
-    printFrame.value = null
+  cleanupReceiptFrame()
+}
+
+async function runReceiptAction(fn) {
+  const id = result.value?.receipt?.id
+  if (!id) return
+  receiptBusy.value = true
+  receiptError.value = ''
+  try {
+    await fn(id, result.value?.receipt?.receipt_number)
+  } catch (e) {
+    receiptError.value = e?.response?.data?.message || t('payments.receiptPrintFailed')
+  } finally {
+    receiptBusy.value = false
   }
 }
 
-function printReceipt() {
-  const url = receiptUrl(false)
-  if (!url) return
-
-  // The PDF is same-origin, so it can be loaded into a hidden iframe and printed
-  // directly — no extra tab, and the printed output is the real branded receipt
-  // rather than a screen-styled copy of the card. If the browser refuses (some
-  // block scripted printing of embedded PDFs), fall back to opening it in a tab.
-  cleanupPrintFrame()
-  const frame = document.createElement('iframe')
-  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
-  frame.src = url
-  frame.onload = () => {
-    try {
-      frame.contentWindow.focus()
-      frame.contentWindow.print()
-    } catch {
-      window.open(url, '_blank', 'noopener')
-    }
-  }
-  frame.onerror = () => window.open(url, '_blank', 'noopener')
-  document.body.appendChild(frame)
-  printFrame.value = frame
-}
-
-function downloadReceipt() {
-  const url = receiptUrl(true)
-  if (url) window.open(url, '_blank', 'noopener')
-}
+const printReceipt = () => runReceiptAction(printReceiptPdf)
+const downloadReceipt = () => runReceiptAction(downloadReceiptPdf)
 
 function closeAfterPayment() {
   cleanupPrintFrame()

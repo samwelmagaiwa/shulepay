@@ -749,6 +749,7 @@ export default {
     referenceNumber: 'Reference No.',
     invoiceFullySettled: 'This invoice is now fully settled.',
     remainingBalanceNote: 'Remaining balance: {amount}',
+    receiptPrintFailed: 'Could not open the receipt. Please try again.',
     printReceipt:    'Print Receipt',
     downloadReceipt: 'Download',
     payBtn:          'Pay {amount}',

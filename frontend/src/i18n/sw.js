@@ -749,6 +749,7 @@ export default {
     referenceNumber: 'Nambari ya Kumbukumbu',
     invoiceFullySettled: 'Ankara hii imelipwa yote.',
     remainingBalanceNote: 'Salio lililobaki: {amount}',
+    receiptPrintFailed: 'Imeshindwa kufungua risiti. Tafadhali jaribu tena.',
     printReceipt:    'Chapisha Risiti',
     downloadReceipt: 'Pakua',
     payBtn:          'Lipa {amount}',

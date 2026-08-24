@@ -2063,3 +2063,14 @@ entry recording every id removed."
 [0;36m[2026-08-24 19:22:56][0m   ShulePay — Release
 [0;36m[2026-08-24 19:22:56][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 19:22:56][0m Checking working tree...
+[0;36m[2026-08-24 19:22:56][0m Files staged for commit:
+[0;36m[2026-08-24 19:22:56][0m Committing: "fix: migration invoice numbers use the school code as a full prefix replacement for MIG (MGRTHMR-2026-000001 for secondary, MGRTH-2026-000001 for primary), keeping the original dash-separated 6-digit sequence style; renumbering command now does a simple prefix swap preserving existing sequence numbers instead of reformatting"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 19:22:56][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 19:23:00][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-24 19:35:01][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 19:35:01][0m   ShulePay — Release
+[0;36m[2026-08-24 19:35:01][0m ══════════════════════════════════════════
+[0;36m[2026-08-24 19:35:01][0m Checking working tree...

@@ -667,6 +667,7 @@ import { usePaymentsStore } from '@/stores/payments'
 import { useInstallmentsStore } from '@/stores/installments'
 import StatusBadge from '@/components/StatusBadge.vue'
 import InfoRow from '@/components/InfoRow.vue'
+import { downloadReceipt as downloadReceiptPdf } from '@/utils/receipt'
 import LipiaModal from '@/components/LipiaModal.vue'
 
 const { t } = useI18n()
@@ -908,8 +909,13 @@ function onPaid() {
   loadInstallments()
 }
 
-function downloadReceipt(receiptId) {
-  window.open(`/api/receipts/${receiptId}/download`, '_blank')
+async function downloadReceipt(receiptId) {
+  // Opening the URL directly sends no auth token — see utils/receipt.js
+  try {
+    await downloadReceiptPdf(receiptId)
+  } catch (e) {
+    console.error('Receipt download failed:', e?.response?.data?.message || e.message)
+  }
 }
 
 async function loadPayments() {
