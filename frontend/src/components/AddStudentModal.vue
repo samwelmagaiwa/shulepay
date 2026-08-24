@@ -508,8 +508,7 @@
           <CCol md="6">
             <div class="p-3 rounded-3 border" style="background:#f0f8ff;border-color:#4A9FD4!important;">
               <label class="form-label fw-bold small mb-2 d-flex align-items-center gap-2">
-                💵 {{ t('students.totalTuitionFee') || 'Total Tuition Fee' }}
-                <CBadge color="info" style="font-size:.65rem;">{{ t('common.optional') || 'Optional' }}</CBadge>
+                💵 {{ t('students.totalTuitionFee') || 'Total Tuition Fee' }} <span class="text-danger">*</span>
               </label>
               <div class="text-muted small mb-2" style="font-size:.7rem;">{{ t('students.totalTuitionFeeHint') || 'Define the total tuition fee if no fee structure exists' }}</div>
               <CFormInput
@@ -519,7 +518,9 @@
                 @input="form.total_tuition_fee = parseAmount($event.target.value)"
                 placeholder="0"
                 class="fw-semibold"
+                :class="{'is-invalid': errors.total_tuition_fee}"
               />
+              <div class="invalid-feedback d-block" v-if="errors.total_tuition_fee">{{ errors.total_tuition_fee }}</div>
               <small v-if="form.total_tuition_fee > 0" class="d-block mt-2 text-info">
                 <strong>{{ formatMoney((form.total_tuition_fee || 0) * 100) }}</strong>
               </small>
@@ -890,6 +891,15 @@
               <div class="invalid-feedback d-block" v-if="errors.lumpsum_total_paid">{{ errors.lumpsum_total_paid }}</div>
               <small class="d-block mt-2 text-success fw-bold">{{ formatMoney((form.lumpsum_total_paid || 0) * 100) }}</small>
             </CCol>
+            <CCol md="6" v-if="form.lumpsum_total_paid > 0">
+              <label class="form-label fw-bold mb-2">{{ t('students.lumpsumPaymentDate') || 'When Was This Paid?' }} <span class="text-danger">*</span></label>
+              <CFormInput
+                type="date" v-model="form.lumpsum_payment_date" :max="today"
+                :class="{'is-invalid': errors.lumpsum_payment_date}"
+              />
+              <div class="invalid-feedback d-block" v-if="errors.lumpsum_payment_date">{{ errors.lumpsum_payment_date }}</div>
+              <div class="text-muted small mt-1" style="font-size:.7rem;">{{ t('students.lumpsumPaymentDateHint') || 'The actual historical date this amount was paid — not today, unless it really was.' }}</div>
+            </CCol>
           </CRow>
 
           <!-- Outstanding Balance Summary -->
@@ -919,6 +929,10 @@
             ✅ {{ t('students.allFeesPaidInFull') || 'All fees paid in full' }}
           </CAlert>
         </div>
+
+        <CAlert v-if="errors.payment_history_total" color="danger" class="mt-3 mb-0 small">
+          ⚠️ {{ errors.payment_history_total }}
+        </CAlert>
 
         <!-- Annual Debt Summary -->
         <CCard v-if="form.payment_history.length > 0" class="mt-4 border-0" style="background:#f0f8ff;border-left:4px solid #d32f2f!important;">
@@ -1162,6 +1176,7 @@ function blankForm() {
     // Annual summary (lump sum mode)
     lumpsum_total_charged: 0,
     lumpsum_total_paid: 0,
+    lumpsum_payment_date: '',  // when the recorded amount was actually paid (historical) — must not default to today
   }
 }
 
@@ -1442,6 +1457,11 @@ function validateStep() {
     if (!g?.phone)        errors.value['guardians.0.phone']        = t('guardians.errors.phoneRequired')
     if (!g?.relationship) errors.value['guardians.0.relationship'] = t('guardians.errors.relationshipRequired')
   }
+  if (step.value === 5) {
+    if (!form.value.total_tuition_fee || form.value.total_tuition_fee <= 0) {
+      errors.value.total_tuition_fee = t('students.errors.totalTuitionFeeRequired')
+    }
+  }
   if (step.value === 6) {
     // Only validate if existing student
     if (form.value.is_existing_student) {
@@ -1466,6 +1486,15 @@ function validateStep() {
               }
             })
           })
+
+          // The sum of every term's "Fee amount for this term" must not exceed the
+          // annual Total Tuition Fee defined in Step 5 — that figure is the cap for
+          // the whole year's history.
+          const cap = form.value.total_tuition_fee || 0
+          if (cap > 0 && totalHistoryFees() > cap) {
+            errors.value['payment_history_total'] =
+              `${t('students.errors.termFeesExceedTuition') || 'Total term fees exceed the Total Tuition Fee'}: ${formatMoney(totalHistoryFees() * 100)} > ${formatMoney(cap * 100)}`
+          }
         }
       }
       // Lumpsum mode: validate lumpsum fields
@@ -1474,6 +1503,12 @@ function validateStep() {
           errors.value['lumpsum_total_charged'] = t('students.errors.totalChargedRequired')
         if (!form.value.lumpsum_total_paid || form.value.lumpsum_total_paid < 0)
           errors.value['lumpsum_total_paid'] = t('students.errors.totalPaidRequired')
+        // If any amount was recorded as paid, the historical payment date is required —
+        // without it the backend has no correct date to use and "Today's Collections"
+        // on the dashboard gets silently inflated with old money.
+        if (form.value.lumpsum_total_paid > 0 && !form.value.lumpsum_payment_date) {
+          errors.value['lumpsum_payment_date'] = t('students.errors.lumpsumPaymentDateRequired')
+        }
       }
     }
   }
@@ -1560,6 +1595,7 @@ async function submit() {
       migration_mode: migrationMode.value || 'detailed',
       lumpsum_total_charged_cents: Math.round((f.lumpsum_total_charged || 0) * 100),
       lumpsum_total_paid_cents: Math.round((f.lumpsum_total_paid || 0) * 100),
+      lumpsum_payment_date: f.lumpsum_payment_date || '',
     }
 
     Object.entries(fields).forEach(([k, v]) => fd.append(k, v ?? ''))

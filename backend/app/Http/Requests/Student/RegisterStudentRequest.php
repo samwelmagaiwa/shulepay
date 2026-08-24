@@ -85,6 +85,7 @@ class RegisterStudentRequest extends FormRequest
             // Lump sum mode: annual summary
             'lumpsum_total_charged_cents' => 'nullable|integer|min:0',
             'lumpsum_total_paid_cents' => 'nullable|integer|min:0',
+            'lumpsum_payment_date' => 'nullable|date|before_or_equal:today',
         ];
     }
 

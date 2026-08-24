@@ -463,6 +463,12 @@ class StudentRegistrationService
             // Cap payment to invoice total (no overpayment)
             $paymentAmount = min($totalPaidCents, $totalChargedCents);
 
+            // Use the historical payment date supplied by the user — defaulting to
+            // "now" here would misdate every migrated lumpsum payment as made today,
+            // permanently inflating the dashboard's "Today's Collections" figure for
+            // money that was actually collected on a past date.
+            $paidAt = $data['lumpsum_payment_date'] ?? now()->toDateString();
+
             Payment::create([
                 'invoice_id' => $invoice->id,
                 'student_id' => $student->id,
@@ -470,7 +476,7 @@ class StudentRegistrationService
                 'amount_cents' => $paymentAmount,
                 'method' => 'cash',
                 'reference_number' => null,
-                'paid_at' => now()->toDateString(),
+                'paid_at' => $paidAt,
                 'recorded_by' => auth()->id(),
                 'notes' => 'Imehamishwa kutoka vitabuni - Jumla ya malipo ya juu',
             ]);

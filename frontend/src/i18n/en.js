@@ -517,7 +517,12 @@ export default {
       paymentHistoryRequired: 'Add at least one term history entry',
       totalChargedRequired:   'Enter total amount charged',
       totalPaidRequired:      'Enter total amount paid',
+      totalTuitionFeeRequired: 'Total Tuition Fee is required',
+      termFeesExceedTuition:  'Total term fees exceed the Total Tuition Fee',
+      lumpsumPaymentDateRequired: 'Enter the date this amount was actually paid',
     },
+    lumpsumPaymentDate:      'When Was This Paid?',
+    lumpsumPaymentDateHint:  'The actual historical date this amount was paid — not today, unless it really was.',
   },
   terms: {
     add:              'Add Term',

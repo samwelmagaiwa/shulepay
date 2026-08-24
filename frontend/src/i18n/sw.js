@@ -517,7 +517,12 @@ export default {
       paymentHistoryRequired: 'Ongeza angalau ingizo moja la historia ya muhula',
       totalChargedRequired:   'Ingiza jumla ya kiasi kilichochajiwa',
       totalPaidRequired:      'Ingiza jumla ya kiasi kilicholipwa',
+      totalTuitionFeeRequired: 'Jumla ya ada ya masomo inahitajika',
+      termFeesExceedTuition:  'Jumla ya ada za muhula zinazidi Jumla ya Ada ya Masomo',
+      lumpsumPaymentDateRequired: 'Ingiza tarehe kiasi hiki kililipwa',
     },
+    lumpsumPaymentDate:      'Kililipwa Lini?',
+    lumpsumPaymentDateHint:  'Tarehe halisi ya kihistoria kiasi hiki kililipwa — si leo, isipokuwa kweli ndivyo ilivyokuwa.',
   },
   terms: {
     add:              'Ongeza Muhula',
