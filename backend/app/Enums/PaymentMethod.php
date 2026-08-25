@@ -8,6 +8,7 @@ enum PaymentMethod: string
     case Mpesa = 'mpesa';
     case Bank = 'bank';
     case Cheque = 'cheque';
+    case Sponsor = 'sponsor';
 
     public function label(): string
     {
@@ -16,6 +17,7 @@ enum PaymentMethod: string
             self::Mpesa => 'M-Pesa',
             self::Bank => 'Benki',
             self::Cheque => 'Hundi',
+            self::Sponsor => 'Mfadhili',
         };
     }
 }
