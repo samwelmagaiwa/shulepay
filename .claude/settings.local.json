@@ -405,7 +405,12 @@
       "Bash(ssh root@169.58.188.122 \"docker cp /tmp/cleanup3.php shulepay_backend:/tmp/cleanup3.php && docker exec shulepay_backend php artisan tinker /tmp/cleanup3.php\")",
       "Bash(curl -s http://localhost/api/auth/me -H 'Authorization: Bearer 53|e8R7ypC42SYyobOPxDxCzo6bLU5mlt8eU4kC1Xml130258a0' -H 'Accept: application/json')",
       "Bash(curl -s http://localhost/api/dashboard/stats?school_id=1 -H 'Authorization: Bearer 53|e8R7ypC42SYyobOPxDxCzo6bLU5mlt8eU4kC1Xml130258a0' -H 'Accept: application/json')",
-      "Bash(docker compose exec backend php artisan tinker '--execute= *)"
+      "Bash(docker compose exec backend php artisan tinker '--execute= *)",
+      "Bash(ssh root@169.58.188.122 \"docker ps --format '{{.Names}}\\\\t{{.Status}}'\")",
+      "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\before_stats.php\" root@169.58.188.122:/tmp/before_stats.php)",
+      "Bash(ssh root@169.58.188.122 \"docker cp /tmp/before_stats.php shulepay_backend:/tmp/before_stats.php && docker exec shulepay_backend php artisan tinker /tmp/before_stats.php\")",
+      "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\test_dashboard_classfee.php\" root@169.58.188.122:/tmp/test_dashboard_classfee.php)",
+      "Bash(ssh root@169.58.188.122 \"docker cp /tmp/test_dashboard_classfee.php shulepay_backend:/tmp/test_dashboard_classfee.php && docker exec shulepay_backend php artisan tinker /tmp/test_dashboard_classfee.php\")"
     ]
   }
 }

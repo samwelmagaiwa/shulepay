@@ -8,6 +8,7 @@ use App\Models\Student;
 use App\Services\Pdf\ReportPdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class StatementController extends Controller
@@ -80,12 +81,23 @@ class StatementController extends Controller
             $pdf = app(ReportPdf::class);
             $content = $pdf->studentStatement($student, $invoices);
 
+            $name = 'Taarifa-ya-Ada-'.($student->currentEnrollment?->admission_number ?: $student->id).'.pdf';
+            $name = preg_replace('#[/\\\\]+#', '-', $name);
+
             return response($content, 200, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="statement-'.$student->id.'.pdf"',
+                'Content-Disposition' => 'attachment; filename="'.$name.'"',
             ]);
-        } catch (\Throwable) {
-            return response()->json(['message' => 'PDF haipatikani kwa sasa.'], 501);
+        } catch (\Throwable $e) {
+            // This previously swallowed the exception and returned a bare 501, which
+            // is how an unimplemented ReportPdf::studentStatement() went unnoticed —
+            // the endpoint looked like a deliberate "not supported yet" response.
+            Log::error('[StatementController] Statement PDF failed: '.$e->getMessage(), [
+                'student_id' => $student->id,
+                'exception' => $e::class,
+            ]);
+
+            return response()->json(['message' => 'Imeshindwa kutengeneza taarifa ya ada.'], 500);
         }
     }
 
