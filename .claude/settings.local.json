@@ -323,7 +323,18 @@
       "Bash(MSYS_NO_PATHCONV=1 docker exec shulepay_backend php artisan cache:clear)",
       "Bash(curl -s -o /dev/null -w '%{http_code} ' -H 'Authorization: Bearer __TRACKED_VAR__' -H 'Accept: application/json' -X POST http://localhost/api/sms/reminder -d student_ids[]=1 -H 'Content-Type: application/x-www-form-urlencoded')",
       "Bash(curl -sI http://localhost/)",
-      "Bash(bash deploy.sh release \"security: fix cross-tenant receipt IDOR, non-expiring auth tokens, unverified 2FA-enable, missing security headers, and unthrottled API - see audit report for details\")"
+      "Bash(bash deploy.sh release \"security: fix cross-tenant receipt IDOR, non-expiring auth tokens, unverified 2FA-enable, missing security headers, and unthrottled API - see audit report for details\")",
+      "Bash(curl -sI https://magrethschools.sc.tz/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" https://magrethschools.sc.tz/api/auth/schools)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" -X POST https://magrethschools.sc.tz/api/settings/verify-2fa-enable)",
+      "Bash(ssh -o StrictHostKeyChecking=no root@169.58.188.122 \"cd /www/shulepay && docker compose -f docker-compose.prod.yml exec -T backend php artisan tinker --execute='echo App\\\\Models\\\\FeeStructure::withoutGlobalScopes\\(\\)->count\\(\\);'\")",
+      "Bash(php -l app/Http/Controllers/Accountant/FeeStructureController.php)",
+      "Bash(vendor/bin/pint app/Http/Controllers/Accountant/FeeStructureController.php --test)",
+      "Bash(curl -s -H 'Authorization: Bearer 38|mYMmTGkukuMZXuyua8TYIrP0wIAutNk65Kp8NU3x9cda8855' -H 'Accept: application/json' -X POST http://localhost/api/fee-structures -d 'school_id=1&school_class_id=1&academic_year_id=11&term_id=15&items[0][name]=Tuition&items[0][amount_cents]=50000&items[0][is_optional]=0' -H 'Content-Type: application/x-www-form-urlencoded')",
+      "Bash(MSYS_NO_PATHCONV=1 docker exec shulepay_frontend sh -c \"grep -c 'fee_items' /usr/share/nginx/html/assets/index-Bjiqk6EO.js\")",
+      "Bash(MSYS_NO_PATHCONV=1 docker exec shulepay_frontend sh -c \"ls /usr/share/nginx/html/assets/ | grep -i muundo\")",
+      "Bash(MSYS_NO_PATHCONV=1 docker exec shulepay_frontend sh -c \"grep -l 'fee_items' /usr/share/nginx/html/assets/*.js 2>/dev/null\")",
+      "Bash(bash deploy.sh release \"fix: Fee Structures feature was completely broken - 'name' is a required NOT NULL column but neither store\\(\\) nor storeFullTuition\\(\\) ever set it, so every save attempt 500'd; also fix frontend reading items instead of Eloquent's auto-snake-cased fee_items key, which left the items list and totals blank even after a successful save\")"
     ]
   }
 }

@@ -2143,3 +2143,14 @@ column. Switch to A5 and scale the typography up to suit the wider page."
 [0;36m[2026-08-25 12:18:20][0m   ShulePay — Release
 [0;36m[2026-08-25 12:18:20][0m ══════════════════════════════════════════
 [0;36m[2026-08-25 12:18:20][0m Checking working tree...
+[0;36m[2026-08-25 12:18:21][0m Files staged for commit:
+[0;36m[2026-08-25 12:18:21][0m Committing: "security: fix cross-tenant receipt IDOR, non-expiring auth tokens, unverified 2FA-enable, missing security headers, and unthrottled API - see audit report for details"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-25 12:18:21][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-25 12:18:25][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-25 12:39:50][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 12:39:50][0m   ShulePay — Release
+[0;36m[2026-08-25 12:39:50][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 12:39:50][0m Checking working tree...

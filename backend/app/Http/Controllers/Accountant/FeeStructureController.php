@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Accountant;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
 use App\Models\FeeStructure;
+use App\Models\SchoolClass;
+use App\Models\Term;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -55,11 +57,18 @@ class FeeStructureController extends Controller
             return response()->json(['message' => 'A fee structure already exists for this class and term.'], 422);
         }
 
+        // `name` is a required NOT NULL column with no default — omitting it here
+        // made every attempt to save a per-term fee structure fail with a 500.
+        $schoolClass = SchoolClass::findOrFail($data['school_class_id']);
+        $term = Term::findOrFail($data['term_id']);
+        $year = AcademicYear::findOrFail($data['academic_year_id']);
+
         $structure = FeeStructure::create([
             'school_id' => $data['school_id'],
             'school_class_id' => $data['school_class_id'],
             'academic_year_id' => $data['academic_year_id'],
             'term_id' => $data['term_id'],
+            'name' => "Muundo wa Ada - {$schoolClass->name}, {$term->name}, {$year->name}",
             'fee_mode' => 'per_term',
         ]);
 
@@ -95,6 +104,7 @@ class FeeStructureController extends Controller
 
         $perInstallmentCents = (int) round($data['full_tuition_cents'] / $data['installments_count']);
         $monthsPerInstallment = 12 / $data['installments_count'];
+        $schoolClass = SchoolClass::findOrFail($data['school_class_id']);
 
         $created = [];
         for ($i = 0; $i < $data['installments_count']; $i++) {
@@ -113,11 +123,15 @@ class FeeStructureController extends Controller
                 ], 422);
             }
 
+            // `name` is a required NOT NULL column with no default — omitting it
+            // here made every attempt to save a full-tuition fee structure fail
+            // with a 500.
             $structure = FeeStructure::create([
                 'school_id' => $data['school_id'],
                 'school_class_id' => $data['school_class_id'],
                 'academic_year_id' => $data['academic_year_id'],
                 'term_id' => $term->id,
+                'name' => "Muundo wa Ada - {$schoolClass->name}, {$term->name}, {$year->name}",
                 'fee_mode' => 'full_tuition',
                 'full_tuition_cents' => $data['full_tuition_cents'],
                 'installments_count' => $data['installments_count'],
