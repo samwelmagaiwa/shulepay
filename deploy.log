@@ -2176,3 +2176,29 @@ column. Switch to A5 and scale the typography up to suit the wider page."
 [0;36m[2026-08-25 13:48:51][0m   ShulePay — Release
 [0;36m[2026-08-25 13:48:51][0m ══════════════════════════════════════════
 [0;36m[2026-08-25 13:48:51][0m Checking working tree...
+[0;36m[2026-08-25 13:48:51][0m Files staged for commit:
+[0;36m[2026-08-25 13:48:51][0m Committing: "feat(students): split full sponsorship into paid/free, enforce discount amount, cap terms at 4
+
+Sponsorship now has four values. 'full' keeps its exact meaning (fully sponsored,
+no payments, no fee, no history, zero invoices); 'full_paid' is new — fully
+sponsored but payments are still recorded, so it bills like any other student and
+takes a Sponsored Amount that feeds straight into the annual tuition figure.
+'half' is unchanged. Enum widening is additive, so no existing row changes.
+
+Discount: selecting a type now requires an amount > 0, an amount requires a type,
+and a discount can never exceed the tuition fee.
+
+Payment history: hard cap of 4 terms (an academic year has no more), and the sum
+of term fees may not exceed the annual fee.
+
+All of the above are enforced in RegisterStudentRequest, not just the UI, so a
+stale page or tampered request cannot bypass them."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-25 13:48:52][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-25 13:49:00][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-25 14:00:41][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 14:00:41][0m   ShulePay — Release
+[0;36m[2026-08-25 14:00:41][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 14:00:41][0m Checking working tree...
