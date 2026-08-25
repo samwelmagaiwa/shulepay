@@ -175,24 +175,27 @@ const patientCategories = computed(() => {
     'FORM 4': '#fcd116',
   }
 
-  const cb = dashboard.stats?.class_breakdown || {}
+  // Fee amounts collected per class (cents), not student headcounts —
+  // class_breakdown counts enrollments, which is a different metric.
+  const cb = dashboard.stats?.class_fee_breakdown_cents || {}
 
   const cats = Object.keys(CLASS_KEY_MAP).map((title) => {
     // Custom override takes priority
     if (classOverrides.value[title] !== undefined && classOverrides.value[title] !== '') {
       const val = parseInt(classOverrides.value[title]) || 0
-      return { title, value: val.toLocaleString(), color: colors[title] || '#6c757d', numericValue: val }
+      return { title, value: 'TZS ' + val.toLocaleString(), color: colors[title] || '#6c757d', numericValue: val }
     }
 
-    // Look up real data from class_breakdown using all possible key variants
+    // Look up real data from class_fee_breakdown_cents using all possible key variants
     const keys = CLASS_KEY_MAP[title]
-    const count = keys.reduce((sum, k) => sum + (cb[k] || 0), 0)
+    const totalCents = keys.reduce((sum, k) => sum + (cb[k] || 0), 0)
+    const amount = Math.round(totalCents / 100)
 
     return {
       title,
-      value: count.toLocaleString(),
+      value: 'TZS ' + amount.toLocaleString(),
       color: colors[title] || '#6c757d',
-      numericValue: count,
+      numericValue: amount,
     }
   })
 
@@ -200,7 +203,7 @@ const patientCategories = computed(() => {
 
   return [
     ...cats,
-    { title: 'Total', value: totalSum.toLocaleString(), color: 'grey' },
+    { title: 'Total', value: 'TZS ' + totalSum.toLocaleString(), color: 'grey' },
   ]
 })
 // Configuration Modal State & Methods (Superadmin / Accountant / Owner)

@@ -2304,3 +2304,36 @@ time — so rate = (present + late) / marked days."
 [0;36m[2026-08-25 17:47:16][0m   ShulePay — Release
 [0;36m[2026-08-25 17:47:16][0m ══════════════════════════════════════════
 [0;36m[2026-08-25 17:47:16][0m Checking working tree...
+[0;36m[2026-08-25 17:47:16][0m Files staged for commit:
+[0;36m[2026-08-25 17:47:16][0m Committing: "fix(auth): remove school selector from login — it locked every parent out
+
+With more than one active school the login page required a school. Parents have
+school_id = NULL and no user_school_access rows, so canAccessSchool() returned
+false for every option and AuthController logged them straight back out with
+'You do not have access to that school'. 23 of 24 production parents were
+affected and could not reach the portal at all.
+
+The field was redundant: the backend already returns school_id and
+accessible_school_ids on login, and multi-school users pick their school from the
+existing header switcher. Login is now email + password only.
+
+Deliberately NOT implemented: looking the email up as it is typed to decide
+whether to show the field. An unauthenticated endpoint answering 'does this email
+exist and is it multi-school' is a user-enumeration oracle that also reveals which
+accounts are admins.
+
+The backend school gate is unchanged and still rejects a school the user cannot
+access, for any client that still sends school_id.
+
+Also hides the header school switcher from parents — /api/schools returns all
+active schools to any authenticated user, so they were being offered a switcher
+that does nothing for them."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-25 17:47:16][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-25 17:47:22][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-25 18:06:00][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 18:06:00][0m   ShulePay — Release
+[0;36m[2026-08-25 18:06:00][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 18:06:00][0m Checking working tree...

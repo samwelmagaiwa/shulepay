@@ -402,7 +402,10 @@
       "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\check_balance.php\" root@169.58.188.122:/tmp/check_balance.php)",
       "Bash(ssh root@169.58.188.122 \"docker cp /tmp/check_balance.php shulepay_backend:/tmp/check_balance.php && docker exec shulepay_backend php artisan tinker /tmp/check_balance.php\")",
       "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\cleanup3.php\" root@169.58.188.122:/tmp/cleanup3.php)",
-      "Bash(ssh root@169.58.188.122 \"docker cp /tmp/cleanup3.php shulepay_backend:/tmp/cleanup3.php && docker exec shulepay_backend php artisan tinker /tmp/cleanup3.php\")"
+      "Bash(ssh root@169.58.188.122 \"docker cp /tmp/cleanup3.php shulepay_backend:/tmp/cleanup3.php && docker exec shulepay_backend php artisan tinker /tmp/cleanup3.php\")",
+      "Bash(curl -s http://localhost/api/auth/me -H 'Authorization: Bearer 53|e8R7ypC42SYyobOPxDxCzo6bLU5mlt8eU4kC1Xml130258a0' -H 'Accept: application/json')",
+      "Bash(curl -s http://localhost/api/dashboard/stats?school_id=1 -H 'Authorization: Bearer 53|e8R7ypC42SYyobOPxDxCzo6bLU5mlt8eU4kC1Xml130258a0' -H 'Accept: application/json')",
+      "Bash(docker compose exec backend php artisan tinker '--execute= *)"
     ]
   }
 }

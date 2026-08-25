@@ -139,6 +139,26 @@ class DashboardService
                 strtolower(str_replace(' ', '_', $r->schoolClass->name ?? 'unknown')) => (int) $r->cnt,
             ])->toArray();
 
+        // ── Class fee collection breakdown (1 query) ───────────────────────────
+        // Distinct from $classBreakdown above, which counts enrolled students —
+        // this sums money actually collected per class, joining through
+        // invoices → students → enrollments → school_classes the same way
+        // ReportController::collections' by_class does.
+        $classFeeBreakdown = Payment::allSchools()
+            ->join($invoiceTable, "{$invoiceTable}.id", '=', "{$paymentTable}.invoice_id")
+            ->join('enrollments', function ($join) use ($invoiceTable) {
+                $join->on('enrollments.student_id', '=', "{$invoiceTable}.student_id")
+                    ->where('enrollments.status', 'active');
+            })
+            ->join('school_classes', 'school_classes.id', '=', 'enrollments.school_class_id')
+            ->when($schoolId, fn ($q) => $q->where("{$paymentTable}.school_id", $schoolId))
+            ->selectRaw("school_classes.name as class_name, sum({$paymentTable}.amount_cents) as total")
+            ->groupBy('school_classes.name')
+            ->get()
+            ->mapWithKeys(fn ($r) => [
+                strtolower(str_replace(' ', '_', $r->class_name ?? 'unknown')) => (int) $r->total,
+            ])->toArray();
+
         // ── Top 5 debtors — DB-level sort (replaces full load + PHP sort) ─────
         $topDebtors = (clone $invoiceQ)
             ->whereIn('status', ['unpaid', 'partial'])
@@ -232,6 +252,7 @@ class DashboardService
             'method_breakdown' => $methodBreakdown,
             'school_breakdown' => $schoolBreakdown,
             'class_breakdown' => $classBreakdown,
+            'class_fee_breakdown_cents' => $classFeeBreakdown,
             'top_debtors' => $topDebtors,
         ];
     }

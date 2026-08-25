@@ -16,6 +16,7 @@ use App\Services\Sms\SmsService;
 use App\Services\Sms\SmsTemplates;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -208,11 +209,21 @@ class StudentRegistrationService
             $email = null;
         }
 
+        // Same convention as staff accounts (Owner\UserController,
+        // Superadmin\SuperadminUserController): a known default password plus a
+        // forced change on first login.
+        //
+        // This previously used bcrypt(Str::random(16)) — a password that was never
+        // displayed, never stored anywhere, and never emailed. Combined with the
+        // absence of any password-reset route, that made every guardian account
+        // permanently unreachable: nobody, including the school, could log in as a
+        // parent.
         $user = User::create([
             'name' => $gData['full_name'],
             'email' => $email ?? $gData['phone'].'@guardian.local',
             'phone' => $gData['phone'],
-            'password' => bcrypt(Str::random(16)),
+            'password' => Hash::make('SCHOOL'),
+            'must_change_password' => true,
             'role' => 'parent',
         ]);
 
