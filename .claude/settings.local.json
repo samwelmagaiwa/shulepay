@@ -386,7 +386,12 @@
       "Bash(ssh root@169.58.188.122 \"docker cp /tmp/2026_08_25_130000_widen_discounts_type_enum_to_english.php shulepay_backend:/var/www/html/database/migrations/ && docker exec shulepay_backend php -l database/migrations/2026_08_25_130000_widen_discounts_type_enum_to_english.php && docker exec shulepay_backend php artisan migrate --force\")",
       "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend php artisan tinker /tmp/test_discount.php\")",
       "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\test_discount2.php\" root@169.58.188.122:/tmp/test_discount2.php)",
-      "Bash(ssh root@169.58.188.122 \"docker cp /tmp/test_discount2.php shulepay_backend:/tmp/test_discount2.php && docker exec shulepay_backend php artisan tinker /tmp/test_discount2.php\")"
+      "Bash(ssh root@169.58.188.122 \"docker cp /tmp/test_discount2.php shulepay_backend:/tmp/test_discount2.php && docker exec shulepay_backend php artisan tinker /tmp/test_discount2.php\")",
+      "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\test_full_free.php\" \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\test_full_tamper.php\" root@169.58.188.122:/tmp/)",
+      "Bash(ssh root@169.58.188.122 \"docker cp /tmp/test_full_free.php shulepay_backend:/tmp/test_full_free.php && docker cp /tmp/test_full_tamper.php shulepay_backend:/tmp/test_full_tamper.php && docker exec shulepay_backend php artisan tinker /tmp/test_full_free.php && echo '=====' && docker exec shulepay_backend php artisan tinker /tmp/test_full_tamper.php\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend php artisan tinker /tmp/cleanup.php 2>&1 || true\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend rm -f /tmp/*.php && rm -f /tmp/*.php\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend php artisan tinker --execute=\\\\\"echo DB::select\\(\\\\\\\\\\\\\"SHOW COLUMNS FROM payments WHERE Field='method'\\\\\\\\\\\\\"\\)[0]->Type;\\\\\"\")"
     ]
   }
 }
