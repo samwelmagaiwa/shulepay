@@ -34,7 +34,7 @@ class RegisterStudentRequest extends FormRequest
             'ward' => 'nullable|string|max:100',
             'street' => 'nullable|string|max:100',
             'status' => 'required|in:active,transferred,graduated,dropped,sponsored,orphaned',
-            'sponsorship_type' => 'nullable|in:none,half,full',
+            'sponsorship_type' => 'nullable|in:none,half,full,full_paid',
             'notes' => 'nullable|string',
 
             // Enrollment
@@ -73,8 +73,10 @@ class RegisterStudentRequest extends FormRequest
             // Migration: existing student payment history
             'is_existing_student' => 'nullable|boolean',
             'migration_mode' => 'nullable|in:detailed,lumpsum',
-            // Payment history — lenient validation, detailed mode only enforced in controller
-            'payment_history' => 'nullable|array',
+            // Payment history — lenient validation, detailed mode only enforced in controller.
+            // An academic year has at most four terms, so more than four entries is
+            // always a mistake (or a tampered request) regardless of student type.
+            'payment_history' => 'nullable|array|max:4',
             'payment_history.*.term_id' => 'nullable|exists:terms,id',
             'payment_history.*.academic_year_id' => 'nullable|exists:academic_years,id',
             'payment_history.*.fee_amount_cents' => 'nullable|integer|min:1',
@@ -141,6 +143,74 @@ class RegisterStudentRequest extends FormRequest
             'discount_amount_cents.min' => 'Discount amount cannot be negative.',
             'opening_balance_cents.integer' => 'Opening balance must be a number.',
             'opening_balance_cents.min' => 'Opening balance cannot be negative.',
+            'payment_history.max' => 'An academic year has at most 4 terms.',
         ];
+    }
+
+    /**
+     * Cross-field billing rules. These live here rather than only in the UI so a
+     * stale page or a tampered request cannot create a student whose discount
+     * exceeds the fee, or who is billed while fully sponsored.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $sponsorship = $this->input('sponsorship_type', 'none');
+            $fee = (int) $this->input('total_tuition_fee_cents', 0);
+            $discountType = $this->input('discount_type');
+            $discount = (int) $this->input('discount_amount_cents', 0);
+
+            // 'full' means fully sponsored with no payments at all — it must carry
+            // no fee, no discount and no payment history. 'full_paid' is the
+            // variant that does still bill, so it is excluded here.
+            if ($sponsorship === 'full') {
+                if ($fee > 0) {
+                    $validator->errors()->add('total_tuition_fee_cents',
+                        'A fully sponsored student with no payments cannot have a tuition fee.');
+                }
+                if (! empty($this->input('payment_history'))) {
+                    $validator->errors()->add('payment_history',
+                        'A fully sponsored student with no payments cannot have payment history.');
+                }
+
+                return;
+            }
+
+            // Every other type must carry a positive fee.
+            if ($fee <= 0) {
+                $validator->errors()->add('total_tuition_fee_cents',
+                    $sponsorship === 'full_paid'
+                        ? 'Enter the sponsored amount for this student.'
+                        : 'Total tuition fee is required.');
+            }
+
+            // A discount type without an amount is meaningless, and a discount can
+            // never exceed the fee it is applied to.
+            if ($discountType) {
+                if ($discount <= 0) {
+                    $validator->errors()->add('discount_amount_cents',
+                        'Enter the discount amount for the selected discount type.');
+                } elseif ($fee > 0 && $discount > $fee) {
+                    $validator->errors()->add('discount_amount_cents',
+                        'Discount cannot be greater than the total tuition fee.');
+                }
+            } elseif ($discount > 0) {
+                $validator->errors()->add('discount_type',
+                    'Select a discount type for the amount entered.');
+            }
+
+            // Term fees for the year cannot exceed the annual tuition fee.
+            $history = $this->input('payment_history', []);
+            if (is_array($history) && $history && $fee > 0) {
+                $sum = array_sum(array_map(
+                    fn ($e) => (int) ($e['fee_amount_cents'] ?? 0),
+                    $history
+                ));
+                if ($sum > $fee) {
+                    $validator->errors()->add('payment_history',
+                        'The terms total more than the annual tuition fee.');
+                }
+            }
+        });
     }
 }

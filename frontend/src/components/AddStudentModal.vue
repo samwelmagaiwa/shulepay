@@ -465,18 +465,40 @@
           </label>
           <div class="btn-group w-100" role="group">
             <input type="radio" class="btn-check" id="sponsorNone" value="none" v-model="form.sponsorship_type" autocomplete="off">
-            <label class="btn btn-outline-secondary" for="sponsorNone">{{ t('students.notSponsored') || 'Not Sponsored' }}</label>
+            <label class="btn btn-outline-secondary" for="sponsorNone">{{ t('students.notSponsored') }}</label>
 
             <input type="radio" class="btn-check" id="sponsorHalf" value="half" v-model="form.sponsorship_type" autocomplete="off">
-            <label class="btn btn-outline-warning" for="sponsorHalf">🤝 {{ t('students.halfSponsored') || 'Half Sponsored' }}</label>
+            <label class="btn btn-outline-warning" for="sponsorHalf">🤝 {{ t('students.halfSponsored') }}</label>
+
+            <input type="radio" class="btn-check" id="sponsorFullPaid" value="full_paid" v-model="form.sponsorship_type" autocomplete="off">
+            <label class="btn btn-outline-info" for="sponsorFullPaid">🎗️ {{ t('students.fullySponsoredPaid') }}</label>
 
             <input type="radio" class="btn-check" id="sponsorFull" value="full" v-model="form.sponsorship_type" autocomplete="off">
-            <label class="btn btn-outline-success" for="sponsorFull">🎗️ {{ t('students.fullySponsored') || 'Fully Sponsored' }}</label>
+            <label class="btn btn-outline-success" for="sponsorFull">🎗️ {{ t('students.fullySponsoredFree') }}</label>
           </div>
           <div class="text-muted mt-2" style="font-size:.72rem;">
-            <span v-if="form.sponsorship_type === 'full'">{{ t('students.fullySponsoredHint') || 'Fully covered by a sponsor — no tuition fee to enter, no payment history step.' }}</span>
-            <span v-else-if="form.sponsorship_type === 'half'">{{ t('students.halfSponsoredHint') || 'Partially covered by a sponsor — tracked as a label only; billing continues as normal below.' }}</span>
-            <span v-else>{{ t('students.notSponsoredHint') || 'No sponsorship — standard billing.' }}</span>
+            <span v-if="form.sponsorship_type === 'full'">{{ t('students.fullySponsoredHint') }}</span>
+            <span v-else-if="form.sponsorship_type === 'full_paid'">{{ t('students.fullySponsoredPaidHint') }}</span>
+            <span v-else-if="form.sponsorship_type === 'half'">{{ t('students.halfSponsoredHint') }}</span>
+            <span v-else>{{ t('students.notSponsoredHint') }}</span>
+          </div>
+
+          <!-- Sponsored amount — only for the variant that still records payments.
+               This IS the annual tuition figure, so it writes straight into
+               total_tuition_fee rather than being a second number to reconcile. -->
+          <div v-if="form.sponsorship_type === 'full_paid'" class="mt-3">
+            <label class="form-label fw-semibold small mb-1">
+              {{ t('students.sponsoredAmount') }} <span class="text-danger">*</span>
+            </label>
+            <CFormInput
+              type="text" inputmode="numeric"
+              :value="formatAmount(form.total_tuition_fee || 0)"
+              @input="form.total_tuition_fee = parseAmount($event.target.value)"
+              :class="{'is-invalid': errors.total_tuition_fee}"
+              placeholder="0"
+            />
+            <div class="invalid-feedback d-block" v-if="errors.total_tuition_fee">{{ errors.total_tuition_fee }}</div>
+            <div class="text-muted mt-1" style="font-size:.72rem;">{{ t('students.sponsoredAmountHint') }}</div>
           </div>
         </div>
 
@@ -611,8 +633,22 @@
               <option value="other">{{ t('common.other') }}</option>
             </CFormSelect>
             <div v-if="form.discount_type">
-              <label class="form-label small mb-1">{{ t('students.discountAmount') }} (TZS)</label>
-              <CFormInput type="number" v-model.number="form.discount_amount" min="0" placeholder="0" />
+              <label class="form-label small mb-1">
+                {{ t('students.discountAmount') }} (TZS) <span class="text-danger">*</span>
+              </label>
+              <CFormInput
+                type="text" inputmode="numeric"
+                :value="formatAmount(form.discount_amount || 0)"
+                @input="form.discount_amount = parseAmount($event.target.value)"
+                :class="{'is-invalid': errors.discount_amount}"
+                placeholder="0"
+              />
+              <div class="invalid-feedback d-block" v-if="errors.discount_amount">{{ errors.discount_amount }}</div>
+              <div v-if="!errors.discount_amount && form.discount_amount > 0 && form.total_tuition_fee > 0"
+                   class="text-muted mt-1" style="font-size:.7rem;">
+                {{ t('students.netAfterDiscount') }}:
+                <strong>{{ formatMoney((form.total_tuition_fee - form.discount_amount) * 100) }}</strong>
+              </div>
             </div>
           </div>
 
@@ -878,9 +914,13 @@
           </div>
         </div>
 
-          <CButton color="warning" variant="outline" @click="addTermHistory" style="min-height:44px;">
+          <CButton color="warning" variant="outline" @click="addTermHistory"
+                   :disabled="form.payment_history.length >= MAX_TERMS" style="min-height:44px;">
             + {{ t('students.addTermHistory') }}
           </CButton>
+          <div v-if="form.payment_history.length >= MAX_TERMS" class="text-muted mt-2" style="font-size:.72rem;">
+            {{ t('students.maxTermsReached', { max: MAX_TERMS }) }}
+          </div>
         </div>
 
         <!-- ── ANNUAL SUMMARY MODE: Lump Sum ───────────────────────────── -->
@@ -1403,7 +1443,14 @@ function defaultPayment() {
   return { paid_at: today, amount: 0, method: 'cash', notes: '' }
 }
 
-function addTermHistory() { form.value.payment_history.push(defaultTermEntry()) }
+// An academic year has at most four terms, so the history can never exceed four
+// entries. Mirrored server-side in RegisterStudentRequest.
+const MAX_TERMS = 4
+
+function addTermHistory() {
+  if (form.value.payment_history.length >= MAX_TERMS) return
+  form.value.payment_history.push(defaultTermEntry())
+}
 function removeTermHistory(i) { form.value.payment_history.splice(i, 1) }
 function addPayment(ei) { form.value.payment_history[ei].payments.push(defaultPayment()) }
 function removePayment(ei, pi) { form.value.payment_history[ei].payments.splice(pi, 1) }
@@ -1505,11 +1552,28 @@ function validateStep() {
     if (!g?.relationship) errors.value['guardians.0.relationship'] = t('guardians.errors.relationshipRequired')
   }
   if (step.value === 5) {
-    // Fully-sponsored students have no tuition fee to enter — sponsorship
-    // covers everything, so the field doesn't apply.
+    const fee = form.value.total_tuition_fee || 0
+    const discount = form.value.discount_amount || 0
+
+    // 'full' (fully sponsored, no payments) is the only type with no fee at all.
+    // 'full_paid' still bills, so it needs the sponsored amount just like the rest.
     if (form.value.sponsorship_type !== 'full') {
-      if (!form.value.total_tuition_fee || form.value.total_tuition_fee <= 0) {
-        errors.value.total_tuition_fee = t('students.errors.totalTuitionFeeRequired')
+      if (fee <= 0) {
+        errors.value.total_tuition_fee = form.value.sponsorship_type === 'full_paid'
+          ? t('students.errors.sponsoredAmountRequired')
+          : t('students.errors.totalTuitionFeeRequired')
+      }
+
+      // A discount type with no amount is meaningless, and a discount can never
+      // be larger than the fee it reduces.
+      if (form.value.discount_type) {
+        if (discount <= 0) {
+          errors.value.discount_amount = t('students.errors.discountAmountRequired')
+        } else if (fee > 0 && discount > fee) {
+          errors.value.discount_amount = t('students.errors.discountExceedsFee')
+        }
+      } else if (discount > 0) {
+        errors.value.discount_type = t('students.errors.discountTypeRequired')
       }
     }
   }
@@ -1520,6 +1584,8 @@ function validateStep() {
       if (migrationMode.value === 'detailed') {
         if (!form.value.payment_history || form.value.payment_history.length === 0) {
           errors.value['payment_history'] = t('students.errors.paymentHistoryRequired')
+        } else if (form.value.payment_history.length > MAX_TERMS) {
+          errors.value['payment_history'] = t('students.errors.tooManyTerms', { max: MAX_TERMS })
         } else {
           form.value.payment_history.forEach((entry, ei) => {
             if (!entry.academic_year_id) errors.value[`payment_history.${ei}.academic_year_id`] = t('students.errors.yearRequired')
@@ -1614,8 +1680,13 @@ async function submit() {
     // stale entry (empty term_id, zero fee) still gets sent and the backend
     // correctly 422s it, which then jumps the UI to a step that no longer
     // exists for a fully-sponsored student.
+    // Only 'full' (fully sponsored, no payments) carries no billing at all.
+    // 'full_paid' bills normally, so its fee and history must be sent through.
     if (f.sponsorship_type === 'full') {
       f.payment_history = []
+      f.total_tuition_fee = 0
+      f.discount_type = ''
+      f.discount_amount = 0
     }
 
     const fields = {

@@ -122,6 +122,9 @@ class StudentRegistrationService
             // A fully-sponsored student has no billing at all — enforced here, not just
             // hidden in the UI, so a stale/tampered request can't sneak invoices in for a
             // student who is supposed to owe nothing.
+            // Only 'full' means no billing whatsoever. 'full_paid' is fully sponsored
+            // but payments are still recorded against a fee, so it bills like any
+            // other student — hence the exact match rather than a str_starts_with.
             $isFullySponsored = ($data['sponsorship_type'] ?? 'none') === 'full';
 
             // 6. Migration: create backdated invoices + payments for existing students
