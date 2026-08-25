@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\ParentPortal;
 
 use App\Http\Controllers\Controller;
+use App\Models\Attendance;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Receipt;
@@ -10,6 +11,7 @@ use App\Models\Student;
 use App\Services\Pdf\ReceiptPdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -67,7 +69,14 @@ class DashboardController extends Controller
 
         $byStudent = $invoices->groupBy('student_id');
 
-        $children = $students->map(function (Student $s) use ($byStudent) {
+        // Attendance for the last 30 days, one query for all children.
+        $since = Carbon::today()->subDays(30)->toDateString();
+        $attendance = Attendance::whereIn('student_id', $studentIds)
+            ->where('date', '>=', $since)
+            ->get()
+            ->groupBy('student_id');
+
+        $children = $students->map(function (Student $s) use ($byStudent, $attendance) {
             $rows = $byStudent->get($s->id, collect());
             $enrollment = $s->currentEnrollment;
 
@@ -87,6 +96,7 @@ class DashboardController extends Controller
                 'paid_cents' => $paid,
                 'balance_cents' => max(0, $billed - $paid),
                 'invoice_count' => $rows->count(),
+                'attendance' => $this->attendanceSummary($attendance->get($s->id, collect())),
 
                 // Per-term breakdown so a parent can see which term is outstanding
                 // rather than only a single annual figure.
@@ -155,6 +165,80 @@ class DashboardController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => "{$disposition}; filename=\"{$filename}\"",
         ]);
+    }
+
+    /**
+     * GET /api/parent/attendance?student_id=&month=YYYY-MM
+     *
+     * One child's attendance for a single month, as day records the UI renders as
+     * a calendar. Scoped to the parent's own children.
+     */
+    public function attendance(Request $request): JsonResponse
+    {
+        $request->validate([
+            'student_id' => 'required|integer|exists:students,id',
+            'month' => 'nullable|date_format:Y-m',
+        ]);
+
+        $guardian = $request->user()?->guardian;
+        $studentId = (int) $request->input('student_id');
+
+        $owns = $guardian && $guardian->students()->where('students.id', $studentId)->exists();
+        if (! $owns) {
+            abort(403, 'Access denied — this student is not your child.');
+        }
+
+        $month = $request->filled('month')
+            ? Carbon::createFromFormat('Y-m', $request->input('month'))->startOfMonth()
+            : Carbon::today()->startOfMonth();
+
+        $start = $month->copy()->startOfMonth();
+        $end = $month->copy()->endOfMonth();
+
+        $records = Attendance::where('student_id', $studentId)
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->orderBy('date')
+            ->get(['id', 'date', 'status', 'remarks']);
+
+        $student = Student::find($studentId);
+
+        return response()->json([
+            'student' => ['id' => $studentId, 'name' => $student?->fullName()],
+            'month' => $start->format('Y-m'),
+            'month_label' => $start->format('F Y'),
+            'start_date' => $start->toDateString(),
+            'end_date' => $end->toDateString(),
+            'days_in_month' => $start->daysInMonth,
+            // 1 = Monday .. 7 = Sunday, so the UI can offset the first calendar cell.
+            'first_weekday' => (int) $start->isoWeekday(),
+            'summary' => $this->attendanceSummary($records),
+            'records' => $records->map(fn ($r) => [
+                'date' => Carbon::parse($r->date)->toDateString(),
+                'day' => (int) Carbon::parse($r->date)->day,
+                'status' => $r->status,
+                'remarks' => $r->remarks,
+            ])->all(),
+        ]);
+    }
+
+    /**
+     * Counts plus an attendance rate. Late counts as attended — the pupil was
+     * present, just not on time — so the rate is (present + late) / marked days.
+     */
+    private function attendanceSummary(Collection $records): array
+    {
+        $present = $records->where('status', 'present')->count();
+        $late = $records->where('status', 'late')->count();
+        $absent = $records->where('status', 'absent')->count();
+        $marked = $present + $late + $absent;
+
+        return [
+            'present' => $present,
+            'late' => $late,
+            'absent' => $absent,
+            'marked_days' => $marked,
+            'rate' => $marked > 0 ? (int) round((($present + $late) / $marked) * 100) : null,
+        ];
     }
 
     /** Invoice total as the parent owes it: fees + arrears - discount. */

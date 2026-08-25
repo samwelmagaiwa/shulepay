@@ -121,11 +121,36 @@
                 </CBadge>
               </div>
               <div v-else class="text-muted small text-center py-2">{{ t('dashboard.noInvoice') }}</div>
+
+              <!-- Attendance, last 30 days -->
+              <hr class="my-3" />
+              <div class="text-muted text-uppercase mb-2" style="font-size:.65rem; letter-spacing:.05em;">
+                📋 {{ t('attendance.title') }} — {{ t('dashboard.last30Days') }}
+              </div>
+              <div v-if="child.attendance?.marked_days" class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="att-chip" style="background:rgba(25,135,84,.1);color:#198754;">
+                  {{ child.attendance.present }} {{ t('attendance.present') }}
+                </span>
+                <span class="att-chip" style="background:rgba(253,126,20,.1);color:#fd7e14;">
+                  {{ child.attendance.late }} {{ t('attendance.late') }}
+                </span>
+                <span class="att-chip" style="background:rgba(220,53,69,.1);color:#dc3545;">
+                  {{ child.attendance.absent }} {{ t('attendance.absent') }}
+                </span>
+                <span class="ms-auto fw-bold"
+                      :class="child.attendance.rate >= 80 ? 'text-success' : 'text-danger'">
+                  {{ child.attendance.rate }}%
+                </span>
+              </div>
+              <div v-else class="text-muted small">{{ t('dashboard.noAttendance') }}</div>
             </CCardBody>
-            <CCardFooter class="p-2">
-              <CButton size="sm" color="outline-primary" class="w-100" @click="downloadStatement(child)">
+            <CCardFooter class="p-2 d-flex gap-2">
+              <CButton size="sm" color="outline-primary" class="flex-grow-1" @click="downloadStatement(child)">
                 <CSpinner v-if="child._downloading" size="sm" class="me-1" />
                 📄 {{ t('dashboard.downloadStatement') }}
+              </CButton>
+              <CButton size="sm" color="outline-secondary" class="flex-grow-1" @click="openAttendance(child)">
+                📋 {{ t('dashboard.viewAttendance') }}
               </CButton>
             </CCardFooter>
           </CCard>
@@ -179,6 +204,86 @@
         {{ actionError }}
       </CAlert>
     </div>
+
+    <!-- ── Attendance calendar ─────────────────────────────────────────── -->
+    <CModal :visible="attOpen" @close="attOpen = false" size="lg" alignment="center">
+      <CModalHeader>
+        <CModalTitle>📋 {{ t('attendance.title') }} — {{ attChild?.name }}</CModalTitle>
+      </CModalHeader>
+      <CModalBody>
+        <!-- Month navigation -->
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <CButton size="sm" color="light" @click="shiftMonth(-1)" :disabled="attLoading">‹</CButton>
+          <div class="fw-bold">{{ attData?.month_label || '—' }}</div>
+          <CButton size="sm" color="light" @click="shiftMonth(1)"
+                   :disabled="attLoading || attMonth >= currentMonth">›</CButton>
+        </div>
+
+        <div v-if="attLoading" class="text-center py-5"><CSpinner color="primary" /></div>
+
+        <template v-else-if="attData">
+          <!-- Summary chips, same colour language as the staff register -->
+          <div class="d-flex gap-2 flex-wrap mb-3">
+            <span class="att-chip" style="background:rgba(25,135,84,.1);color:#198754;">
+              ✓ {{ attData.summary.present }} {{ t('attendance.present') }}
+            </span>
+            <span class="att-chip" style="background:rgba(253,126,20,.1);color:#fd7e14;">
+              ⏱ {{ attData.summary.late }} {{ t('attendance.late') }}
+            </span>
+            <span class="att-chip" style="background:rgba(220,53,69,.1);color:#dc3545;">
+              ✕ {{ attData.summary.absent }} {{ t('attendance.absent') }}
+            </span>
+            <span v-if="attData.summary.rate !== null" class="att-chip ms-auto"
+                  :style="attData.summary.rate >= 80
+                    ? 'background:rgba(25,135,84,.1);color:#198754;'
+                    : 'background:rgba(220,53,69,.1);color:#dc3545;'">
+              {{ attData.summary.rate }}% {{ t('dashboard.attendanceRate') }}
+            </span>
+          </div>
+
+          <div v-if="!attData.summary.marked_days" class="text-center text-muted py-4">
+            {{ t('dashboard.noAttendanceMonth') }}
+          </div>
+
+          <template v-else>
+            <!-- Calendar grid -->
+            <div class="att-grid mb-2">
+              <div v-for="d in weekdayLabels" :key="d" class="att-head">{{ d }}</div>
+              <div v-for="b in (attData.first_weekday - 1)" :key="'b'+b" class="att-cell att-blank"></div>
+              <div v-for="day in attData.days_in_month" :key="day"
+                   class="att-cell" :style="dayStyle(day)" :title="dayTitle(day)">
+                {{ day }}
+              </div>
+            </div>
+            <div class="d-flex gap-3 flex-wrap small text-muted">
+              <span><span class="dot" style="background:#198754;"></span> {{ t('attendance.present') }}</span>
+              <span><span class="dot" style="background:#fd7e14;"></span> {{ t('attendance.late') }}</span>
+              <span><span class="dot" style="background:#dc3545;"></span> {{ t('attendance.absent') }}</span>
+              <span><span class="dot" style="background:#e9ecef;"></span> {{ t('dashboard.notMarked') }}</span>
+            </div>
+
+            <!-- Days needing attention -->
+            <div v-if="flaggedDays.length" class="mt-3">
+              <div class="text-muted text-uppercase mb-1" style="font-size:.65rem; letter-spacing:.05em;">
+                {{ t('dashboard.daysNeedingAttention') }}
+              </div>
+              <div v-for="r in flaggedDays" :key="r.date"
+                   class="d-flex justify-content-between align-items-center py-1 small"
+                   style="border-bottom:1px dotted var(--cui-border-color,#e0e0e0);">
+                <span>{{ r.date }}</span>
+                <span class="fw-semibold" :style="{ color: statusColor(r.status) }">
+                  {{ t('attendance.' + r.status) }}
+                  <span v-if="r.remarks" class="text-muted fw-normal ms-1">— {{ r.remarks }}</span>
+                </span>
+              </div>
+            </div>
+          </template>
+        </template>
+      </CModalBody>
+      <CModalFooter>
+        <CButton color="secondary" variant="outline" @click="attOpen = false">{{ t('common.close') }}</CButton>
+      </CModalFooter>
+    </CModal>
   </CContainer>
 </template>
 
@@ -275,6 +380,79 @@ async function printReceipt(receiptId) {
   }
 }
 
+// ── Attendance ──────────────────────────────────────────────────────────────
+const attOpen    = ref(false)
+const attChild   = ref(null)
+const attData    = ref(null)
+const attLoading = ref(false)
+const attMonth   = ref('')
+
+const currentMonth = new Date().toISOString().slice(0, 7)
+const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+// day number -> record, so the calendar can colour cells without re-scanning.
+const recordsByDay = computed(() => {
+  const m = {}
+  for (const r of attData.value?.records || []) m[r.day] = r
+  return m
+})
+
+const flaggedDays = computed(() =>
+  (attData.value?.records || []).filter(r => r.status !== 'present')
+)
+
+function statusColor(status) {
+  return { present: '#198754', late: '#fd7e14', absent: '#dc3545' }[status] || '#6c757d'
+}
+
+function dayStyle(day) {
+  const r = recordsByDay.value[day]
+  if (!r) return { background: '#e9ecef', color: '#adb5bd' }
+  const c = statusColor(r.status)
+  return { background: c, color: '#fff', fontWeight: '600' }
+}
+
+function dayTitle(day) {
+  const r = recordsByDay.value[day]
+  if (!r) return t('dashboard.notMarked')
+  return t('attendance.' + r.status) + (r.remarks ? ` — ${r.remarks}` : '')
+}
+
+async function loadAttendance() {
+  if (!attChild.value) return
+  attLoading.value = true
+  actionError.value = ''
+  try {
+    const { data } = await api.get('/parent/attendance', {
+      params: { student_id: attChild.value.id, month: attMonth.value },
+    })
+    attData.value = data
+    attMonth.value = data.month
+  } catch (e) {
+    attData.value = null
+    actionError.value = e?.response?.data?.message || t('common.loadFailed')
+  } finally {
+    attLoading.value = false
+  }
+}
+
+function openAttendance(child) {
+  attChild.value = child
+  attMonth.value = currentMonth
+  attData.value = null
+  attOpen.value = true
+  loadAttendance()
+}
+
+function shiftMonth(delta) {
+  const [y, m] = attMonth.value.split('-').map(Number)
+  const d = new Date(y, m - 1 + delta, 1)
+  const next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  if (next > currentMonth) return   // no future months to show
+  attMonth.value = next
+  loadAttendance()
+}
+
 onMounted(async () => {
   try {
     // One request for the whole page. This previously issued a /parent/children
@@ -290,3 +468,52 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.att-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Seven equal columns so the day cells line up under the weekday headings. */
+.att-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.att-head {
+  text-align: center;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--cui-secondary-color, #6c757d);
+  padding-bottom: 2px;
+}
+
+.att-cell {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: .8rem;
+}
+
+.att-blank { background: transparent; }
+
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+</style>

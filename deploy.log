@@ -2257,3 +2257,28 @@ stale page or tampered request cannot bypass them."
 [0;36m[2026-08-25 16:57:41][0m   ShulePay — Release
 [0;36m[2026-08-25 16:57:41][0m ══════════════════════════════════════════
 [0;36m[2026-08-25 16:57:41][0m Checking working tree...
+[0;36m[2026-08-25 16:57:41][0m Files staged for commit:
+[0;36m[2026-08-25 16:57:41][0m Committing: "feat(parent): scoped dashboard endpoint, per-term breakdown, own-receipt printing
+
+Adds GET /api/parent/dashboard returning children, per-term balances, summary
+totals and recent payments in one scoped payload. The page previously issued a
+/parent/children call plus a /parent/statement call per child.
+
+Every query starts from $user->guardian->students(), so a parent sees only their
+own children; a user with no guardian record gets an empty dashboard.
+
+Adds GET /api/parent/receipts/{receipt} — the staff receipt route is role-gated,
+so parents had no way to obtain proof of payment. Ownership is checked against
+the guardian's own students.
+
+UI: per-term outstanding breakdown per child, and a recent-payments table with
+print buttons."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-25 16:57:42][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-25 16:57:47][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-25 17:22:48][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 17:22:48][0m   ShulePay — Release
+[0;36m[2026-08-25 17:22:48][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 17:22:48][0m Checking working tree...

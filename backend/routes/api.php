@@ -352,6 +352,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Parent portal — read-only, own children only
     Route::middleware('role:parent')->prefix('parent')->group(function () {
         Route::get('dashboard', [ParentDashboardController::class, 'index']);
+        Route::get('attendance', [ParentDashboardController::class, 'attendance']);
         // Own children's receipts. The staff receipt route is role-gated, so a
         // parent needs this scoped equivalent to get their own proof of payment.
         Route::get('receipts/{receipt}', [ParentDashboardController::class, 'receipt'])
