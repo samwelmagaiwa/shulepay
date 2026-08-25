@@ -65,6 +65,9 @@ class RegisterStudentRequest extends FormRequest
 
             // Financial
             'total_tuition_fee_cents' => 'nullable|integer|min:0',
+            // 'full_paid' sponsorship only: amount the sponsor covers, separate from
+            // the fee itself — recorded as a payment against the invoice.
+            'sponsored_amount_cents' => 'nullable|integer|min:0',
             'discount_type' => 'nullable|in:sibling,staff,sponsor,other',
             'discount_amount_cents' => 'nullable|integer|min:0',
             'opening_balance_cents' => 'nullable|integer|min:0',
@@ -179,9 +182,20 @@ class RegisterStudentRequest extends FormRequest
             // Every other type must carry a positive fee.
             if ($fee <= 0) {
                 $validator->errors()->add('total_tuition_fee_cents',
-                    $sponsorship === 'full_paid'
-                        ? 'Enter the sponsored amount for this student.'
-                        : 'Total tuition fee is required.');
+                    'Total tuition fee is required.');
+            }
+
+            // 'full_paid': the sponsor's covered amount is separate from the fee —
+            // it must be entered, and it can never exceed the fee it applies to.
+            if ($sponsorship === 'full_paid') {
+                $sponsored = (int) $this->input('sponsored_amount_cents', 0);
+                if ($sponsored <= 0) {
+                    $validator->errors()->add('sponsored_amount_cents',
+                        'Enter the amount the sponsor is covering.');
+                } elseif ($fee > 0 && $sponsored > $fee) {
+                    $validator->errors()->add('sponsored_amount_cents',
+                        'Sponsored amount cannot be greater than the total tuition fee.');
+                }
             }
 
             // A discount type without an amount is meaningless, and a discount can

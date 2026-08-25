@@ -484,21 +484,25 @@
           </div>
 
           <!-- Sponsored amount — only for the variant that still records payments.
-               This IS the annual tuition figure, so it writes straight into
-               total_tuition_fee rather than being a second number to reconcile. -->
+               This is separate from Total Tuition Fee below: the invoice is raised
+               for the full fee, and this amount is recorded as a payment against
+               it, leaving the remainder as the balance still owed. -->
           <div v-if="form.sponsorship_type === 'full_paid'" class="mt-3">
             <label class="form-label fw-semibold small mb-1">
               {{ t('students.sponsoredAmount') }} <span class="text-danger">*</span>
             </label>
             <CFormInput
               type="text" inputmode="numeric"
-              :value="formatAmount(form.total_tuition_fee || 0)"
-              @input="form.total_tuition_fee = parseAmount($event.target.value)"
-              :class="{'is-invalid': errors.total_tuition_fee}"
+              :value="formatAmount(form.sponsored_amount || 0)"
+              @input="form.sponsored_amount = parseAmount($event.target.value)"
+              :class="{'is-invalid': errors.sponsored_amount}"
               placeholder="0"
             />
-            <div class="invalid-feedback d-block" v-if="errors.total_tuition_fee">{{ errors.total_tuition_fee }}</div>
+            <div class="invalid-feedback d-block" v-if="errors.sponsored_amount">{{ errors.sponsored_amount }}</div>
             <div class="text-muted mt-1" style="font-size:.72rem;">{{ t('students.sponsoredAmountHint') }}</div>
+            <div v-if="form.total_tuition_fee > 0 && form.sponsored_amount > 0" class="mt-2 small fw-semibold" :class="form.sponsored_amount >= form.total_tuition_fee ? 'text-success' : 'text-warning'">
+              {{ t('students.remainingBalance') }}: {{ formatMoney(Math.max(0, form.total_tuition_fee - form.sponsored_amount) * 100) }}
+            </div>
           </div>
         </div>
 
@@ -1242,7 +1246,7 @@ function blankForm() {
     // Guardians
     guardians: [defaultGuardian()],
     // Financial
-    total_tuition_fee: 0, opening_balance: 0, discount_type: '', discount_amount: 0,
+    total_tuition_fee: 0, sponsored_amount: 0, opening_balance: 0, discount_type: '', discount_amount: 0,
     generate_first_invoice: false,  // Existing students don't generate first invoice
     // Migration
     is_existing_student: true,  // Default: all students are existing (migrating from books)
@@ -1556,12 +1560,20 @@ function validateStep() {
     const discount = form.value.discount_amount || 0
 
     // 'full' (fully sponsored, no payments) is the only type with no fee at all.
-    // 'full_paid' still bills, so it needs the sponsored amount just like the rest.
     if (form.value.sponsorship_type !== 'full') {
       if (fee <= 0) {
-        errors.value.total_tuition_fee = form.value.sponsorship_type === 'full_paid'
-          ? t('students.errors.sponsoredAmountRequired')
-          : t('students.errors.totalTuitionFeeRequired')
+        errors.value.total_tuition_fee = t('students.errors.totalTuitionFeeRequired')
+      }
+
+      // 'full_paid': the sponsored amount is separate from the fee — it's what
+      // the sponsor covers, and it can never exceed the fee itself.
+      if (form.value.sponsorship_type === 'full_paid') {
+        const sponsored = form.value.sponsored_amount || 0
+        if (sponsored <= 0) {
+          errors.value.sponsored_amount = t('students.errors.sponsoredAmountRequired')
+        } else if (fee > 0 && sponsored > fee) {
+          errors.value.sponsored_amount = t('students.errors.sponsoredAmountExceedsFee')
+        }
       }
 
       // A discount type with no amount is meaningless, and a discount can never
@@ -1718,6 +1730,7 @@ async function submit() {
       enrollment_date:        f.enrollment_date,
       previous_school:        f.previous_school,
       total_tuition_fee_cents: Math.round((f.total_tuition_fee || 0) * 100),
+      sponsored_amount_cents: f.sponsorship_type === 'full_paid' ? Math.round((f.sponsored_amount || 0) * 100) : 0,
       opening_balance_cents:  Math.round((f.opening_balance || 0) * 100),
       discount_type:          f.discount_type || '',
       discount_amount_cents:  Math.round((f.discount_amount || 0) * 100),

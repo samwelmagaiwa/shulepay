@@ -438,6 +438,28 @@ class StudentRegistrationService
             $invoice->save();
         }
 
+        // 'full_paid' sponsorship: the sponsor covers a fixed amount of the fee,
+        // separate from the fee itself. Record it as a payment against the
+        // invoice — same as any other payment — so the balance due is exactly
+        // the fee minus what the sponsor already covered.
+        if (($data['sponsorship_type'] ?? 'none') === 'full_paid') {
+            $sponsoredCents = (int) ($data['sponsored_amount_cents'] ?? 0);
+            if ($sponsoredCents > 0) {
+                Payment::create([
+                    'invoice_id' => $invoice->id,
+                    'student_id' => $student->id,
+                    'school_id' => $data['school_id'],
+                    'receipt_id' => app(ReceiptService::class)->issue($student->id)->id,
+                    'amount_cents' => min($sponsoredCents, $totalCents),
+                    'method' => 'sponsor',
+                    'reference_number' => null,
+                    'paid_at' => now()->toDateString(),
+                    'recorded_by' => auth()->id(),
+                    'notes' => 'Sponsor payment recorded at registration',
+                ]);
+            }
+        }
+
         $invoice->syncStatus();
     }
 
