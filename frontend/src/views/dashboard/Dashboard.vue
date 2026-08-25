@@ -140,6 +140,8 @@ const getCategoryIcon = (title) => {
 // Maps display title → backend class_breakdown key(s) from DashboardService
 // Keys are: strtolower(str_replace(' ', '_', class_name))
 // e.g. "Darasa la 1" → "darasa_la_1", "PP 1" → "pp_1", "Kidato la 1" → "kidato_la_1"
+// Production secondary classes are spelled out ("FORM ONE".."FORM FOUR") rather
+// than numbered, so both forms need covering — form_4/form4 AND form_four.
 const CLASS_KEY_MAP = {
   'PP1':    ['pp_1', 'pp1'],
   'PP2':    ['pp_2', 'pp2'],
@@ -150,10 +152,10 @@ const CLASS_KEY_MAP = {
   'STD 5':  ['darasa_la_5', 'std_5', 'std5'],
   'STD 6':  ['darasa_la_6', 'std_6', 'std6'],
   'STD 7':  ['darasa_la_7', 'std_7', 'std7'],
-  'FORM 1': ['kidato_la_1', 'form_1', 'form1'],
-  'FORM 2': ['kidato_la_2', 'form_2', 'form2'],
-  'FORM 3': ['kidato_la_3', 'form_3', 'form3'],
-  'FORM 4': ['kidato_la_4', 'form_4', 'form4'],
+  'FORM 1': ['kidato_la_1', 'form_1', 'form1', 'form_one'],
+  'FORM 2': ['kidato_la_2', 'form_2', 'form2', 'form_two'],
+  'FORM 3': ['kidato_la_3', 'form_3', 'form3', 'form_three'],
+  'FORM 4': ['kidato_la_4', 'form_4', 'form4', 'form_four'],
 }
 
 const classOverrides = ref(JSON.parse(localStorage.getItem('shulepay_class_overrides') || '{}'))
