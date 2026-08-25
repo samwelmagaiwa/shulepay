@@ -2337,3 +2337,25 @@ that does nothing for them."
 [0;36m[2026-08-25 18:06:00][0m   ShulePay — Release
 [0;36m[2026-08-25 18:06:00][0m ══════════════════════════════════════════
 [0;36m[2026-08-25 18:06:00][0m Checking working tree...
+[0;36m[2026-08-25 18:06:01][0m Files staged for commit:
+[0;36m[2026-08-25 18:06:01][0m Committing: "fix(auth): parent accounts were created with an unknowable password
+
+resolveGuardian() set bcrypt(Str::random(16)) on every guardian user. That
+password was never displayed, stored or sent, and the API has no
+forgot/reset-password route, so no parent could ever sign in — 0 of 26 production
+parents had must_change_password and none matched any known default.
+
+Guardians now follow the same convention as staff accounts: Hash::make('SCHOOL')
+plus must_change_password, so the parent is forced to set their own on first login.
+
+Adds parents:reset-passwords (with --dry-run, --email, --all) to recover the
+existing locked-out accounts. It writes only the password and that flag."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-25 18:06:01][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-25 18:06:07][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-25 18:15:27][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 18:15:27][0m   ShulePay — Release
+[0;36m[2026-08-25 18:15:28][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 18:15:28][0m Checking working tree...
