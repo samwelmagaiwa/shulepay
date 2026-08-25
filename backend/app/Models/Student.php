@@ -20,6 +20,7 @@ class Student extends Model
         'date_of_birth',
         'gender',
         'status',
+        'sponsorship_type',
         'notes',
         'birth_certificate_no',
         'nationality',

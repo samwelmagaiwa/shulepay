@@ -19,6 +19,7 @@ class StudentResource extends JsonResource
             'date_of_birth' => $this->date_of_birth?->format('Y-m-d'),
             'gender' => $this->gender,
             'status' => $this->status,
+            'sponsorship_type' => $this->sponsorship_type,
             'birth_certificate_no' => $this->birth_certificate_no,
             'nationality' => $this->nationality,
             'blood_group' => $this->blood_group,

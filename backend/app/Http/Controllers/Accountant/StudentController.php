@@ -168,6 +168,7 @@ class StudentController extends Controller
 
         $fields = [
             'first_name', 'middle_name', 'last_name', 'date_of_birth', 'gender', 'status',
+            'sponsorship_type',
             'birth_certificate_no', 'nationality', 'religion',
             'blood_group', 'allergies', 'medical_conditions',
             'address', 'region', 'district', 'ward', 'street', 'place',

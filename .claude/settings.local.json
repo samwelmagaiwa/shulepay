@@ -334,7 +334,13 @@
       "Bash(MSYS_NO_PATHCONV=1 docker exec shulepay_frontend sh -c \"grep -c 'fee_items' /usr/share/nginx/html/assets/index-Bjiqk6EO.js\")",
       "Bash(MSYS_NO_PATHCONV=1 docker exec shulepay_frontend sh -c \"ls /usr/share/nginx/html/assets/ | grep -i muundo\")",
       "Bash(MSYS_NO_PATHCONV=1 docker exec shulepay_frontend sh -c \"grep -l 'fee_items' /usr/share/nginx/html/assets/*.js 2>/dev/null\")",
-      "Bash(bash deploy.sh release \"fix: Fee Structures feature was completely broken - 'name' is a required NOT NULL column but neither store\\(\\) nor storeFullTuition\\(\\) ever set it, so every save attempt 500'd; also fix frontend reading items instead of Eloquent's auto-snake-cased fee_items key, which left the items list and totals blank even after a successful save\")"
+      "Bash(bash deploy.sh release \"fix: Fee Structures feature was completely broken - 'name' is a required NOT NULL column but neither store\\(\\) nor storeFullTuition\\(\\) ever set it, so every save attempt 500'd; also fix frontend reading items instead of Eloquent's auto-snake-cased fee_items key, which left the items list and totals blank even after a successful save\")",
+      "Bash(xargs -I{} cat {})",
+      "Bash(grep -n 'protected $fillable' -A 20 app/Models/Student.php)",
+      "Bash(MSYS_NO_PATHCONV=1 docker exec shulepay_backend php artisan migrate:status)",
+      "Bash(MSYS_NO_PATHCONV=1 docker exec shulepay_frontend sh -c \"ls /usr/share/nginx/html/assets/ | grep '^index-'\")",
+      "Bash(vendor/bin/pint --test)",
+      "Bash(bash deploy.sh release \"feat: add sponsorship level to student registration \\(Not/Half/Fully Sponsored\\) - fully-sponsored students skip Step 6 entirely, need no tuition fee, and get zero invoices, enforced server-side even if the request is tampered with; half-sponsored is a reporting label only, billing unchanged; fix a real TDZ crash and a stale-payment-history bug found while verifying the full-sponsorship flow end-to-end\")"
     ]
   }
 }

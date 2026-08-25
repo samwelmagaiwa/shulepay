@@ -73,6 +73,7 @@ class StudentRegistrationService
                 'street' => $data['street'] ?? null,
                 'photo' => $photoPath,
                 'status' => $data['status'] ?? 'active',
+                'sponsorship_type' => $data['sponsorship_type'] ?? 'none',
                 'notes' => $data['notes'] ?? null,
             ]);
 
@@ -118,11 +119,16 @@ class StudentRegistrationService
                 ]);
             }
 
+            // A fully-sponsored student has no billing at all — enforced here, not just
+            // hidden in the UI, so a stale/tampered request can't sneak invoices in for a
+            // student who is supposed to owe nothing.
+            $isFullySponsored = ($data['sponsorship_type'] ?? 'none') === 'full';
+
             // 6. Migration: create backdated invoices + payments for existing students
             $isExisting = ! empty($data['is_existing_student']);
             $migrationMode = $data['migration_mode'] ?? 'detailed';
 
-            if ($isExisting) {
+            if ($isExisting && ! $isFullySponsored) {
                 if ($migrationMode === 'lumpsum') {
                     // Annual summary mode: create single consolidated invoice
                     $this->importLumpsumPaymentHistory($student, $data);
@@ -133,7 +139,7 @@ class StudentRegistrationService
             }
 
             // 7. Generate first invoice if requested (skip for existing — history covers it)
-            $generateInvoice = ! $isExisting && (isset($data['generate_first_invoice'])
+            $generateInvoice = ! $isExisting && ! $isFullySponsored && (isset($data['generate_first_invoice'])
                 ? (bool) $data['generate_first_invoice']
                 : true);
 

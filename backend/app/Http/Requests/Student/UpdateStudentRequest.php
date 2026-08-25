@@ -38,6 +38,7 @@ class UpdateStudentRequest extends FormRequest
             // Must mirror RegisterStudentRequest — a student registered as sponsored or
             // orphaned was previously impossible to save from the edit form.
             'status' => 'sometimes|in:active,transferred,graduated,dropped,sponsored,orphaned',
+            'sponsorship_type' => 'sometimes|in:none,half,full',
             'birth_certificate_no' => 'nullable|string|max:50',
             'nationality' => 'nullable|string|max:50',
             'religion' => 'nullable|string|max:50',

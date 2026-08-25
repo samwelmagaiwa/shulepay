@@ -458,6 +458,30 @@
       <!-- ═══════════════ STEP 5: Financial ═══════════════ -->
       <div v-if="step === 5">
 
+        <!-- ── Sponsorship level ──────────────────────────────────────── -->
+        <div class="p-3 rounded-3 border mb-3" style="background:#faf5ff;border-color:#8b5cf6!important;">
+          <label class="form-label fw-bold small mb-2 d-flex align-items-center gap-2">
+            🎗️ {{ t('students.sponsorshipLevel') || 'Sponsorship' }}
+          </label>
+          <div class="btn-group w-100" role="group">
+            <input type="radio" class="btn-check" id="sponsorNone" value="none" v-model="form.sponsorship_type" autocomplete="off">
+            <label class="btn btn-outline-secondary" for="sponsorNone">{{ t('students.notSponsored') || 'Not Sponsored' }}</label>
+
+            <input type="radio" class="btn-check" id="sponsorHalf" value="half" v-model="form.sponsorship_type" autocomplete="off">
+            <label class="btn btn-outline-warning" for="sponsorHalf">🤝 {{ t('students.halfSponsored') || 'Half Sponsored' }}</label>
+
+            <input type="radio" class="btn-check" id="sponsorFull" value="full" v-model="form.sponsorship_type" autocomplete="off">
+            <label class="btn btn-outline-success" for="sponsorFull">🎗️ {{ t('students.fullySponsored') || 'Fully Sponsored' }}</label>
+          </div>
+          <div class="text-muted mt-2" style="font-size:.72rem;">
+            <span v-if="form.sponsorship_type === 'full'">{{ t('students.fullySponsoredHint') || 'Fully covered by a sponsor — no tuition fee to enter, no payment history step.' }}</span>
+            <span v-else-if="form.sponsorship_type === 'half'">{{ t('students.halfSponsoredHint') || 'Partially covered by a sponsor — tracked as a label only; billing continues as normal below.' }}</span>
+            <span v-else>{{ t('students.notSponsoredHint') || 'No sponsorship — standard billing.' }}</span>
+          </div>
+        </div>
+
+        <template v-if="form.sponsorship_type !== 'full'">
+
         <!-- ── Fee structure preview ──────────────────────────────────── -->
         <div class="fw-semibold text-muted small mb-2 text-uppercase" style="letter-spacing:.05em;">💰 {{ t('fees.title') }}</div>
 
@@ -608,6 +632,11 @@
           </div>
 
         </div>
+
+        </template>
+        <CAlert v-else color="success" class="mb-3">
+          🎗️ {{ t('students.fullySponsoredConfirm') || 'This student is fully sponsored — no tuition fee or payment history is needed. They will be saved with no invoices.' }}
+        </CAlert>
 
         <!-- Summary card — full review before submit -->
         <CCard class="mt-4" style="border:1.5px solid #007f3e;">
@@ -1139,7 +1168,11 @@ const steps = computed(() => {
     t('students.stepGuardians'),
     t('students.stepFinancial'),
   ]
-  if (form.value.is_existing_student) base.push(t('students.stepMigration'))
+  // A fully-sponsored student has no billing at all — no payment history/
+  // migration step makes sense since there's nothing to ever collect.
+  if (form.value.is_existing_student && form.value.sponsorship_type !== 'full') {
+    base.push(t('students.stepMigration'))
+  }
   return base
 })
 
@@ -1157,6 +1190,7 @@ function blankForm() {
     gender: '', date_of_birth: '',
     birth_certificate_no: '', nationality: 'Tanzanian', religion: '',
     status: 'active',
+    sponsorship_type: 'none', // 'none' | 'half' | 'full'
     // Health
     blood_group: '', allergies: '', medical_conditions: '',
     // Address
@@ -1181,6 +1215,19 @@ function blankForm() {
 }
 
 const form = ref(blankForm())
+
+// The steps array can shrink at runtime (e.g. switching to Fully Sponsored
+// removes the Payment History step). If the user was sitting on a step number
+// that no longer exists, clamp back onto the new last step instead of leaving
+// step.value pointing past the end of the array — otherwise "step === steps.length"
+// never matches, the Save button never renders, and the modal gets stuck.
+// Placed here (after both `form` and `step` exist) deliberately: watch()
+// evaluates its source once synchronously to capture a baseline, and `steps`
+// reads form.value — declaring this watch any earlier reads form before its
+// own `const form = ref(...)` has run.
+watch(steps, (newSteps) => {
+  if (step.value > newSteps.length) step.value = newSteps.length
+})
 
 function formatAmount(val) {
   if (!val && val !== 0) return ''
@@ -1458,8 +1505,12 @@ function validateStep() {
     if (!g?.relationship) errors.value['guardians.0.relationship'] = t('guardians.errors.relationshipRequired')
   }
   if (step.value === 5) {
-    if (!form.value.total_tuition_fee || form.value.total_tuition_fee <= 0) {
-      errors.value.total_tuition_fee = t('students.errors.totalTuitionFeeRequired')
+    // Fully-sponsored students have no tuition fee to enter — sponsorship
+    // covers everything, so the field doesn't apply.
+    if (form.value.sponsorship_type !== 'full') {
+      if (!form.value.total_tuition_fee || form.value.total_tuition_fee <= 0) {
+        errors.value.total_tuition_fee = t('students.errors.totalTuitionFeeRequired')
+      }
     }
   }
   if (step.value === 6) {
@@ -1558,6 +1609,14 @@ async function submit() {
     if (f.is_existing_student && migrationMode.value === 'lumpsum') {
       f.payment_history = []
     }
+    // Fully-sponsored students never go through Step 6, but blankForm() seeds
+    // payment_history with one blank entry by default — without this guard that
+    // stale entry (empty term_id, zero fee) still gets sent and the backend
+    // correctly 422s it, which then jumps the UI to a step that no longer
+    // exists for a fully-sponsored student.
+    if (f.sponsorship_type === 'full') {
+      f.payment_history = []
+    }
 
     const fields = {
       admission_no:           f.admission_no,
@@ -1579,6 +1638,7 @@ async function submit() {
       street:                 f.street,
       place:                  f.place,
       status:                 f.status,
+      sponsorship_type:       f.sponsorship_type || 'none',
       notes:                  f.notes,
       school_id:              f.school_id,
       school_class_id:        f.school_class_id,

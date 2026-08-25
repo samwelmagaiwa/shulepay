@@ -34,6 +34,7 @@ class RegisterStudentRequest extends FormRequest
             'ward' => 'nullable|string|max:100',
             'street' => 'nullable|string|max:100',
             'status' => 'required|in:active,transferred,graduated,dropped,sponsored,orphaned',
+            'sponsorship_type' => 'nullable|in:none,half,full',
             'notes' => 'nullable|string',
 
             // Enrollment
