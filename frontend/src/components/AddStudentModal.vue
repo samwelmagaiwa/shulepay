@@ -634,7 +634,7 @@
             </CFormSelect>
             <div v-if="form.discount_type">
               <label class="form-label small mb-1">
-                {{ t('students.discountAmount') }} (TZS) <span class="text-danger">*</span>
+                {{ t('students.discountAmount') }} <span class="text-danger">*</span>
               </label>
               <CFormInput
                 type="text" inputmode="numeric"
