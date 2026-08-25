@@ -39,6 +39,8 @@ class StudentResource extends JsonResource
             'admission_number' => $enrollment?->admission_number,
             'school_id' => $enrollment?->school_id,
             'school_class_id' => $enrollment?->school_class_id,
+            'academic_year_id' => $enrollment?->academic_year_id,
+            'term_id' => $enrollment?->term_id,
             'school_class' => $enrollment ? [
                 'id' => $enrollment->schoolClass?->id,
                 'name' => $enrollment->schoolClass?->name,
@@ -81,6 +83,9 @@ class StudentResource extends JsonResource
                     'id' => $g->id,
                     'full_name' => $g->fullName(),
                     'phone' => $g->phone,
+                    'email' => $g->email,
+                    'national_id' => $g->national_id,
+                    'address' => $g->address,
                     'is_primary' => (bool) $g->pivot->is_primary,
                     'relation' => $g->pivot->relation,
                 ])

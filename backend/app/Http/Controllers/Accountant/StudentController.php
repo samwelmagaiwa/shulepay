@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Accountant;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\RegisterStudentRequest;
 use App\Http\Requests\Student\StoreStudentRequest;
+use App\Http\Requests\Student\UpdateStudentFullRequest;
 use App\Http\Requests\Student\UpdateStudentRequest;
 use App\Http\Resources\StudentResource;
 use App\Models\AuditLog;
 use App\Models\School;
 use App\Models\Student;
 use App\Services\Students\StudentRegistrationService;
+use App\Services\Students\StudentUpdateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -18,7 +20,10 @@ use Illuminate\Support\Facades\DB;
 
 class StudentController extends Controller
 {
-    public function __construct(private StudentRegistrationService $registrationService) {}
+    public function __construct(
+        private StudentRegistrationService $registrationService,
+        private StudentUpdateService $updateService
+    ) {}
 
     public function register(RegisterStudentRequest $request): JsonResponse
     {
@@ -191,6 +196,17 @@ class StudentController extends Controller
         AuditLog::record('student_updated', $student, $before, $student->fresh()->toArray());
 
         return new StudentResource($student->load(['currentEnrollment.schoolClass', 'currentEnrollment.school']));
+    }
+
+    public function updateFull(UpdateStudentFullRequest $request, Student $student): StudentResource
+    {
+        $student = $this->updateService->update(
+            $student,
+            $request->validated(),
+            $request->file('photo')
+        );
+
+        return new StudentResource($student);
     }
 
     public function destroy(Student $student): JsonResponse

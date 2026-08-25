@@ -175,7 +175,7 @@ class StudentRegistrationService
         });
     }
 
-    private function resolveGuardian(array $gData): Guardian
+    public function resolveGuardian(array $gData): Guardian
     {
         $gData['phone'] = self::normalizePhone($gData['phone']);
         $gData['alt_phone'] = isset($gData['alt_phone']) && $gData['alt_phone']
@@ -374,7 +374,7 @@ class StudentRegistrationService
         return sprintf('%s-%s-%06d', $code, $year, ((int) $seq) + 1);
     }
 
-    private function generateInvoice(Student $student, array $data): void
+    public function generateInvoice(Student $student, array $data): void
     {
         $openingBalance = (int) ($data['opening_balance_cents'] ?? 0);
         $discountCents = (int) ($data['discount_amount_cents'] ?? 0);

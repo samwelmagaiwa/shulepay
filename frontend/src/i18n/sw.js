@@ -480,6 +480,8 @@ export default {
     remainingBalance: 'Kiasi Kilichobaki',
     generateFirstInvoice: 'Tengeneza Ankara ya Kwanza',
     generateFirstInvoiceHint: 'Ankara ya muhula huu itatengenezwa moja kwa moja wakati wa kuhifadhi',
+    generateNewInvoice: 'Tengeneza Ankara Mpya',
+    generateNewInvoiceHint: 'Si lazima — inatengeneza ankara moja mpya kwa ada iliyowekwa hapa chini. Ankara na malipo yaliyopo hayabadiliki kamwe.',
     registrationSummary: 'Muhtasari wa Usajili',
     stepPersonal:    'Taarifa za Mwanafunzi',
     stepHealthAddress: 'Afya & Makazi',

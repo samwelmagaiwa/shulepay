@@ -142,20 +142,15 @@
       </CModalFooter>
     </CModal>
 
-    <!-- Add Student Modal -->
+    <!-- Add / Edit Student Modal — the full registration wizard doubles as the
+         edit flow when opened with mode="edit" and an editStudentId. -->
     <AddStudentModal
-      :visible="showAddModal"
-      @close="showAddModal = false"
+      :visible="showAddModal || showEditModal"
+      :mode="showEditModal ? 'edit' : 'create'"
+      :edit-student-id="showEditModal ? editStudent?.id : null"
+      @close="showAddModal = false; showEditModal = false"
       @saved="onStudentSaved"
       @registered="onStudentSaved"
-    />
-
-    <!-- Edit Student Modal -->
-    <EditStudentModal
-      :visible="showEditModal"
-      :student="editStudent"
-      @close="showEditModal = false"
-      @saved="onStudentSaved"
     />
   </CContainer>
 </template>
@@ -171,7 +166,6 @@ import { useSchoolStore }   from '@/stores/school'
 import StatusBadge         from '@/components/StatusBadge.vue'
 import MwanafunziDrawer    from '@/components/MwanafunziDrawer.vue'
 import AddStudentModal     from '@/components/AddStudentModal.vue'
-import EditStudentModal    from '@/components/EditStudentModal.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -273,6 +267,7 @@ async function doDelete() {
 
 function onStudentSaved() {
   showAddModal.value = false
+  showEditModal.value = false
   fetchData()
 }
 

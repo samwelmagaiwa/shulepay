@@ -480,6 +480,8 @@ export default {
     remainingBalance: 'Remaining Balance',
     generateFirstInvoice: 'Generate First Invoice',
     generateFirstInvoiceHint: 'An invoice for this term will be created automatically on save',
+    generateNewInvoice: 'Generate New Invoice',
+    generateNewInvoiceHint: 'Optional — creates one new invoice for the fee entered below. Existing invoices and payments are never changed.',
     registrationSummary: 'Registration Summary',
     stepPersonal:    'Student Information',
     stepHealthAddress: 'Health & Address',

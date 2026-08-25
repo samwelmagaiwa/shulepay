@@ -1,7 +1,7 @@
 <template>
   <CModal :visible="visible" @close="$emit('close')" size="xl" class="modal-fullscreen-sm-down" :backdrop="'static'" scrollable>
     <CModalHeader style="border-bottom:2px solid #007f3e;">
-      <CModalTitle class="fw-bold">{{ t('students.register') }}</CModalTitle>
+      <CModalTitle class="fw-bold">{{ isEditMode ? t('students.edit') : t('students.register') }}</CModalTitle>
       <div v-if="draftSaved" class="text-end text-success" style="font-size:.75rem;">
         ✓ {{ t('students.draftSaved') || 'Draft saved' }}
       </div>
@@ -32,8 +32,10 @@
         </div>
       </div>
 
-      <!-- ── New / Existing toggle (STRONG DEFAULT) ──────────────────────────────────────── -->
-      <div v-if="!showResumeDialog" class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3 border"
+      <!-- ── New / Existing toggle (STRONG DEFAULT) ── hidden in edit mode: an
+           already-registered student's migration history was a one-time import,
+           not something to redo on every edit. ──────────────────────────────── -->
+      <div v-if="!showResumeDialog && !isEditMode" class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3 border"
            :style="form.is_existing_student
              ? 'border-color:#007f3e!important;background:#f0f9f5;border-width:2px!important;box-shadow:0 0 0 3px rgba(0,127,62,.1);'
              : 'border-color:#e0e0e0!important;background:#f9f9f9;'">
@@ -661,9 +663,9 @@
             <template v-if="!form.is_existing_student">
               <div class="d-flex align-items-center gap-2">
                 <CFormSwitch v-model="form.generate_first_invoice" id="genInvoice" size="xl" />
-                <div class="fw-semibold small">{{ t('students.generateFirstInvoice') }}</div>
+                <div class="fw-semibold small">{{ isEditMode ? t('students.generateNewInvoice') : t('students.generateFirstInvoice') }}</div>
               </div>
-              <div class="text-muted" style="font-size:.72rem;">{{ t('students.generateFirstInvoiceHint') }}</div>
+              <div class="text-muted" style="font-size:.72rem;">{{ isEditMode ? t('students.generateNewInvoiceHint') : t('students.generateFirstInvoiceHint') }}</div>
             </template>
             <template v-else>
               <div class="text-warning fw-semibold small">📚 {{ t('students.isExistingStudent') }}</div>
@@ -1102,8 +1104,16 @@ import studentDraftService from '@/services/studentDraftService'
 
 const { t } = useI18n()
 
-const props = defineProps({ visible: Boolean })
-const emit  = defineEmits(['close', 'registered'])
+const props = defineProps({
+  visible: Boolean,
+  // 'create' (default) registers a brand-new student. 'edit' reopens this same
+  // wizard prefilled with an existing student's data and saves through
+  // PUT /students/{id}/full instead of POST /students/register.
+  mode: { type: String, default: 'create' },
+  editStudentId: { type: [Number, String], default: null },
+})
+const emit  = defineEmits(['close', 'registered', 'saved'])
+const isEditMode = computed(() => props.mode === 'edit')
 
 const schoolsStore = useSchoolsStore()
 const schoolStore  = useSchoolStore()
@@ -1214,7 +1224,9 @@ const steps = computed(() => {
   ]
   // A fully-sponsored student has no billing at all — no payment history/
   // migration step makes sense since there's nothing to ever collect.
-  if (form.value.is_existing_student && form.value.sponsorship_type !== 'full') {
+  // Edit mode never shows it either: migration history is a one-time import
+  // for a student's pre-ShulePay records, not something to redo on every edit.
+  if (!isEditMode.value && form.value.is_existing_student && form.value.sponsorship_type !== 'full') {
     base.push(t('students.stepMigration'))
   }
   return base
@@ -1559,8 +1571,13 @@ function validateStep() {
     const fee = form.value.total_tuition_fee || 0
     const discount = form.value.discount_amount || 0
 
-    // 'full' (fully sponsored, no payments) is the only type with no fee at all.
-    if (form.value.sponsorship_type !== 'full') {
+    // Edit mode: the financial fields are opt-in (see generate_first_invoice,
+    // relabeled "Generate New Invoice" in edit mode) — skip requiring them
+    // unless the toggle is on, since most edits touch identity/class/guardians
+    // only and must never be blocked by an unrelated blank fee field.
+    if (isEditMode.value && !form.value.generate_first_invoice) {
+      // fall through with no checks
+    } else if (form.value.sponsorship_type !== 'full') {
       if (fee <= 0) {
         errors.value.total_tuition_fee = t('students.errors.totalTuitionFeeRequired')
       }
@@ -1678,6 +1695,11 @@ async function submit() {
   saving.value = true
   submitError.value = ''
   errors.value = {}
+
+  if (isEditMode.value) {
+    await submitEdit()
+    return
+  }
 
   try {
     const fd = new FormData()
@@ -1807,6 +1829,88 @@ async function submit() {
   }
 }
 
+// Edit mode saves through a dedicated endpoint (PUT /students/{id}/full) with
+// a leaner payload than registration — no admission number, no enrollment
+// date, no lumpsum/migration fields. Fee/discount are only sent when the user
+// explicitly opted in via the "Generate New Invoice" toggle (form.generate_first_invoice),
+// so a save that only changed, say, the phone number never touches billing at all.
+async function submitEdit() {
+  try {
+    const fd = new FormData()
+    const f  = form.value
+
+    const fields = {
+      first_name:             f.first_name,
+      middle_name:            f.middle_name,
+      last_name:              f.last_name,
+      gender:                 f.gender,
+      date_of_birth:          f.date_of_birth,
+      birth_certificate_no:   f.birth_certificate_no,
+      nationality:            f.nationality || 'Tanzanian',
+      religion:               f.religion,
+      blood_group:            f.blood_group,
+      allergies:              f.allergies,
+      medical_conditions:     f.medical_conditions,
+      address:                f.address,
+      region:                 f.region,
+      district:               f.district,
+      ward:                   f.ward,
+      street:                 f.street,
+      place:                  f.place,
+      status:                 f.status,
+      sponsorship_type:       f.sponsorship_type || 'none',
+      notes:                  f.notes,
+      school_class_id:        f.school_class_id,
+    }
+    Object.entries(fields).forEach(([k, v]) => fd.append(k, v ?? ''))
+
+    f.guardians.forEach((g, i) => {
+      Object.entries(g).forEach(([k, v]) => {
+        if (!k.startsWith('_')) fd.append(`guardians[${i}][${k}]`, v ?? '')
+      })
+    })
+
+    if (f.generate_first_invoice) {
+      fd.append('generate_new_invoice', 1)
+      fd.append('total_tuition_fee_cents', Math.round((f.total_tuition_fee || 0) * 100))
+      fd.append('sponsored_amount_cents', f.sponsorship_type === 'full_paid' ? Math.round((f.sponsored_amount || 0) * 100) : 0)
+      fd.append('opening_balance_cents', Math.round((f.opening_balance || 0) * 100))
+      fd.append('discount_type', f.discount_type || '')
+      fd.append('discount_amount_cents', Math.round((f.discount_amount || 0) * 100))
+    }
+
+    if (photoFile.value) fd.append('photo', photoFile.value)
+    fd.append('_method', 'PUT')
+
+    await api.post(`/students/${props.editStudentId}/full`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+
+    emit('saved')
+    resetForm()
+  } catch (e) {
+    if (e?.response?.status === 422) {
+      const errs = e.response.data.errors || {}
+      errors.value = Object.fromEntries(Object.entries(errs).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]))
+      submitError.value = t('common.fixErrors')
+      const firstErr = Object.keys(errors.value)[0]
+      if (['first_name','last_name','gender','date_of_birth','status','nationality'].includes(firstErr)) {
+        step.value = 1
+      } else if (['blood_group','allergies','medical_conditions','address','region','district','ward','street','religion'].includes(firstErr)) {
+        step.value = 2
+      } else if (firstErr === 'school_class_id') {
+        step.value = 3
+      } else if (firstErr?.startsWith('guardians')) {
+        step.value = 4
+      } else {
+        step.value = 5
+      }
+    } else {
+      submitError.value = e?.response?.data?.message || t('common.saveFailed')
+    }
+  } finally {
+    saving.value = false
+  }
+}
+
 function resetForm() {
   step.value = 1
   photoPreview.value = null
@@ -1829,6 +1933,15 @@ const hasDraft = ref(false)
 watch(() => props.visible, async (v) => {
   if (v) {
     resetForm()
+
+    // Edit mode never touches drafts or migration/autosave — it's loading an
+    // already-saved student, not resuming an in-progress registration.
+    if (isEditMode.value && props.editStudentId) {
+      await initializeModal()
+      await loadStudentForEdit(props.editStudentId)
+      return
+    }
+
     // Check if there's a draft available
     if (schoolStore.activeSchoolId) {
       const drafts = await studentDraftService.getDrafts(schoolStore.activeSchoolId)
@@ -1849,6 +1962,79 @@ async function initializeModal() {
   // Restore the current-year default and its terms
   const currentYear = academicYears.value.find(y => y.is_current) || academicYears.value[0]
   if (currentYear) form.value.academic_year_id = currentYear.id
+}
+
+async function loadStudentForEdit(id) {
+  draftLoading.value = true
+  try {
+    const { data } = await api.get(`/students/${id}`)
+    const s = data.data || data
+
+    form.value.admission_no        = s.admission_number || ''
+    form.value.first_name          = s.first_name || ''
+    form.value.middle_name         = s.middle_name || ''
+    form.value.last_name           = s.last_name || ''
+    form.value.gender              = s.gender || ''
+    form.value.date_of_birth       = s.date_of_birth || ''
+    form.value.birth_certificate_no= s.birth_certificate_no || ''
+    form.value.nationality         = s.nationality || 'Tanzanian'
+    form.value.religion            = s.religion || ''
+    form.value.status              = s.status || 'active'
+    form.value.sponsorship_type    = s.sponsorship_type || 'none'
+    form.value.blood_group         = s.blood_group || ''
+    form.value.allergies           = s.allergies || ''
+    form.value.medical_conditions  = s.medical_conditions || ''
+    hasAllergies.value             = !!s.allergies
+    form.value.address             = s.address || ''
+    form.value.region              = s.region || ''
+    form.value.district            = s.district || ''
+    form.value.ward                = s.ward || ''
+    form.value.street              = s.street || ''
+    form.value.place               = s.place || ''
+    form.value.notes               = s.notes || ''
+    form.value.school_id           = s.school_id || ''
+    form.value.school_class_id     = s.school_class_id || ''
+    if (s.academic_year_id) form.value.academic_year_id = s.academic_year_id
+    if (s.term_id) form.value.term_id = s.term_id
+    if (s.photo) photoPreview.value = s.photo
+
+    if (Array.isArray(s.guardians) && s.guardians.length > 0) {
+      form.value.guardians = s.guardians.map(g => ({
+        full_name: g.full_name || '',
+        relationship: g.relation || '',
+        phone: g.phone || '',
+        alt_phone: '',
+        email: g.email || '',
+        id_type: '',
+        national_id: g.national_id || '',
+        address: g.address || '',
+        is_primary_contact: !!g.is_primary,
+        _exists: true,
+      }))
+    }
+
+    // Migration/payment-history has no place in edit mode — hide Step 6 and
+    // never let a stale blank entry from blankForm() get submitted.
+    form.value.is_existing_student = false
+    form.value.payment_history = []
+
+    // Financial fields are opt-in only in edit mode (see generate_new_invoice
+    // in submit()) — left blank rather than guessed, since the student's
+    // actual fee/discount at registration isn't persisted anywhere to read back.
+    form.value.total_tuition_fee = 0
+    form.value.sponsored_amount  = 0
+    form.value.discount_type     = ''
+    form.value.discount_amount   = 0
+    form.value.opening_balance   = 0
+    form.value.generate_first_invoice = false
+
+    if (form.value.academic_year_id) await loadTerms(form.value.academic_year_id)
+    if (s.term_id) form.value.term_id = s.term_id
+  } catch (e) {
+    submitError.value = t('common.loadFailed') || 'Failed to load student.'
+  } finally {
+    draftLoading.value = false
+  }
 }
 
 function onResume() {
