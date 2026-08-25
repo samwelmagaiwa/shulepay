@@ -8,22 +8,19 @@ const { t } = useI18n()
 const auth         = useAuthStore()
 const email        = ref('')
 const password     = ref('')
-const schoolId     = ref('')
 const isLoading    = ref(false)
 const errorMessage = ref('')
-const schoolError  = ref('')
 
 const schools      = ref([])
 const schoolsLoaded = ref(false)
 
 // ── Dynamic branding for login page ──────────────────────────────────────────
-// Derived directly from the selected school's branding data (included in /auth/schools).
-// Keeps the login page lightweight — no store, no extra API call.
+// Branding only — the user no longer picks a school here. With a single school we
+// show its branding; with several there is no way to know which one the visitor
+// belongs to before they authenticate, so fall back to the product default.
 const loginBranding = computed(() => {
-  const selected = schoolId.value
-    ? schools.value.find((s) => s.id == schoolId.value)
-    : schools.value.length === 1 ? schools.value[0] : null
-  return selected?.branding ?? { app_name: 'ShulePay', app_tagline: 'nexoryaTECH', logo_url: null }
+  const only = schools.value.length === 1 ? schools.value[0] : null
+  return only?.branding ?? { app_name: 'ShulePay', app_tagline: 'nexoryaTECH', logo_url: null }
 })
 
 const loginLogoError = ref(false)
@@ -34,7 +31,7 @@ onMounted(async () => {
     const { data } = await api.get('/auth/schools')
     schools.value = data
     // Auto-select if only one school
-    if (data.length === 1) schoolId.value = data[0].id
+    // Fetched for branding only — see loginBranding above.
   } catch {
     schools.value = []
   } finally {
@@ -44,34 +41,24 @@ onMounted(async () => {
 
 async function handleLogin() {
   errorMessage.value = ''
-  schoolError.value  = ''
 
   if (!email.value || !password.value) {
     errorMessage.value = 'Tafadhali jaza barua pepe na neno la siri.'
-    return
-  }
-  if (schools.value.length > 1 && !schoolId.value) {
-    schoolError.value = 'Tafadhali chagua shule.'
     return
   }
 
   isLoading.value = true
 
   try {
-    await auth.login(email.value, password.value, schoolId.value !== '' ? schoolId.value : null)
+    // No school_id: the backend resolves the user's school from their own record.
+    await auth.login(email.value, password.value)
     window.location.href = '/dashibodi'
   } catch (e) {
     const errors = e?.response?.data?.errors
-    const msg = errors?.school_id?.[0]
-             || errors?.email?.[0]
-             || e?.response?.data?.message
-             || e?.message
-             || t('auth.errorInvalid')
-    if (errors?.school_id) {
-      schoolError.value = errors.school_id[0]
-    } else {
-      errorMessage.value = msg
-    }
+    errorMessage.value = errors?.email?.[0]
+                      || e?.response?.data?.message
+                      || e?.message
+                      || t('auth.errorInvalid')
     isLoading.value = false
   }
 }
@@ -403,23 +390,15 @@ async function handleLogin() {
             </div>
           </div>
 
-          <!-- School selector — shown when multiple schools exist -->
-          <div v-if="schoolsLoaded && schools.length > 1" class="form-group mb-5">
-            <label class="form-label">🏫 {{ t('auth.selectSchool') }}</label>
-            <select
-              v-model="schoolId"
-              class="form-input"
-              :class="schoolError ? 'input-error' : ''"
-              :disabled="isLoading"
-              style="cursor:pointer;"
-            >
-              <option value="">{{ t('auth.schoolPlaceholder') }}</option>
-              <option v-for="s in schools" :key="s.id" :value="s.id">
-                {{ s.name }}{{ s.level ? ' (' + s.level + ')' : '' }}
-              </option>
-            </select>
-            <div v-if="schoolError" class="field-error">{{ schoolError }}</div>
-          </div>
+          <!-- No school selector here by design.
+               The school a user belongs to is already on their account, and the
+               backend returns school_id / accessible_school_ids on login. Asking
+               at this point was redundant for single-school staff, impossible for
+               parents (whose school_id is null, so canAccessSchool() rejected every
+               option and locked them out), and any "which school is this email in?"
+               hint before authentication would leak account existence and role.
+               Multi-school users pick their school from the header switcher after
+               logging in. -->
 
           <button type="submit" class="submit-btn" :disabled="isLoading">
             <span v-if="!isLoading">{{ t('auth.login') }}</span>

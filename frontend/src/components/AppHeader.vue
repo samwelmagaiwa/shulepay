@@ -40,8 +40,12 @@ if (typeof window !== 'undefined') {
 }
 
 // School switcher — visible whenever the user has access to more than one school
+// A parent has no school context at all — their view is scoped by which children
+// belong to them, not by an active school. /api/schools still returns every active
+// school to any authenticated user, so without this a parent would be offered a
+// switcher that does nothing for them.
 const showSchoolSwitcher = computed(
-  () => schoolStore.schools.length > 1,
+  () => schoolStore.schools.length > 1 && !auth.isParent,
 )
 
 function switchSchool(id) {

@@ -2282,3 +2282,25 @@ print buttons."
 [0;36m[2026-08-25 17:22:48][0m   ShulePay — Release
 [0;36m[2026-08-25 17:22:48][0m ══════════════════════════════════════════
 [0;36m[2026-08-25 17:22:48][0m Checking working tree...
+[0;36m[2026-08-25 17:22:48][0m Files staged for commit:
+[0;36m[2026-08-25 17:22:48][0m Committing: "feat(parent): show child attendance in the parent portal
+
+Adds GET /api/parent/attendance?student_id=&month=YYYY-MM returning one child's
+month of attendance, scoped to the parent's own children (403 otherwise), plus a
+30-day attendance summary on each child card in the dashboard payload.
+
+UI: present/late/absent chips on the child card using the same colour language as
+the staff register, and a month calendar with prev/next navigation, a colour
+legend, and a list of days needing attention (late/absent with remarks).
+
+Attendance rate counts late as attended — the pupil was present, just not on
+time — so rate = (present + late) / marked days."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-25 17:22:49][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-25 17:22:54][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-25 17:47:16][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 17:47:16][0m   ShulePay — Release
+[0;36m[2026-08-25 17:47:16][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 17:47:16][0m Checking working tree...
