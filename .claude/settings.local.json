@@ -393,7 +393,9 @@
       "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend rm -f /tmp/*.php && rm -f /tmp/*.php\")",
       "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend php artisan tinker --execute=\\\\\"echo DB::select\\(\\\\\\\\\\\\\"SHOW COLUMNS FROM payments WHERE Field='method'\\\\\\\\\\\\\"\\)[0]->Type;\\\\\"\")",
       "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend php artisan migrate:status | tail -3\")",
-      "Bash(bash deploy.sh release \"style: fix Pint violations in the two new enum-widening migrations\")"
+      "Bash(bash deploy.sh release \"style: fix Pint violations in the two new enum-widening migrations\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend php artisan tinker --execute=\\\\\"echo App\\\\Models\\\\Student::count\\(\\);\\\\\"\")",
+      "Bash(bash deploy.sh release \"fix\\(payments\\): add Sponsor case to PaymentMethod enum\")"
     ]
   }
 }
