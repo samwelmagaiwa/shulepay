@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(HandleCors::class);
+        $middleware->throttleApi();
 
         // This backend has no `login` route. Laravel builds the redirect target
         // while constructing the AuthenticationException, so route('login') threw

@@ -36,7 +36,7 @@
             <span class="small fw-semibold text-danger">Due: {{ formatAmount(plan.installment_amount_cents - (plan.paid_amount_cents || 0)) }}</span>
             <CButton v-if="plan.status !== 'completed' && plan.status !== 'paid'" size="sm" color="primary"
                      @click="recordPayment(plan)" style="min-height:44px;">
-              {{ t('installments.recordPayment') }}
+              {{ t('installments.recordPayment') }}i 
             </CButton>
           </div>
         </div>

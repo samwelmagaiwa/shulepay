@@ -50,7 +50,12 @@ return [
     |
     */
 
-    'expiration' => null,
+    // 7 days — previously null (tokens never expired). A generous window chosen
+    // deliberately so this doesn't disrupt staff already using the app; it still
+    // meaningfully bounds how long a stolen/leaked token stays valid, versus
+    // forever. Applies to every issued token retroactively, including ones
+    // already in use — no other code change needed for this to take effect.
+    'expiration' => 60 * 24 * 7,
 
     /*
     |--------------------------------------------------------------------------

@@ -90,6 +90,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('settings/profile', [UserSettingsController::class, 'updateProfile']);
     Route::post('settings/change-password', [UserSettingsController::class, 'changePassword']);
     Route::post('settings/toggle-2fa', [UserSettingsController::class, 'toggle2fa']);
+    Route::post('settings/verify-2fa-enable', [UserSettingsController::class, 'verify2faEnable'])
+        ->middleware('throttle:5,15');
 
     // Stationary requests — teaching staff can request; finance can manage
     Route::get('stationary/items', [StationaryController::class, 'availableItems'])
@@ -152,15 +154,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('discounts', DiscountController::class)->only(['index', 'store', 'destroy']);
 
         // Invoices
+        // generate can create invoices across many students at once — throttled
+        // to bound how often that expensive bulk write can be triggered.
         Route::post('invoices/generate-preview', [InvoiceController::class, 'generatePreview']);
-        Route::post('invoices/generate', [InvoiceController::class, 'generate']);
+        Route::post('invoices/generate', [InvoiceController::class, 'generate'])->middleware('throttle:20,1');
         Route::apiResource('invoices', InvoiceController::class)->only(['index', 'show']);
 
         // Payments
         Route::apiResource('payments', PaymentController::class)->only(['index', 'store']);
 
-        // Receipts
-        Route::get('receipts/{receipt}/download', [ReceiptController::class, 'download']);
+        // Receipts — PDF rendering is CPU-heavy, throttled to bound abuse cost.
+        Route::get('receipts/{receipt}/download', [ReceiptController::class, 'download'])->middleware('throttle:30,1');
 
         // Refunds
         Route::apiResource('refunds', RefundController::class)->only(['index', 'store', 'destroy']);
@@ -235,8 +239,10 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
         // ── Phase 4: SMS ──────────────────────────────────────────
-        Route::post('sms/blast', [SmsController::class, 'blast']);
-        Route::post('sms/reminder', [SmsController::class, 'reminder']);
+        // Each call can message many recipients and costs real money per SMS —
+        // throttled tighter than the default API limit to bound abuse cost.
+        Route::post('sms/blast', [SmsController::class, 'blast'])->middleware('throttle:10,1');
+        Route::post('sms/reminder', [SmsController::class, 'reminder'])->middleware('throttle:10,1');
         Route::get('sms/logs', [SmsController::class, 'logs']);
 
         // ── Phase 5: Academics & Missing Modules ──────────────────
@@ -348,6 +354,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('children/{student}', [ChildController::class, 'show'])
             ->middleware('parent.owns_student');
         Route::get('statement', [StatementController::class, 'index']);
-        Route::get('statement/pdf', [StatementController::class, 'download']);
+        // PDF rendering is CPU-heavy, throttled to bound abuse cost.
+        Route::get('statement/pdf', [StatementController::class, 'download'])->middleware('throttle:30,1');
     });
 });

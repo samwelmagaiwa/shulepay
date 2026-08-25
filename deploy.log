@@ -2121,3 +2121,25 @@ column. Switch to A5 and scale the typography up to suit the wider page."
 [0;36m[2026-08-24 20:08:56][0m   ShulePay — Release
 [0;36m[2026-08-24 20:08:56][0m ══════════════════════════════════════════
 [0;36m[2026-08-24 20:08:56][0m Checking working tree...
+[0;36m[2026-08-24 20:08:56][0m Files staged for commit:
+[0;36m[2026-08-24 20:08:56][0m Committing: "fix(receipt): A5 layout guaranteed to one page; rename migrated fee line
+
+- Fee line description 'Ada iliyohamishwa (kutoka vitabuni)' -> 'Ada ya muhula'
+  (applies to newly imported terms; existing rows need the data update below)
+- Receipt overflowed onto a second page, pushing 'Imepokelewa na' and the footer
+  off the first. Tightened the A5 layout, added a condensed mode past five fee
+  lines, and collapse the tail into one 'Vipengele vingine (n)' row. Verified
+  single page from 1 to 100 lines.
+- Print buttons now show a spinner while the PDF is fetched"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-24 20:08:57][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 20:08:57][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-24 20:09:01][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-25 12:18:20][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 12:18:20][0m   ShulePay — Release
+[0;36m[2026-08-25 12:18:20][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 12:18:20][0m Checking working tree...

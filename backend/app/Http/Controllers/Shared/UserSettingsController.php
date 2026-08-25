@@ -106,36 +106,73 @@ class UserSettingsController extends Controller
 
     /**
      * POST /api/settings/toggle-2fa
+     * Disabling takes effect immediately. Enabling only sends a verification OTP —
+     * 2fa_enabled is NOT flipped here. It previously was flipped unconditionally on
+     * this same request, which sent an OTP that nothing ever checked, making 2FA
+     * enable functionally unprotected by its own verification step. The frontend
+     * must call verify-2fa-enable with the code to actually complete enabling.
      */
     public function toggle2fa(Request $request): JsonResponse
     {
         $user = $request->user();
         $current = (bool) $user->{'2fa_enabled'};
 
-        if (! $current && ! $user->phone) {
+        if ($current) {
+            $user->update(['2fa_enabled' => false]);
+
+            return response()->json(['enabled' => false, 'message' => '2FA imezimwa.']);
+        }
+
+        if (! $user->phone) {
             return response()->json(['message' => 'Lazima uwe na nambari ya simu ili kuwasha 2FA.'], 422);
         }
 
-        if (! $current) {
-            // Enabling — send a verification OTP first
-            $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            OtpCode::create([
-                'user_id' => $user->id,
-                'code' => $code,
-                'expires_at' => now()->addMinutes(10),
-                'ip_address' => $request->ip(),
-            ]);
-            try {
-                $this->sms->send($user->phone, "ShulePay: Uthibitisho wa kuwasha 2FA. Msimbo: {$code}");
-            } catch (\Throwable) {
-            }
+        OtpCode::where('user_id', $user->id)->whereNull('used_at')->update(['used_at' => now()]);
+
+        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        OtpCode::create([
+            'user_id' => $user->id,
+            'code' => $code,
+            'expires_at' => now()->addMinutes(10),
+            'ip_address' => $request->ip(),
+        ]);
+        try {
+            $this->sms->send($user->phone, "ShulePay: Uthibitisho wa kuwasha 2FA. Msimbo: {$code}");
+        } catch (\Throwable) {
         }
 
-        $user->update(['2fa_enabled' => ! $current]);
-
         return response()->json([
-            'enabled' => ! $current,
-            'message' => ! $current ? '2FA imewashwa.' : '2FA imezimwa.',
+            'enabled' => false,
+            'requires_verification' => true,
+            'message' => 'Msimbo wa uthibitisho umetumwa. Ingiza msimbo kuwasha 2FA.',
         ]);
+    }
+
+    /**
+     * POST /api/settings/verify-2fa-enable
+     * Completes enabling 2FA — call after toggle-2fa sends the OTP.
+     */
+    public function verify2faEnable(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'code' => 'required|string|size:6',
+        ]);
+
+        $otp = OtpCode::valid()
+            ->where('user_id', $user->id)
+            ->where('code', $request->code)
+            ->latest()
+            ->first();
+
+        if (! $otp) {
+            return response()->json(['message' => 'Msimbo si sahihi au umeisha muda wake.'], 422);
+        }
+
+        $otp->update(['used_at' => now()]);
+        $user->update(['2fa_enabled' => true]);
+
+        return response()->json(['enabled' => true, 'message' => '2FA imewashwa.']);
     }
 }
