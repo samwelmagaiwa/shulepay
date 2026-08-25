@@ -37,6 +37,7 @@ use App\Http\Controllers\Owner\DashboardController;
 use App\Http\Controllers\Owner\UserController;
 use App\Http\Controllers\Owner\UserSchoolAccessController;
 use App\Http\Controllers\ParentPortal\ChildController;
+use App\Http\Controllers\ParentPortal\DashboardController as ParentDashboardController;
 use App\Http\Controllers\ParentPortal\StatementController;
 use App\Http\Controllers\Reports\ReportController;
 use App\Http\Controllers\Shared\AcademicYearController;
@@ -350,6 +351,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Parent portal — read-only, own children only
     Route::middleware('role:parent')->prefix('parent')->group(function () {
+        Route::get('dashboard', [ParentDashboardController::class, 'index']);
+        // Own children's receipts. The staff receipt route is role-gated, so a
+        // parent needs this scoped equivalent to get their own proof of payment.
+        Route::get('receipts/{receipt}', [ParentDashboardController::class, 'receipt'])
+            ->middleware('throttle:30,1');
         Route::get('children', [ChildController::class, 'index']);
         Route::get('children/{student}', [ChildController::class, 'show'])
             ->middleware('parent.owns_student');

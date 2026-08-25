@@ -39,7 +39,7 @@
           <CCard class="h-100 text-center" style="border-left:4px solid #dc3545;">
             <CCardBody class="p-3">
               <div style="font-size:2rem;">💰</div>
-              <div class="fw-bold fs-4" style="font-size:1.1rem !important;">{{ fmtTzs(totalBalance) }}</div>
+              <div class="fw-bold fs-4" style="font-size:1.1rem !important;">{{ fmtCents(totalBalance) }}</div>
               <div class="text-muted small">{{ t('dashboard.totalBalance') }}</div>
             </CCardBody>
           </CCard>
@@ -74,30 +74,46 @@
                 {{ childInitials(child) }}
               </div>
               <div class="flex-grow-1 overflow-hidden">
-                <div class="text-truncate">{{ child.full_name }}</div>
+                <div class="text-truncate">{{ child.name }}</div>
                 <div class="text-muted" style="font-size:.75rem;">
-                  {{ child.school_class?.name }} &bull; {{ child.admission_number }}
+                  {{ child.school_class }} &bull; {{ child.admission_number }}
                 </div>
               </div>
             </CCardHeader>
             <CCardBody class="p-3">
-              <!-- Invoice info -->
-              <div v-if="child._invoice">
+              <div v-if="child.invoice_count">
                 <div class="d-flex justify-content-between mb-2">
                   <span class="text-muted small">{{ t('common.total') }}</span>
-                  <span class="small">{{ fmtTzs(child._invoice.total_tzs) }}</span>
+                  <span class="small">{{ fmtCents(child.billed_cents) }}</span>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
                   <span class="text-muted small">{{ t('invoices.amountPaid') }}</span>
-                  <span class="small text-success">{{ fmtTzs(child._invoice.paid_tzs) }}</span>
+                  <span class="small text-success">{{ fmtCents(child.paid_cents) }}</span>
                 </div>
                 <div class="d-flex justify-content-between mb-3">
                   <span class="text-muted small fw-semibold">{{ t('payments.balanceDue') }}</span>
-                  <span class="fw-bold" :style="{ color: child._invoice.balance_tzs === 0 ? '#198754' : '#dc3545' }">
-                    {{ fmtTzs(child._invoice.balance_tzs) }}
+                  <span class="fw-bold" :style="{ color: child.balance_cents === 0 ? '#198754' : '#dc3545' }">
+                    {{ fmtCents(child.balance_cents) }}
                   </span>
                 </div>
-                <CBadge v-if="child._invoice.balance_tzs === 0" color="success" class="w-100 py-1">
+
+                <!-- Per-term breakdown: which term is actually outstanding -->
+                <div v-if="child.terms.length" class="mb-3">
+                  <div class="text-muted text-uppercase mb-1" style="font-size:.65rem; letter-spacing:.05em;">
+                    {{ t('dashboard.perTerm') }}
+                  </div>
+                  <div v-for="tr in child.terms" :key="tr.invoice_id"
+                       class="d-flex justify-content-between align-items-center py-1"
+                       style="border-bottom:1px dotted var(--cui-border-color, #e0e0e0);">
+                    <span class="small text-truncate" style="max-width:52%;">{{ tr.term || '—' }}</span>
+                    <span class="small fw-semibold"
+                          :class="tr.balance_cents === 0 ? 'text-success' : 'text-danger'">
+                      {{ tr.balance_cents === 0 ? '✓' : fmtCents(tr.balance_cents) }}
+                    </span>
+                  </div>
+                </div>
+
+                <CBadge v-if="child.balance_cents === 0" color="success" class="w-100 py-1">
                   {{ t('dashboard.allClear') }} ✅
                 </CBadge>
                 <CBadge v-else color="danger" class="w-100 py-1">
@@ -115,6 +131,53 @@
           </CCard>
         </CCol>
       </CRow>
+
+      <!-- Recent payments across this parent's children only -->
+      <CCard v-if="recentPayments.length" class="mt-4">
+        <CCardHeader class="fw-semibold">🧾 {{ t('dashboard.recentPayments') }}</CCardHeader>
+        <CCardBody class="p-0">
+          <div class="table-responsive">
+            <CTable hover class="align-middle mb-0">
+              <CTableHead>
+                <CTableRow>
+                  <CTableHeaderCell>{{ t('students.paidDate') }}</CTableHeaderCell>
+                  <CTableHeaderCell>{{ t('common.student') }}</CTableHeaderCell>
+                  <CTableHeaderCell>{{ t('common.term') }}</CTableHeaderCell>
+                  <CTableHeaderCell>{{ t('payments.method') }}</CTableHeaderCell>
+                  <CTableHeaderCell class="text-end">{{ t('students.paidAmount') }}</CTableHeaderCell>
+                  <CTableHeaderCell class="text-center">{{ t('payments.receipt') }}</CTableHeaderCell>
+                </CTableRow>
+              </CTableHead>
+              <CTableBody>
+                <CTableRow v-for="p in recentPayments" :key="p.id">
+                  <CTableDataCell class="small">{{ p.paid_at || '—' }}</CTableDataCell>
+                  <CTableDataCell class="small">{{ p.student_name }}</CTableDataCell>
+                  <CTableDataCell class="small text-muted">{{ p.term || '—' }}</CTableDataCell>
+                  <CTableDataCell class="small">{{ p.method_label }}</CTableDataCell>
+                  <CTableDataCell class="text-end fw-semibold text-success">
+                    {{ fmtCents(p.amount_cents) }}
+                  </CTableDataCell>
+                  <CTableDataCell class="text-center">
+                    <CButton v-if="p.receipt_id" size="sm" color="success" variant="outline"
+                             :disabled="printingId === p.receipt_id"
+                             @click="printReceipt(p.receipt_id)"
+                             :title="p.receipt_number">
+                      <CSpinner v-if="printingId === p.receipt_id" size="sm" />
+                      <span v-else>🖨</span>
+                    </CButton>
+                    <span v-else class="text-muted small">—</span>
+                  </CTableDataCell>
+                </CTableRow>
+              </CTableBody>
+            </CTable>
+          </div>
+        </CCardBody>
+      </CCard>
+
+      <CAlert v-if="actionError" color="danger" dismissible class="mt-3 py-2"
+              @close="actionError = ''">
+        {{ actionError }}
+      </CAlert>
     </div>
   </CContainer>
 </template>
@@ -128,90 +191,101 @@ import api from '@/services/api'
 const { t } = useI18n()
 const auth = useAuthStore()
 
-const children = ref([])
-const loading = ref(true)
+const children       = ref([])
+const recentPayments = ref([])
+const summary        = ref(null)
+const loading        = ref(true)
+const actionError    = ref('')
+const printingId     = ref(null)
 
 const initials = computed(() => {
   const name = auth.user?.name || ''
   return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
 })
 
-const todayDate = computed(() => new Date().toLocaleDateString('en-TZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))
+const todayDate = computed(() =>
+  new Date().toLocaleDateString('en-TZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+)
 
-const totalBalance   = computed(() => children.value.reduce((a, c) => a + (c._invoice?.balance_tzs || 0), 0))
-const clearedCount   = computed(() => children.value.filter(c => c._invoice && c._invoice.balance_tzs === 0).length)
-const pendingCount   = computed(() => children.value.filter(c => c._invoice && c._invoice.balance_tzs > 0).length)
+// Totals come from the server, which computes them from the same invoices it
+// scoped to this parent — no client-side re-derivation to drift out of sync.
+const totalBalance = computed(() => summary.value?.total_balance_cents ?? 0)
+const clearedCount = computed(() => summary.value?.cleared_count ?? 0)
+const pendingCount = computed(() => summary.value?.pending_count ?? 0)
 
 function childInitials(child) {
-  return (child.full_name || child.name || '').split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
+  return (child.name || '').split(' ').filter(Boolean).map(p => p[0]).join('').toUpperCase().slice(0, 2)
 }
 
-function fmtTzs(tzs) {
-  if (!tzs && tzs !== 0) return '—'
-  return 'TZS ' + Math.round(tzs).toLocaleString('en-TZ', { maximumFractionDigits: 0 })
+function fmtCents(cents) {
+  if (cents === null || cents === undefined) return '—'
+  return 'TZS ' + Math.round(cents / 100).toLocaleString('en-TZ', { maximumFractionDigits: 0 })
 }
 
 async function downloadStatement(child) {
   child._downloading = true
+  actionError.value = ''
   try {
-    const resp = await api.get(`/parent/statement/pdf`, {
+    const resp = await api.get('/parent/statement/pdf', {
       params: { student_id: child.id },
       responseType: 'blob',
     })
     const url = window.URL.createObjectURL(new Blob([resp.data], { type: 'application/pdf' }))
     const a = document.createElement('a')
     a.href = url
-    a.download = `statement-${child.admission_number}.pdf`
+    a.download = `statement-${child.admission_number || child.id}.pdf`
+    document.body.appendChild(a)
     a.click()
+    a.remove()
     window.URL.revokeObjectURL(url)
-  } catch { /* silent */ } finally {
+  } catch (e) {
+    actionError.value = e?.response?.data?.message || t('common.loadFailed')
+  } finally {
     child._downloading = false
+  }
+}
+
+let printFrame = null
+
+// Parents use their own scoped receipt route; the staff one is role-gated.
+// Fetched via axios so the auth token is attached (a bare iframe src is not).
+async function printReceipt(receiptId) {
+  if (!receiptId) return
+  printingId.value = receiptId
+  actionError.value = ''
+  try {
+    const { data } = await api.get(`/parent/receipts/${receiptId}`, { responseType: 'blob' })
+    if (data.type && !data.type.includes('pdf')) throw new Error('Not a PDF')
+
+    if (printFrame) printFrame.remove()
+    const url = URL.createObjectURL(data)
+    const frame = document.createElement('iframe')
+    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
+    frame.src = url
+    frame.onload = () => {
+      try { frame.contentWindow.focus(); frame.contentWindow.print() }
+      catch { window.open(url, '_blank', 'noopener') }
+    }
+    document.body.appendChild(frame)
+    printFrame = frame
+  } catch (e) {
+    actionError.value = e?.response?.data?.message || t('payments.receiptPrintFailed')
+  } finally {
+    printingId.value = null
   }
 }
 
 onMounted(async () => {
   try {
-    const { data } = await api.get('/parent/children')
-    // API returns { data: [...] }; each child has `name`, `enrollment.admission_number`, `enrollment.school_class`
-    const list = Array.isArray(data) ? data : (data.data || [])
-
-    const enriched = await Promise.all(list.map(async raw => {
-      // Normalise field names so template can use child.full_name / child.admission_number / child.school_class
-      const child = {
-        ...raw,
-        full_name:        raw.full_name || raw.name || '',
-        admission_number: raw.admission_number || raw.enrollment?.admission_number || '',
-        school_class:     raw.school_class || raw.enrollment?.school_class || null,
-        _downloading:     false,
-        _invoice:         null,
-      }
-
-      try {
-        const { data: stmt } = await api.get('/parent/statement', { params: { student_id: child.id } })
-        // Response: { student, invoices: [...], summary: { total_billed_cents, total_paid_cents, total_balance_cents } }
-        const summary = stmt.summary || null
-        if (summary) {
-          child._invoice = {
-            total_tzs:   Math.round((summary.total_billed_cents || 0) / 100),
-            paid_tzs:    Math.round((summary.total_paid_cents  || 0) / 100),
-            balance_tzs: Math.round((summary.total_balance_cents || 0) / 100),
-          }
-        } else {
-          // Fallback: use first invoice's fields
-          const inv = (stmt.invoices || [])[0] || null
-          if (inv) {
-            const total   = Math.round((inv.total_amount_cents || 0) / 100)
-            const paid    = Math.round((inv.paid_cents || 0) / 100)
-            child._invoice = { total_tzs: total, paid_tzs: paid, balance_tzs: Math.max(0, total - paid) }
-          }
-        }
-      } catch { /* statement unavailable */ }
-
-      return child
-    }))
-
-    children.value = enriched
-  } catch { /* no data */ } finally {
+    // One request for the whole page. This previously issued a /parent/children
+    // call plus a /parent/statement call per child.
+    const { data } = await api.get('/parent/dashboard')
+    summary.value        = data.summary || null
+    children.value       = (data.children || []).map(c => ({ ...c, _downloading: false }))
+    recentPayments.value = data.recent_payments || []
+  } catch (e) {
+    actionError.value = e?.response?.data?.message || t('common.loadFailed')
+  } finally {
     loading.value = false
   }
 })

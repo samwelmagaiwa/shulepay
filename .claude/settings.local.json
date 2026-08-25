@@ -395,7 +395,14 @@
       "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend php artisan migrate:status | tail -3\")",
       "Bash(bash deploy.sh release \"style: fix Pint violations in the two new enum-widening migrations\")",
       "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend php artisan tinker --execute=\\\\\"echo App\\\\Models\\\\Student::count\\(\\);\\\\\"\")",
-      "Bash(bash deploy.sh release \"fix\\(payments\\): add Sponsor case to PaymentMethod enum\")"
+      "Bash(bash deploy.sh release \"fix\\(payments\\): add Sponsor case to PaymentMethod enum\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend cat app/Enums/PaymentMethod.php\")",
+      "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\test_balance.php\" root@169.58.188.122:/tmp/test_balance.php)",
+      "Bash(ssh root@169.58.188.122 \"docker cp /tmp/test_balance.php shulepay_backend:/tmp/test_balance.php && docker exec shulepay_backend php artisan tinker /tmp/test_balance.php\")",
+      "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\check_balance.php\" root@169.58.188.122:/tmp/check_balance.php)",
+      "Bash(ssh root@169.58.188.122 \"docker cp /tmp/check_balance.php shulepay_backend:/tmp/check_balance.php && docker exec shulepay_backend php artisan tinker /tmp/check_balance.php\")",
+      "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\cleanup3.php\" root@169.58.188.122:/tmp/cleanup3.php)",
+      "Bash(ssh root@169.58.188.122 \"docker cp /tmp/cleanup3.php shulepay_backend:/tmp/cleanup3.php && docker exec shulepay_backend php artisan tinker /tmp/cleanup3.php\")"
     ]
   }
 }
