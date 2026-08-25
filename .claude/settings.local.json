@@ -410,7 +410,10 @@
       "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\before_stats.php\" root@169.58.188.122:/tmp/before_stats.php)",
       "Bash(ssh root@169.58.188.122 \"docker cp /tmp/before_stats.php shulepay_backend:/tmp/before_stats.php && docker exec shulepay_backend php artisan tinker /tmp/before_stats.php\")",
       "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\test_dashboard_classfee.php\" root@169.58.188.122:/tmp/test_dashboard_classfee.php)",
-      "Bash(ssh root@169.58.188.122 \"docker cp /tmp/test_dashboard_classfee.php shulepay_backend:/tmp/test_dashboard_classfee.php && docker exec shulepay_backend php artisan tinker /tmp/test_dashboard_classfee.php\")"
+      "Bash(ssh root@169.58.188.122 \"docker cp /tmp/test_dashboard_classfee.php shulepay_backend:/tmp/test_dashboard_classfee.php && docker exec shulepay_backend php artisan tinker /tmp/test_dashboard_classfee.php\")",
+      "Bash(curl -s -X POST http://localhost/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"accountant@gmail.com\",\"password\":\"12345678\"}')",
+      "Bash(python3 -c \"import json,sys; print\\(json.load\\(sys.stdin\\)['token']\\)\")",
+      "Bash(bash deploy.sh release \"feat\\(students\\): Edit button reopens the full registration wizard in edit mode\")"
     ]
   }
 }

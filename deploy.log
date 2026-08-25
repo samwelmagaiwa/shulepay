@@ -2370,3 +2370,27 @@ existing locked-out accounts. It writes only the password and that flag."
 [0;36m[2026-08-25 18:41:15][0m   ShulePay — Release
 [0;36m[2026-08-25 18:41:15][0m ══════════════════════════════════════════
 [0;36m[2026-08-25 18:41:15][0m Checking working tree...
+[0;36m[2026-08-25 18:41:15][0m Files staged for commit:
+[0;36m[2026-08-25 18:41:15][0m Committing: "fix(parent): implement the fee statement PDF — it was never written
+
+/api/parent/statement/pdf returned 501 for every request. ReportPdf was an empty
+stub class, so studentStatement() threw BadMethodCallException, which a bare
+catch (\Throwable) converted into 501 'Not Implemented'. The Download Statement
+button has never worked.
+
+Implements ReportPdf::studentStatement plus an A4 statement view: school branding,
+student and class details, every invoice with term/year/billed/paid/balance and a
+status badge, each payment listed beneath its invoice with date, method and
+reference, and the running totals.
+
+The catch now logs the real exception and returns 500 rather than 501 — the old
+response looked like a deliberate 'not supported yet' and hid the missing method."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-25 18:41:16][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-25 18:41:20][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-25 19:08:17][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 19:08:17][0m   ShulePay — Release
+[0;36m[2026-08-25 19:08:18][0m ══════════════════════════════════════════
+[0;36m[2026-08-25 19:08:18][0m Checking working tree...
