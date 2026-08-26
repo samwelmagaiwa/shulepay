@@ -3,7 +3,7 @@
 
     <!-- Toolbar: filters + add button in one row -->
     <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-      <CFormSelect v-model="filters.school_id" @update:modelValue="loadData" style="max-width:200px;">
+      <CFormSelect v-model="filters.school_id" @update:modelValue="onFilterSchoolChange" style="max-width:200px;">
         <option value="">{{ t('common.all') }} {{ t('common.school') }}</option>
         <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
       </CFormSelect>
@@ -128,9 +128,11 @@
           </CCol>
           <CCol sm="6">
             <label class="form-label">{{ t('common.year') }} *</label>
-            <CFormSelect v-model="form.academic_year_id" @update:modelValue="onYearChange">
-              <option value="">{{ t('common.select') }}</option>
-              <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
+            <CFormSelect v-model="form.academic_year_id" @update:modelValue="onYearChange" :disabled="!form.school_id || loadingModalYears">
+              <option value="">
+                {{ loadingModalYears ? t('fees.loadingClasses') : (form.school_id ? t('common.select') : t('fees.selectSchoolFirst')) }}
+              </option>
+              <option v-for="y in modalAcademicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
             </CFormSelect>
           </CCol>
 
@@ -297,8 +299,10 @@ const academicYears    = ref([])
 const terms            = ref([])
 const schoolClasses    = ref([])
 const modalClasses     = ref([])
+const modalAcademicYears = ref([]) // years for the selected school in modal
 const modalTerms       = ref([])   // terms for the selected year in modal
 const loadingModalClasses = ref(false)
+const loadingModalYears   = ref(false)
 
 // Full tuition mode state
 const feeMode          = ref('per_term')
@@ -315,6 +319,7 @@ const schools = computed(() => schoolsStore.schools)
 
 watch(() => schoolStore.activeSchoolId, (id) => {
   filters.value.school_id = id || ''
+  loadFilterOptions()
   loadData()
 })
 
@@ -340,15 +345,24 @@ async function onModalSchoolChange() {
   form.value.academic_year_id = ''
   form.value.term_id          = ''
   modalClasses.value = []
+  modalAcademicYears.value = []
   modalTerms.value = []
   if (!form.value.school_id) return
 
   loadingModalClasses.value = true
+  loadingModalYears.value = true
   try {
-    const r = await api.get('/school-classes', { params: { school_id: form.value.school_id } })
-    modalClasses.value = r.data.data ?? r.data
+    const [classesRes, yearsRes] = await Promise.all([
+      api.get('/school-classes', { params: { school_id: form.value.school_id } }),
+      api.get('/academic-years', { params: { school_id: form.value.school_id } }),
+    ])
+    modalClasses.value = classesRes.data.data ?? classesRes.data
+    modalAcademicYears.value = yearsRes.data.data ?? yearsRes.data
   } catch {}
-  finally { loadingModalClasses.value = false }
+  finally {
+    loadingModalClasses.value = false
+    loadingModalYears.value = false
+  }
 }
 
 async function onYearChange() {
@@ -356,7 +370,7 @@ async function onYearChange() {
   modalTerms.value = []
   if (!form.value.academic_year_id) return
 
-  const year = academicYears.value.find(y => y.id == form.value.academic_year_id)
+  const year = modalAcademicYears.value.find(y => y.id == form.value.academic_year_id)
   if (year?.terms?.length) {
     modalTerms.value = year.terms
     return
@@ -366,6 +380,31 @@ async function onYearChange() {
     const r = await api.get('/terms', { params: { academic_year_id: form.value.academic_year_id } })
     modalTerms.value = r.data.data ?? r.data
   } catch {}
+}
+
+// ── Filter row: classes/years scoped to the currently active school ───────
+async function loadFilterOptions() {
+  const schoolId = filters.value.school_id
+  try {
+    const [classesRes, yearsRes] = await Promise.all([
+      api.get('/school-classes', schoolId ? { params: { school_id: schoolId } } : {}),
+      api.get('/academic-years', schoolId ? { params: { school_id: schoolId } } : {}),
+    ])
+    schoolClasses.value = classesRes.data.data ?? classesRes.data
+    academicYears.value = yearsRes.data.data ?? yearsRes.data
+    terms.value = []
+    academicYears.value.forEach(y => {
+      if (y.terms) terms.value.push(...y.terms)
+    })
+  } catch {}
+}
+
+function onFilterSchoolChange() {
+  filters.value.academic_year_id = ''
+  filters.value.term_id = ''
+  filters.value.school_class_id = ''
+  loadFilterOptions()
+  loadData()
 }
 
 function openAdd() {
@@ -459,17 +498,7 @@ async function loadData() {
 
 onMounted(async () => {
   try { await schoolsStore.fetchSchools() } catch {}
-  try {
-    const [years, classes] = await Promise.all([
-      api.get('/academic-years'),
-      api.get('/school-classes'),
-    ])
-    academicYears.value = years.data.data || years.data
-    schoolClasses.value = classes.data.data || classes.data
-    academicYears.value.forEach(y => {
-      if (y.terms) terms.value.push(...y.terms)
-    })
-  } catch {}
+  await loadFilterOptions()
   await loadData()
 })
 </script>
