@@ -450,7 +450,8 @@
       "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\verify_sponsored_free.php\" root@169.58.188.122:/tmp/verify_sponsored_free.php)",
       "Bash(ssh root@169.58.188.122 \"docker cp /tmp/verify_sponsored_free.php shulepay_backend:/tmp/verify_sponsored_free.php && docker exec shulepay_backend php artisan tinker /tmp/verify_sponsored_free.php\")",
       "Bash(grep -n 'class Discount\\\\|BelongsToSchool\\\\|protected $fillable' backend/app/Models/Discount.php)",
-      "Bash(bash deploy.sh release \"feat\\(dashboard\\): replace Absent Today card with Students with Discount, shorten MADENI label\")"
+      "Bash(bash deploy.sh release \"feat\\(dashboard\\): replace Absent Today card with Students with Discount, shorten MADENI label\")",
+      "Bash(bash deploy.sh release \"fix\\(admin\\): rollover wizard From Year now scoped to selected school, cleaned up headers\")"
     ]
   }
 }
