@@ -453,7 +453,13 @@
       "Bash(bash deploy.sh release \"feat\\(dashboard\\): replace Absent Today card with Students with Discount, shorten MADENI label\")",
       "Bash(bash deploy.sh release \"fix\\(admin\\): rollover wizard From Year now scoped to selected school, cleaned up headers\")",
       "Bash(grep -n 'protected $fillable\\\\|casts' backend/app/Models/Term.php backend/app/Models/AcademicYear.php)",
-      "Bash(bash deploy.sh release \"fix\\(rollover\\): rollover wizard was completely broken end-to-end, now fixed and tested\")"
+      "Bash(bash deploy.sh release \"fix\\(rollover\\): rollover wizard was completely broken end-to-end, now fixed and tested\")",
+      "Bash(grep -n \"use App\\\\\\\\\\\\\\\\Http\\\\\\\\\\\\\\\\Controllers.*ReportController\" backend/routes/api.php)",
+      "Bash(grep -n 'schoolId = $request->integer' backend/app/Http/Controllers/Reports/ReportController.php)",
+      "Bash(grep -n '\\(int\\) $r->amount_cents\\\\|\\(int\\) $r->payment_count\\\\|\\(int\\) $r->cnt\\\\|->cents\\(\\)' backend/app/Http/Controllers/Reports/ReportController.php)",
+      "Bash(grep -n 'getRawOriginal\\\\|\\(int\\) $r->amount_cents\\\\|\\(int\\) $r->payment_count' backend/app/Http/Controllers/Reports/ReportController.php)",
+      "Bash(curl -s -X POST http://localhost/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"super@gmail.com\",\"password\":\"12345678\"}')",
+      "Bash(bash deploy.sh release \"fix\\(reports\\): Collections/Debtors/By Class/Expenses vs Collections were all broken, now fixed and tested\")"
     ]
   }
 }
