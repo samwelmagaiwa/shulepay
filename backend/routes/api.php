@@ -233,6 +233,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('reports')->group(function () {
             Route::get('collections', [ReportController::class, 'collections']);
             Route::get('debtor-aging', [ReportController::class, 'debtorAging']);
+            Route::get('by-class', [ReportController::class, 'byClass']);
+            Route::get('expenses-vs-collections', [ReportController::class, 'expensesVsCollections']);
             Route::get('income-statement', [ReportController::class, 'incomeStatement']);
             Route::get('balance-sheet', [ReportController::class, 'balanceSheet']);
             Route::get('cash-flow', [ReportController::class, 'cashFlow']);

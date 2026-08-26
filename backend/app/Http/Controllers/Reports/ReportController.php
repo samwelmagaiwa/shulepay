@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
+use App\Models\Enrollment;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Payroll;
 use App\Models\School;
+use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\SupplierPayment;
 use App\Services\Reporting\ReportExportService;
@@ -21,6 +23,24 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ReportController extends Controller
 {
     public function __construct(private readonly ReportExportService $exporter) {}
+
+    /**
+     * Every report query below used to scope by school ONLY when an explicit
+     * `school_id` query param was sent — never sent by the frontend, so every
+     * report silently aggregated across every school in the system regardless
+     * of whichever school was active in the UI. This falls back to the
+     * active-school context (set via the X-School-Id header) the same way
+     * resolveSchool() already did for exports, but was never applied to the
+     * actual report queries themselves.
+     */
+    private function activeSchoolId(Request $request): ?int
+    {
+        if ($request->filled('school_id')) {
+            return $request->integer('school_id');
+        }
+
+        return app()->bound('active_school') ? app('active_school')?->id : null;
+    }
 
     // ─────────────────────────────────────────────────────────
     //  1. Collections
@@ -35,14 +55,15 @@ class ReportController extends Controller
             'group_by' => 'nullable|in:day,week,month,class',
         ]);
 
-        $from = $request->date('from', today()->startOfMonth());
-        $to = $request->date('to', today());
+        $from = $request->filled('from') ? \Carbon\Carbon::parse($request->input('from')) : today()->startOfMonth();
+        $to = $request->filled('to') ? \Carbon\Carbon::parse($request->input('to')) : today();
         $groupBy = $request->input('group_by', 'day');
+        $schoolId = $this->activeSchoolId($request);
 
         // Base payment query (bypass school scope if no school bound)
         $base = Payment::allSchools()
             ->whereBetween('paid_at', [$from->startOfDay(), $to->copy()->endOfDay()])
-            ->when($request->filled('school_id'), fn ($q) => $q->where('payments.school_id', $request->integer('school_id')));
+            ->when($schoolId, fn ($q) => $q->where('payments.school_id', $schoolId));
 
         // Summary totals
         $totalPayments = (clone $base)->count();
@@ -50,12 +71,30 @@ class ReportController extends Controller
 
         // Invoice counts by status for the period
         $invoiceBase = Invoice::allSchools()
-            ->when($request->filled('school_id'), fn ($q) => $q->where('school_id', $request->integer('school_id')));
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId));
 
         $invoiceCount = (clone $invoiceBase)->count();
         $paidCount = (clone $invoiceBase)->where('status', 'paid')->count();
         $partialCount = (clone $invoiceBase)->where('status', 'partial')->count();
         $unpaidCount = (clone $invoiceBase)->where('status', 'unpaid')->count();
+
+        // Total outstanding — current balance across all unpaid/partial invoices
+        // (not period-scoped: it's "what's owed right now", same figure the
+        // dashboard's Outstanding Debt card shows).
+        $paymentTable = (new Payment)->getTable();
+        $invoiceTable = (new Invoice)->getTable();
+        $totalOutstanding = (clone $invoiceBase)
+            ->whereIn('status', ['unpaid', 'partial'])
+            ->leftJoin(
+                DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} GROUP BY invoice_id) as p"),
+                'p.invoice_id', '=', "{$invoiceTable}.id"
+            )
+            ->selectRaw("SUM({$invoiceTable}.total_amount_cents - COALESCE(p.paid_sum, 0)) as outstanding")
+            ->value('outstanding') ?? 0;
+        // An overpaid invoice can push the sum negative — "debt" is never negative,
+        // that would represent a credit balance, a different concept this figure
+        // doesn't track.
+        $totalOutstanding = max(0, (int) $totalOutstanding);
 
         // $groupBy is validated above as in:day,week,month,class — safe to use in DB::raw
         $periodExpr = match ($groupBy) {
@@ -75,8 +114,8 @@ class ReportController extends Controller
             ->get()
             ->map(fn ($r) => [
                 'period' => $r->period,
-                'amount_cents' => (int) $r->amount_cents,
-                'payment_count' => (int) $r->payment_count,
+                'amount_cents' => (int) $r->getRawOriginal('amount_cents'),
+                'payment_count' => (int) $r->getRawOriginal('payment_count'),
             ])
             ->toArray();
 
@@ -87,7 +126,7 @@ class ReportController extends Controller
             ->get()
             ->map(fn ($r) => [
                 'method' => $r->method,
-                'amount_cents' => (int) $r->amount_cents,
+                'amount_cents' => (int) $r->getRawOriginal('amount_cents'),
                 'count' => (int) $r->count,
             ])
             ->toArray();
@@ -101,14 +140,14 @@ class ReportController extends Controller
             })
             ->join('school_classes', 'school_classes.id', '=', 'enrollments.school_class_id')
             ->whereBetween('payments.paid_at', [$from->startOfDay(), $to->copy()->endOfDay()])
-            ->when($request->filled('school_id'), fn ($q) => $q->where('payments.school_id', $request->integer('school_id')))
+            ->when($schoolId, fn ($q) => $q->where('payments.school_id', $schoolId))
             ->select('school_classes.name as class', DB::raw('SUM(payments.amount_cents) as amount_cents'))
             ->groupBy('school_classes.name')
             ->orderBy('school_classes.name')
             ->get()
             ->map(fn ($r) => [
                 'class' => $r->class,
-                'amount_cents' => (int) $r->amount_cents,
+                'amount_cents' => (int) $r->getRawOriginal('amount_cents'),
             ])
             ->toArray();
 
@@ -120,6 +159,7 @@ class ReportController extends Controller
                 'paid_count' => $paidCount,
                 'partial_count' => $partialCount,
                 'unpaid_count' => $unpaidCount,
+                'total_outstanding_cents' => (int) $totalOutstanding,
             ],
             'rows' => $rows,
             'by_method' => $byMethod,
@@ -141,13 +181,14 @@ class ReportController extends Controller
             'as_of' => 'nullable|date',
         ]);
 
-        $asOf = $request->date('as_of', today());
+        $asOf = $request->filled('as_of') ? \Carbon\Carbon::parse($request->input('as_of')) : today();
+        $schoolId = $this->activeSchoolId($request);
 
         // Fetch unpaid / partial invoices with student info
         $invoices = Invoice::allSchools()
             ->with(['student.currentEnrollment.schoolClass'])
             ->whereIn('status', ['unpaid', 'partial'])
-            ->when($request->filled('school_id'), fn ($q) => $q->where('school_id', $request->integer('school_id')))
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
             ->get();
 
         // Group by student, track oldest invoice due_date per student
@@ -209,6 +250,7 @@ class ReportController extends Controller
                 'admission_number' => $s['admission_number'],
                 'school_class' => $s['school_class'],
                 'oldest_invoice_date' => $s['oldest_invoice_date'],
+                'oldest_age' => $age,
                 'outstanding_cents' => $s['outstanding_cents'],
             ];
 
@@ -243,18 +285,14 @@ class ReportController extends Controller
             'to' => 'nullable|date',
         ]);
 
-        $from = $request->date('from', today()->startOfYear());
-        $to = $request->date('to', today());
-
-        $schoolFilter = fn ($q) => $q->when(
-            $request->filled('school_id'),
-            fn ($q) => $q->where('school_id', $request->integer('school_id'))
-        );
+        $from = $request->filled('from') ? \Carbon\Carbon::parse($request->input('from')) : today()->startOfYear();
+        $to = $request->filled('to') ? \Carbon\Carbon::parse($request->input('to')) : today();
+        $schoolId = $this->activeSchoolId($request);
 
         // Revenue: fee collections (payments) in period
         $feeCollections = Payment::allSchools()
             ->whereBetween('paid_at', [$from->startOfDay(), $to->copy()->endOfDay()])
-            ->when($request->filled('school_id'), fn ($q) => $q->where('school_id', $request->integer('school_id')))
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
             ->sum('amount_cents');
 
         $totalRevenue = (int) $feeCollections;
@@ -264,13 +302,13 @@ class ReportController extends Controller
             ->with('category')
             ->where('status', 'approved')
             ->whereBetween('expense_date', [$from->toDateString(), $to->toDateString()])
-            ->when($request->filled('school_id'), fn ($q) => $q->where('school_id', $request->integer('school_id')))
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
             ->select('category_id', DB::raw('SUM(amount_cents) as amount_cents'))
             ->groupBy('category_id')
             ->get()
             ->map(fn ($r) => [
                 'category' => $r->category?->name ?? 'Uncategorised',
-                'amount_cents' => (int) $r->amount_cents,
+                'amount_cents' => (int) $r->getRawOriginal('amount_cents'),
             ])
             ->toArray();
 
@@ -280,7 +318,7 @@ class ReportController extends Controller
         $payrollTotal = Payroll::allSchools()
             ->where('status', 'paid')
             ->whereBetween('payment_date', [$from->toDateString(), $to->toDateString()])
-            ->when($request->filled('school_id'), fn ($q) => $q->where('school_id', $request->integer('school_id')))
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
             ->sum('net_salary_cents');
 
         $payrollTotal = (int) $payrollTotal;
@@ -312,9 +350,9 @@ class ReportController extends Controller
             'as_of' => 'nullable|date',
         ]);
 
-        $asOf = $request->date('as_of', today());
+        $asOf = $request->filled('as_of') ? \Carbon\Carbon::parse($request->input('as_of')) : today();
 
-        $schoolId = $request->integer('school_id') ?: null;
+        $schoolId = $this->activeSchoolId($request);
 
         // Cash & Bank: all payments received up to as_of
         $cashAndBank = Payment::allSchools()
@@ -398,9 +436,9 @@ class ReportController extends Controller
             'to' => 'nullable|date',
         ]);
 
-        $from = $request->date('from', today()->startOfMonth());
-        $to = $request->date('to', today());
-        $schoolId = $request->integer('school_id') ?: null;
+        $from = $request->filled('from') ? \Carbon\Carbon::parse($request->input('from')) : today()->startOfMonth();
+        $to = $request->filled('to') ? \Carbon\Carbon::parse($request->input('to')) : today();
+        $schoolId = $this->activeSchoolId($request);
 
         // Operating inflows: fee collections
         $feeCollections = Payment::allSchools()
@@ -459,6 +497,101 @@ class ReportController extends Controller
             'net_change_cents' => $operatingNet + $investingNet,
             'period' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
         ]);
+    }
+
+    // ─────────────────────────────────────────────────────────
+    //  6b. Collections By Class
+    // ─────────────────────────────────────────────────────────
+
+    public function byClass(Request $request): JsonResponse
+    {
+        $request->validate([
+            'school_id' => 'nullable|integer|exists:schools,id',
+            'academic_year_id' => 'nullable|integer|exists:academic_years,id',
+        ]);
+
+        $schoolId = $this->activeSchoolId($request);
+
+        $classes = SchoolClass::query()
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+            ->orderBy('sort_order')
+            ->get();
+
+        $rows = $classes->map(function (SchoolClass $class) use ($request) {
+            $studentIds = Enrollment::where('school_class_id', $class->id)
+                ->where('status', 'active')
+                ->when(
+                    $request->filled('academic_year_id'),
+                    fn ($q) => $q->where('academic_year_id', $request->integer('academic_year_id'))
+                )
+                ->pluck('student_id');
+
+            $invoices = Invoice::allSchools()->whereIn('student_id', $studentIds)->get();
+
+            $billed = $invoices->sum(
+                fn (Invoice $inv) => $inv->total_amount_cents->cents()
+                    + $inv->arrears_cents->cents()
+                    - $inv->discount_cents->cents()
+            );
+            $collected = $invoices->sum(fn (Invoice $inv) => $inv->paidCents());
+
+            return [
+                'class_name' => $class->name,
+                'student_count' => $studentIds->count(),
+                'total_billed_cents' => (int) $billed,
+                'total_collected_cents' => (int) $collected,
+                'total_outstanding_cents' => max(0, (int) $billed - (int) $collected),
+            ];
+        })->values();
+
+        return response()->json(['rows' => $rows]);
+    }
+
+    // ─────────────────────────────────────────────────────────
+    //  6c. Expenses vs Collections
+    // ─────────────────────────────────────────────────────────
+
+    public function expensesVsCollections(Request $request): JsonResponse
+    {
+        $request->validate([
+            'school_id' => 'nullable|integer|exists:schools,id',
+            'year' => 'nullable|integer|min:2000|max:2100',
+        ]);
+
+        $schoolId = $this->activeSchoolId($request);
+        $year = $request->integer('year') ?: (int) now()->format('Y');
+
+        // pluck()/attribute access on an aggregated column still runs it through
+        // the model's Money cast (casts apply by attribute NAME, not by where the
+        // value came from) — get() + getRawOriginal() sidesteps that instead of
+        // crashing on "Object of class Money could not be converted to int".
+        $collectionsByMonth = Payment::allSchools()
+            ->whereYear('paid_at', $year)
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+            ->selectRaw('MONTH(paid_at) as month, SUM(amount_cents) as amount_cents')
+            ->groupBy('month')
+            ->get()
+            ->mapWithKeys(fn ($r) => [$r->month => (int) $r->getRawOriginal('amount_cents')]);
+
+        $expensesByMonth = Expense::allSchools()
+            ->where('status', 'approved')
+            ->whereYear('expense_date', $year)
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+            ->selectRaw('MONTH(expense_date) as month, SUM(amount_cents) as amount_cents')
+            ->groupBy('month')
+            ->get()
+            ->mapWithKeys(fn ($r) => [$r->month => (int) $r->getRawOriginal('amount_cents')]);
+
+        $rows = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $rows[] = [
+                'month' => $m,
+                'collections_cents' => (int) ($collectionsByMonth[$m] ?? 0),
+                'expenses_cents' => (int) ($expensesByMonth[$m] ?? 0),
+            ];
+        }
+
+        return response()->json(['rows' => $rows, 'year' => $year]);
     }
 
     // ─────────────────────────────────────────────────────────

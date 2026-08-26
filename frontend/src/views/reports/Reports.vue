@@ -142,7 +142,7 @@
             <CTableHead class="table-light">
               <CTableRow>
                 <CTableHeaderCell>{{ t('students.student') }}</CTableHeaderCell>
-                <CTableHeaderCell class="d-none d-md-table-cell">{{ t('invoices.invoiceNo') }} #</CTableHeaderCell>
+                <CTableHeaderCell class="d-none d-md-table-cell">{{ t('common.class') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('invoices.balance') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.daysOverdue') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.agingStatus') }}</CTableHeaderCell>
@@ -151,14 +151,14 @@
             <CTableBody>
               <CTableRow v-for="d in debtors" :key="d.id">
                 <CTableDataCell>
-                  <div class="fw-semibold">{{ d.student?.full_name }}</div>
-                  <div class="text-muted small">{{ d.student?.admission_number }}</div>
+                  <div class="fw-semibold">{{ d.full_name }}</div>
+                  <div class="text-muted small">{{ d.admission_number }}</div>
                 </CTableDataCell>
-                <CTableDataCell class="d-none d-md-table-cell small">{{ d.invoice_number }}</CTableDataCell>
-                <CTableDataCell class="fw-bold text-danger">{{ formatTZS(d.balance_due_cents) }}</CTableDataCell>
-                <CTableDataCell class="small">{{ d.days_overdue || 0 }}</CTableDataCell>
+                <CTableDataCell class="d-none d-md-table-cell small">{{ d.school_class }}</CTableDataCell>
+                <CTableDataCell class="fw-bold text-danger">{{ formatTZS(d.outstanding_cents) }}</CTableDataCell>
+                <CTableDataCell class="small">{{ d.oldest_age || 0 }}</CTableDataCell>
                 <CTableDataCell>
-                  <CBadge :color="agingColor(d.days_overdue)" shape="rounded-pill">{{ agingLabel(d.days_overdue) }}</CBadge>
+                  <CBadge :color="agingColor(d.oldest_age)" shape="rounded-pill">{{ agingLabel(d.oldest_age) }}</CBadge>
                 </CTableDataCell>
               </CTableRow>
               <CTableRow v-if="!debtors.length">
@@ -316,9 +316,11 @@
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useSchoolStore } from '@/stores/school'
 import api from '@/services/api'
 
 const { t } = useI18n()
+const schoolStore = useSchoolStore()
 
 let Chart = null
 
@@ -403,7 +405,9 @@ function formatTZS(cents) {
 }
 function collectionPct(c) {
   if (!c.total_billed_cents) return 0
-  return Math.round((c.total_collected_cents / c.total_billed_cents) * 100)
+  // An overpaid class (collected > billed) would otherwise show e.g. "40000%" —
+  // this is a % of fee collected, capped at 100 like any completion metric.
+  return Math.min(100, Math.round((c.total_collected_cents / c.total_billed_cents) * 100))
 }
 function agingLabel(days) {
   if (!days || days <= 30) return '0-30'
@@ -431,10 +435,17 @@ async function initChart() {
 async function loadCollections() {
   loadingCol.value = true
   try {
-    const { data } = await api.get('/reports/collections', { params: colFilters.value })
+    const { data } = await api.get('/reports/collections', {
+      params: { from: colFilters.value.date_from, to: colFilters.value.date_to },
+    })
     const d = data.data || data
-    colRows.value = d.rows || []
-    colStats.value = d.stats || {}
+    colRows.value = (d.rows || []).map(r => ({ date: r.period, amount_cents: r.amount_cents, count: r.payment_count }))
+    colStats.value = {
+      total_collected: d.summary?.total_amount_cents || 0,
+      total_outstanding: d.summary?.total_outstanding_cents || 0,
+      paid_count: d.summary?.paid_count || 0,
+      partial_count: d.summary?.partial_count || 0,
+    }
     await nextTick()
     if (colRows.value.length) await renderColChart()
   } catch {} finally { loadingCol.value = false }
@@ -458,17 +469,21 @@ async function renderColChart() {
 async function loadDebtors() {
   loadingDebt.value = true
   try {
-    const { data } = await api.get('/reports/debtors')
-    const d = data.data || data
-    debtors.value = d.rows || d || []
+    const { data } = await api.get('/reports/debtor-aging')
+    const buckets = data.buckets || {}
+    // Backend has 5 buckets (current = not-yet-due, plus 4 aging ranges); the
+    // UI only has 4 slots, so "current" folds into the 1-30 days slot.
+    const slotOf = { current: 0, days_1_30: 0, days_31_60: 1, days_61_90: 2, over_90: 3 }
     const counts = [0, 0, 0, 0]
     const totals = [0, 0, 0, 0]
-    debtors.value.forEach(inv => {
-      const days = inv.days_overdue || 0
-      const idx = days <= 30 ? 0 : days <= 60 ? 1 : days <= 90 ? 2 : 3
-      counts[idx]++
-      totals[idx] += inv.balance_due_cents || 0
+    const flat = []
+    Object.entries(slotOf).forEach(([key, slot]) => {
+      const b = buckets[key] || { count: 0, amount_cents: 0, students: [] }
+      counts[slot] += b.count || 0
+      totals[slot] += b.amount_cents || 0
+      ;(b.students || []).forEach(s => flat.push({ ...s, bucket: key }))
     })
+    debtors.value = flat
     debtBucketCounts.value = counts
     debtBucketTotals.value = totals
   } catch {} finally { loadingDebt.value = false }
@@ -545,6 +560,16 @@ watch(activeTab, (tab) => {
   if (tab === 'debtors' && !debtors.value.length) loadDebtors()
   if (tab === 'byclass' && !classData.value.length) loadByClass()
   if (tab === 'vs' && !vsData.value.length) loadVsData()
+})
+
+// Every report is scoped server-side by the active school (via X-School-Id) —
+// switching schools while a tab is already populated must refresh it instead
+// of silently keeping the previous school's numbers on screen.
+watch(() => schoolStore.activeSchoolId, () => {
+  if (activeTab.value === 'collections') loadCollections()
+  else if (activeTab.value === 'debtors') loadDebtors()
+  else if (activeTab.value === 'byclass') loadByClass()
+  else if (activeTab.value === 'vs') loadVsData()
 })
 
 onMounted(async () => { try { await loadCollections() } catch {} })
