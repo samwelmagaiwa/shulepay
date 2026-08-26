@@ -180,6 +180,7 @@ export default {
     cardTotalStudents:  'Wanafunzi Wote',
     cardDebt:           'Madeni Yanayodai',
     cardNewStudents:    'Wanafunzi Wapya',
+    cardSponsoredFree:  'Wamefadhiliwa Kikamilifu (Bila Malipo)',
     cardTodayCollect:   'Makusanyo ya Leo',
     cardPaidInvoices:   'Ankara Zilizolipwa',
     cardUnpaid:         'Hawajalipiwa',

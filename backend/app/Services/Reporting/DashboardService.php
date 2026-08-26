@@ -29,6 +29,17 @@ class DashboardService
             ->distinct('student_id')
             ->count('student_id');
 
+        // ── Fully sponsored, no payments (1 query) ─────────────────────────────
+        // Exact match on 'full' only — 'full_paid' is sponsored but still bills,
+        // so it must not be counted here (same distinction StudentRegistrationService
+        // uses to decide whether a student gets an invoice at all).
+        $sponsoredFreeCount = Enrollment::withoutGlobalScope('school')
+            ->where('status', 'active')
+            ->whereHas('student', fn ($q) => $q->where('sponsorship_type', 'full'))
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+            ->distinct('student_id')
+            ->count('student_id');
+
         // ── Base query builders ────────────────────────────────────────────────
         $invoiceTable = (new Invoice)->getTable();
         $paymentTable = (new Payment)->getTable();
@@ -237,6 +248,7 @@ class DashboardService
 
         return [
             'total_students' => $studentCount,
+            'sponsored_free_count' => $sponsoredFreeCount,
             'total_collected_cents' => (int) $totalCollectedCents,
             'total_outstanding_cents' => (int) $totalOutstanding,
             'total_expenses_cents' => (int) $totalExpensesCents,

@@ -180,6 +180,7 @@ export default {
     cardTotalStudents:  'All Students',
     cardDebt:           'Outstanding Debt',
     cardNewStudents:    'New Students',
+    cardSponsoredFree:  'Fully Sponsored (Free)',
     cardTodayCollect:   "Today's Collections",
     cardPaidInvoices:   'Paid Invoices',
     cardUnpaid:         'Unpaid',

@@ -182,7 +182,7 @@ const fetchPendingPatients = () => {}
             </div>
             <div class="stat-main-info">
               <h3 class="stat-value" style="color: #0ea5e9">{{ getValue('new_visits') }}</h3>
-              <span class="stat-label">{{ t('dashboard.cardNewStudents') }}</span>
+              <span class="stat-label">{{ t('dashboard.cardSponsoredFree') }}</span>
             </div>
           </div>
           <div
