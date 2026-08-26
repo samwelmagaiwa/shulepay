@@ -57,7 +57,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
     if (!s) return null
     return {
       total_patients:   s.total_students   || 0,
-      emergency_visits: (s.unpaid_invoices || 0) + (s.partial_invoices || 0),
+      // "Outstanding Debt" card (SocialStatsWidgets) reads this — it must be the
+      // actual TZS amount still owed, not a count of invoices. That count is a
+      // different metric and stays available separately as `pending` below.
+      emergency_visits: Math.round((s.total_outstanding_cents || 0) / 100), // TZS
       new_visits:       s.new_students     || 0,
       followups:        Math.round((s.today_collections || 0) / 100), // TZS
       consulted:        s.paid_invoices    || 0,

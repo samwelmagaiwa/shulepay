@@ -151,7 +151,7 @@ const fetchPendingPatients = () => {}
             <div class="stat-main-info">
               <div class="d-flex align-items-center mb-0">
                 <h3 class="stat-value mb-0" style="color: #f43f5e">
-                  {{ getValue('emergency_visits') }}
+                  TZS {{ getValue('emergency_visits') }}
                 </h3>
               </div>
               <span class="stat-label">{{ t('dashboard.cardDebt') }}</span>
