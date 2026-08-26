@@ -33,48 +33,43 @@ const getPrevValue = (key) => {
   return (dashboard.previousStats?.[key] || 0).toLocaleString()
 }
 
-// ── Absent students card ──────────────────────────────────────────────────
-const showAbsentList  = ref(false)
-const absentByClass   = ref([])
-const isAbsentLoading = ref(false)
+// ── Students with discount card (formerly "Absent Today") ─────────────────
+const showDiscountList  = ref(false)
+const discountedByClass = ref([])
+const isDiscountLoading = ref(false)
 
-const todayStr = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-}
-
-const totalAbsent = computed(() =>
-  absentByClass.value.reduce((s, c) => s + (c.absent || 0), 0)
+const totalDiscounted = computed(() =>
+  discountedByClass.value.reduce((s, c) => s + (c.discounted || 0), 0)
 )
 
-const toggleAbsentList = async () => {
-  showAbsentList.value = !showAbsentList.value
-  if (showAbsentList.value) {
-    await loadAbsentByClass()
+const toggleDiscountList = async () => {
+  showDiscountList.value = !showDiscountList.value
+  if (showDiscountList.value) {
+    await loadDiscountedByClass()
   }
 }
 
-const loadAbsentByClass = async () => {
-  isAbsentLoading.value = true
+const loadDiscountedByClass = async () => {
+  isDiscountLoading.value = true
   try {
-    absentByClass.value = await dashboard.fetchAbsentByClass(todayStr())
+    discountedByClass.value = await dashboard.fetchDiscountedByClass()
   } catch (e) {
-    console.error('fetchAbsentByClass error', e)
-    absentByClass.value = []
+    console.error('fetchDiscountedByClass error', e)
+    discountedByClass.value = []
   } finally {
-    isAbsentLoading.value = false
+    isDiscountLoading.value = false
   }
 }
 
 // Auto-load on mount so the count shows immediately
-loadAbsentByClass()
+loadDiscountedByClass()
 
-// Refresh when school / date changes
+// Refresh when school changes
 watch(
   () => [dashboard.selectedDay, dashboard.selectedWeek, dashboard.selectedMonth, dashboard.selectedYear, dashboard.selectedRange],
   () => {
-    absentByClass.value = []
-    if (showAbsentList.value) loadAbsentByClass()
+    discountedByClass.value = []
+    if (showDiscountList.value) loadDiscountedByClass()
   },
   { deep: true },
 )
@@ -253,53 +248,50 @@ const fetchPendingPatients = () => {}
         </div>
       </CCol>
 
-      <!-- Absent Students Today -->
+      <!-- Students with Discount -->
       <CCol class="metric-col">
         <div
           class="stat-card premium-shadow shadow-red red-theme-active"
-          :class="{ expanded: showAbsentList }"
+          :class="{ expanded: showDiscountList }"
         >
           <div class="notch-border top red"></div>
           <div class="notch-border bottom red"></div>
 
-          <div class="stat-card-header mb-1" @click="toggleAbsentList" style="cursor:pointer;">
+          <div class="stat-card-header mb-1" @click="toggleDiscountList" style="cursor:pointer;">
             <div class="stat-icon-wrapper" style="background:rgba(239,68,68,0.12);">
-              <!-- Person with X -->
+              <!-- Discount tag -->
               <svg viewBox="0 0 24 24" class="stat-icon" style="color:#ef4444;" fill="currentColor">
-                <circle cx="9" cy="7" r="3.5" />
-                <path d="M2 19c0-3.3 3.1-6 7-6s7 2.7 7 6H2z" />
-                <line x1="16" y1="11" x2="22" y2="17" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round"/>
-                <line x1="22" y1="11" x2="16" y2="17" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round"/>
+                <path d="M20.6 12.3 12.7 20.2c-.6.6-1.6.6-2.2 0L3.2 12.9c-.3-.3-.5-.7-.5-1.1V4.5c0-.8.7-1.5 1.5-1.5h7.3c.4 0 .8.2 1.1.5l7.9 7.9c.7.6.7 1.6.1 2.2ZM7.5 8.5A1.5 1.5 0 1 0 7.5 5.5A1.5 1.5 0 1 0 7.5 8.5Z"/>
               </svg>
             </div>
             <div class="stat-main-info">
               <h3 class="stat-value" style="color:#ef4444;">
-                <span v-if="isAbsentLoading" class="spinner-border spinner-border-sm" style="width:1rem;height:1rem;border-width:2px;"></span>
-                <span v-else>{{ totalAbsent }}</span>
-                <CIcon :icon="showAbsentList ? cilChevronTop : cilChevronBottom" size="sm" class="ms-1 dropdown-arrow" />
+                <span v-if="isDiscountLoading" class="spinner-border spinner-border-sm" style="width:1rem;height:1rem;border-width:2px;"></span>
+                <span v-else>{{ totalDiscounted }}</span>
+                <CIcon :icon="showDiscountList ? cilChevronTop : cilChevronBottom" size="sm" class="ms-1 dropdown-arrow" />
               </h3>
-              <span class="stat-label">{{ t('dashboard.cardAbsent', 'ABSENT TODAY') }}</span>
+              <span class="stat-label">{{ t('dashboard.cardDiscounted', 'STUDENTS WITH DISCOUNT') }}</span>
             </div>
           </div>
 
-          <!-- Per-class absent breakdown dropdown -->
-          <div v-if="showAbsentList" class="pending-list-container">
-            <div v-if="isAbsentLoading" class="text-center py-2">
+          <!-- Per-class discounted-students breakdown dropdown -->
+          <div v-if="showDiscountList" class="pending-list-container">
+            <div v-if="isDiscountLoading" class="text-center py-2">
               <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
             </div>
-            <div v-else-if="absentByClass.length === 0" class="no-data-text">
-              Hakuna wanafunzi walioripotiwa leo
+            <div v-else-if="discountedByClass.length === 0" class="no-data-text">
+              {{ t('dashboard.noDiscountedStudents', 'No students with a discount') }}
             </div>
             <div v-else class="patient-list">
               <!-- Total row -->
               <div class="patient-item absent-total-row">
                 <span class="mr-number fw-bold">Jumla</span>
-                <span class="absent-count-badge absent-count-total">{{ totalAbsent }}</span>
+                <span class="absent-count-badge absent-count-total">{{ totalDiscounted }}</span>
               </div>
               <!-- Per class rows -->
-              <div v-for="cls in absentByClass" :key="cls.class_id" class="patient-item">
+              <div v-for="cls in discountedByClass" :key="cls.class_id" class="patient-item">
                 <span class="mr-number">{{ cls.class_name || '—' }}</span>
-                <span class="absent-count-badge">{{ cls.absent }}</span>
+                <span class="absent-count-badge">{{ cls.discounted }}</span>
               </div>
             </div>
           </div>

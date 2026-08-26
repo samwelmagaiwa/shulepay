@@ -272,6 +272,14 @@ export const useDashboardStore = defineStore('dashboard', () => {
       .sort((a, b) => (a.class_name || '').localeCompare(b.class_name || ''))
   }
 
+  async function fetchDiscountedByClass() {
+    const { data } = await api.get('/students/discounted-by-class')
+    // Return array sorted by class name, only classes with at least 1 discounted student
+    return (data || [])
+      .filter(c => c.discounted > 0)
+      .sort((a, b) => (a.class_name || '').localeCompare(b.class_name || ''))
+  }
+
   function setBreakdownMode(_enabled) {
     // No-op: breakdown mode is not wired to a separate endpoint in ShulePay
   }
@@ -307,6 +315,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
     // Legacy stubs
     metrics, clinics,
     // Actions
-    fetchStats, fetchPendingPatients, fetchAbsentByClass, setBreakdownMode, calculateDateRange, stopPulse,
+    fetchStats, fetchPendingPatients, fetchAbsentByClass, fetchDiscountedByClass, setBreakdownMode, calculateDateRange, stopPulse,
   }
 })

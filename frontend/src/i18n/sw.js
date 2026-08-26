@@ -178,7 +178,7 @@ export default {
     todayCollections: 'Makusanyo Leo',
     // Stat cards
     cardTotalStudents:  'Wanafunzi Wote',
-    cardDebt:           'Madeni Yanayodai',
+    cardDebt:           'Madeni',
     cardNewStudents:    'Wanafunzi Wapya',
     cardSponsoredFree:  'Wamefadhiliwa Kikamilifu (Bila Malipo)',
     cardTodayCollect:   'Makusanyo ya Leo',
@@ -186,6 +186,8 @@ export default {
     cardUnpaid:         'Hawajalipiwa',
     cardNotPaidToday:   'Bado Hawajalipa',
     cardAbsent:         'Hawakuja Leo',
+    cardDiscounted:     'Wanafunzi Wenye Punguzo',
+    noDiscountedStudents: 'Hakuna wanafunzi wenye punguzo',
     compYesterday:      'Jana',
     compLastWeek:       'Wiki Iliyopita',
     compLastMonth:      'Mwezi Uliopita',

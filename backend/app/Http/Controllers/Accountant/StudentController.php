@@ -9,6 +9,7 @@ use App\Http\Requests\Student\UpdateStudentFullRequest;
 use App\Http\Requests\Student\UpdateStudentRequest;
 use App\Http\Resources\StudentResource;
 use App\Models\AuditLog;
+use App\Models\Discount;
 use App\Models\School;
 use App\Models\Student;
 use App\Services\Students\StudentRegistrationService;
@@ -207,6 +208,34 @@ class StudentController extends Controller
         );
 
         return new StudentResource($student);
+    }
+
+    /**
+     * Per-class breakdown of students who currently have a discount, for the
+     * "Students with Discount" dashboard card (formerly "Absent Today").
+     * Mirrors AttendanceController::summary's shape/scoping so the widget's
+     * existing dropdown UI could be repointed here directly.
+     */
+    public function discountedByClass(Request $request): JsonResponse
+    {
+        $schoolId = app()->bound('active_school') ? app('active_school')->id : auth()->user()->school_id;
+
+        $summary = Discount::query()
+            ->join('enrollments', function ($join) {
+                $join->on('enrollments.student_id', '=', 'discounts.student_id')
+                    ->where('enrollments.status', 'active');
+            })
+            ->join('school_classes', 'school_classes.id', '=', 'enrollments.school_class_id')
+            ->when($schoolId, fn ($q) => $q->where('enrollments.school_id', $schoolId))
+            ->select(
+                'school_classes.id as class_id',
+                'school_classes.name as class_name',
+                DB::raw('count(distinct discounts.student_id) as discounted')
+            )
+            ->groupBy('school_classes.id', 'school_classes.name')
+            ->get();
+
+        return response()->json($summary);
     }
 
     public function destroy(Student $student): JsonResponse

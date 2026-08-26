@@ -140,6 +140,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Students — custom routes MUST precede apiResource to avoid {student} capturing them
         Route::post('students/register', [StudentController::class, 'register']);
         Route::get('students/next-admission-number', [StudentController::class, 'nextAdmissionNumber']);
+        Route::get('students/discounted-by-class', [StudentController::class, 'discountedByClass']);
         Route::put('students/{student}/full', [StudentController::class, 'updateFull']);
         Route::apiResource('students', StudentController::class);
 

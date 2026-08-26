@@ -186,6 +186,8 @@ export default {
     cardUnpaid:         'Unpaid',
     cardNotPaidToday:   'Not Yet Paid',
     cardAbsent:         'Absent Today',
+    cardDiscounted:     'Students with Discount',
+    noDiscountedStudents: 'No students with a discount',
     compYesterday:      'Yesterday',
     compLastWeek:       'Last Week',
     compLastMonth:      'Last Month',
