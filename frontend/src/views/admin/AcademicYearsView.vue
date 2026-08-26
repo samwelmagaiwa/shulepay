@@ -131,11 +131,7 @@ function fmtDate(d) {
   <CContainer fluid class="py-3">
 
     <!-- Page header -->
-    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-4">
-      <div>
-        <h4 class="fw-bold mb-0" style="color:#007f3e;">📅 {{ t('nav.academicYears') }}</h4>
-        <p class="text-muted small mb-0">{{ t('academicYears.subtitle') }}</p>
-      </div>
+    <div class="d-flex justify-content-end mb-2 mt-1">
       <CButton color="success" @click="openCreate" style="font-weight:600;">
         + {{ t('academicYears.add') }}
       </CButton>

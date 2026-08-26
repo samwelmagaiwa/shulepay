@@ -1,14 +1,7 @@
 <template>
   <CContainer fluid class="p-2 p-md-3">
-    <CRow class="align-items-center mb-3">
-      <CCol>
-        <h5 class="fw-bold mb-0">{{ t('rollover.title') }}</h5>
-        <p class="text-muted small mb-0">{{ t('rollover.subtitle') }}</p>
-      </CCol>
-    </CRow>
-
     <!-- Stepper -->
-    <div class="d-flex align-items-center mb-4 px-2">
+    <div class="d-flex align-items-center mb-4 px-2 mt-2">
       <template v-for="(label, i) in stepLabels" :key="i">
         <div class="d-flex flex-column align-items-center">
           <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold"
@@ -37,8 +30,9 @@
           </CCol>
           <CCol xs="12" sm="6">
             <label class="form-label fw-semibold">{{ t('rollover.from') }} <span class="text-danger">*</span></label>
-            <CFormSelect v-model="setup.from_year_id">
-              <option value="">— {{ t('rollover.selectYear') }} —</option>
+            <CFormSelect v-model="setup.from_year_id" :disabled="!setup.school_id">
+              <option v-if="!setup.school_id" value="">{{ t('fees.selectSchoolFirst') }}</option>
+              <option v-else value="">— {{ t('rollover.selectYear') }} —</option>
               <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
             </CFormSelect>
           </CCol>
@@ -188,7 +182,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
 
@@ -257,16 +251,31 @@ async function executeRollover() {
   }
 }
 
-onMounted(async () => {
+// Academic years and classes are per-school — fetched unscoped they fall back
+// to the logged-in user's own school, not whichever school is chosen in this
+// wizard's own "School" field, leaving "From Year" empty for any other
+// school. Refetch, scoped by school_id, whenever the selection changes.
+async function loadForSchool(schoolId) {
+  setup.value.from_year_id = ''
+  academicYears.value = []
+  classes.value = []
+  if (!schoolId) return
   try {
-    const [s, y, c] = await Promise.all([
-      api.get('/schools'),
-      api.get('/academic-years'),
-      api.get('/school-classes'),
+    const [y, c] = await Promise.all([
+      api.get('/academic-years', { params: { school_id: schoolId } }),
+      api.get('/school-classes', { params: { school_id: schoolId } }),
     ])
-    schools.value = s.data.data || s.data
     academicYears.value = y.data.data || y.data
     classes.value = c.data.data || c.data
+  } catch {}
+}
+
+watch(() => setup.value.school_id, (id) => loadForSchool(id))
+
+onMounted(async () => {
+  try {
+    const s = await api.get('/schools')
+    schools.value = s.data.data || s.data
   } catch {}
 })
 </script>
