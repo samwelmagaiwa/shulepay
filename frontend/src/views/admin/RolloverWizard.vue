@@ -224,9 +224,19 @@ async function fetchPreview() {
   }
   previewing.value = true
   try {
-    const { data } = await api.get('/rollover/preview', { params: setup.value })
+    const { data } = await api.get('/rollover/preview', {
+      params: { school_id: setup.value.school_id, from_year_id: setup.value.from_year_id },
+    })
     previewStudents.value = data.data || data
-    studentActions.value = previewStudents.value.map(s => ({ student_id: s.id, action: 'promoted', new_class_id: '' }))
+    // Default each student to the backend's proposed action/class — a student
+    // with no next class in sequence (top class) is proposed as 'graduated',
+    // which must default correctly here since execute() requires a class only
+    // for promoted/repeated and would otherwise reject a blank one.
+    studentActions.value = previewStudents.value.map(s => ({
+      student_id: s.id,
+      action: s.proposed_action || 'promoted',
+      new_class_id: s.proposed_class_id || '',
+    }))
     step.value = 1
   } catch (e) {
     setupError.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia wanafunzi'
@@ -240,8 +250,14 @@ async function executeRollover() {
   executing.value = true
   try {
     const { data } = await api.post('/rollover/execute', {
-      ...setup.value,
-      students: studentActions.value,
+      school_id: setup.value.school_id,
+      from_year_id: setup.value.from_year_id,
+      new_year_name: setup.value.new_year_name,
+      promotions: studentActions.value.map(a => ({
+        student_id: a.student_id,
+        new_school_class_id: a.new_class_id || null,
+        action: a.action,
+      })),
     })
     executeResult.value = data
   } catch (e) {

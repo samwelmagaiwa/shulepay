@@ -8,6 +8,7 @@ use App\Models\Enrollment;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\Term;
 use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ class RolloverController extends Controller
     public function preview(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'academic_year_id' => ['required', 'integer', 'exists:academic_years,id'],
+            'from_year_id' => ['required', 'integer', 'exists:academic_years,id'],
             'school_id' => ['required', 'integer', 'exists:schools,id'],
         ]);
 
@@ -46,7 +47,7 @@ class RolloverController extends Controller
         // Get active enrollments in the given academic year
         $enrollments = Enrollment::with(['student', 'schoolClass'])
             ->where('school_id', $school->id)
-            ->where('academic_year_id', $data['academic_year_id'])
+            ->where('academic_year_id', $data['from_year_id'])
             ->where('status', 'active')
             ->get();
 
@@ -56,11 +57,10 @@ class RolloverController extends Controller
             $nextClass = $nextClassId ? $allClasses->get($nextClassId) : null;
 
             return [
-                'student_id' => $enrollment->student_id,
-                'student_name' => $enrollment->student->fullName(),
+                'id' => $enrollment->student_id,
+                'full_name' => $enrollment->student->fullName(),
                 'admission_number' => $enrollment->admission_number,
-                'current_class_id' => $enrollment->school_class_id,
-                'current_class_name' => $currentClass?->name,
+                'school_class' => $currentClass ? ['id' => $currentClass->id, 'name' => $currentClass->name] : null,
                 'proposed_class_id' => $nextClassId,
                 'proposed_class_name' => $nextClass?->name ?? 'No next class (graduated)',
                 'proposed_action' => $nextClassId ? 'promoted' : 'graduated',
@@ -68,33 +68,74 @@ class RolloverController extends Controller
         });
 
         return response()->json([
-            'academic_year_id' => $data['academic_year_id'],
+            'from_year_id' => $data['from_year_id'],
             'school_id' => $data['school_id'],
             'total' => $preview->count(),
-            'enrollments' => $preview->values(),
+            'data' => $preview->values(),
         ]);
     }
 
     /**
      * POST /rollover/execute
-     * Executes the rollover: creates new enrollments for new academic year.
+     * Executes the rollover: creates the new academic year (and its terms,
+     * copied forward one year from the source year) if it doesn't already
+     * exist, then creates new enrollments for it.
      */
     public function execute(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'academic_year_id' => ['required', 'integer', 'exists:academic_years,id'],
-            'new_academic_year_id' => ['required', 'integer', 'exists:academic_years,id', 'different:academic_year_id'],
+            'from_year_id' => ['required', 'integer', 'exists:academic_years,id'],
+            'new_year_name' => ['required', 'string', 'max:100'],
             'school_id' => ['required', 'integer', 'exists:schools,id'],
             'promotions' => ['required', 'array', 'min:1'],
             'promotions.*.student_id' => ['required', 'integer', 'exists:students,id'],
-            'promotions.*.new_school_class_id' => ['required', 'integer', 'exists:school_classes,id'],
+            // Only required for promoted/repeated — graduated/dropped students
+            // never get a next class, so this is validated per-action below
+            // instead of unconditionally, which previously rejected every
+            // graduate/dropout in the same batch.
+            'promotions.*.new_school_class_id' => ['nullable', 'integer', 'exists:school_classes,id'],
             'promotions.*.action' => ['required', 'string', 'in:promoted,repeated,graduated,dropped'],
         ]);
 
         $school = School::findOrFail($data['school_id']);
-        $newAcademicYear = AcademicYear::findOrFail($data['new_academic_year_id']);
+        $fromYear = AcademicYear::with('terms')->findOrFail($data['from_year_id']);
 
-        $summary = DB::transaction(function () use ($data, $school, $newAcademicYear) {
+        foreach ($data['promotions'] as $i => $promo) {
+            if (in_array($promo['action'], ['promoted', 'repeated'], true) && empty($promo['new_school_class_id'])) {
+                return response()->json([
+                    'message' => "Select a class for promotions.{$i} (student {$promo['student_id']}).",
+                ], 422);
+            }
+        }
+
+        $summary = DB::transaction(function () use ($data, $school, $fromYear) {
+            // Reuse an existing year with this name (e.g. a retried rollover)
+            // instead of creating a duplicate.
+            $newAcademicYear = AcademicYear::where('school_id', $school->id)
+                ->where('name', $data['new_year_name'])
+                ->first();
+
+            if (! $newAcademicYear) {
+                $newAcademicYear = AcademicYear::create([
+                    'name' => $data['new_year_name'],
+                    'school_id' => $school->id,
+                    'start_date' => $fromYear->start_date?->copy()->addYear() ?? now(),
+                    'end_date' => $fromYear->end_date?->copy()->addYear() ?? now()->addYear(),
+                    'is_current' => false,
+                ]);
+
+                foreach ($fromYear->terms as $term) {
+                    Term::create([
+                        'academic_year_id' => $newAcademicYear->id,
+                        'name' => $term->name,
+                        'number' => $term->number,
+                        'start_date' => $term->start_date?->copy()->addYear(),
+                        'end_date' => $term->end_date?->copy()->addYear(),
+                        'is_current' => false,
+                    ]);
+                }
+            }
+
             $imported = 0;
             $graduated = 0;
             $dropped = 0;
@@ -111,7 +152,7 @@ class RolloverController extends Controller
 
                 // Check for duplicate enrollment in new year
                 $exists = Enrollment::where('student_id', $student->id)
-                    ->where('academic_year_id', $data['new_academic_year_id'])
+                    ->where('academic_year_id', $newAcademicYear->id)
                     ->where('school_id', $school->id)
                     ->exists();
 
@@ -129,7 +170,7 @@ class RolloverController extends Controller
 
                     // Deactivate current enrollment
                     Enrollment::where('student_id', $student->id)
-                        ->where('academic_year_id', $data['academic_year_id'])
+                        ->where('academic_year_id', $data['from_year_id'])
                         ->where('school_id', $school->id)
                         ->update(['status' => $action === 'graduated' ? 'graduated' : 'dropped']);
 
@@ -149,7 +190,7 @@ class RolloverController extends Controller
                     'student_id' => $student->id,
                     'school_id' => $school->id,
                     'school_class_id' => $newClassId,
-                    'academic_year_id' => $data['new_academic_year_id'],
+                    'academic_year_id' => $newAcademicYear->id,
                     'admission_number' => $admissionNumber,
                     'status' => 'active',
                     'admitted_at' => $newAcademicYear->start_date ?? now(),
@@ -157,7 +198,7 @@ class RolloverController extends Controller
 
                 // Deactivate old enrollment
                 Enrollment::where('student_id', $student->id)
-                    ->where('academic_year_id', $data['academic_year_id'])
+                    ->where('academic_year_id', $data['from_year_id'])
                     ->where('school_id', $school->id)
                     ->update(['status' => 'completed']);
 
@@ -166,8 +207,9 @@ class RolloverController extends Controller
 
             AuditLogger::log('rollover_executed', null, [
                 'after' => [
-                    'from_academic_year_id' => $data['academic_year_id'],
-                    'to_academic_year_id' => $data['new_academic_year_id'],
+                    'from_academic_year_id' => $data['from_year_id'],
+                    'to_academic_year_id' => $newAcademicYear->id,
+                    'to_academic_year_name' => $newAcademicYear->name,
                     'school_id' => $data['school_id'],
                     'promoted' => $imported,
                     'graduated' => $graduated,
@@ -181,6 +223,8 @@ class RolloverController extends Controller
                 'graduated' => $graduated,
                 'dropped' => $dropped,
                 'errors' => $errors,
+                'new_academic_year_id' => $newAcademicYear->id,
+                'new_academic_year_name' => $newAcademicYear->name,
             ];
         });
 
