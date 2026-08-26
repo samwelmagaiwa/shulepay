@@ -443,7 +443,9 @@
       "Bash(ssh root@169.58.188.122 \"docker cp /tmp/audit_classfee2.php shulepay_backend:/tmp/audit_classfee2.php && docker exec shulepay_backend php artisan tinker /tmp/audit_classfee2.php\")",
       "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\audit_all_classes.php\" root@169.58.188.122:/tmp/audit_all_classes.php)",
       "Bash(ssh root@169.58.188.122 \"docker cp /tmp/audit_all_classes.php shulepay_backend:/tmp/audit_all_classes.php && docker exec shulepay_backend php artisan tinker /tmp/audit_all_classes.php\")",
-      "Bash(bash deploy.sh release \"fix\\(dashboard\\): Outstanding Debt card shows real TZS amount owed, not invoice count\")"
+      "Bash(bash deploy.sh release \"fix\\(dashboard\\): Outstanding Debt card shows real TZS amount owed, not invoice count\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend grep -c 'total_outstanding_cents' app/Services/Reporting/DashboardService.php\")",
+      "Bash(bash deploy.sh release \"feat\\(dashboard\\): New Students card now counts Fully Sponsored \\(Free\\) students\")"
     ]
   }
 }

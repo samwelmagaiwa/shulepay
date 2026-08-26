@@ -2405,3 +2405,14 @@ response looked like a deliberate 'not supported yet' and hid the missing method
 [0;36m[2026-08-26 21:12:31][0m   ShulePay — Release
 [0;36m[2026-08-26 21:12:31][0m ══════════════════════════════════════════
 [0;36m[2026-08-26 21:12:31][0m Checking working tree...
+[0;36m[2026-08-26 21:12:31][0m Files staged for commit:
+[0;36m[2026-08-26 21:12:31][0m Committing: "fix(dashboard): Outstanding Debt card shows real TZS amount owed, not invoice count"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-26 21:12:32][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-26 21:12:40][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-27 00:49:19][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 00:49:19][0m   ShulePay — Release
+[0;36m[2026-08-27 00:49:19][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 00:49:19][0m Checking working tree...
