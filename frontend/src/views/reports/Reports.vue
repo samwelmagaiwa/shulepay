@@ -45,7 +45,11 @@
 
       <!-- Print-only header -->
       <div class="print-only mb-3 pb-2" style="border-bottom:2px solid #333;">
-        <div class="fw-bold fs-5">ST. MAGRETH PRIMARY SCHOOL</div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+          <img v-if="branding.logoUrl" :src="branding.logoUrl"
+               style="height:40px; width:40px; object-fit:contain; flex-shrink:0;" />
+          <div class="fw-bold fs-5">{{ schoolStore.activeSchool?.name || branding.appName }}</div>
+        </div>
         <div class="fw-semibold">
           {{ tabs.find(t => t.id === activeTab)?.label }} — {{ t('reports.title') }}
         </div>
@@ -61,7 +65,7 @@
 
         <div v-if="loadingCol" class="text-center py-4"><CSpinner color="primary" /></div>
         <div v-else>
-          <CRow class="g-2 mb-3">
+          <CRow class="g-2 mb-3 no-print">
             <CCol xs="6" md="3">
               <CCard class="text-center border-0 shadow-sm h-100" style="border-left:3px solid #198754 !important">
                 <CCardBody class="p-2">
@@ -126,13 +130,13 @@
       <div v-if="activeTab === 'debtors'">
         <div v-if="loadingDebt" class="text-center py-4"><CSpinner color="primary" /></div>
         <div v-else>
-          <CRow class="g-2 mb-3">
+          <CRow class="g-2 mb-3 no-print">
             <CCol xs="6" sm="3" v-for="bucket in debtBuckets" :key="bucket.label">
               <CCard class="text-center border-0 shadow-sm h-100" :style="`border-left:3px solid ${bucket.color} !important`">
                 <CCardBody class="p-2">
                   <div class="fw-bold fs-6" :style="`color:${bucket.color}`">{{ formatTZS(bucket.total) }}</div>
                   <div class="text-muted small">{{ bucket.label }}</div>
-                  <div class="text-muted" style="font-size:.72rem;">{{ bucket.count }} ankara</div>
+                  <div class="text-muted" style="font-size:.72rem;">{{ bucket.count }} {{ t('reports.invoicesShort') }}</div>
                 </CCardBody>
               </CCard>
             </CCol>
@@ -141,7 +145,7 @@
           <CTable responsive hover class="mb-0" style="font-size:.85rem;">
             <CTableHead class="table-light">
               <CTableRow>
-                <CTableHeaderCell>{{ t('students.student') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('reports.student') }}</CTableHeaderCell>
                 <CTableHeaderCell class="d-none d-md-table-cell">{{ t('common.class') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('invoices.balance') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.daysOverdue') }}</CTableHeaderCell>
@@ -173,12 +177,12 @@
       <div v-if="activeTab === 'byclass'">
         <div v-if="loadingClass" class="text-center py-4"><CSpinner color="primary" /></div>
         <div v-else>
-          <CRow class="g-2 mb-3">
+          <CRow class="g-2 mb-3 no-print">
             <CCol xs="6" md="3">
               <CCard class="text-center border-0 shadow-sm h-100" style="border-left:3px solid #0d6efd !important">
                 <CCardBody class="p-2">
                   <div class="fw-bold fs-6 text-primary">{{ classData.length }}</div>
-                  <div class="text-muted small">Idadi ya Madarasa</div>
+                  <div class="text-muted small">{{ t('reports.classReport.classCount') }}</div>
                 </CCardBody>
               </CCard>
             </CCol>
@@ -186,7 +190,7 @@
               <CCard class="text-center border-0 shadow-sm h-100" style="border-left:3px solid #6c757d !important">
                 <CCardBody class="p-2">
                   <div class="fw-bold fs-6 text-secondary">{{ formatTZS(classStats.totalBilled) }}</div>
-                  <div class="text-muted small">Jumla Iliyotozwa</div>
+                  <div class="text-muted small">{{ t('reports.classReport.totalBilled') }}</div>
                 </CCardBody>
               </CCard>
             </CCol>
@@ -194,7 +198,7 @@
               <CCard class="text-center border-0 shadow-sm h-100" style="border-left:3px solid #198754 !important">
                 <CCardBody class="p-2">
                   <div class="fw-bold fs-6 text-success">{{ formatTZS(classStats.totalCollected) }}</div>
-                  <div class="text-muted small">Jumla Iliyokusanywa</div>
+                  <div class="text-muted small">{{ t('reports.classReport.totalCollected') }}</div>
                 </CCardBody>
               </CCard>
             </CCol>
@@ -202,7 +206,7 @@
               <CCard class="text-center border-0 shadow-sm h-100" style="border-left:3px solid #dc3545 !important">
                 <CCardBody class="p-2">
                   <div class="fw-bold fs-6 text-danger">{{ formatTZS(classStats.totalDebt) }}</div>
-                  <div class="text-muted small">Jumla ya Madeni</div>
+                  <div class="text-muted small">{{ t('reports.classReport.totalDebt') }}</div>
                 </CCardBody>
               </CCard>
             </CCol>
@@ -247,12 +251,12 @@
       <div v-if="activeTab === 'vs'">
         <div v-if="loadingVs" class="text-center py-4"><CSpinner color="primary" /></div>
         <div v-else>
-          <CRow class="g-2 mb-3">
+          <CRow class="g-2 mb-3 no-print">
             <CCol xs="6" md="4">
               <CCard class="text-center border-0 shadow-sm h-100" style="border-left:3px solid #198754 !important">
                 <CCardBody class="p-2">
                   <div class="fw-bold fs-6 text-success">{{ formatTZS(vsStats.totalCollections) }}</div>
-                  <div class="text-muted small">Jumla ya Makusanyo</div>
+                  <div class="text-muted small">{{ t('reports.vsReport.totalCollections') }}</div>
                 </CCardBody>
               </CCard>
             </CCol>
@@ -260,7 +264,7 @@
               <CCard class="text-center border-0 shadow-sm h-100" style="border-left:3px solid #dc3545 !important">
                 <CCardBody class="p-2">
                   <div class="fw-bold fs-6 text-danger">{{ formatTZS(vsStats.totalExpenses) }}</div>
-                  <div class="text-muted small">Jumla ya Gharama</div>
+                  <div class="text-muted small">{{ t('reports.vsReport.totalExpenses') }}</div>
                 </CCardBody>
               </CCard>
             </CCol>
@@ -270,7 +274,7 @@
                   <div class="fw-bold fs-6" :class="vsStats.surplus >= 0 ? 'text-success' : 'text-danger'">
                     {{ formatTZS(vsStats.surplus) }}
                   </div>
-                  <div class="text-muted small">Uzio wa Kifedha (Surplus / Deficit)</div>
+                  <div class="text-muted small">{{ t('reports.vsReport.surplusDeficit') }}</div>
                 </CCardBody>
               </CCard>
             </CCol>
@@ -310,10 +314,12 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSchoolStore } from '@/stores/school'
+import { useBrandingStore } from '@/stores/branding'
 import api from '@/services/api'
 
 const { t } = useI18n()
 const schoolStore = useSchoolStore()
+const branding = useBrandingStore()
 
 const activeTab = ref('collections')
 const tabs = computed(() => [
