@@ -7,6 +7,7 @@ use App\Models\SystemSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class BrandingController extends Controller
 {
@@ -36,7 +37,7 @@ class BrandingController extends Controller
             $schoolBranding = ($school->settings ?? [])['branding'] ?? [];
 
             return response()->json(array_merge(
-                $this->resolve($schoolBranding, $system, $school->name),
+                $this->resolve($schoolBranding, $system, $school),
                 ['school_id' => $school->id, 'school_name' => $school->name]
             ));
         }
@@ -49,7 +50,7 @@ class BrandingController extends Controller
 
         $schoolBranding = ($school->settings ?? [])['branding'] ?? [];
 
-        return response()->json($this->resolve($schoolBranding, $system, $school->name));
+        return response()->json($this->resolve($schoolBranding, $system, $school));
     }
 
     // ── POST /api/v1/branding ────────────────────────────────────────────────
@@ -66,11 +67,37 @@ class BrandingController extends Controller
             'Only owners and superadmins can update branding.'
         );
 
+        // The school whose record these details belong to — needed up front so the
+        // code's uniqueness rule can ignore that school's own current code.
+        $targetSchoolId = $user->hasRole('superadmin') && $request->filled('school_id')
+            ? (int) $request->school_id
+            : $user->school_id;
+
         $validated = $request->validate([
             'school_id' => 'sometimes|integer|exists:schools,id',
             'app_name' => 'sometimes|string|max:80',
             'app_tagline' => 'sometimes|string|max:80',
             'logo' => 'sometimes|file|mimes:jpg,jpeg,png,svg,webp|max:2048',
+
+            // School contact details. These live on the schools table rather than in
+            // the branding JSON because they are real record fields, not display
+            // preferences — receipts, statements and SMS all read them.
+            'phone' => 'sometimes|nullable|string|max:20',
+            'email' => 'sometimes|nullable|email|max:255',
+
+            // The short code is the middle segment of every admission number this
+            // school issues (SEC/MGRTHMR/0001/2026), so it must stay unique and
+            // stripped of anything that would corrupt that format.
+            'code' => [
+                'sometimes',
+                'string',
+                'max:10',
+                'regex:/^[A-Za-z0-9]+$/',
+                Rule::unique('schools', 'code')->ignore($targetSchoolId),
+            ],
+        ], [
+            'code.regex' => 'School code may contain only letters and numbers.',
+            'code.unique' => 'That school code is already used by another school.',
         ]);
 
         if ($user->hasRole('superadmin')) {
@@ -174,11 +201,25 @@ class BrandingController extends Controller
         }
 
         $settings['branding'] = $branding;
-        $school->update(['settings' => $settings]);
+
+        // Contact details and the short code are columns on the school itself, not
+        // branding preferences — receipts, statements, SMS and admission numbers
+        // read them from there.
+        $columns = ['settings' => $settings];
+        foreach (['phone', 'email'] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $columns[$field] = $validated[$field] ?: null;
+            }
+        }
+        if (array_key_exists('code', $validated)) {
+            $columns['code'] = strtoupper($validated['code']);
+        }
+
+        $school->update($columns);
 
         $system = SystemSetting::get('branding', []);
         $response = array_merge(
-            $this->resolve($branding, $system, $school->name),
+            $this->resolve($branding, $system, $school),
             ['message' => 'Branding updated successfully.']
         );
 
@@ -206,10 +247,15 @@ class BrandingController extends Controller
 
     /**
      * Merge school branding over system branding, falling back to hard defaults.
+     *
+     * $school is passed when the branding belongs to a specific school, so the
+     * response can also carry that school's own record fields (phone, email,
+     * code) which the settings form edits alongside the branding.
      */
-    private function resolve(array $specific, ?array $system, ?string $schoolName = null): array
+    private function resolve(array $specific, ?array $system, ?School $school = null): array
     {
         $system = $system ?? [];
+        $schoolName = $school?->name;
 
         $appName = $specific['app_name']
             ?? $system['app_name']
@@ -232,6 +278,12 @@ class BrandingController extends Controller
             'app_name' => $appName,
             'app_tagline' => $appTagline,
             'logo_url' => $logoPath ? '/storage/'.$logoPath : null,
+
+            // Null when resolving system-wide defaults, where there is no school.
+            'phone' => $school?->phone,
+            'email' => $school?->email,
+            'code' => $school?->code,
+            'level' => $school?->level?->value,
         ];
     }
 }

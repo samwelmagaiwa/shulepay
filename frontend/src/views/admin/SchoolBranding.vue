@@ -26,6 +26,12 @@ if (auth.isSuperAdmin) {
 // ── Form state ───────────────────────────────────────────────────────────────
 const appName         = ref('')
 const appTagline      = ref('')
+const schoolPhone     = ref('')
+const schoolEmail     = ref('')
+const schoolCode      = ref('')
+const schoolCodeOrig  = ref('')   // to warn only when it actually changes
+const schoolLevel     = ref('')
+const fieldErrors     = ref({})
 const logoFile        = ref(null)
 const logoPreview     = ref(null)
 const logoLoadError   = ref(false)   // true when server URL failed to render — does NOT clear logoPreview
@@ -41,13 +47,19 @@ async function fetchBranding(id) {
   logoLoadError.value   = false
   error.value           = ''
   logoFile.value        = null
+  fieldErrors.value     = {}
   fileInputKey.value++
   try {
     const params = id ? { school_id: id } : {}
     const res = await api.get('/branding', { params })
-    appName.value     = res.data.app_name    || ''
-    appTagline.value  = res.data.app_tagline || ''
-    logoPreview.value = res.data.logo_url    || null
+    appName.value       = res.data.app_name    || ''
+    appTagline.value    = res.data.app_tagline || ''
+    logoPreview.value   = res.data.logo_url    || null
+    schoolPhone.value   = res.data.phone || ''
+    schoolEmail.value   = res.data.email || ''
+    schoolCode.value    = res.data.code  || ''
+    schoolCodeOrig.value = res.data.code || ''
+    schoolLevel.value   = res.data.level || ''
   } catch {
     error.value = 'Failed to load branding.'
   } finally {
@@ -62,10 +74,15 @@ async function save() {
   saving.value  = true
   error.value   = ''
   success.value = ''
+  fieldErrors.value = {}
   try {
     const fd = new FormData()
     fd.append('app_name', appName.value)
     fd.append('app_tagline', appTagline.value)
+    fd.append('phone', schoolPhone.value ?? '')
+    fd.append('email', schoolEmail.value ?? '')
+    // Only sent when it belongs to a school — system-wide defaults have no code.
+    if (schoolCode.value) fd.append('code', schoolCode.value.toUpperCase())
     if (logoFile.value) fd.append('logo', logoFile.value)
     if (auth.isSuperAdmin && selectedSchoolId.value) {
       fd.append('school_id', selectedSchoolId.value)
@@ -79,6 +96,10 @@ async function save() {
     logoLoadError.value = false
     // Always update the preview from the server response — this confirms the saved logo URL.
     logoPreview.value = data.logo_url ?? logoPreview.value
+    schoolPhone.value    = data.phone ?? schoolPhone.value
+    schoolEmail.value    = data.email ?? schoolEmail.value
+    schoolCode.value     = data.code  ?? schoolCode.value
+    schoolCodeOrig.value = data.code  ?? schoolCodeOrig.value
     success.value     = data.message || 'Branding saved!'
     setTimeout(() => { success.value = '' }, 3000)
 
@@ -94,7 +115,11 @@ async function save() {
       })
     }
   } catch (e) {
-    error.value = e.response?.data?.message || 'Failed to save.'
+    fieldErrors.value = e.response?.data?.errors || {}
+    const first = Object.values(fieldErrors.value)[0]
+    error.value = (Array.isArray(first) ? first[0] : first)
+               || e.response?.data?.message
+               || 'Failed to save.'
   } finally {
     saving.value = false
   }
@@ -134,6 +159,15 @@ function onLogoChange(e) {
 
 const previewName    = computed(() => appName.value    || 'ShulePay')
 const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
+
+// Admission-number prefix mirrors SchoolLevel::admissionPrefix() on the backend.
+const admissionPrefix = computed(() => (schoolLevel.value === 'secondary' ? 'SEC' : 'PRM'))
+const currentYear = new Date().getFullYear()
+const codeChanged = computed(() =>
+  !!schoolCodeOrig.value &&
+  !!schoolCode.value &&
+  schoolCode.value.toUpperCase() !== schoolCodeOrig.value.toUpperCase()
+)
 </script>
 
 <template>
@@ -205,6 +239,66 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
                   :disabled="loadingBranding"
                 />
                 <div class="form-text">Shown below the app name.</div>
+              </div>
+
+              <!-- School phone -->
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold mb-1">School Phone</label>
+                <input
+                  v-model="schoolPhone"
+                  type="tel"
+                  class="form-control"
+                  :class="{ 'is-invalid': fieldErrors.phone }"
+                  placeholder="0712 345 678"
+                  maxlength="20"
+                  :disabled="loadingBranding"
+                />
+                <div v-if="fieldErrors.phone" class="invalid-feedback d-block">{{ fieldErrors.phone[0] }}</div>
+                <div v-else class="form-text">Shown on receipts and statements.</div>
+              </div>
+
+              <!-- School email -->
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold mb-1">School Email</label>
+                <input
+                  v-model="schoolEmail"
+                  type="email"
+                  class="form-control"
+                  :class="{ 'is-invalid': fieldErrors.email }"
+                  placeholder="info@school.ac.tz"
+                  maxlength="255"
+                  :disabled="loadingBranding"
+                />
+                <div v-if="fieldErrors.email" class="invalid-feedback d-block">{{ fieldErrors.email[0] }}</div>
+                <div v-else class="form-text">Shown on receipts and statements.</div>
+              </div>
+
+              <!-- School code — drives admission numbers, so it carries a warning -->
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold mb-1">School Code</label>
+                <input
+                  v-model="schoolCode"
+                  type="text"
+                  class="form-control text-uppercase"
+                  :class="{ 'is-invalid': fieldErrors.code }"
+                  placeholder="MGRTH"
+                  maxlength="10"
+                  :disabled="loadingBranding || !schoolCodeOrig"
+                  style="letter-spacing:1px;font-weight:600;"
+                />
+                <div v-if="fieldErrors.code" class="invalid-feedback d-block">{{ fieldErrors.code[0] }}</div>
+                <div v-else class="form-text">
+                  Short form of the school name, letters and numbers only.
+                  Used in admission numbers:
+                  <code>{{ admissionPrefix }}/{{ (schoolCode || 'CODE').toUpperCase() }}/0001/{{ currentYear }}</code>
+                </div>
+
+                <!-- Changing this only affects numbers issued from now on -->
+                <div v-if="codeChanged" class="alert alert-warning py-2 px-3 mt-2 mb-0" style="font-size:.8rem;">
+                  <strong>Heads up:</strong> students already registered keep their existing
+                  admission numbers (<code>{{ admissionPrefix }}/{{ schoolCodeOrig }}/…</code>).
+                  Only new registrations will use <code>{{ schoolCode.toUpperCase() }}</code>.
+                </div>
               </div>
 
               <!-- Logo -->

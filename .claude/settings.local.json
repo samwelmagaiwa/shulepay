@@ -491,7 +491,17 @@
       "Bash(vendor/bin/pint --test app/Http/Controllers/Reports/ReportController.php app/Exports/GenericArrayExport.php app/Exports/OutstandingDebtsExport.php)",
       "Bash(vendor/bin/pint --test routes/api.php)",
       "Bash(php -l app/Http/Controllers/Reports/ReportController.php)",
-      "Bash(vendor/bin/pint app/Http/Controllers/Reports/ReportController.php)"
+      "Bash(vendor/bin/pint app/Http/Controllers/Reports/ReportController.php)",
+      "Bash(npx vue-tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(php -l app/Models/PrimaryFeeCategory.php)",
+      "Bash(php -l app/Http/Controllers/Accountant/PrimaryFeeCategoryController.php)",
+      "Bash(php -l database/migrations/2026_08_27_090342_create_primary_fee_categories_table.php)",
+      "Bash(vendor/bin/pint app/Models/PrimaryFeeCategory.php app/Http/Controllers/Accountant/PrimaryFeeCategoryController.php routes/api.php database/migrations/2026_08_27_090342_create_primary_fee_categories_table.php)",
+      "Bash(vendor/bin/pint --test app/Models/PrimaryFeeCategory.php app/Http/Controllers/Accountant/PrimaryFeeCategoryController.php routes/api.php database/migrations/2026_08_27_090342_create_primary_fee_categories_table.php)",
+      "Bash(vendor/bin/pint app/Http/Requests/Student/RegisterStudentRequest.php)",
+      "Bash(vendor/bin/pint app/Services/Students/StudentRegistrationService.php)",
+      "Bash(vendor/bin/pint routes/api.php)"
     ]
   }
 }

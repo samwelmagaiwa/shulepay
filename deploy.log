@@ -2559,3 +2559,39 @@ response looked like a deliberate 'not supported yet' and hid the missing method
 [0;36m[2026-08-27 09:47:32][0m   ShulePay — Release
 [0;36m[2026-08-27 09:47:32][0m ══════════════════════════════════════════
 [0;36m[2026-08-27 09:47:32][0m Checking working tree...
+[0;36m[2026-08-27 09:47:32][0m Files staged for commit:
+[0;36m[2026-08-27 09:47:32][0m Committing: "fix(ui): clean up CoreUI modal artefacts that froze the interface
+
+Two defects in @coreui/vue v5 CModal made the UI appear stuck until reload.
+
+1. Orphaned backdrops. CBackdrop renders inside a CSS-class <Transition>. When
+   the leave transition is interrupted — trivial on pages that mount several
+   modals — it never completes and the node survives as
+   position:fixed inset:0 z-index:1050 opacity:0 pointer-events:auto:
+   an invisible sheet over the viewport that swallows every click while the page
+   looks entirely normal. Reproduced: two modals open, dismiss one, and
+   elementFromPoint at the centre returns the backdrop with the toolbar button
+   unreachable.
+
+2. Stale scroll lock. CModal writes modal-open and overflow:hidden onto <body>
+   in its Transition enter hook and only reverses that in the leave hook. It has
+   no onUnmounted, so navigating away with a modal open leaves the page unable to
+   scroll permanently, and leaks a window mousedown + keydown listener per
+   occurrence (measured: 1, 2, 3 across three cycles).
+
+Adds utils/modalGuard.js, which reconciles the DOM instead of forking the
+dependency: backdrops may never outnumber visible modals, and with nothing open
+there is no backdrop and no scroll lock. Triggered by a MutationObserver
+(class/style included, since closing a modal only toggles v-show), the router
+afterEach, and a capture-phase click on any backdrop as a self-heal.
+
+Verified an open modal keeps its backdrop, so dimming still works."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-27 09:47:33][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-27 09:47:38][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-27 17:27:25][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 17:27:25][0m   ShulePay — Release
+[0;36m[2026-08-27 17:27:25][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 17:27:25][0m Checking working tree...
