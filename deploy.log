@@ -2741,3 +2741,26 @@ The per-payment receipt stays A4 as requested, and reports were already A4."
 [0;36m[2026-08-27 19:18:52][0m   ShulePay — Release
 [0;36m[2026-08-27 19:18:53][0m ══════════════════════════════════════════
 [0;36m[2026-08-27 19:18:53][0m Checking working tree...
+[0;36m[2026-08-27 19:18:53][0m Files staged for commit:
+[0;36m[2026-08-27 19:18:53][0m Committing: "fix(pdf): statements ignored the branding letterhead; restructure the header
+
+Both statement views still rendered their own inline header, so the logo, phone
+numbers, email and postal address configured in branding appeared only on the
+per-payment receipt and nowhere else. Both now include the shared partial, so
+all three documents draw from one place.
+
+Header restructured as asked: the school name is centred across the full width
+with the motto or tagline beneath it, then a three-column row — phone numbers and
+email on the left, the logo in the middle, the postal address on the right —
+above the brand rule and document title.
+
+Tables throughout, since DomPDF does not implement flexbox."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-27 19:18:53][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-27 19:19:00][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-27 19:37:00][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 19:37:00][0m   ShulePay — Release
+[0;36m[2026-08-27 19:37:00][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 19:37:00][0m Checking working tree...

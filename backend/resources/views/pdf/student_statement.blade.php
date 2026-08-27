@@ -7,6 +7,23 @@
 @php
     $money = fn ($cents) => 'TZS '.number_format(((int) $cents) / 100, 0, '.', ',');
     $guardian = $student->guardians?->first();
+
+    // This must stay a single page however many invoices a student has accumulated
+    // (four per academic year, so a pupil here for six years reaches 24). Density
+    // steps up before anything is hidden, so "all invoices" stays true:
+    //   <= 6   full detail, one line per payment
+    //   7-14   condensed rows, payments summarised to a count
+    //   > 14   condensed, and the oldest collapse into a single carried-forward row
+    $count = $invoices->count();
+    $dense = $count > 6;
+    $showPayments = $count <= 6;
+    $maxRows = 14;
+
+    $shownInvoices = $count > $maxRows ? $invoices->slice(-$maxRows) : $invoices;
+    $olderInvoices = $count > $maxRows ? $invoices->slice(0, $count - $maxRows) : collect();
+    $olderGross = $olderInvoices->sum(fn ($i) => $i->gross_cents);
+    $olderPaid = $olderInvoices->sum(fn ($i) => $i->paid_cents);
+    $olderBalance = $olderInvoices->sum(fn ($i) => $i->balance_cents);
 @endphp
 <!DOCTYPE html>
 <html lang="sw">
@@ -41,6 +58,14 @@
   .status-unpaid  { color: #c0292b; font-weight: bold; }
 
   .payment-line { font-size: 8.5px; color: #666; }
+
+  /* Applied once a student has enough invoices that full-detail rows would
+     push the totals onto a second page. */
+  table.items.dense th { font-size: 7.5px; padding: 2px 2px; }
+  table.items.dense td { font-size: 8.5px; padding: 1.5px 2px; }
+  table.items.dense .status-paid,
+  table.items.dense .status-partial,
+  table.items.dense .status-unpaid { display: inline; font-size: 8px; }
 
   .amount-box { border: 2px solid #007f3e; border-radius: 4px; padding: 7px; margin: 10px 0 6px; }
   .amount-lbl { font-size: 9px; letter-spacing: 1.5px; color: #555; text-align: center; }
@@ -92,7 +117,7 @@
 
   <div class="hr"></div>
 
-  <table class="items">
+  <table class="items {{ $dense ? 'dense' : '' }}">
     <thead>
       <tr>
         <th>Muhula</th>
@@ -102,19 +127,31 @@
       </tr>
     </thead>
     <tbody>
-      @forelse($invoices as $inv)
+      @if($olderInvoices->isNotEmpty())
+      <tr>
+        <td><em>Ankara za awali ({{ $olderInvoices->count() }})</em></td>
+        <td class="amt">{{ $money($olderGross) }}</td>
+        <td class="amt">{{ $money($olderPaid) }}</td>
+        <td class="amt {{ $olderBalance > 0 ? 'balance-due' : 'balance-paid' }}">{{ $money($olderBalance) }}</td>
+      </tr>
+      @endif
+      @forelse($shownInvoices as $inv)
       <tr>
         <td>
           {{ $inv->term ?: '—' }}
-          <div class="status-{{ $inv->status }}">
+          <span class="status-{{ $inv->status }}"{!! $dense ? '' : ' style="display:block"' !!}>
             {{ ['paid' => 'Amelipa', 'partial' => 'Amelipa Kiasi', 'unpaid' => 'Hajalipa'][$inv->status] ?? $inv->status }}
-          </div>
-          @foreach($inv->payments as $p)
-            <div class="payment-line">
-              {{ $p->paid_at?->format('d/m/Y') }} — {{ $money($p->amount_cents) }}
-              @if($p->reference_number) ({{ $p->reference_number }}) @endif
-            </div>
-          @endforeach
+          </span>
+          @if($showPayments)
+            @foreach($inv->payments as $p)
+              <div class="payment-line">
+                {{ $p->paid_at?->format('d/m/Y') }} — {{ $money($p->amount_cents) }}
+                @if($p->reference_number) ({{ $p->reference_number }}) @endif
+              </div>
+            @endforeach
+          @elseif($inv->payments->count())
+            <span class="payment-line">({{ $inv->payments->count() }} malipo)</span>
+          @endif
         </td>
         <td class="amt">{{ $money($inv->gross_cents) }}</td>
         <td class="amt">{{ $money($inv->paid_cents) }}</td>

@@ -32,7 +32,10 @@
     {{ strtoupper($lh['name']) }}
   </div>
   @if(!empty($lh['motto']))
-    <div style="font-size:{{ $px(9.5) }}; color:#555; font-style:italic; margin-top:{{ $px(2) }};">
+    {{-- Mottos print in italic capitals, the convention on school letterhead --}}
+    <div style="font-size:{{ $px(9.5) }}; color:#555; font-style:italic;
+                text-transform:uppercase; letter-spacing:{{ $px(0.5) }};
+                margin-top:{{ $px(2) }};">
       {{ $lh['motto'] }}
     </div>
   @elseif(!empty($lh['tagline']))

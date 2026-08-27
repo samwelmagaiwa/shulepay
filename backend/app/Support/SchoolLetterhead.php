@@ -50,14 +50,30 @@ class SchoolLetterhead
         ];
     }
 
-    /** Logo as a data: URI, since DomPDF cannot fetch remote assets. */
+    /**
+     * Logo as a data: URI, since DomPDF cannot fetch remote assets.
+     *
+     * Read from the 'public' disk explicitly. BrandingController uploads with
+     * ->store(..., 'public'), but this used a bare Storage::exists(), which goes to
+     * the default disk (FILESYSTEM_DISK, 'local' here). That looked in
+     * storage/app/ while the file sits in storage/app/public/, so exists() was
+     * always false and the logo was silently dropped from every PDF.
+     */
     private static function logo(array $branding): ?string
     {
         $path = $branding['logo_path'] ?? null;
-        if (! $path || ! Storage::exists($path)) {
+        if (! $path) {
             return null;
         }
 
-        return 'data:'.Storage::mimeType($path).';base64,'.base64_encode(Storage::get($path));
+        // Older uploads were recorded with a leading "public/".
+        $path = preg_replace('#^public/#', '', $path);
+        $disk = Storage::disk('public');
+
+        if (! $disk->exists($path)) {
+            return null;
+        }
+
+        return 'data:'.$disk->mimeType($path).';base64,'.base64_encode($disk->get($path));
     }
 }

@@ -38,8 +38,10 @@ async function load() {
     // straight at the API URL sends no Authorization header and fails.
     const { data } = await api.get(props.src, { responseType: 'blob' })
     if (data.type && !data.type.includes('pdf')) throw new Error('Not a PDF')
-    // #toolbar=0 hides the viewer's own chrome so our buttons are the only ones.
-    blobUrl.value = URL.createObjectURL(data) + '#toolbar=0&navpanes=0'
+    // toolbar=0 hides the viewer's own chrome so our buttons are the only ones;
+    // view=Fit scales the page to the frame instead of rendering it at natural
+    // size, which left an A5 page as a small block in a wide grey field.
+    blobUrl.value = URL.createObjectURL(data) + '#toolbar=0&navpanes=0&view=Fit'
   } catch (e) {
     error.value = e?.response?.data?.message || t('payments.receiptPrintFailed')
   } finally {
@@ -78,7 +80,7 @@ function download() {
 </script>
 
 <template>
-  <CModal :visible="visible" @close="emit('close')" size="xl" alignment="center" scrollable>
+  <CModal :visible="visible" @close="emit('close')" size="lg" alignment="center" scrollable>
     <CModalHeader style="border-bottom:2px solid #007f3e;">
       <CModalTitle class="d-flex align-items-center gap-2">
         <span>🧾</span>
@@ -135,28 +137,39 @@ function download() {
 
 <style scoped>
 .receipt-frame-wrap {
-  /* Tall enough to read an A5 receipt without squinting, but capped so the
-     footer buttons stay on screen on a laptop. */
-  height: 70vh;
+  /* Centres the page rather than stretching it across the full modal width —
+     a portrait document in a wide frame reads as a small block floating in
+     empty space. Scrolls for viewports too short for the whole sheet. */
+  height: 76vh;
   min-height: 420px;
-  overflow: auto;          /* outer scroll, for very small viewports */
-  padding: 12px;
+  overflow: auto;
+  padding: 14px;
+  text-align: center;
 }
 
 .receipt-frame {
-  width: 100%;
+  /* A-series portrait (1 : 1.414). Receipts are A4 and consolidated statements
+     A5, but both share this ratio, so one box suits either. */
   height: 100%;
-  min-height: 400px;
+  aspect-ratio: 1 / 1.414;
+  width: auto;
+  max-width: 100%;
   border: 0;
-  border-radius: 6px;
+  border-radius: 4px;
   background: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, .12);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, .18);
 }
 
 @media (max-width: 767px) {
   .receipt-frame-wrap {
-    height: 62vh;
+    height: 66vh;
     padding: 6px;
+  }
+  /* Too narrow for the portrait box to stay legible — fill the width instead. */
+  .receipt-frame {
+    aspect-ratio: auto;
+    width: 100%;
+    height: 100%;
   }
 }
 </style>
