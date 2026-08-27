@@ -96,10 +96,6 @@
             </CCol>
           </CRow>
 
-          <div v-if="colRows.length" style="position:relative; height:260px;" class="mb-3">
-            <canvas ref="colChartRef" style="width:100%;height:100%;"></canvas>
-          </div>
-
           <CTable responsive hover class="mb-0" style="font-size:.85rem;">
             <CTableHead class="table-light">
               <CTableRow>
@@ -208,10 +204,6 @@
             </CCol>
           </CRow>
 
-          <div v-if="classData.length" style="position:relative; height:260px;" class="mb-3">
-            <canvas ref="classChartRef" style="width:100%;height:100%;"></canvas>
-          </div>
-
           <CTable responsive hover class="mb-0" style="font-size:.85rem;">
             <CTableHead class="table-light">
               <CTableRow>
@@ -279,9 +271,6 @@
               </CCard>
             </CCol>
           </CRow>
-          <div v-if="vsData.length" style="position:relative; height:260px;" class="mb-3">
-            <canvas ref="vsChartRef" style="width:100%;height:100%;"></canvas>
-          </div>
           <CTable responsive hover class="mb-0" style="font-size:.85rem;">
             <CTableHead class="table-light">
               <CTableRow>
@@ -314,15 +303,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSchoolStore } from '@/stores/school'
 import api from '@/services/api'
 
 const { t } = useI18n()
 const schoolStore = useSchoolStore()
-
-let Chart = null
 
 const activeTab = ref('collections')
 const tabs = computed(() => [
@@ -336,8 +323,6 @@ const tabs = computed(() => [
 const loadingCol = ref(false)
 const colRows = ref([])
 const colStats = ref({})
-const colChartRef = ref(null)
-let colChart = null
 const colFilters = ref({
   date_from: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10),
   date_to: new Date().toISOString().slice(0, 10),
@@ -358,8 +343,6 @@ const debtBucketCounts = ref([0, 0, 0, 0])
 // By class
 const loadingClass = ref(false)
 const classData = ref([])
-const classChartRef = ref(null)
-let classChart = null
 
 const classStats = computed(() => {
   let totalBilled = 0
@@ -377,8 +360,6 @@ const classStats = computed(() => {
 const loadingVs = ref(false)
 const vsData = ref([])
 const vsYear = ref(new Date().getFullYear())
-const vsChartRef = ref(null)
-let vsChart = null
 
 const vsStats = computed(() => {
   let totalCollections = 0
@@ -422,16 +403,6 @@ function agingColor(days) {
   return 'danger'
 }
 
-async function initChart() {
-  if (!Chart) {
-    try {
-      const mod = await import('chart.js/auto')
-      Chart = mod.default || mod.Chart
-    } catch { return null }
-  }
-  return Chart
-}
-
 async function loadCollections() {
   loadingCol.value = true
   try {
@@ -446,35 +417,7 @@ async function loadCollections() {
       paid_count: d.summary?.paid_count || 0,
       partial_count: d.summary?.partial_count || 0,
     }
-    await nextTick()
-    if (colRows.value.length) await renderColChart()
   } catch {} finally { loadingCol.value = false }
-}
-
-// Chart.js's own ResizeObserver-based sizing sometimes measures the canvas's
-// parent before the v-if'd container has actually been laid out (its 260px
-// height reserved via inline style), leaving the canvas stuck at the
-// hard-coded 300x150 default — a tiny chart adrift in a large empty box.
-// Forcing one resize() on the next frame, once layout has definitely
-// settled, fixes it.
-function forceChartResize(chart) {
-  requestAnimationFrame(() => chart?.resize())
-}
-
-async function renderColChart() {
-  if (!colChartRef.value) return
-  const C = await initChart()
-  if (!C) return
-  if (colChart) colChart.destroy()
-  colChart = new C(colChartRef.value, {
-    type: 'bar',
-    data: {
-      labels: colRows.value.map(r => r.date),
-      datasets: [{ label: t('reports.collectionsCol'), data: colRows.value.map(r => Math.round((r.amount_cents || 0) / 100)), backgroundColor: '#198754' }],
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
-  })
-  forceChartResize(colChart)
 }
 
 async function loadDebtors() {
@@ -509,28 +452,7 @@ async function loadByClass() {
     const { data } = await api.get('/reports/by-class')
     const d = data.data || data
     classData.value = d.rows || d || []
-    await nextTick()
-    if (classData.value.length) await renderClassChart()
   } catch {} finally { loadingClass.value = false }
-}
-
-async function renderClassChart() {
-  if (!classChartRef.value) return
-  const C = await initChart()
-  if (!C) return
-  if (classChart) classChart.destroy()
-  classChart = new C(classChartRef.value, {
-    type: 'doughnut',
-    data: {
-      labels: classData.value.map(c => c.class_name),
-      datasets: [{
-        data: classData.value.map(c => Math.round((c.total_collected_cents || 0) / 100)),
-        backgroundColor: ['#198754','#0d6efd','#ffc107','#0dcaf0','#dc3545','#6c757d','#20c997','#fd7e14'],
-      }],
-    },
-    options: { responsive: true, maintainAspectRatio: false },
-  })
-  forceChartResize(classChart)
 }
 
 async function loadVsData() {
@@ -539,28 +461,7 @@ async function loadVsData() {
     const { data } = await api.get('/reports/expenses-vs-collections', { params: { year: vsYear.value } })
     const d = data.data || data
     vsData.value = d.rows || d || []
-    await nextTick()
-    if (vsData.value.length) await renderVsChart()
   } catch {} finally { loadingVs.value = false }
-}
-
-async function renderVsChart() {
-  if (!vsChartRef.value) return
-  const C = await initChart()
-  if (!C) return
-  if (vsChart) vsChart.destroy()
-  vsChart = new C(vsChartRef.value, {
-    type: 'bar',
-    data: {
-      labels: vsData.value.map(r => monthName(r.month)),
-      datasets: [
-        { label: t('reports.collections'), data: vsData.value.map(r => Math.round((r.collections_cents || 0) / 100)), backgroundColor: '#198754' },
-        { label: t('reports.vsReport.expenses'), data: vsData.value.map(r => Math.round((r.expenses_cents || 0) / 100)), backgroundColor: '#dc3545' },
-      ],
-    },
-    options: { responsive: true, maintainAspectRatio: false },
-  })
-  forceChartResize(vsChart)
 }
 
 function printReport() {
