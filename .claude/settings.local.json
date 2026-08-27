@@ -468,7 +468,8 @@
       "Bash(bash deploy.sh release \"fix\\(reports\\): chart canvases stuck at 300x150, leaving a large empty gap\")",
       "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\check_due_dates.php\" root@169.58.188.122:/tmp/check_due_dates.php)",
       "Bash(ssh root@169.58.188.122 \"docker cp /tmp/check_due_dates.php shulepay_backend:/tmp/check_due_dates.php && docker exec shulepay_backend php artisan tinker /tmp/check_due_dates.php\")",
-      "Bash(bash deploy.sh release \"fix\\(reports\\): Print PDF blank page + debtors table sort order\")"
+      "Bash(bash deploy.sh release \"fix\\(reports\\): Print PDF blank page + debtors table sort order\")",
+      "Bash(bash deploy.sh release \"fix\\(reports\\): remove charts entirely to eliminate the layout gap for good\")"
     ]
   }
 }
