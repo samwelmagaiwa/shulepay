@@ -65,7 +65,7 @@
             <CCol xs="6" md="3">
               <CCard class="text-center border-0 shadow-sm h-100" style="border-left:3px solid #198754 !important">
                 <CCardBody class="p-2">
-                  <div class="fw-bold fs-6 text-success">{{ formatTZS(colStats.total_collected) }}</div>
+                  <div class="fw-bold fs-6 text-success">{{ colStats.total_payments || 0 }} | {{ formatTZS(colStats.total_collected) }}</div>
                   <div class="text-muted small">{{ t('reports.totalCollected') }}</div>
                 </CCardBody>
               </CCard>
@@ -73,7 +73,7 @@
             <CCol xs="6" md="3">
               <CCard class="text-center border-0 shadow-sm h-100" style="border-left:3px solid #dc3545 !important">
                 <CCardBody class="p-2">
-                  <div class="fw-bold fs-6 text-danger">{{ formatTZS(colStats.total_outstanding) }}</div>
+                  <div class="fw-bold fs-6 text-danger">{{ colStats.debt_invoice_count || 0 }} | {{ formatTZS(colStats.total_outstanding) }}</div>
                   <div class="text-muted small">{{ t('reports.totalDebt') }}</div>
                 </CCardBody>
               </CCard>
@@ -81,7 +81,7 @@
             <CCol xs="6" md="3">
               <CCard class="text-center border-0 shadow-sm h-100">
                 <CCardBody class="p-2">
-                  <div class="fw-bold fs-6">{{ colStats.paid_count || 0 }}</div>
+                  <div class="fw-bold fs-6">{{ colStats.paid_count || 0 }} | {{ formatTZS(colStats.paid_amount) }}</div>
                   <div class="text-muted small">{{ t('reports.fullyPaid') }}</div>
                 </CCardBody>
               </CCard>
@@ -89,7 +89,7 @@
             <CCol xs="6" md="3">
               <CCard class="text-center border-0 shadow-sm h-100" style="border-left:3px solid #ffc107 !important">
                 <CCardBody class="p-2">
-                  <div class="fw-bold fs-6 text-warning">{{ colStats.partial_count || 0 }}</div>
+                  <div class="fw-bold fs-6 text-warning">{{ colStats.partial_count || 0 }} | {{ formatTZS(colStats.partial_paid_amount) }}</div>
                   <div class="text-muted small">{{ t('reports.partialPaid') }}</div>
                 </CCardBody>
               </CCard>
@@ -101,6 +101,8 @@
               <CTableRow>
                 <CTableHeaderCell>{{ t('common.date') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.collectionsCol') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('reports.totalDebt') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('reports.totalPartialPaid') }}</CTableHeaderCell>
                 <CTableHeaderCell class="d-none d-md-table-cell">{{ t('reports.paymentCount') }}</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
@@ -108,10 +110,12 @@
               <CTableRow v-for="row in colRows" :key="row.date">
                 <CTableDataCell>{{ row.date }}</CTableDataCell>
                 <CTableDataCell class="fw-semibold text-success">{{ formatTZS(row.amount_cents) }}</CTableDataCell>
+                <CTableDataCell class="fw-semibold text-danger">{{ formatTZS(row.total_debt_cents) }}</CTableDataCell>
+                <CTableDataCell class="fw-semibold text-warning">{{ formatTZS(row.total_partial_paid_cents) }}</CTableDataCell>
                 <CTableDataCell class="d-none d-md-table-cell">{{ row.count }}</CTableDataCell>
               </CTableRow>
               <CTableRow v-if="!colRows.length">
-                <CTableDataCell colspan="3" class="text-center text-muted py-4">{{ t('reports.noData') }}</CTableDataCell>
+                <CTableDataCell colspan="5" class="text-center text-muted py-4">{{ t('reports.noData') }}</CTableDataCell>
               </CTableRow>
             </CTableBody>
           </CTable>
@@ -410,12 +414,22 @@ async function loadCollections() {
       params: { from: colFilters.value.date_from, to: colFilters.value.date_to },
     })
     const d = data.data || data
-    colRows.value = (d.rows || []).map(r => ({ date: r.period, amount_cents: r.amount_cents, count: r.payment_count }))
+    colRows.value = (d.rows || []).map(r => ({
+      date: r.period,
+      amount_cents: r.amount_cents,
+      total_debt_cents: r.total_debt_cents,
+      total_partial_paid_cents: r.total_partial_paid_cents,
+      count: r.payment_count,
+    }))
     colStats.value = {
+      total_payments: d.summary?.total_payments || 0,
       total_collected: d.summary?.total_amount_cents || 0,
       total_outstanding: d.summary?.total_outstanding_cents || 0,
+      debt_invoice_count: d.summary?.debt_invoice_count || 0,
       paid_count: d.summary?.paid_count || 0,
+      paid_amount: d.summary?.paid_amount_cents || 0,
       partial_count: d.summary?.partial_count || 0,
+      partial_paid_amount: d.summary?.partial_paid_amount_cents || 0,
     }
   } catch {} finally { loadingCol.value = false }
 }

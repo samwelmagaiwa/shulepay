@@ -838,6 +838,7 @@ export default {
     vsTitle:      'Expenses vs Collections',
     month:        'Month',
     collectionsCol: 'Collections (TZS)',
+    totalPartialPaid: 'Total Partial Paid',
     paymentCount: 'Payment Count',
     daysOverdue:  'Days Overdue',
     agingStatus:  'Aging Status',

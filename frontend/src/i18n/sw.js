@@ -838,6 +838,7 @@ export default {
     vsTitle:      'Gharama vs Makusanyo',
     month:        'Mwezi',
     collectionsCol: 'Makusanyo (TZS)',
+    totalPartialPaid: 'Jumla ya Malipo ya Sehemu',
     paymentCount: 'Idadi ya Malipo',
     daysOverdue:  'Siku (Zimepita)',
     agingStatus:  'Hali ya Umri',

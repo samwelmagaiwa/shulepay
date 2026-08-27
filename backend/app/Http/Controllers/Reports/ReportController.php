@@ -97,6 +97,14 @@ class ReportController extends Controller
         // doesn't track.
         $totalOutstanding = max(0, (int) $totalOutstanding);
 
+        // Amount behind each summary card's count, so every card can show
+        // "count | amount" instead of just one or the other.
+        $paidAmountCents = (int) (clone $invoiceBase)->where('status', 'paid')->sum('total_amount_cents');
+        $partialInvoiceIds = (clone $invoiceBase)->where('status', 'partial')->pluck('id');
+        $partialPaidAmountCents = (int) Payment::allSchools()
+            ->whereIn('invoice_id', $partialInvoiceIds)
+            ->sum('amount_cents');
+
         // $groupBy is validated above as in:day,week,month,class — safe to use in DB::raw
         $periodExpr = match ($groupBy) {
             'week' => DB::raw("DATE_FORMAT(paid_at, '%x-W%v') as period"),
@@ -119,6 +127,62 @@ class ReportController extends Controller
                 'payment_count' => (int) $r->getRawOriginal('payment_count'),
             ])
             ->toArray();
+
+        // Per-period "Total Debts" (remaining balance, as of now, on invoices
+        // touched by a payment that period) and "Total Partial Paid" (payment
+        // amounts that period against invoices still in 'partial' status).
+        // Built in PHP rather than a single grouped SQL query: joining
+        // payments -> invoices and summing balance per period would double-count
+        // an invoice's balance for every payment it received that period, since
+        // balance is a property of the invoice, not of any one payment.
+        $touchedRows = (clone $base)
+            ->join('invoices', 'invoices.id', '=', 'payments.invoice_id')
+            ->select(
+                $periodExpr,
+                'invoices.id as touched_invoice_id',
+                'invoices.status as touched_invoice_status',
+                'invoices.total_amount_cents as touched_invoice_total_cents',
+                'payments.amount_cents as touched_payment_amount_cents'
+            )
+            ->get();
+
+        $touchedInvoiceIds = $touchedRows->pluck('touched_invoice_id')->unique();
+        $paidSumsByInvoice = Payment::allSchools()
+            ->whereIn('invoice_id', $touchedInvoiceIds)
+            ->selectRaw('invoice_id, SUM(amount_cents) as paid_sum')
+            ->groupBy('invoice_id')
+            ->pluck('paid_sum', 'invoice_id');
+
+        $debtByPeriod = [];
+        $partialPaidByPeriod = [];
+        $seenInvoicePeriod = [];
+
+        foreach ($touchedRows as $r) {
+            $period = $r->period;
+            $invId = $r->touched_invoice_id;
+            $status = $r->touched_invoice_status;
+
+            $debtByPeriod[$period] ??= 0;
+            $partialPaidByPeriod[$period] ??= 0;
+
+            $dedupeKey = $period.':'.$invId;
+            if (in_array($status, ['unpaid', 'partial'], true) && ! isset($seenInvoicePeriod[$dedupeKey])) {
+                $balance = max(0, (int) $r->touched_invoice_total_cents - (int) ($paidSumsByInvoice[$invId] ?? 0));
+                $debtByPeriod[$period] += $balance;
+            }
+            $seenInvoicePeriod[$dedupeKey] = true;
+
+            if ($status === 'partial') {
+                $partialPaidByPeriod[$period] += (int) $r->touched_payment_amount_cents;
+            }
+        }
+
+        $rows = array_map(function ($row) use ($debtByPeriod, $partialPaidByPeriod) {
+            $row['total_debt_cents'] = (int) ($debtByPeriod[$row['period']] ?? 0);
+            $row['total_partial_paid_cents'] = (int) ($partialPaidByPeriod[$row['period']] ?? 0);
+
+            return $row;
+        }, $rows);
 
         // By payment method
         $byMethod = (clone $base)
@@ -161,6 +225,9 @@ class ReportController extends Controller
                 'partial_count' => $partialCount,
                 'unpaid_count' => $unpaidCount,
                 'total_outstanding_cents' => (int) $totalOutstanding,
+                'debt_invoice_count' => $unpaidCount + $partialCount,
+                'paid_amount_cents' => $paidAmountCents,
+                'partial_paid_amount_cents' => $partialPaidAmountCents,
             ],
             'rows' => $rows,
             'by_method' => $byMethod,
