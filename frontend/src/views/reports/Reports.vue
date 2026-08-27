@@ -494,7 +494,10 @@ async function loadDebtors() {
       totals[slot] += b.amount_cents || 0
       ;(b.students || []).forEach(s => flat.push({ ...s, bucket: key }))
     })
-    debtors.value = flat
+    // Most overdue first — otherwise every "current" (0 days) debtor lists
+    // before any genuinely overdue one, and a table full of "0" up top reads
+    // as if aging were broken even though the underlying numbers are correct.
+    debtors.value = flat.sort((a, b) => (b.oldest_age || 0) - (a.oldest_age || 0))
     debtBucketCounts.value = counts
     debtBucketTotals.value = totals
   } catch {} finally { loadingDebt.value = false }
@@ -592,17 +595,23 @@ onMounted(async () => { try { await loadCollections() } catch {} })
 .print-only { display: none; }
 
 @media print {
-  /* Hide everything except the print area */
-  body > * { display: none !important; }
-  #app > * { display: none !important; }
+  /* Hide everything except the print area. #print-area is nested several
+     layout levels deep (sidebar/header wrapper > router-view > this page),
+     not a direct child of #app — display:none on an ancestor can't be
+     undone by a display override on a descendant, which is why the old
+     `body > *` / `#app > *` rules produced a blank printed page. visibility
+     doesn't have that problem: a hidden ancestor doesn't force its
+     visible-again descendants to stay hidden. */
+  body * { visibility: hidden !important; }
+  #print-area, #print-area * { visibility: visible !important; }
   .no-print { display: none !important; }
   .print-only { display: block !important; }
 
   /* Make print area fill the page */
   #print-area {
-    display: block !important;
-    position: fixed;
-    inset: 0;
+    position: absolute;
+    left: 0;
+    top: 0;
     width: 100%;
     padding: 20px;
     background: #fff;
