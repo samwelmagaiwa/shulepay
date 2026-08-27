@@ -213,16 +213,30 @@ class RegisterStudentRequest extends FormRequest
                     'Select a discount type for the amount entered.');
             }
 
-            // Term fees for the year cannot exceed the annual tuition fee.
+            // Each term's fee is expected to equal Total Tuition Fee — it must
+            // never exceed it, and payments recorded for a term must never
+            // exceed that term's fee (a shortfall there is the term's normal,
+            // still-unpaid debt, not an error). Mirrors the same check in
+            // AddStudentModal.vue so the wizard's validation can't be bypassed
+            // by calling the API directly.
             $history = $this->input('payment_history', []);
-            if (is_array($history) && $history && $fee > 0) {
-                $sum = array_sum(array_map(
-                    fn ($e) => (int) ($e['fee_amount_cents'] ?? 0),
-                    $history
-                ));
-                if ($sum > $fee) {
-                    $validator->errors()->add('payment_history',
-                        'The terms total more than the annual tuition fee.');
+            if (is_array($history) && $history) {
+                foreach ($history as $i => $entry) {
+                    $entryFee = (int) ($entry['fee_amount_cents'] ?? 0);
+
+                    if ($fee > 0 && $entryFee > $fee) {
+                        $validator->errors()->add("payment_history.{$i}.fee_amount_cents",
+                            "This term's fee cannot exceed the Total Tuition Fee.");
+                    }
+
+                    $paid = array_sum(array_map(
+                        fn ($p) => (int) ($p['amount_cents'] ?? 0),
+                        $entry['payments'] ?? []
+                    ));
+                    if ($paid > $entryFee) {
+                        $validator->errors()->add("payment_history.{$i}.payments",
+                            'Payments recorded for this term exceed its fee amount.');
+                    }
                 }
             }
         });
