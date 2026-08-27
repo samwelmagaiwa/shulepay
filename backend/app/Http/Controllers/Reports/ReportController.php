@@ -16,6 +16,7 @@ use App\Models\SupplierPayment;
 use App\Services\Reporting\ReportExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -55,8 +56,8 @@ class ReportController extends Controller
             'group_by' => 'nullable|in:day,week,month,class',
         ]);
 
-        $from = $request->filled('from') ? \Carbon\Carbon::parse($request->input('from')) : today()->startOfMonth();
-        $to = $request->filled('to') ? \Carbon\Carbon::parse($request->input('to')) : today();
+        $from = $request->filled('from') ? Carbon::parse($request->input('from')) : today()->startOfMonth();
+        $to = $request->filled('to') ? Carbon::parse($request->input('to')) : today();
         $groupBy = $request->input('group_by', 'day');
         $schoolId = $this->activeSchoolId($request);
 
@@ -181,7 +182,7 @@ class ReportController extends Controller
             'as_of' => 'nullable|date',
         ]);
 
-        $asOf = $request->filled('as_of') ? \Carbon\Carbon::parse($request->input('as_of')) : today();
+        $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : today();
         $schoolId = $this->activeSchoolId($request);
 
         // Fetch unpaid / partial invoices with student info
@@ -285,8 +286,8 @@ class ReportController extends Controller
             'to' => 'nullable|date',
         ]);
 
-        $from = $request->filled('from') ? \Carbon\Carbon::parse($request->input('from')) : today()->startOfYear();
-        $to = $request->filled('to') ? \Carbon\Carbon::parse($request->input('to')) : today();
+        $from = $request->filled('from') ? Carbon::parse($request->input('from')) : today()->startOfYear();
+        $to = $request->filled('to') ? Carbon::parse($request->input('to')) : today();
         $schoolId = $this->activeSchoolId($request);
 
         // Revenue: fee collections (payments) in period
@@ -350,7 +351,7 @@ class ReportController extends Controller
             'as_of' => 'nullable|date',
         ]);
 
-        $asOf = $request->filled('as_of') ? \Carbon\Carbon::parse($request->input('as_of')) : today();
+        $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : today();
 
         $schoolId = $this->activeSchoolId($request);
 
@@ -436,8 +437,8 @@ class ReportController extends Controller
             'to' => 'nullable|date',
         ]);
 
-        $from = $request->filled('from') ? \Carbon\Carbon::parse($request->input('from')) : today()->startOfMonth();
-        $to = $request->filled('to') ? \Carbon\Carbon::parse($request->input('to')) : today();
+        $from = $request->filled('from') ? Carbon::parse($request->input('from')) : today()->startOfMonth();
+        $to = $request->filled('to') ? Carbon::parse($request->input('to')) : today();
         $schoolId = $this->activeSchoolId($request);
 
         // Operating inflows: fee collections
