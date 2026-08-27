@@ -9,14 +9,12 @@
     $guardian = $student->guardians?->first();
 
     // This must stay a single page however many invoices a student has accumulated
-    // (four per academic year, so a pupil here for six years reaches 24). Density
-    // steps up before anything is hidden, so "all invoices" stays true:
-    //   <= 6   full detail, one line per payment
-    //   7-14   condensed rows, payments summarised to a count
-    //   > 14   condensed, and the oldest collapse into a single carried-forward row
+    // (four per academic year, so a pupil here for six years reaches 24). Rows
+    // condense past 6 invoices, and past 14 the oldest collapse into a single
+    // carried-forward row — payment dates/amounts are no longer printed per
+    // invoice at all, only the paid/partial/unpaid indicator.
     $count = $invoices->count();
     $dense = $count > 6;
-    $showPayments = $count <= 6;
     $maxRows = 14;
 
     $shownInvoices = $count > $maxRows ? $invoices->slice(-$maxRows) : $invoices;
@@ -56,8 +54,6 @@
   .status-paid    { color: #007f3e; font-weight: bold; }
   .status-partial { color: #b45309; font-weight: bold; }
   .status-unpaid  { color: #c0292b; font-weight: bold; }
-
-  .payment-line { font-size: 8.5px; color: #666; }
 
   /* Applied once a student has enough invoices that full-detail rows would
      push the totals onto a second page. */
@@ -142,16 +138,6 @@
           <span class="status-{{ $inv->status }}"{!! $dense ? '' : ' style="display:block"' !!}>
             {{ ['paid' => 'Amelipa', 'partial' => 'Amelipa Kiasi', 'unpaid' => 'Hajalipa'][$inv->status] ?? $inv->status }}
           </span>
-          @if($showPayments)
-            @foreach($inv->payments as $p)
-              <div class="payment-line">
-                {{ $p->paid_at?->format('d/m/Y') }} — {{ $money($p->amount_cents) }}
-                @if($p->reference_number) ({{ $p->reference_number }}) @endif
-              </div>
-            @endforeach
-          @elseif($inv->payments->count())
-            <span class="payment-line">({{ $inv->payments->count() }} malipo)</span>
-          @endif
         </td>
         <td class="amt">{{ $money($inv->gross_cents) }}</td>
         <td class="amt">{{ $money($inv->paid_cents) }}</td>
