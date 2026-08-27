@@ -501,7 +501,10 @@
       "Bash(vendor/bin/pint --test app/Models/PrimaryFeeCategory.php app/Http/Controllers/Accountant/PrimaryFeeCategoryController.php routes/api.php database/migrations/2026_08_27_090342_create_primary_fee_categories_table.php)",
       "Bash(vendor/bin/pint app/Http/Requests/Student/RegisterStudentRequest.php)",
       "Bash(vendor/bin/pint app/Services/Students/StudentRegistrationService.php)",
-      "Bash(vendor/bin/pint routes/api.php)"
+      "Bash(vendor/bin/pint routes/api.php)",
+      "Bash(curl -s -o /tmp/statement_test.pdf -w 'HTTP_STATUS:%{http_code}\\\\nCONTENT_TYPE:%{content_type}\\\\nSIZE:%{size_download}\\\\n' -H 'Authorization: Bearer 71|GBJnvn131Bo7pqlGgvWQF59Pkt4qN0yBEFIEFd1Bcb9f51ce' -H 'X-School-Id: 2' -H 'Accept: application/json' https://magrethschools.sc.tz/api/students/133/statement-receipt)",
+      "Bash(curl -s \"https://magrethschools.sc.tz/assets/index-Bi76Gql7.js\" -o /tmp/bundle.js)",
+      "Bash(grep -o \"students/\\\\${[a-zA-Z]*}/statement-receipt\" /tmp/bundle.js)"
     ]
   }
 }

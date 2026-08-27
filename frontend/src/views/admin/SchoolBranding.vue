@@ -89,11 +89,13 @@ async function save() {
     const fd = new FormData()
     fd.append('app_name', appName.value)
     fd.append('app_tagline', appTagline.value)
-    fd.append('phone', schoolPhone.value ?? '')
-    fd.append('email', schoolEmail.value ?? '')
-    // Only sent when it belongs to a school — system-wide defaults have no code.
-    if (schoolCode.value) fd.append('code', schoolCode.value.toUpperCase())
-    Object.entries(lh.value).forEach(([k, v]) => fd.append(k, v ?? ''))
+    // These belong to a school record; system defaults have none.
+    if (!isSystemDefault.value) {
+      fd.append('phone', schoolPhone.value ?? '')
+      fd.append('email', schoolEmail.value ?? '')
+      if (schoolCode.value) fd.append('code', schoolCode.value.toUpperCase())
+      Object.entries(lh.value).forEach(([k, v]) => fd.append(k, v ?? ''))
+    }
     if (logoFile.value) fd.append('logo', logoFile.value)
     if (auth.isSuperAdmin && selectedSchoolId.value) {
       fd.append('school_id', selectedSchoolId.value)
@@ -175,6 +177,11 @@ const previewTagline = computed(() => appTagline.value || 'nexoryaTECH')
 // Admission-number prefix mirrors SchoolLevel::admissionPrefix() on the backend.
 const admissionPrefix = computed(() => (schoolLevel.value === 'secondary' ? 'SEC' : 'PRM'))
 const currentYear = new Date().getFullYear()
+// "System Default" has no school behind it, so the school record fields
+// (phone, email, code, letterhead) have nowhere to be saved. Hide them rather
+// than accept input that would be silently discarded.
+const isSystemDefault = computed(() => auth.isSuperAdmin && !selectedSchoolId.value)
+
 const codeChanged = computed(() =>
   !!schoolCodeOrig.value &&
   !!schoolCode.value &&
@@ -253,6 +260,17 @@ const codeChanged = computed(() =>
                 <div class="form-text">Shown below the app name.</div>
               </div>
 
+              <!-- System Default has no school record to attach these to -->
+              <div v-if="isSystemDefault" class="col-12">
+                <div class="alert alert-info py-2 px-3 mb-0" style="font-size:.82rem;">
+                  <strong>System Default</strong> sets the fallback name, tagline and logo for
+                  schools that have not been configured. Contact details, school code and the
+                  letterhead belong to an individual school — pick one above to edit those.
+                </div>
+              </div>
+
+              <!-- School phone -->
+              <template v-if="!isSystemDefault">
               <!-- School phone -->
               <div class="col-12 col-md-6">
                 <label class="form-label fw-semibold mb-1">School Phone</label>
@@ -369,6 +387,7 @@ const codeChanged = computed(() =>
                        placeholder="Education for Excellence" maxlength="120" :disabled="loadingBranding" />
                 <div class="form-text">Replaces the tagline on printed documents.</div>
               </div>
+              </template>
 
               <!-- Logo -->
               <div class="col-12">

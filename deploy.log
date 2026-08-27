@@ -2621,3 +2621,32 @@ use the new code."
 [0;36m[2026-08-27 18:23:21][0m   ShulePay — Release
 [0;36m[2026-08-27 18:23:21][0m ══════════════════════════════════════════
 [0;36m[2026-08-27 18:23:21][0m Checking working tree...
+[0;36m[2026-08-27 18:23:21][0m Files staged for commit:
+[0;36m[2026-08-27 18:23:21][0m Committing: "feat(branding): letterhead fields, printed on receipts and statements
+
+Adds the postal and contact block from the school's official letterhead —
+address lines, P.O. Box, city/country, two extra phone numbers, website and
+motto — to the branding page, and prints them at the top of every document.
+
+Stored in settings.letterhead. The primary phone and email stay as columns
+because SMS and other features read them; these extra lines are presentation
+only.
+
+ReceiptPdf, ReportPdf and StudentStatementPdf each carried their own copy of the
+branding-resolution logic and each blade its own header markup, so the postal
+details existed in none of them. Introduces App\Support\SchoolLetterhead as the
+single resolver and pdf/partials/letterhead.blade.php as one shared header:
+logo and school identity on the left, the postal/contact block right-aligned as
+on a printed letterhead, a brand rule, and the document title.
+
+Built with tables, not flexbox — DomPDF ignores flexbox, which is what silently
+stacked the receipt's rows before."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-27 18:23:22][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-27 18:23:27][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-27 18:33:26][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 18:33:26][0m   ShulePay — Release
+[0;36m[2026-08-27 18:33:26][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 18:33:26][0m Checking working tree...

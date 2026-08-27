@@ -42,6 +42,14 @@ class BrandingController extends Controller
             ));
         }
 
+        // A superadmin who sent no school_id is on "System Default", so return the
+        // system values — not their own school's. update() already routes the same
+        // request to updateSystem(), and the two disagreeing meant the form showed
+        // one school's details while saving somewhere else entirely.
+        if ($user->hasRole('superadmin')) {
+            return response()->json($this->resolve($system, null));
+        }
+
         $school = $user->school;
 
         if (! $school) {
