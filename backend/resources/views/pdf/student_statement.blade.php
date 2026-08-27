@@ -53,21 +53,15 @@
 </head>
 <body>
 
-  <div class="center">
-    @if($logoBase64)
-      <img src="{{ $logoBase64 }}" class="logo-img" alt="Logo"><br>
-    @endif
-    <div class="app-name">{{ $appName }}</div>
-    <div class="sub">{{ $appTagline }}</div>
-    @if($enrollment?->school && $enrollment->school->name !== $appName)
-      <div class="sub bold">{{ $enrollment->school->name }}</div>
-    @endif
-  </div>
+  {{-- Shared letterhead — logo, contacts and postal address all come from the
+       school's branding settings. See pdf/partials/letterhead.blade.php. --}}
+  @include('pdf.partials.letterhead', [
+    'lh' => $lh,
+    'docTitle' => 'Taarifa ya Malipo Yote (Ankara Zote)',
+    'compact' => true,
+  ])
 
-  <div class="hr"></div>
-
-  <div class="center">
-    <div class="doc-title">TAARIFA YA MALIPO YOTE (ANKARA ZOTE)</div>
+  <div class="center" style="margin-top:6px;">
     <div class="sub">{{ now()->format('d/m/Y H:i') }}</div>
   </div>
 

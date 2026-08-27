@@ -2724,3 +2724,20 @@ height. Spacing trimmed and verified single-page from 1 to 200 lines."
 [0;36m[2026-08-27 19:10:25][0m   ShulePay — Release
 [0;36m[2026-08-27 19:10:25][0m ══════════════════════════════════════════
 [0;36m[2026-08-27 19:10:25][0m Checking working tree...
+[0;36m[2026-08-27 19:10:25][0m Files staged for commit:
+[0;36m[2026-08-27 19:10:26][0m Committing: "fix(statements): keep the consolidated statement on A5
+
+The previous commit moved every document to A4. The consolidated
+'Taarifa ya Malipo Yote' is a compact one-per-student summary designed at A5;
+on A4 it sat at the top of a mostly empty sheet. Reverted to its original size.
+
+The per-payment receipt stays A4 as requested, and reports were already A4."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-27 19:10:26][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-27 19:10:33][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-27 19:18:52][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 19:18:52][0m   ShulePay — Release
+[0;36m[2026-08-27 19:18:53][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 19:18:53][0m Checking working tree...

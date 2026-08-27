@@ -59,16 +59,13 @@
 </head>
 <body>
 
-  <div class="center">
-    @if($logoBase64)
-      <img src="{{ $logoBase64 }}" class="logo-img" alt="Logo"><br>
-    @endif
-    <div class="app-name">{{ $appName }}</div>
-    <div class="sub">{{ $appTagline }}</div>
-    @if($school && $school->name !== $appName)
-      <div class="sub bold">{{ $school->name }}</div>
-    @endif
-    <div class="doc-title">TAARIFA YA ADA</div>
+  @include('pdf.partials.letterhead', [
+    'lh' => $lh,
+    'docTitle' => 'Taarifa ya Ada',
+    'compact' => false,
+  ])
+
+  <div class="center" style="margin-top:6px;">
     <div class="sub">Imetolewa: {{ now()->format('d/m/Y H:i') }}</div>
   </div>
 
