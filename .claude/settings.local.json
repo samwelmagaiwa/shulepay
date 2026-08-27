@@ -459,7 +459,9 @@
       "Bash(grep -n '\\(int\\) $r->amount_cents\\\\|\\(int\\) $r->payment_count\\\\|\\(int\\) $r->cnt\\\\|->cents\\(\\)' backend/app/Http/Controllers/Reports/ReportController.php)",
       "Bash(grep -n 'getRawOriginal\\\\|\\(int\\) $r->amount_cents\\\\|\\(int\\) $r->payment_count' backend/app/Http/Controllers/Reports/ReportController.php)",
       "Bash(curl -s -X POST http://localhost/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"super@gmail.com\",\"password\":\"12345678\"}')",
-      "Bash(bash deploy.sh release \"fix\\(reports\\): Collections/Debtors/By Class/Expenses vs Collections were all broken, now fixed and tested\")"
+      "Bash(bash deploy.sh release \"fix\\(reports\\): Collections/Debtors/By Class/Expenses vs Collections were all broken, now fixed and tested\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend php artisan route:list --path=reports\")",
+      "Bash(ssh root@169.58.188.122 \"docker inspect shulepay_backend --format '{{.Created}}' && docker inspect shulepay_backend --format '{{.State.StartedAt}}'\")"
     ]
   }
 }
