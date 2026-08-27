@@ -97,7 +97,7 @@
           </CRow>
 
           <div v-if="colRows.length" style="position:relative; height:260px;" class="mb-3">
-            <canvas ref="colChartRef"></canvas>
+            <canvas ref="colChartRef" style="width:100%;height:100%;"></canvas>
           </div>
 
           <CTable responsive hover class="mb-0" style="font-size:.85rem;">
@@ -209,7 +209,7 @@
           </CRow>
 
           <div v-if="classData.length" style="position:relative; height:260px;" class="mb-3">
-            <canvas ref="classChartRef"></canvas>
+            <canvas ref="classChartRef" style="width:100%;height:100%;"></canvas>
           </div>
 
           <CTable responsive hover class="mb-0" style="font-size:.85rem;">
@@ -280,7 +280,7 @@
             </CCol>
           </CRow>
           <div v-if="vsData.length" style="position:relative; height:260px;" class="mb-3">
-            <canvas ref="vsChartRef"></canvas>
+            <canvas ref="vsChartRef" style="width:100%;height:100%;"></canvas>
           </div>
           <CTable responsive hover class="mb-0" style="font-size:.85rem;">
             <CTableHead class="table-light">
@@ -451,6 +451,16 @@ async function loadCollections() {
   } catch {} finally { loadingCol.value = false }
 }
 
+// Chart.js's own ResizeObserver-based sizing sometimes measures the canvas's
+// parent before the v-if'd container has actually been laid out (its 260px
+// height reserved via inline style), leaving the canvas stuck at the
+// hard-coded 300x150 default — a tiny chart adrift in a large empty box.
+// Forcing one resize() on the next frame, once layout has definitely
+// settled, fixes it.
+function forceChartResize(chart) {
+  requestAnimationFrame(() => chart?.resize())
+}
+
 async function renderColChart() {
   if (!colChartRef.value) return
   const C = await initChart()
@@ -464,6 +474,7 @@ async function renderColChart() {
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
   })
+  forceChartResize(colChart)
 }
 
 async function loadDebtors() {
@@ -516,6 +527,7 @@ async function renderClassChart() {
     },
     options: { responsive: true, maintainAspectRatio: false },
   })
+  forceChartResize(classChart)
 }
 
 async function loadVsData() {
@@ -545,6 +557,7 @@ async function renderVsChart() {
     },
     options: { responsive: true, maintainAspectRatio: false },
   })
+  forceChartResize(vsChart)
 }
 
 function printReport() {
