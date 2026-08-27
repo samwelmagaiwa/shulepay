@@ -108,8 +108,10 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
+import { useSchoolStore } from '@/stores/school'
 
 const { t } = useI18n()
+const schoolStore = useSchoolStore()
 defineProps({ visible: { type: Boolean, default: false } })
 const emit = defineEmits(['close', 'generated'])
 
@@ -207,15 +209,29 @@ async function doGenerate() {
   }
 }
 
-import { onMounted } from 'vue'
-onMounted(async () => {
+import { onMounted, watch } from 'vue'
+
+// Previously fetched /terms and /academic-years with no school scoping at
+// all, so this modal listed another school's terms/years whenever the
+// logged-in user's fixed home school differed from the active one selected
+// in the top switcher — same bug class as the /admin/terms page.
+async function loadYearsAndTerms() {
   try {
+    const schoolId = schoolStore.activeSchoolId
+    const params = schoolId ? { school_id: schoolId } : {}
     const [termsRes, yearsRes] = await Promise.all([
-      api.get('/terms'),
-      api.get('/academic-years'),
+      api.get('/terms', { params }),
+      api.get('/academic-years', { params }),
     ])
     terms.value = termsRes.data.data || termsRes.data
     academicYears.value = yearsRes.data.data || yearsRes.data
   } catch {}
+}
+
+onMounted(loadYearsAndTerms)
+watch(() => schoolStore.activeSchoolId, () => {
+  form.value.academic_year_id = ''
+  form.value.term_id = ''
+  loadYearsAndTerms()
 })
 </script>

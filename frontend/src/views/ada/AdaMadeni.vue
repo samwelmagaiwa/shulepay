@@ -318,8 +318,23 @@ const schools    = computed(() => schoolsStore.schools)
 
 watch(() => schoolStore.activeSchoolId, (id) => {
   filters.value.school_id = id || ''
+  filters.value.class_id = ''  // a class picked under the previous school no longer applies
   fetchData(1)
+  loadClasses()
 })
+
+// The Class filter dropdown was fetched once on mount with no school scoping
+// at all (fell back to the logged-in user's fixed home school, ignoring the
+// active-school switcher) and never refreshed on school switch — same bug
+// class as the /admin/terms page.
+async function loadClasses() {
+  try {
+    const { data: cd } = await api.get('/school-classes', {
+      params: filters.value.school_id ? { school_id: filters.value.school_id } : {},
+    })
+    classes.value = cd.data || cd
+  } catch { classes.value = [] }
+}
 
 const totalOutstanding = computed(() =>
   invoices.value.reduce((s, i) => s + (i.balance_due_cents || 0), 0)
@@ -436,10 +451,7 @@ watch(() => filters.value.school_id, () => fetchPromisedCount())
 onMounted(async () => {
   try {
     await schoolsStore.fetchSchools()
-    try {
-      const { data: cd } = await api.get('/school-classes')
-      classes.value = cd.data || cd
-    } catch {}
+    await loadClasses()
     await Promise.all([fetchData(), fetchPromisedCount()])
   } catch (e) {
     console.error('AdaMadeni mount error', e)
