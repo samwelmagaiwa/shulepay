@@ -526,4 +526,18 @@ onMounted(async () => {
 @media (max-width: 767px) {
   .btn { min-height: 44px; }
 }
+
+/* The "+N more invoices" dropdown was rendering clipped/behind the table.
+   .table-responsive sets overflow-x: auto, and per spec a browser then also
+   computes overflow-y as auto (not visible) — that clips the dropdown's
+   menu vertically since its containing block is this scrollable wrapper.
+   Keeping overflow-x for the horizontal scroll but freeing overflow-y lets
+   the menu escape without losing the table's responsive scrolling. */
+:deep(.table-responsive) {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+:deep(.dropdown-menu) {
+  z-index: 1060;
+}
 </style>
