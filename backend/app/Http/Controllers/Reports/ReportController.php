@@ -203,7 +203,12 @@ class ReportController extends Controller
                 continue;
             }
 
-            $age = (int) $inv->due_date->diffInDays($asOf, false);
+            // Migrated/historical invoices (StudentRegistrationService::
+            // importPaymentHistory) are created with due_date=null — there was
+            // no agreed due date to import. Fall back to when the invoice was
+            // generated so it still ages sensibly instead of crashing.
+            $dueDate = $inv->due_date ?? $inv->generated_at ?? $inv->created_at;
+            $age = (int) $dueDate->diffInDays($asOf, false);
             // Negative age means not yet due — treat as current (0)
             $age = max(0, $age);
 
@@ -214,7 +219,7 @@ class ReportController extends Controller
                     'full_name' => $inv->student?->fullName() ?? '—',
                     'admission_number' => $enrollment?->admission_number ?? '—',
                     'school_class' => $enrollment?->schoolClass?->name ?? '—',
-                    'oldest_invoice_date' => $inv->due_date->toDateString(),
+                    'oldest_invoice_date' => $dueDate->toDateString(),
                     'oldest_age' => $age,
                     'outstanding_cents' => $balance,
                 ];
@@ -222,7 +227,7 @@ class ReportController extends Controller
                 $studentMap[$sid]['outstanding_cents'] += $balance;
                 if ($age > $studentMap[$sid]['oldest_age']) {
                     $studentMap[$sid]['oldest_age'] = $age;
-                    $studentMap[$sid]['oldest_invoice_date'] = $inv->due_date->toDateString();
+                    $studentMap[$sid]['oldest_invoice_date'] = $dueDate->toDateString();
                 }
             }
         }
@@ -638,7 +643,8 @@ class ReportController extends Controller
 
             return [
                 'invoice_number' => $inv->invoice_number,
-                'due_date' => $inv->due_date->toDateString(),
+                // Migrated invoices have no due_date (see debtorAging above).
+                'due_date' => $inv->due_date?->toDateString(),
                 'term' => $inv->term?->name,
                 'gross_cents' => $gross,
                 'paid_cents' => $paid,
