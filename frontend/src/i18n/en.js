@@ -840,6 +840,7 @@ export default {
     month:        'Month',
     collectionsCol: 'Collections (TZS)',
     totalPartialPaid: 'Total Partial Paid',
+    debtorsColumn: 'Debtors (Terms Not Paid)',
     paymentCount: 'Payment Count',
     daysOverdue:  'Days Overdue',
     agingStatus:  'Aging Status',

@@ -142,6 +142,7 @@
                 <CTableHeaderCell>{{ t('common.date') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.collectionsCol') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.totalDebt') }}</CTableHeaderCell>
+                <CTableHeaderCell class="d-none d-lg-table-cell">{{ t('reports.debtorsColumn') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.totalPartialPaid') }}</CTableHeaderCell>
                 <CTableHeaderCell class="d-none d-md-table-cell">{{ t('reports.paymentCount') }}</CTableHeaderCell>
               </CTableRow>
@@ -151,11 +152,15 @@
                 <CTableDataCell>{{ row.date }}</CTableDataCell>
                 <CTableDataCell class="fw-semibold text-success">{{ formatTZS(row.amount_cents) }}</CTableDataCell>
                 <CTableDataCell class="fw-semibold text-danger">{{ formatTZS(row.total_debt_cents) }}</CTableDataCell>
+                <CTableDataCell class="d-none d-lg-table-cell small">
+                  <div v-if="!row.debtors || !row.debtors.length" class="text-muted">—</div>
+                  <div v-for="(d, i) in row.debtors" :key="i">{{ d }}</div>
+                </CTableDataCell>
                 <CTableDataCell class="fw-semibold text-warning">{{ formatTZS(row.total_partial_paid_cents) }}</CTableDataCell>
                 <CTableDataCell class="d-none d-md-table-cell">{{ row.count }}</CTableDataCell>
               </CTableRow>
               <CTableRow v-if="!colRows.length">
-                <CTableDataCell colspan="5" class="text-center text-muted py-4">{{ t('reports.noData') }}</CTableDataCell>
+                <CTableDataCell colspan="6" class="text-center text-muted py-4">{{ t('reports.noData') }}</CTableDataCell>
               </CTableRow>
             </CTableBody>
           </CTable>
@@ -479,6 +484,7 @@ async function loadCollections() {
       date: r.period,
       amount_cents: r.amount_cents,
       total_debt_cents: r.total_debt_cents,
+      debtors: r.debtors || [],
       total_partial_paid_cents: r.total_partial_paid_cents,
       count: r.payment_count,
     }))

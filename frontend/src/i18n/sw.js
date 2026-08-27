@@ -840,6 +840,7 @@ export default {
     month:        'Mwezi',
     collectionsCol: 'Makusanyo (TZS)',
     totalPartialPaid: 'Jumla ya Malipo ya Sehemu',
+    debtorsColumn: 'Wenye Madeni (Muhula Ambao Haujalipwa)',
     paymentCount: 'Idadi ya Malipo',
     daysOverdue:  'Siku (Zimepita)',
     agingStatus:  'Hali ya Umri',

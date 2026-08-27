@@ -16,6 +16,7 @@ use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\SupplierPayment;
+use App\Models\Term;
 use App\Services\Reporting\ReportExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -147,6 +148,8 @@ class ReportController extends Controller
                 'invoices.id as touched_invoice_id',
                 'invoices.status as touched_invoice_status',
                 'invoices.total_amount_cents as touched_invoice_total_cents',
+                'invoices.student_id as touched_student_id',
+                'invoices.term_id as touched_term_id',
                 'payments.amount_cents as touched_payment_amount_cents'
             )
             ->get();
@@ -158,8 +161,16 @@ class ReportController extends Controller
             ->groupBy('invoice_id')
             ->pluck('paid_sum', 'invoice_id');
 
+        // Names/terms for the debtors-per-period column — batched instead of
+        // per-row lookups, since the same handful of students/terms repeat.
+        $debtorStudentIds = $touchedRows->pluck('touched_student_id')->unique()->filter();
+        $studentNamesById = Student::whereIn('id', $debtorStudentIds)->get()->mapWithKeys(fn ($s) => [$s->id => $s->fullName()]);
+        $debtorTermIds = $touchedRows->pluck('touched_term_id')->unique()->filter();
+        $termNamesById = Term::whereIn('id', $debtorTermIds)->pluck('name', 'id');
+
         $debtByPeriod = [];
         $partialPaidByPeriod = [];
+        $debtorsByPeriod = [];
         $seenInvoicePeriod = [];
 
         foreach ($touchedRows as $r) {
@@ -169,11 +180,17 @@ class ReportController extends Controller
 
             $debtByPeriod[$period] ??= 0;
             $partialPaidByPeriod[$period] ??= 0;
+            $debtorsByPeriod[$period] ??= [];
 
             $dedupeKey = $period.':'.$invId;
             if (in_array($status, ['unpaid', 'partial'], true) && ! isset($seenInvoicePeriod[$dedupeKey])) {
                 $balance = max(0, (int) $r->touched_invoice_total_cents - (int) ($paidSumsByInvoice[$invId] ?? 0));
                 $debtByPeriod[$period] += $balance;
+
+                $debtorsByPeriod[$period][] = [
+                    'student_name' => $studentNamesById[$r->touched_student_id] ?? '—',
+                    'term' => $termNamesById[$r->touched_term_id] ?? '—',
+                ];
             }
             $seenInvoicePeriod[$dedupeKey] = true;
 
@@ -182,9 +199,25 @@ class ReportController extends Controller
             }
         }
 
-        $rows = array_map(function ($row) use ($debtByPeriod, $partialPaidByPeriod) {
+        // Collapse to one entry per student per period, joining their unpaid
+        // terms — a student can have more than one touched invoice in the
+        // same period (e.g. two terms both still owing).
+        $debtorsByPeriod = array_map(function ($entries) {
+            $byStudent = [];
+            foreach ($entries as $e) {
+                $byStudent[$e['student_name']] ??= [];
+                if (! in_array($e['term'], $byStudent[$e['student_name']], true)) {
+                    $byStudent[$e['student_name']][] = $e['term'];
+                }
+            }
+
+            return collect($byStudent)->map(fn ($terms, $name) => $name.' ('.implode(', ', $terms).')')->values()->all();
+        }, $debtorsByPeriod);
+
+        $rows = array_map(function ($row) use ($debtByPeriod, $partialPaidByPeriod, $debtorsByPeriod) {
             $row['total_debt_cents'] = (int) ($debtByPeriod[$row['period']] ?? 0);
             $row['total_partial_paid_cents'] = (int) ($partialPaidByPeriod[$row['period']] ?? 0);
+            $row['debtors'] = $debtorsByPeriod[$row['period']] ?? [];
 
             return $row;
         }, $rows);
@@ -957,12 +990,13 @@ class ReportController extends Controller
                 $school = $this->resolveSchool($request);
                 $data = compact('report', 'school');
                 if ($forCsv) {
-                    $csvHeaders = ['Period', 'Collected (TZS)', 'Total Debt (TZS)', 'Total Partial Paid (TZS)', 'Payment Count'];
+                    $csvHeaders = ['Period', 'Collected (TZS)', 'Total Debt (TZS)', 'Debtors (Terms Not Paid)', 'Total Partial Paid (TZS)', 'Payment Count'];
                     $csvRows = array_map(
                         fn ($r) => [
                             $r['period'],
                             round(($r['amount_cents'] ?? 0) / 100),
                             round(($r['total_debt_cents'] ?? 0) / 100),
+                            implode('; ', $r['debtors'] ?? []),
                             round(($r['total_partial_paid_cents'] ?? 0) / 100),
                             $r['payment_count'],
                         ],
@@ -974,22 +1008,22 @@ class ReportController extends Controller
                     $sponsorshipLabels = ['half' => 'Half Sponsored', 'full' => 'Fully Sponsored (Free)', 'full_paid' => 'Fully Sponsored (Paid via Sponsor)'];
                     $sponsorshipColors = ['half' => 'BAE6FD', 'full' => 'BBF7D0', 'full_paid' => 'FBCFE8'];
 
-                    $csvRows[] = ['', '', '', '', ''];
+                    $csvRows[] = ['', '', '', '', '', ''];
 
                     $csvRowStyles[count($csvRows)] = ['bg' => '6366F1', 'color' => 'FFFFFF', 'bold' => true];
-                    $csvRows[] = ['DISCOUNTS BY TYPE', 'Students', 'Amount (TZS)', '', ''];
+                    $csvRows[] = ['DISCOUNTS BY TYPE', 'Students', 'Amount (TZS)', '', '', ''];
                     foreach ($report['by_discount_type'] ?? [] as $d) {
                         $csvRowStyles[count($csvRows)] = ['bg' => $discountColors[$d['type']] ?? 'F3F4F6'];
-                        $csvRows[] = [$discountLabels[$d['type']] ?? $d['type'], $d['count'], round($d['amount_cents'] / 100), '', ''];
+                        $csvRows[] = [$discountLabels[$d['type']] ?? $d['type'], $d['count'], round($d['amount_cents'] / 100), '', '', ''];
                     }
 
-                    $csvRows[] = ['', '', '', '', ''];
+                    $csvRows[] = ['', '', '', '', '', ''];
 
                     $csvRowStyles[count($csvRows)] = ['bg' => '0EA5E9', 'color' => 'FFFFFF', 'bold' => true];
-                    $csvRows[] = ['SPONSORSHIPS BY TYPE', 'Students', 'Amount Collected (TZS)', '', ''];
+                    $csvRows[] = ['SPONSORSHIPS BY TYPE', 'Students', 'Amount Collected (TZS)', '', '', ''];
                     foreach ($report['by_sponsorship_type'] ?? [] as $s) {
                         $csvRowStyles[count($csvRows)] = ['bg' => $sponsorshipColors[$s['type']] ?? 'F3F4F6'];
-                        $csvRows[] = [$sponsorshipLabels[$s['type']] ?? $s['type'], $s['count'], round($s['amount_cents'] / 100), '', ''];
+                        $csvRows[] = [$sponsorshipLabels[$s['type']] ?? $s['type'], $s['count'], round($s['amount_cents'] / 100), '', '', ''];
                     }
                 }
                 break;
