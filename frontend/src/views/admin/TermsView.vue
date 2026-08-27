@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
 import { useSchoolStore } from '@/stores/school'
@@ -28,10 +28,14 @@ async function load() {
   loading.value = true
   error.value   = ''
   try {
-    // Load all academic years and terms (not filtered by school, like AcademicYearsView)
+    // Scoped to the currently active school (top switcher) — each school's
+    // own academic years and terms only. Previously loaded everything the
+    // user could access with no school filter, so e.g. viewing a primary
+    // school here would still list a secondary school's academic years.
+    const schoolId = schoolStore.activeSchoolId
     const [ayRes, tmRes] = await Promise.all([
-      api.get('/academic-years'),
-      api.get('/terms'),
+      api.get('/academic-years', { params: schoolId ? { school_id: schoolId } : {} }),
+      api.get('/terms', { params: schoolId ? { school_id: schoolId } : {} }),
     ])
 
     academicYears.value = ayRes.data.data ?? ayRes.data ?? []
@@ -44,6 +48,9 @@ async function load() {
 }
 
 onMounted(load)
+
+// Reload whenever the user switches schools in the top selector.
+watch(() => schoolStore.activeSchoolId, load)
 
 function openCreate() {
   editTarget.value = null
