@@ -175,53 +175,76 @@
             </CTableRow>
           </CTableHead>
           <CTableBody>
-            <CTableRow v-for="inv in invoices" :key="inv.id" :class="rowBgClass(inv)">
-              <CTableDataCell class="fw-medium">{{ inv.invoice_number }}</CTableDataCell>
-              <CTableDataCell>{{ inv.student?.full_name }}</CTableDataCell>
-              <CTableDataCell class="d-none d-lg-table-cell">{{ inv.student?.school_class?.name }}</CTableDataCell>
-              <CTableDataCell>{{ inv.term?.name }}</CTableDataCell>
-              <CTableDataCell class="d-none d-lg-table-cell">{{ formatMoney(inv.total_amount_cents) }}</CTableDataCell>
-              <CTableDataCell>{{ formatMoney(inv.paid_cents) }}</CTableDataCell>
-              <CTableDataCell class="fw-semibold" :class="inv.balance_due_cents > 0 ? 'text-danger' : 'text-success'">
-                {{ formatMoney(inv.balance_due_cents) }}
-              </CTableDataCell>
-              <CTableDataCell><StatusBadge :status="inv.status" /></CTableDataCell>
-              <CTableDataCell>
-                <div class="d-flex gap-1">
-                  <CButton size="sm" color="info" variant="outline" @click="openDrawer(inv.student)"
-                           style="min-height:36px; min-width:36px;">
-                    <CIcon icon="cilMagnifyingGlass" />
-                  </CButton>
-                  <CButton v-if="inv.status !== 'paid'" size="sm" color="primary"
-                           @click="openPayment(inv)" style="min-height:36px;">
-                    {{ t('invoices.payNow') }}
-                  </CButton>
-                  <!-- Any invoice with a receipted payment can be reprinted, including
-                       partials — a parent who paid half still needs their receipt. -->
-                  <CButton v-if="receiptsFor(inv).length === 1" size="sm" color="success" variant="outline"
-                           @click="printReceipt(receiptsFor(inv)[0].id)"
-                           :disabled="printingReceiptId === receiptsFor(inv)[0].id"
-                           :title="t('payments.printReceipt')" style="min-height:36px; min-width:40px;">
-                    <CSpinner v-if="printingReceiptId === receiptsFor(inv)[0].id" size="sm" />
-                    <span v-else>🖨</span>
-                  </CButton>
-                  <CDropdown v-else-if="receiptsFor(inv).length > 1" variant="btn-group">
-                    <CDropdownToggle size="sm" color="success" variant="outline" style="min-height:36px;">
-                      🖨 {{ receiptsFor(inv).length }}
+            <template v-for="group in groupedInvoices" :key="group.primary.id">
+              <CTableRow :class="rowBgClass(group.primary)">
+                <CTableDataCell class="fw-medium">{{ group.primary.invoice_number }}</CTableDataCell>
+                <CTableDataCell>
+                  {{ group.primary.student?.full_name }}
+                  <!-- Well-designed dropdown: a student's other invoices stay hidden
+                       here until this toggle is opened — keeps one row per student
+                       instead of one row per term. -->
+                  <CDropdown v-if="group.others.length" variant="btn-group" class="d-inline-block ms-1">
+                    <CDropdownToggle size="sm" color="secondary" variant="outline" style="min-height:26px; padding:.1rem .4rem; font-size:.75rem;">
+                      +{{ group.others.length }} {{ t('invoices.moreInvoices') }}
                     </CDropdownToggle>
-                    <CDropdownMenu>
-                      <CDropdownHeader>{{ t('payments.receipt') }}</CDropdownHeader>
-                      <CDropdownItem v-for="r in receiptsFor(inv)" :key="r.id"
-                                     style="cursor:pointer;" @click="printReceipt(r.id)">
-                        <CSpinner v-if="printingReceiptId === r.id" size="sm" class="me-1" />
-                        {{ r.receipt_number }}
-                        <span class="text-muted small ms-1">{{ formatMoney(r.amount_cents) }}</span>
+                    <CDropdownMenu style="min-width:280px;">
+                      <CDropdownHeader>{{ t('invoices.otherInvoicesFor', { name: group.primary.student?.full_name }) }}</CDropdownHeader>
+                      <CDropdownItem v-for="inv in group.others" :key="inv.id" style="cursor:default;" class="py-2">
+                        <div class="d-flex justify-content-between align-items-center gap-2">
+                          <div>
+                            <div class="small fw-semibold">{{ inv.term?.name }} — {{ inv.invoice_number }}</div>
+                            <div class="small">
+                              <StatusBadge :status="inv.status" />
+                              <span class="ms-1" :class="inv.balance_due_cents > 0 ? 'text-danger' : 'text-success'">
+                                {{ formatMoney(inv.balance_due_cents) }}
+                              </span>
+                            </div>
+                          </div>
+                          <div class="d-flex gap-1 flex-shrink-0">
+                            <CButton size="sm" color="info" variant="outline" @click="openDrawer(inv.student)" style="min-height:30px; min-width:30px;">
+                              <CIcon icon="cilMagnifyingGlass" />
+                            </CButton>
+                            <CButton v-if="inv.status !== 'paid'" size="sm" color="primary" @click="openPayment(inv)" style="min-height:30px;">
+                              {{ t('invoices.payNow') }}
+                            </CButton>
+                          </div>
+                        </div>
                       </CDropdownItem>
                     </CDropdownMenu>
                   </CDropdown>
-                </div>
-              </CTableDataCell>
-            </CTableRow>
+                </CTableDataCell>
+                <CTableDataCell class="d-none d-lg-table-cell">{{ group.primary.student?.school_class?.name }}</CTableDataCell>
+                <CTableDataCell>{{ group.primary.term?.name }}</CTableDataCell>
+                <CTableDataCell class="d-none d-lg-table-cell">{{ formatMoney(group.primary.total_amount_cents) }}</CTableDataCell>
+                <CTableDataCell>{{ formatMoney(group.primary.paid_cents) }}</CTableDataCell>
+                <CTableDataCell class="fw-semibold" :class="group.primary.balance_due_cents > 0 ? 'text-danger' : 'text-success'">
+                  {{ formatMoney(group.primary.balance_due_cents) }}
+                </CTableDataCell>
+                <CTableDataCell><StatusBadge :status="group.primary.status" /></CTableDataCell>
+                <CTableDataCell>
+                  <div class="d-flex gap-1">
+                    <CButton size="sm" color="info" variant="outline" @click="openDrawer(group.primary.student)"
+                             style="min-height:36px; min-width:36px;">
+                      <CIcon icon="cilMagnifyingGlass" />
+                    </CButton>
+                    <CButton v-if="group.primary.status !== 'paid'" size="sm" color="primary"
+                             @click="openPayment(group.primary)" style="min-height:36px;">
+                      {{ t('invoices.payNow') }}
+                    </CButton>
+                    <!-- Consolidated receipt: every invoice this student has — all
+                         terms' debts, payments made, and remaining balance — on one
+                         printout, not just group.primary's own invoice. -->
+                    <CButton size="sm" color="success" variant="outline"
+                             @click="printStatement(group.studentId)"
+                             :disabled="printingStatementFor === group.studentId"
+                             :title="t('invoices.printAllReceipt')" style="min-height:36px; min-width:40px;">
+                      <CSpinner v-if="printingStatementFor === group.studentId" size="sm" />
+                      <span v-else>🖨</span>
+                    </CButton>
+                  </div>
+                </CTableDataCell>
+              </CTableRow>
+            </template>
             <CTableRow v-if="!loading && invoices.length === 0">
               <CTableDataCell colspan="9" class="text-center text-muted py-4">{{ t('invoices.noInvoices') }}</CTableDataCell>
             </CTableRow>
@@ -292,7 +315,7 @@ import MwanafunziDrawer      from '@/components/MwanafunziDrawer.vue'
 import GenerateInvoiceModal  from '@/components/GenerateInvoiceModal.vue'
 import SmsBlastModal         from '@/components/SmsBlastModal.vue'
 import api                   from '@/services/api'
-import { printReceipt as printReceiptPdf, cleanupReceiptFrame } from '@/utils/receipt'
+import { printReceipt as printReceiptPdf, printStudentStatement as printStudentStatementPdf, cleanupReceiptFrame } from '@/utils/receipt'
 
 const { t } = useI18n()
 const invoicesStore = useInvoicesStore()
@@ -364,6 +387,30 @@ function rowBgClass(inv) {
   return ''
 }
 
+// ── Group invoices by student — one visible row per student, the rest
+// tucked behind a dropdown, so a student with e.g. 4 terms' invoices
+// doesn't fill the table with 4 near-identical rows. The most relevant
+// invoice (unpaid/partial over paid, then by balance) leads the row; the
+// dropdown lists every invoice with the same actions the full table had.
+const groupedInvoices = computed(() => {
+  const byStudent = new Map()
+  for (const inv of invoices.value) {
+    const sid = inv.student?.id
+    if (sid == null) continue
+    if (!byStudent.has(sid)) byStudent.set(sid, [])
+    byStudent.get(sid).push(inv)
+  }
+
+  const statusRank = { unpaid: 0, partial: 1, paid: 2 }
+  return Array.from(byStudent.values()).map(group => {
+    const sorted = [...group].sort((a, b) => {
+      const r = (statusRank[a.status] ?? 3) - (statusRank[b.status] ?? 3)
+      return r !== 0 ? r : (b.balance_due_cents || 0) - (a.balance_due_cents || 0)
+    })
+    return { primary: sorted[0], others: sorted.slice(1), studentId: sorted[0].student.id }
+  })
+})
+
 async function fetchData(page) {
   const params = { page: page ?? pagination.value.current_page ?? 1, per_page: perPage.value }
   if (filters.value.school_id)   params.school_id   = filters.value.school_id
@@ -415,6 +462,22 @@ async function printReceipt(receiptId) {
     receiptError.value = e?.response?.data?.message || t('payments.receiptPrintFailed')
   } finally {
     printingReceiptId.value = null
+  }
+}
+
+// One consolidated receipt for every invoice a student has — all terms'
+// debts, payments made, and the remaining balance on a single printout.
+const printingStatementFor = ref(null)
+async function printStatement(studentId) {
+  if (!studentId) return
+  printingStatementFor.value = studentId
+  receiptError.value = ''
+  try {
+    await printStudentStatementPdf(studentId)
+  } catch (e) {
+    receiptError.value = e?.response?.data?.message || t('payments.receiptPrintFailed')
+  } finally {
+    printingStatementFor.value = null
   }
 }
 

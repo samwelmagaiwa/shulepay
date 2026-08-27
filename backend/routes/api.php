@@ -173,6 +173,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Receipts — PDF rendering is CPU-heavy, throttled to bound abuse cost.
         Route::get('receipts/{receipt}/download', [ReceiptController::class, 'download'])->middleware('throttle:30,1');
+        Route::get('students/{student}/statement-receipt', [ReceiptController::class, 'downloadStatement'])->middleware('throttle:30,1');
 
         // Refunds
         Route::apiResource('refunds', RefundController::class)->only(['index', 'store', 'destroy']);

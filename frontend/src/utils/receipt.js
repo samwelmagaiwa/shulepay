@@ -61,6 +61,40 @@ export async function printReceipt(receiptId) {
   activeFrame = frame
 }
 
+/**
+ * Print a single consolidated receipt covering every invoice a student has
+ * — all terms' debts, payments made, and the remaining balance on one
+ * printout, instead of one receipt per invoice.
+ */
+export async function printStudentStatement(studentId) {
+  if (!studentId) return
+  releaseFrame()
+
+  const { data } = await api.get(`/students/${studentId}/statement-receipt`, {
+    responseType: 'blob',
+  })
+  if (data.type && !data.type.includes('pdf')) {
+    throw new Error('Server did not return a PDF')
+  }
+
+  const url = URL.createObjectURL(data)
+  activeUrl = url
+
+  const frame = document.createElement('iframe')
+  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
+  frame.src = url
+  frame.onload = () => {
+    try {
+      frame.contentWindow.focus()
+      frame.contentWindow.print()
+    } catch {
+      window.open(url, '_blank', 'noopener')
+    }
+  }
+  document.body.appendChild(frame)
+  activeFrame = frame
+}
+
 /** Save the receipt as a file. */
 export async function downloadReceipt(receiptId, receiptNumber = null) {
   if (!receiptId) return
