@@ -2160,14 +2160,24 @@ async function loadDraft() {
   try {
     const drafts = await studentDraftService.getDrafts(schoolStore.activeSchoolId)
     if (drafts && drafts.length > 0) {
-      const draft = drafts[0]
-      currentDraft.value = draft
+      const rawDraft = drafts[0]
+      currentDraft.value = rawDraft
+      // The backend only stores money fields as *_cents — convert those back
+      // to the plain-TZS field names the form is keyed by (total_tuition_fee,
+      // discount_amount, opening_balance, lumpsum totals) before merging, or
+      // every one of them silently resets to 0 on resume.
+      const draft = studentDraftService.convertFromApiFormat(rawDraft)
       // Populate form from draft
       Object.keys(form.value).forEach(key => {
         if (draft[key] !== undefined && draft[key] !== null) {
           form.value[key] = draft[key]
         }
       })
+      // The opening-balance field only renders while this switch is on — restoring
+      // a nonzero form.opening_balance without also flipping the switch leaves the
+      // value in the form but invisible/uneditable until the user re-toggles it.
+      hasOpeningBalance.value = (form.value.opening_balance || 0) > 0
+
       // Normalize payment_history shape — a draft saved by an older code path may be
       // missing fields (e.g. `payments`), which would otherwise crash validateStep()
       // silently when the user tries to save.

@@ -63,6 +63,28 @@ export default {
     return converted
   },
 
+  // Convert a draft loaded from the API back to form format (cents -> TZS).
+  // The backend only persists the *_cents columns (see StudentDraft::$fillable) —
+  // without this, resuming a draft silently drops every money field (Total
+  // Tuition Fee, discount, opening balance, lumpsum totals) because the form
+  // is keyed by the plain TZS field name, which the API response never sets.
+  convertFromApiFormat(draft) {
+    const converted = { ...draft }
+    const centsFields = {
+      total_tuition_fee_cents: 'total_tuition_fee',
+      discount_amount_cents: 'discount_amount',
+      opening_balance_cents: 'opening_balance',
+      lumpsum_total_charged_cents: 'lumpsum_total_charged',
+      lumpsum_total_paid_cents: 'lumpsum_total_paid',
+    }
+    Object.entries(centsFields).forEach(([centsKey, tzsKey]) => {
+      if (converted[centsKey] !== undefined && converted[centsKey] !== null) {
+        converted[tzsKey] = Math.round(converted[centsKey]) / 100
+      }
+    })
+    return converted
+  },
+
   // Save/update a draft (creates new or updates existing)
   async saveDraft(schoolId, draftData) {
     try {
