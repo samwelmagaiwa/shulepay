@@ -257,21 +257,29 @@ class ReportController extends Controller
             ->get()
             ->keyBy('sponsorship_type');
 
-        // 'full_paid' students are sponsored but the sponsor's covered portion
-        // is still recorded as a real Payment (method='sponsor') against their
-        // invoice — surface that amount so the card isn't just a bare count.
-        $sponsorPaidAmountCents = (int) Payment::allSchools()
-            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
-            ->where('method', 'sponsor')
-            ->sum('amount_cents');
+        // Real money collected (this period) from each sponsorship group's
+        // invoices — 'half' students are billed at a reduced rate and pay
+        // through the normal invoice flow (no separate "sponsor payment"
+        // record exists for them), so a bare student count alone showed "0"
+        // for the money column even though real payments were being made.
+        // 'full' has no amount at all (fully free, never billed).
+        $collectedBySponsorship = (clone $base)
+            ->join('invoices', 'invoices.id', '=', 'payments.invoice_id')
+            ->join('students', 'students.id', '=', 'invoices.student_id')
+            ->whereIn('students.sponsorship_type', $sponsorshipTypes)
+            ->select('students.sponsorship_type', DB::raw('SUM(payments.amount_cents) as amount_cents'))
+            ->groupBy('students.sponsorship_type')
+            ->get()
+            ->keyBy('sponsorship_type');
 
-        $bySponsorshipType = array_map(function ($type) use ($sponsorshipRows, $sponsorPaidAmountCents) {
-            $row = $sponsorshipRows[$type] ?? null;
+        $bySponsorshipType = array_map(function ($type) use ($sponsorshipRows, $collectedBySponsorship) {
+            $countRow = $sponsorshipRows[$type] ?? null;
+            $amountRow = $collectedBySponsorship[$type] ?? null;
 
             return [
                 'type' => $type,
-                'count' => $row ? (int) $row->cnt : 0,
-                'amount_cents' => $type === 'full_paid' ? $sponsorPaidAmountCents : 0,
+                'count' => $countRow ? (int) $countRow->cnt : 0,
+                'amount_cents' => $amountRow ? (int) $amountRow->getRawOriginal('amount_cents') : 0,
             ];
         }, $sponsorshipTypes);
 
@@ -968,7 +976,7 @@ class ReportController extends Controller
                     }
 
                     $csvRows[] = ['', '', '', '', ''];
-                    $csvRows[] = ['SPONSORSHIPS BY TYPE', 'Students', 'Sponsor-Paid Amount (TZS)', '', ''];
+                    $csvRows[] = ['SPONSORSHIPS BY TYPE', 'Students', 'Amount Collected (TZS)', '', ''];
                     foreach ($report['by_sponsorship_type'] ?? [] as $s) {
                         $csvRows[] = [$sponsorshipLabels[$s['type']] ?? $s['type'], $s['count'], round($s['amount_cents'] / 100), '', ''];
                     }

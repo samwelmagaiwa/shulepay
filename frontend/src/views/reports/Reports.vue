@@ -127,7 +127,7 @@
                 <CCard class="text-center border-0 shadow-sm h-100" style="border-left:3px solid #0ea5e9 !important">
                   <CCardBody class="p-2">
                     <div class="fw-bold fs-6" style="color:#0ea5e9">
-                      {{ s.count || 0 }}<span v-if="s.type === 'full_paid'"> | {{ formatTZS(s.amount_cents) }}</span>
+                      {{ s.count || 0 }}<span v-if="s.type !== 'full'"> | {{ formatTZS(s.amount_cents) }}</span>
                     </div>
                     <div class="text-muted small">{{ sponsorshipTypeLabel(s.type) }}</div>
                   </CCardBody>
