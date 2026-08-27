@@ -129,7 +129,13 @@ class StudentRegistrationService
             $isFullySponsored = ($data['sponsorship_type'] ?? 'none') === 'full';
 
             // 6. Migration: create backdated invoices + payments for existing students
-            $isExisting = ! empty($data['is_existing_student']);
+            // Defaults to TRUE (existing/migrating student) when the key is absent
+            // entirely — most registrations are migrations from paper books, and the
+            // frontend's own "STRONG DEFAULT" toggle already defaults to ON. Only an
+            // explicit `false` opts into "new student, generate first invoice" mode;
+            // this is the backend's own enforcement of that default, independent of
+            // whatever the request happened to send.
+            $isExisting = ! array_key_exists('is_existing_student', $data) || (bool) $data['is_existing_student'];
             $migrationMode = $data['migration_mode'] ?? 'detailed';
 
             if ($isExisting && ! $isFullySponsored) {
