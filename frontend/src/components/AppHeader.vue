@@ -157,7 +157,7 @@ function go(path) {
           <RouterLink v-if="auth.isSuperAdmin" class="btn btn-ghost-secondary text-start" to="/superadmin/users" @click="mobileNavOpen=false">👤 {{ t('nav.userManagement') }}</RouterLink>
           <RouterLink v-if="auth.isSuperAdmin" class="btn btn-ghost-secondary text-start" to="/superadmin/roles" @click="mobileNavOpen=false">🔐 {{ t('nav.rolesPermissions') }}</RouterLink>
           <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/bajeti" @click="mobileNavOpen=false">{{ t('nav.budgets') }}</RouterLink>
-          <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/academic-years" @click="mobileNavOpen=false">📅 {{ t('nav.academicYears') }}</RouterLink>
+          <RouterLink v-if="auth.isOwner || auth.isAccountant" class="btn btn-ghost-secondary text-start" to="/admin/academic-years" @click="mobileNavOpen=false">📅 {{ t('nav.academicYears') }}</RouterLink>
           <RouterLink v-if="auth.isOwner || auth.isAccountant" class="btn btn-ghost-secondary text-start" to="/admin/terms" @click="mobileNavOpen=false">🗓️ {{ t('nav.terms') }}</RouterLink>
           <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/rollover" @click="mobileNavOpen=false">{{ t('nav.rollover') }}</RouterLink>
         </template>

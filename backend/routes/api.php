@@ -318,12 +318,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('user-school-access', [UserSchoolAccessController::class, 'grant']);
         Route::delete('user-school-access/{user}/{school}', [UserSchoolAccessController::class, 'revoke']);
 
-        // Academic year writes
-        Route::post('academic-years', [AcademicYearController::class, 'store']);
-        Route::put('academic-years/{academicYear}', [AcademicYearController::class, 'update']);
-        Route::patch('academic-years/{academicYear}', [AcademicYearController::class, 'update']);
-        Route::delete('academic-years/{academicYear}', [AcademicYearController::class, 'destroy']);
-
         // School class writes
         Route::post('school-classes', [SchoolClassController::class, 'store']);
         Route::put('school-classes/{schoolClass}', [SchoolClassController::class, 'update']);
@@ -331,8 +325,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('school-classes/{schoolClass}', [SchoolClassController::class, 'destroy']);
     });
 
-    // Finance staff — term management
+    // Finance staff — academic year & term management. Accountants set up the
+    // school calendar (terms already worked this way); academic years used to
+    // be owner/superadmin-only here while the frontend route + nav let
+    // accountants open the page anyway, leaving Add/Edit/Delete buttons that
+    // would 403. Moved into the same group as terms for consistency.
     Route::middleware('role:'.UserRole::guard(UserRole::financeStaff()))->group(function () {
+        Route::post('academic-years', [AcademicYearController::class, 'store']);
+        Route::put('academic-years/{academicYear}', [AcademicYearController::class, 'update']);
+        Route::patch('academic-years/{academicYear}', [AcademicYearController::class, 'update']);
+        Route::delete('academic-years/{academicYear}', [AcademicYearController::class, 'destroy']);
+
         Route::post('terms', [TermController::class, 'store']);
         Route::put('terms/{term}', [TermController::class, 'update']);
         Route::patch('terms/{term}', [TermController::class, 'update']);

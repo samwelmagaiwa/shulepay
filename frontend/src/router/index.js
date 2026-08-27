@@ -173,7 +173,7 @@ const routes = [
         path: 'admin/academic-years',
         name: 'AcademicYears',
         component: () => import('@/views/admin/AcademicYearsView.vue'),
-        meta: { requiresAuth: true, roles: ['owner', 'superadmin'] },
+        meta: { requiresAuth: true, roles: ['accountant', 'owner', 'superadmin'] },
       },
       {
         path: 'admin/terms',
