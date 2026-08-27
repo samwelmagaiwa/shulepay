@@ -147,9 +147,10 @@
               {{ t('invoices.payNow') }}
             </CButton>
             <CButton v-for="r in receiptsFor(inv)" :key="r.id" size="sm" color="success" variant="outline"
-                     @click="openReceipt({ ...r, student_name: inv.student?.full_name })"
+                     @click="printReceipt(r.id)" :disabled="printingReceiptId === r.id"
                      style="min-height:44px;">
-              🖨 {{ t('payments.printReceipt') }}
+              <CSpinner v-if="printingReceiptId === r.id" size="sm" class="me-1" />
+              <span v-else>🖨 </span>{{ t('payments.printReceipt') }}
               <span v-if="receiptsFor(inv).length > 1" class="small ms-1">{{ formatMoney(r.amount_cents) }}</span>
             </CButton>
           </div>
@@ -239,11 +240,15 @@
                     </CButton>
                     <!-- Consolidated receipt: every invoice this student has — all
                          terms' debts, payments made, and remaining balance — on one
-                         printout, not just group.primary's own invoice. -->
+                         printout, not just group.primary's own invoice. Prints
+                         directly (no in-app preview) — the previewer's PDF view
+                         clipped page content on the right edge. -->
                     <CButton size="sm" color="success" variant="outline"
-                             @click="openStudentStatement(group.primary)"
+                             @click="printStatement(group.studentId)"
+                             :disabled="printingStatementFor === group.studentId"
                              :title="t('invoices.printAllReceipt')" style="min-height:36px; min-width:40px;">
-                      🖨
+                      <CSpinner v-if="printingStatementFor === group.studentId" size="sm" />
+                      <span v-else>🖨</span>
                     </CButton>
                   </div>
                 </CTableDataCell>
@@ -275,16 +280,6 @@
         </CPaginationItem>
       </CPagination>
     </div>
-
-    <!-- Payment Modal -->
-    <ReceiptViewerModal
-      :visible="viewer.visible"
-      :src="viewer.src"
-      :title="viewer.title"
-      :subtitle="viewer.subtitle"
-      :filename="viewer.filename"
-      @close="viewer.visible = false"
-    />
 
     <LipiaModal
       :visible="showPayModal"
@@ -324,11 +319,11 @@ import { useSchoolsStore }  from '@/stores/schools'
 import { useSchoolStore }   from '@/stores/school'
 import StatusBadge           from '@/components/StatusBadge.vue'
 import LipiaModal            from '@/components/LipiaModal.vue'
-import ReceiptViewerModal    from '@/components/ReceiptViewerModal.vue'
 import MwanafunziDrawer      from '@/components/MwanafunziDrawer.vue'
 import GenerateInvoiceModal  from '@/components/GenerateInvoiceModal.vue'
 import SmsBlastModal         from '@/components/SmsBlastModal.vue'
 import api                   from '@/services/api'
+import { printReceipt as printReceiptPdf, printStudentStatement as printStudentStatementPdf, cleanupReceiptFrame } from '@/utils/receipt'
 
 const { t } = useI18n()
 const invoicesStore = useInvoicesStore()
@@ -464,32 +459,37 @@ function receiptsFor(inv) {
 
 const receiptError = ref('')
 
-// Receipt preview — opens inside the app rather than firing the browser print
-// dialog blind, so the user can check the document before printing or saving.
-const viewer = ref({ visible: false, src: '', title: '', subtitle: '', filename: 'receipt.pdf' })
-
-function openReceipt(r) {
-  if (!r?.id) return
+// Direct print — a hidden iframe loads the PDF and fires the browser's print
+// dialog immediately, no in-app preview. (An in-app previewer was tried and
+// removed: its "fit to width" PDF view clipped page content off the right
+// edge of the modal.)
+const printingReceiptId = ref(null)
+async function printReceipt(receiptId) {
+  if (!receiptId) return
+  printingReceiptId.value = receiptId
   receiptError.value = ''
-  viewer.value = {
-    visible: true,
-    src: `/receipts/${r.id}/download`,
-    title: r.receipt_number || t('payments.receipt'),
-    subtitle: r.student_name || '',
-    filename: `Risiti-${r.receipt_number || r.id}.pdf`,
+  try {
+    await printReceiptPdf(receiptId)
+  } catch (e) {
+    receiptError.value = e?.response?.data?.message || t('payments.receiptPrintFailed')
+  } finally {
+    printingReceiptId.value = null
   }
 }
 
-function openStudentStatement(inv) {
-  const sid = inv?.student?.id
-  if (!sid) return
+// One consolidated receipt for every invoice a student has — all terms'
+// debts, payments made, and the remaining balance on a single printout.
+const printingStatementFor = ref(null)
+async function printStatement(studentId) {
+  if (!studentId) return
+  printingStatementFor.value = studentId
   receiptError.value = ''
-  viewer.value = {
-    visible: true,
-    src: `/students/${sid}/statement-receipt`,
-    title: t('invoices.consolidatedReceipt'),
-    subtitle: inv.student?.full_name || '',
-    filename: `Risiti-${inv.student?.admission_number || sid}.pdf`,
+  try {
+    await printStudentStatementPdf(studentId)
+  } catch (e) {
+    receiptError.value = e?.response?.data?.message || t('payments.receiptPrintFailed')
+  } finally {
+    printingStatementFor.value = null
   }
 }
 
@@ -531,6 +531,8 @@ onMounted(async () => {
     console.error('AdaMadeni mount error', e)
   }
 })
+
+onBeforeUnmount(cleanupReceiptFrame)
 </script>
 
 <style scoped>
