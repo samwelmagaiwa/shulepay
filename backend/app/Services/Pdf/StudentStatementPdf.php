@@ -76,6 +76,6 @@ class StudentStatementPdf
             'appTagline' => $appTagline,
             'logoBase64' => $logoBase64,
             'lh' => $lh,
-        ])->setPaper('a5')->output();
+        ])->setPaper('a4')->output();
     }
 }

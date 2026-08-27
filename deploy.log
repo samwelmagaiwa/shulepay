@@ -2673,3 +2673,27 @@ individual school, instead of accepting input that goes nowhere."
 [0;36m[2026-08-27 18:44:33][0m   ShulePay — Release
 [0;36m[2026-08-27 18:44:34][0m ══════════════════════════════════════════
 [0;36m[2026-08-27 18:44:34][0m Checking working tree...
+[0;36m[2026-08-27 18:44:34][0m Files staged for commit:
+[0;36m[2026-08-27 18:44:34][0m Committing: "fix(invoices): un-clip the invoice dropdown; open receipts in an in-app viewer
+
+The '+N more invoices' menu was clipped by .table-responsive. The previous fix
+set overflow-y: visible on that wrapper, which cannot work — per the overflow
+spec a 'visible' axis computes to 'auto' whenever the other axis is not visible,
+so on a horizontally scrolling table it was silently ignored and no z-index could
+help. The menu is now teleported to <body>, outside the clipping container
+entirely. Verified: parent is BODY, no clipping ancestor, fully on screen.
+
+Receipts previously fired the browser print dialog blind. Adds
+ReceiptViewerModal: the PDF is fetched through axios (so the bearer token is
+attached) and shown in the app, with Print, Download and Close, a loading state
+and an error state. Scrolls both inside the PDF frame and in the modal body, so
+the document stays reachable on short viewports."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-27 18:44:34][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-27 18:44:41][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-27 19:03:59][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 19:03:59][0m   ShulePay — Release
+[0;36m[2026-08-27 19:03:59][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 19:03:59][0m Checking working tree...

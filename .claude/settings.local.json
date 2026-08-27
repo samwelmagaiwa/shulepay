@@ -504,7 +504,14 @@
       "Bash(vendor/bin/pint routes/api.php)",
       "Bash(curl -s -o /tmp/statement_test.pdf -w 'HTTP_STATUS:%{http_code}\\\\nCONTENT_TYPE:%{content_type}\\\\nSIZE:%{size_download}\\\\n' -H 'Authorization: Bearer 71|GBJnvn131Bo7pqlGgvWQF59Pkt4qN0yBEFIEFd1Bcb9f51ce' -H 'X-School-Id: 2' -H 'Accept: application/json' https://magrethschools.sc.tz/api/students/133/statement-receipt)",
       "Bash(curl -s \"https://magrethschools.sc.tz/assets/index-Bi76Gql7.js\" -o /tmp/bundle.js)",
-      "Bash(grep -o \"students/\\\\${[a-zA-Z]*}/statement-receipt\" /tmp/bundle.js)"
+      "Bash(grep -o \"students/\\\\${[a-zA-Z]*}/statement-receipt\" /tmp/bundle.js)",
+      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_frontend sh -c 'grep -rl \\\\\"statement-receipt\\\\\" /usr/share/nginx/html/assets/ 2>/dev/null || echo NOTFOUND'\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend tail -100 storage/logs/laravel.log 2>/dev/null | grep -i 'statement\\\\|receipt' | tail -20\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec -i backend_container_placeholder true\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend tail -150 storage/logs/laravel.log 2>/dev/null | grep -B 20 'downloadStatement' | head -40\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend cat resources/views/pdf/student_statement.blade.php\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend grep -n 'img\\\\|logo\\\\|<img' resources/views/pdf/student_statement.blade.php\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend grep -n 'Undefined array key \\\\\"data\\\\\"' storage/logs/laravel.log | tail -5\")"
     ]
   }
 }

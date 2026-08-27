@@ -1,5 +1,5 @@
 {{--
-  Receipt — 80mm thermal roll.
+  Receipt — A4.
 
   NOTE: DomPDF does not implement flexbox. An earlier version of this view used
   `display:flex; justify-content:space-between` for its label/value rows, which
@@ -19,12 +19,12 @@
 
     $guardian = $receipt->student?->guardians?->first();
 
-    // The receipt must stay on a single A5 page. At the default sizing five fee
-    // lines fit; beyond that the layout condenses, and past MAX_LINES the tail is
-    // collapsed into one "other items" row so the footer can never spill over.
+    // The receipt must stay on a single page. A4 fits far more than the old A5
+    // layout, so the thresholds are higher; past $maxLines the tail collapses into
+    // one "other items" row and the footer can never spill onto a second page.
     $allLines = $invoice?->lines ?? collect();
-    $dense = $allLines->count() > 5;
-    $maxLines = 5;
+    $dense = $allLines->count() > 6;
+    $maxLines = 8;
 
     $shownLines = $allLines->take($maxLines);
     $hiddenLines = $allLines->slice($maxLines);
@@ -35,15 +35,15 @@
 <head>
 <meta charset="utf-8">
 <style>
-  /* Sized for A5 (148mm x 210mm). Scaled up from the original 80mm thermal
-     layout, where 9px body text was appropriate but looks tiny on office paper. */
+  /* Sized for A4 (210mm x 297mm) — the paper the school actually prints on.
+     Previously A5; the same block at A5 sizing looks lost on a full sheet. */
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #111; padding: 16px 24px; }
+  body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #111; padding: 26px 38px; }
   .center { text-align: center; }
   .right  { text-align: right; }
   .bold   { font-weight: bold; }
-  .hr     { border-top: 1px dashed #555; margin: 6px 0; }
-  .hr-solid { border-top: 1.5px solid #111; margin: 5px 0; }
+  .hr     { border-top: 1px dashed #555; margin: 7px 0; }
+  .hr-solid { border-top: 1.5px solid #111; margin: 8px 0; }
   .logo-img { max-width: 90px; max-height: 60px; margin-bottom: 3px; }
   .app-name { font-size: 19px; font-weight: bold; color: #007f3e; letter-spacing: .5px; }
   .sub    { font-size: 10px; color: #555; }
@@ -52,28 +52,28 @@
 
   /* Two-column label/value row */
   table.kv { width: 100%; border-collapse: collapse; }
-  table.kv td { padding: 2px 0; vertical-align: top; font-size: 11px; }
+  table.kv td { padding: 2.5px 0; vertical-align: top; font-size: 12px; }
   table.kv td.k { color: #555; }
   table.kv td.v { text-align: right; font-weight: bold; }
 
   /* Particulars (invoice line items) */
   table.items { width: 100%; border-collapse: collapse; margin-top: 2px; }
-  table.items th { font-size: 9px; letter-spacing: .5px; text-transform: uppercase; color: #555;
-                   border-bottom: 1.5px solid #999; padding: 3px 0; text-align: left; }
+  table.items th { font-size: 10px; letter-spacing: .5px; text-transform: uppercase; color: #555;
+                   border-bottom: 1.5px solid #999; padding: 4px 0; text-align: left; }
   table.items th.amt, table.items td.amt { text-align: right; }
-  table.items td { font-size: 11px; padding: 3px 0; border-bottom: 1px dotted #ccc; }
+  table.items td { font-size: 12px; padding: 4px 0; border-bottom: 1px dotted #ccc; }
   /* Applied when there are many fee lines, to keep everything on one page */
-  table.items.dense th { font-size: 8px; padding: 2px 0; }
-  table.items.dense td { font-size: 9.5px; padding: 1px 0; }
+  table.items.dense th { font-size: 10px; padding: 3px 0; }
+  table.items.dense td { font-size: 11px; padding: 2px 0; }
 
-  .amount-box { border: 2px solid #007f3e; border-radius: 4px; padding: 7px; margin: 8px 0; }
-  .amount-lbl { font-size: 9px; letter-spacing: 1.5px; color: #555; text-align: center; }
-  .amount { font-size: 23px; font-weight: bold; color: #007f3e; text-align: center; margin-top: 1px; }
+  .amount-box { border: 2px solid #007f3e; border-radius: 5px; padding: 10px; margin: 11px 0; }
+  .amount-lbl { font-size: 11px; letter-spacing: 2px; color: #555; text-align: center; }
+  .amount { font-size: 26px; font-weight: bold; color: #007f3e; text-align: center; margin-top: 2px; }
 
   .balance-paid { color: #007f3e; font-weight: bold; }
   .balance-due  { color: #c0292b; font-weight: bold; }
-  .settled { font-size: 11px; letter-spacing: 1px; }
-  .footer { font-size: 9px; color: #777; text-align: center; margin-top: 8px; line-height: 1.4; }
+  .settled { font-size: 13px; letter-spacing: 1.5px; }
+  .footer { font-size: 10px; color: #777; text-align: center; margin-top: 11px; line-height: 1.4; }
 </style>
 </head>
 <body>
@@ -82,19 +82,19 @@
   @include('pdf.partials.letterhead', [
     'lh' => $lh,
     'docTitle' => 'Risiti ya Malipo',
-    'compact' => true,
+    'compact' => false,
   ])
 
   {{-- Receipt number and issue date, boxed so they read as the document's
        reference rather than part of the school's address block. --}}
-  <table style="width:100%; border-collapse:collapse; margin-top:8px;">
+  <table style="width:100%; border-collapse:collapse; margin-top:10px;">
     <tr>
-      <td style="font-size:8px; color:#666; letter-spacing:.5px;">NAMBA YA RISITI</td>
-      <td style="font-size:8px; color:#666; text-align:right; letter-spacing:.5px;">TAREHE</td>
+      <td style="font-size:10px; color:#666; letter-spacing:1px;">NAMBA YA RISITI</td>
+      <td style="font-size:10px; color:#666; text-align:right; letter-spacing:1px;">TAREHE</td>
     </tr>
     <tr>
-      <td style="font-size:15px; font-weight:bold; color:#007f3e;">{{ $receipt->receipt_number }}</td>
-      <td style="font-size:10px; text-align:right; font-weight:bold;">
+      <td style="font-size:19px; font-weight:bold; color:#007f3e;">{{ $receipt->receipt_number }}</td>
+      <td style="font-size:12px; text-align:right; font-weight:bold;">
         {{ $receipt->issued_at?->format('d/m/Y H:i') }}
       </td>
     </tr>
@@ -217,7 +217,7 @@
   </table>
 
   @if($invoiceDue <= 0)
-    <div class="center bold settled" style="color:#007f3e; margin-top:8px;">
+    <div class="center bold settled" style="color:#007f3e; margin-top:10px;">
       ✓ ANKARA IMELIPWA YOTE
     </div>
   @endif

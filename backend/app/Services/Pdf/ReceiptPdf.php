@@ -32,10 +32,9 @@ class ReceiptPdf
         $logoBase64 = $lh['logo'];
 
         return Pdf::loadView('pdf.receipt', compact('receipt', 'appName', 'appTagline', 'logoBase64', 'lh'))
-            // A5 (148mm × 210mm) — printed from the browser to office paper rather
-            // than a thermal roll. Replaces the earlier 80mm strip, which left the
-            // page mostly empty and the content squeezed into a narrow column.
-            ->setPaper('a5')
+            // A4 — the paper actually loaded in the school's printer. An A5 page
+            // sent to an A4 tray prints as a small block in one corner.
+            ->setPaper('a4')
             ->output();
     }
 }
