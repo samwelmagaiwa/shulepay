@@ -26,11 +26,13 @@ class GenericArrayExport implements FromArray, ShouldAutoSize, WithHeadings, Wit
      * @param  array<int,string>  $headers
      * @param  array<int,array<int,mixed>>  $rows
      * @param  array<int,mixed>|null  $totalRow
+     * @param  array<int,array{bg?:string,color?:string,bold?:bool}>  $rowStyles  Keyed by 0-based index into $rows — lets a caller highlight section-header/divider rows (e.g. "DISCOUNTS BY TYPE") without a separate export class per report.
      */
     public function __construct(
         private readonly array $headers,
         private readonly array $rows,
         private readonly ?array $totalRow = null,
+        private readonly array $rowStyles = [],
     ) {}
 
     public function array(): array
@@ -59,6 +61,24 @@ class GenericArrayExport implements FromArray, ShouldAutoSize, WithHeadings, Wit
             $sheet->getStyle("A{$totalRowNum}:{$lastCol}{$totalRowNum}")->getFill()
                 ->setFillType(Fill::FILL_SOLID)
                 ->getStartColor()->setRGB('E5E7EB');
+        }
+
+        foreach ($this->rowStyles as $index => $style) {
+            // +2: row 1 is the heading row, and $rows is 0-based.
+            $rowNum = $index + 2;
+            $range = "A{$rowNum}:{$lastCol}{$rowNum}";
+
+            if (! empty($style['bold'])) {
+                $sheet->getStyle($range)->getFont()->setBold(true);
+            }
+            if (! empty($style['bg'])) {
+                $sheet->getStyle($range)->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setRGB($style['bg']);
+            }
+            if (! empty($style['color'])) {
+                $sheet->getStyle($range)->getFont()->getColor()->setRGB($style['color']);
+            }
         }
 
         return [];

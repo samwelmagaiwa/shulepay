@@ -854,24 +854,24 @@ class ReportController extends Controller
     }
 
     /**
-     * Real .xlsx download for the Outstanding Debt dashboard card's printer icon —
-     * the generic exportExcel() above only produces a .csv, and the user
-     * specifically asked for an actual Excel file.
-     */
-    /**
      * Real .xlsx download for any Reports page tab — the "Export Excel" button
      * next to the Print button. Reuses the same headers/rows already built for
      * the CSV download instead of duplicating each report's shape again.
      */
     public function exportReportXlsx(Request $request, string $type): BinaryFileResponse
     {
-        [, , $csvHeaders, $csvRows] = $this->resolveReportData($request, $type, true);
+        [, , $csvHeaders, $csvRows, $csvRowStyles] = $this->resolveReportData($request, $type, true);
 
         $filename = $type.'_'.now()->format('Ymd_His').'.xlsx';
 
-        return Excel::download(new GenericArrayExport($csvHeaders, $csvRows), $filename);
+        return Excel::download(new GenericArrayExport($csvHeaders, $csvRows, null, $csvRowStyles), $filename);
     }
 
+    /**
+     * Real .xlsx download for the Outstanding Debt dashboard card's printer icon —
+     * the generic exportExcel() above only produces a .csv, and the user
+     * specifically asked for an actual Excel file.
+     */
     public function exportOutstandingDebtsXlsx(Request $request): BinaryFileResponse
     {
         $rows = $this->outstandingDebtsByStudent($request);
@@ -938,7 +938,9 @@ class ReportController extends Controller
 
     /**
      * Resolve report data for PDF / Excel based on type string.
-     * Returns [viewName, data, csvHeaders, csvRows] — csvHeaders/Rows only populated when $forCsv = true.
+     * Returns [viewName, data, csvHeaders, csvRows, csvRowStyles] — csvHeaders/Rows/RowStyles
+     * only populated when $forCsv = true. csvRowStyles is keyed by 0-based index into
+     * csvRows and only used by the .xlsx export (CSV has no concept of cell color).
      */
     private function resolveReportData(Request $request, string $type, bool $forCsv = false): array
     {
@@ -946,6 +948,7 @@ class ReportController extends Controller
         $data = [];
         $csvHeaders = [];
         $csvRows = [];
+        $csvRowStyles = [];
 
         switch ($type) {
             case 'collections':
@@ -967,17 +970,25 @@ class ReportController extends Controller
                     );
 
                     $discountLabels = ['sibling' => 'Sibling Discount', 'staff' => 'Staff Discount', 'sponsor' => 'Sponsor Discount', 'other' => 'Other Discount'];
+                    $discountColors = ['sibling' => 'E0E7FF', 'staff' => 'D1FAE5', 'sponsor' => 'FEF3C7', 'other' => 'E5E7EB'];
                     $sponsorshipLabels = ['half' => 'Half Sponsored', 'full' => 'Fully Sponsored (Free)', 'full_paid' => 'Fully Sponsored (Paid via Sponsor)'];
+                    $sponsorshipColors = ['half' => 'BAE6FD', 'full' => 'BBF7D0', 'full_paid' => 'FBCFE8'];
 
                     $csvRows[] = ['', '', '', '', ''];
+
+                    $csvRowStyles[count($csvRows)] = ['bg' => '6366F1', 'color' => 'FFFFFF', 'bold' => true];
                     $csvRows[] = ['DISCOUNTS BY TYPE', 'Students', 'Amount (TZS)', '', ''];
                     foreach ($report['by_discount_type'] ?? [] as $d) {
+                        $csvRowStyles[count($csvRows)] = ['bg' => $discountColors[$d['type']] ?? 'F3F4F6'];
                         $csvRows[] = [$discountLabels[$d['type']] ?? $d['type'], $d['count'], round($d['amount_cents'] / 100), '', ''];
                     }
 
                     $csvRows[] = ['', '', '', '', ''];
+
+                    $csvRowStyles[count($csvRows)] = ['bg' => '0EA5E9', 'color' => 'FFFFFF', 'bold' => true];
                     $csvRows[] = ['SPONSORSHIPS BY TYPE', 'Students', 'Amount Collected (TZS)', '', ''];
                     foreach ($report['by_sponsorship_type'] ?? [] as $s) {
+                        $csvRowStyles[count($csvRows)] = ['bg' => $sponsorshipColors[$s['type']] ?? 'F3F4F6'];
                         $csvRows[] = [$sponsorshipLabels[$s['type']] ?? $s['type'], $s['count'], round($s['amount_cents'] / 100), '', ''];
                     }
                 }
@@ -1157,7 +1168,7 @@ class ReportController extends Controller
                 abort(404, "Unknown report type: {$type}");
         }
 
-        return [$view, $data, $csvHeaders, $csvRows];
+        return [$view, $data, $csvHeaders, $csvRows, $csvRowStyles];
     }
 
     private function resolveSchool(Request $request): ?School
