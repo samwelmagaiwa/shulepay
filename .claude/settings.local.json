@@ -475,7 +475,9 @@
       "Bash(grep -n ''\\\\''unpaid_count'\\\\'' => $unpaidCount,' backend/app/Http/Controllers/Reports/ReportController.php)",
       "Bash(curl -s 'http://localhost/api/reports/collections?from=2026-01-01&to=2026-12-31' -H 'Authorization: Bearer 64|ax5IuRPD8OsYpb7OI8wUEBz49Jx3Ho18Jwys6eeqe3e7b961' -H 'Accept: application/json')",
       "Bash(python3 -m json.tool)",
-      "Bash(bash deploy.sh release \"feat\\(reports\\): Collections tab debt/partial columns and count|amount cards\")"
+      "Bash(bash deploy.sh release \"feat\\(reports\\): Collections tab debt/partial columns and count|amount cards\")",
+      "Bash(awk '/^  students: {/,/^  \\\\},?$/' frontend/src/i18n/en.js)",
+      "Bash(bash deploy.sh release \"fix\\(reports\\): missing translations, print-only cards, dynamic branding header\")"
     ]
   }
 }
