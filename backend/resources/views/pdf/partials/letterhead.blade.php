@@ -51,7 +51,7 @@
 <table style="width:100%; border-collapse:collapse; margin-top:{{ $px(8) }};">
   <tr>
     {{-- Left: how to reach the school --}}
-    <td style="width:37%; vertical-align:middle; text-align:left;
+    <td style="width:35%; vertical-align:middle; text-align:left;
                font-size:{{ $px(8.5) }}; color:#444; line-height:1.55;">
       @foreach($lh['phones'] as $i => $phone)
         <div>{{ $i === 0 ? 'Tel: ' : '' }}{{ $phone }}</div>
@@ -65,15 +65,15 @@
     </td>
 
     {{-- Centre: logo, sitting between the two blocks --}}
-    <td style="width:26%; vertical-align:middle; text-align:center;">
+    <td style="width:30%; vertical-align:middle; text-align:center;">
       @if(!empty($lh['logo']))
         <img src="{{ $lh['logo'] }}"
-             style="max-width:{{ $px(78) }}; max-height:{{ $px(78) }};" alt="">
+             style="max-width:{{ $px(128) }}; max-height:{{ $px(128) }};" alt="">
       @endif
     </td>
 
     {{-- Right: where the school is --}}
-    <td style="width:37%; vertical-align:middle; text-align:right;
+    <td style="width:35%; vertical-align:middle; text-align:right;
                font-size:{{ $px(8.5) }}; color:#444; line-height:1.55;">
       @foreach($lh['address_lines'] as $line)
         <div>{{ $line }}</div>

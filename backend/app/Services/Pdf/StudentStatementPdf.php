@@ -76,9 +76,9 @@ class StudentStatementPdf
             'appTagline' => $appTagline,
             'logoBase64' => $logoBase64,
             'lh' => $lh,
-            // A5 — this consolidated statement is a compact one-per-student summary
-            // and was designed at this size; A4 left it stranded at the top of a
-            // mostly empty sheet. The per-payment receipt stays A4.
-        ])->setPaper('a5')->output();
+            // A4 portrait — wider than the A5 this was originally designed at, per
+            // request: A5 left the printed statement looking cramped/narrow next
+            // to the viewer it's previewed in. The per-payment receipt stays A5.
+        ])->setPaper('a4')->output();
     }
 }
