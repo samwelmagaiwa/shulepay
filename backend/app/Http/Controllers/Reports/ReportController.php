@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Reports;
 
+use App\Exports\OutstandingDebtsExport;
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
 use App\Models\Enrollment;
@@ -18,6 +19,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -766,6 +769,70 @@ class ReportController extends Controller
         return $this->exporter->toCsv($csvHeaders, $csvRows, $filename);
     }
 
+    /**
+     * Real .xlsx download for the Outstanding Debt dashboard card's printer icon —
+     * the generic exportExcel() above only produces a .csv, and the user
+     * specifically asked for an actual Excel file.
+     */
+    public function exportOutstandingDebtsXlsx(Request $request): BinaryFileResponse
+    {
+        $rows = $this->outstandingDebtsByStudent($request);
+        $filename = 'outstanding_debts_'.now()->format('Ymd_His').'.xlsx';
+
+        return Excel::download(new OutstandingDebtsExport($rows), $filename);
+    }
+
+    /**
+     * Every unpaid/partial invoice grouped per student: total debt owed and
+     * the distinct list of terms still unpaid, with primary guardian contact
+     * details attached. Shared by the CSV export and the real .xlsx export.
+     *
+     * @return array<int, array{student_name:string, guardian_name:string, guardian_phone:string, village_street:string, debt_cents:int, terms:array<int,string>}>
+     */
+    private function outstandingDebtsByStudent(Request $request): array
+    {
+        $schoolId = $this->activeSchoolId($request);
+        $invoiceTable = (new Invoice)->getTable();
+        $paymentTable = (new Payment)->getTable();
+
+        $unpaidInvoices = Invoice::allSchools()
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+            ->whereIn('status', ['unpaid', 'partial'])
+            ->leftJoin(
+                DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} GROUP BY invoice_id) as p"),
+                'p.invoice_id', '=', "{$invoiceTable}.id"
+            )
+            ->select("{$invoiceTable}.*", DB::raw("({$invoiceTable}.total_amount_cents - COALESCE(p.paid_sum, 0)) as balance_cents"))
+            ->with(['student.guardians', 'term'])
+            ->get();
+
+        $byStudent = [];
+        foreach ($unpaidInvoices as $inv) {
+            $student = $inv->student;
+            if (! $student) {
+                continue;
+            }
+            $sid = $student->id;
+            if (! isset($byStudent[$sid])) {
+                $guardian = $student->guardians->firstWhere('pivot.is_primary', true) ?? $student->guardians->first();
+                $byStudent[$sid] = [
+                    'student_name' => $student->fullName(),
+                    'guardian_name' => $guardian ? trim($guardian->first_name.' '.$guardian->last_name) : '',
+                    'guardian_phone' => $guardian->phone ?? '',
+                    'village_street' => $student->street ?: $student->address ?: '',
+                    'debt_cents' => 0,
+                    'terms' => [],
+                ];
+            }
+            $byStudent[$sid]['debt_cents'] += (int) $inv->balance_cents;
+            if ($inv->term && ! in_array($inv->term->name, $byStudent[$sid]['terms'], true)) {
+                $byStudent[$sid]['terms'][] = $inv->term->name;
+            }
+        }
+
+        return array_values($byStudent);
+    }
+
     // ─────────────────────────────────────────────────────────
     //  Private helpers
     // ─────────────────────────────────────────────────────────
@@ -821,44 +888,7 @@ class ReportController extends Controller
             case 'outstanding-debts':
                 $view = 'outstanding_debts';
                 $school = $this->resolveSchool($request);
-                $schoolId = $this->activeSchoolId($request);
-                $invoiceTable = (new Invoice)->getTable();
-                $paymentTable = (new Payment)->getTable();
-
-                $unpaidInvoices = Invoice::allSchools()
-                    ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
-                    ->whereIn('status', ['unpaid', 'partial'])
-                    ->leftJoin(
-                        DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} GROUP BY invoice_id) as p"),
-                        'p.invoice_id', '=', "{$invoiceTable}.id"
-                    )
-                    ->select("{$invoiceTable}.*", DB::raw("({$invoiceTable}.total_amount_cents - COALESCE(p.paid_sum, 0)) as balance_cents"))
-                    ->with(['student.guardians', 'term'])
-                    ->get();
-
-                $byStudent = [];
-                foreach ($unpaidInvoices as $inv) {
-                    $student = $inv->student;
-                    if (! $student) {
-                        continue;
-                    }
-                    $sid = $student->id;
-                    if (! isset($byStudent[$sid])) {
-                        $guardian = $student->guardians->firstWhere('pivot.is_primary', true) ?? $student->guardians->first();
-                        $byStudent[$sid] = [
-                            'student_name' => $student->fullName(),
-                            'guardian_name' => $guardian ? trim($guardian->first_name.' '.$guardian->last_name) : '',
-                            'guardian_phone' => $guardian->phone ?? '',
-                            'village_street' => $student->street ?: $student->address ?: '',
-                            'debt_cents' => 0,
-                            'terms' => [],
-                        ];
-                    }
-                    $byStudent[$sid]['debt_cents'] += (int) $inv->balance_cents;
-                    if ($inv->term && ! in_array($inv->term->name, $byStudent[$sid]['terms'], true)) {
-                        $byStudent[$sid]['terms'][] = $inv->term->name;
-                    }
-                }
+                $byStudent = $this->outstandingDebtsByStudent($request);
 
                 $report = ['rows' => array_values($byStudent)];
                 $data = compact('report', 'school');

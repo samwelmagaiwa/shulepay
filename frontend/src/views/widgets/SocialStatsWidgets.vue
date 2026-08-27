@@ -81,11 +81,11 @@ const isExportingDebts = ref(false)
 const exportOutstandingDebts = async () => {
   isExportingDebts.value = true
   try {
-    const response = await api.get('/reports/outstanding-debts/excel', { responseType: 'blob' })
-    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const response = await api.get('/reports/outstanding-debts/xlsx', { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `outstanding_debts_${new Date().toISOString().slice(0, 10)}.csv`)
+    link.setAttribute('download', `outstanding_debts_${new Date().toISOString().slice(0, 10)}.xlsx`)
     document.body.appendChild(link)
     link.click()
     link.remove()

@@ -239,6 +239,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('balance-sheet', [ReportController::class, 'balanceSheet']);
             Route::get('cash-flow', [ReportController::class, 'cashFlow']);
             Route::get('student-statement', [ReportController::class, 'studentStatement']);
+            Route::get('outstanding-debts/xlsx', [ReportController::class, 'exportOutstandingDebtsXlsx']);
             Route::get('{type}/pdf', [ReportController::class, 'exportPdf']);
             Route::get('{type}/excel', [ReportController::class, 'exportExcel']);
         });
