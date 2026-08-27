@@ -849,6 +849,19 @@ export default {
     guardian:     'Mzazi/Mlezi',
     village:      'Kijiji/Mtaa',
     termsNotPaid: 'Muhula Ambao Haujalipwa',
+    discountsByType: 'Punguzo kwa Aina',
+    sponsorshipsByType: 'Ufadhili kwa Aina',
+    discountTypes: {
+      sibling: 'Punguzo la Ndugu',
+      staff:   'Punguzo la Mfanyakazi',
+      sponsor: 'Punguzo la Mfadhili',
+      other:   'Punguzo Jingine',
+    },
+    sponsorshipTypes: {
+      half:      'Ufadhili wa Nusu',
+      full:      'Ufadhili Kamili (Bure)',
+      full_paid: 'Ufadhili Kamili (Kupitia Mfadhili)',
+    },
     agingBuckets: {
       current:  'Sasa (0-30)',
       days31:   '31-60 siku',

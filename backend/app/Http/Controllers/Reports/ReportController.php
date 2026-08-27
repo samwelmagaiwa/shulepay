@@ -6,6 +6,7 @@ use App\Exports\GenericArrayExport;
 use App\Exports\OutstandingDebtsExport;
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
+use App\Models\Discount;
 use App\Models\Enrollment;
 use App\Models\Expense;
 use App\Models\Invoice;
@@ -220,6 +221,52 @@ class ReportController extends Controller
             ])
             ->toArray();
 
+        // ── Discounts by type (sibling / staff / sponsor / other) ─────────────
+        // Scoped via invoice->school_id (Discount has no school_id of its own),
+        // matching how every other figure in this report is school-scoped.
+        $discountTypes = ['sibling', 'staff', 'sponsor', 'other'];
+        $discountRows = Discount::query()
+            ->join('invoices', 'invoices.id', '=', 'discounts.invoice_id')
+            ->when($schoolId, fn ($q) => $q->where('invoices.school_id', $schoolId))
+            ->select('discounts.type', DB::raw('COUNT(*) as cnt'), DB::raw('SUM(discounts.amount_cents) as amount_cents'))
+            ->groupBy('discounts.type')
+            ->get()
+            ->keyBy('type');
+
+        $byDiscountType = array_map(fn ($type) => [
+            'type' => $type,
+            'count' => (int) ($discountRows[$type]->cnt ?? 0),
+            'amount_cents' => (int) ($discountRows[$type]->getRawOriginal('amount_cents') ?? 0),
+        ], $discountTypes);
+
+        // ── Sponsorships by type (half / full / full_paid) ─────────────────────
+        // Counted off active enrollments (a student can only be actively
+        // enrolled once), same student-count basis the dashboard uses.
+        $sponsorshipTypes = ['half', 'full', 'full_paid'];
+        $sponsorshipRows = Enrollment::withoutGlobalScope('school')
+            ->join('students', 'students.id', '=', 'enrollments.student_id')
+            ->where('enrollments.status', 'active')
+            ->when($schoolId, fn ($q) => $q->where('enrollments.school_id', $schoolId))
+            ->whereIn('students.sponsorship_type', $sponsorshipTypes)
+            ->select('students.sponsorship_type', DB::raw('COUNT(DISTINCT students.id) as cnt'))
+            ->groupBy('students.sponsorship_type')
+            ->get()
+            ->keyBy('sponsorship_type');
+
+        // 'full_paid' students are sponsored but the sponsor's covered portion
+        // is still recorded as a real Payment (method='sponsor') against their
+        // invoice — surface that amount so the card isn't just a bare count.
+        $sponsorPaidAmountCents = (int) Payment::allSchools()
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+            ->where('method', 'sponsor')
+            ->sum('amount_cents');
+
+        $bySponsorshipType = array_map(fn ($type) => [
+            'type' => $type,
+            'count' => (int) ($sponsorshipRows[$type]->cnt ?? 0),
+            'amount_cents' => $type === 'full_paid' ? $sponsorPaidAmountCents : 0,
+        ], $sponsorshipTypes);
+
         $data = [
             'summary' => [
                 'total_payments' => $totalPayments,
@@ -236,6 +283,8 @@ class ReportController extends Controller
             'rows' => $rows,
             'by_method' => $byMethod,
             'by_class' => $byClass,
+            'by_discount_type' => $byDiscountType,
+            'by_sponsorship_type' => $bySponsorshipType,
             'period' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
         ];
 
@@ -900,6 +949,21 @@ class ReportController extends Controller
                         ],
                         $report['rows']
                     );
+
+                    $discountLabels = ['sibling' => 'Sibling Discount', 'staff' => 'Staff Discount', 'sponsor' => 'Sponsor Discount', 'other' => 'Other Discount'];
+                    $sponsorshipLabels = ['half' => 'Half Sponsored', 'full' => 'Fully Sponsored (Free)', 'full_paid' => 'Fully Sponsored (Paid via Sponsor)'];
+
+                    $csvRows[] = ['', '', '', '', ''];
+                    $csvRows[] = ['DISCOUNTS BY TYPE', 'Students', 'Amount (TZS)', '', ''];
+                    foreach ($report['by_discount_type'] ?? [] as $d) {
+                        $csvRows[] = [$discountLabels[$d['type']] ?? $d['type'], $d['count'], round($d['amount_cents'] / 100), '', ''];
+                    }
+
+                    $csvRows[] = ['', '', '', '', ''];
+                    $csvRows[] = ['SPONSORSHIPS BY TYPE', 'Students', 'Sponsor-Paid Amount (TZS)', '', ''];
+                    foreach ($report['by_sponsorship_type'] ?? [] as $s) {
+                        $csvRows[] = [$sponsorshipLabels[$s['type']] ?? $s['type'], $s['count'], round($s['amount_cents'] / 100), '', ''];
+                    }
                 }
                 break;
 

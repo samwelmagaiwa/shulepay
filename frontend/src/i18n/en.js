@@ -849,6 +849,19 @@ export default {
     guardian:     'Guardian',
     village:      'Village/Street',
     termsNotPaid: 'Terms Not Paid',
+    discountsByType: 'Discounts by Type',
+    sponsorshipsByType: 'Sponsorships by Type',
+    discountTypes: {
+      sibling: 'Sibling Discount',
+      staff:   'Staff Discount',
+      sponsor: 'Sponsor Discount',
+      other:   'Other Discount',
+    },
+    sponsorshipTypes: {
+      half:      'Half Sponsored',
+      full:      'Fully Sponsored (Free)',
+      full_paid: 'Fully Sponsored (Paid via Sponsor)',
+    },
     agingBuckets: {
       current:  'Current (0-30)',
       days31:   '31-60 days',

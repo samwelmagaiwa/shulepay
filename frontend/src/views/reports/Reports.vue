@@ -107,6 +107,35 @@
             </CCol>
           </CRow>
 
+          <!-- Discounts & Sponsorships breakdown -->
+          <div class="no-print mb-3" v-if="byDiscountType.length || bySponsorshipType.length">
+            <div class="fw-semibold text-muted small mb-1">{{ t('reports.discountsByType') }}</div>
+            <CRow class="g-2 mb-2">
+              <CCol xs="6" md="3" v-for="d in byDiscountType" :key="'disc-'+d.type">
+                <CCard class="text-center border-0 shadow-sm h-100" style="border-left:3px solid #6366f1 !important">
+                  <CCardBody class="p-2">
+                    <div class="fw-bold fs-6" style="color:#6366f1">{{ d.count || 0 }} | {{ formatTZS(d.amount_cents) }}</div>
+                    <div class="text-muted small">{{ discountTypeLabel(d.type) }}</div>
+                  </CCardBody>
+                </CCard>
+              </CCol>
+            </CRow>
+
+            <div class="fw-semibold text-muted small mb-1">{{ t('reports.sponsorshipsByType') }}</div>
+            <CRow class="g-2">
+              <CCol xs="6" md="4" v-for="s in bySponsorshipType" :key="'spon-'+s.type">
+                <CCard class="text-center border-0 shadow-sm h-100" style="border-left:3px solid #0ea5e9 !important">
+                  <CCardBody class="p-2">
+                    <div class="fw-bold fs-6" style="color:#0ea5e9">
+                      {{ s.count || 0 }}<span v-if="s.type === 'full_paid'"> | {{ formatTZS(s.amount_cents) }}</span>
+                    </div>
+                    <div class="text-muted small">{{ sponsorshipTypeLabel(s.type) }}</div>
+                  </CCardBody>
+                </CCard>
+              </CCol>
+            </CRow>
+          </div>
+
           <CTable responsive hover class="mb-0" style="font-size:.85rem;">
             <CTableHead class="table-light">
               <CTableRow>
@@ -355,6 +384,10 @@ const tabs = computed(() => [
 const loadingCol = ref(false)
 const colRows = ref([])
 const colStats = ref({})
+const byDiscountType = ref([])
+const bySponsorshipType = ref([])
+const discountTypeLabel = (type) => t(`reports.discountTypes.${type}`, type)
+const sponsorshipTypeLabel = (type) => t(`reports.sponsorshipTypes.${type}`, type)
 const colFilters = ref({
   date_from: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10),
   date_to: new Date().toISOString().slice(0, 10),
@@ -459,6 +492,8 @@ async function loadCollections() {
       partial_count: d.summary?.partial_count || 0,
       partial_paid_amount: d.summary?.partial_paid_amount_cents || 0,
     }
+    byDiscountType.value = d.by_discount_type || []
+    bySponsorshipType.value = d.by_sponsorship_type || []
   } catch {} finally { loadingCol.value = false }
 }
 
