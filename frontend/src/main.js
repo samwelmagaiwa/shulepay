@@ -9,6 +9,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useBrandingStore } from '@/stores/branding'
 import { useSchoolStore } from '@/stores/school'
 import { i18n } from '@/i18n'
+import { installModalGuard } from '@/utils/modalGuard'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -33,5 +34,10 @@ if (auth.token) {
   branding.watchSchool()          // installs watcher; fires immediately for current activeSchoolId
   school.fetchSchools(auth.user?.school_id)
 }
+
+// CoreUI's CModal can leave an invisible full-screen backdrop behind and a
+// permanent scroll lock on <body>, which reads to the user as "the UI froze".
+// See utils/modalGuard.js.
+installModalGuard(router)
 
 app.mount('#app')

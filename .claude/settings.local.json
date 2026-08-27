@@ -477,7 +477,21 @@
       "Bash(python3 -m json.tool)",
       "Bash(bash deploy.sh release \"feat\\(reports\\): Collections tab debt/partial columns and count|amount cards\")",
       "Bash(awk '/^  students: {/,/^  \\\\},?$/' frontend/src/i18n/en.js)",
-      "Bash(bash deploy.sh release \"fix\\(reports\\): missing translations, print-only cards, dynamic branding header\")"
+      "Bash(bash deploy.sh release \"fix\\(reports\\): missing translations, print-only cards, dynamic branding header\")",
+      "Bash(curl -s \"https://api.github.com/repos/samwelmagaiwa/shulepay/commits/ca347a1/check-runs\" -H \"Accept: application/vnd.github+json\")",
+      "Bash(ssh root@169.58.188.122 \"cd /opt/shulepay 2>/dev/null || cd /root/shulepay 2>/dev/null || find / -maxdepth 3 -iname 'docker-compose*.yml' 2>/dev/null; pwd\")",
+      "Bash(ssh root@169.58.188.122 \"find /opt/shulepay -maxdepth 2 -iname 'docker-compose*'\")",
+      "Bash(ssh root@169.58.188.122 \"ls -la /opt/shulepay\")",
+      "Bash(grep -rn \"Maatwebsite\\\\\\\\\\\\\\\\Excel\\\\|FromArray\\\\|WithHeadings\\\\|Excel::download\" \"D:/Projects/shulepay/backend/app\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend find /tmp -maxdepth 1 -iname '*.xlsx' -newer /etc/hostname -exec ls -la {} \\\\;\")",
+      "Bash(php -l backend/app/Http/Controllers/Reports/ReportController.php)",
+      "Bash(php -l backend/app/Exports/GenericArrayExport.php)",
+      "Bash(php -l backend/app/Exports/OutstandingDebtsExport.php)",
+      "Bash(vendor/bin/pint app/Http/Controllers/Reports/ReportController.php app/Exports/GenericArrayExport.php app/Exports/OutstandingDebtsExport.php)",
+      "Bash(vendor/bin/pint --test app/Http/Controllers/Reports/ReportController.php app/Exports/GenericArrayExport.php app/Exports/OutstandingDebtsExport.php)",
+      "Bash(vendor/bin/pint --test routes/api.php)",
+      "Bash(php -l app/Http/Controllers/Reports/ReportController.php)",
+      "Bash(vendor/bin/pint app/Http/Controllers/Reports/ReportController.php)"
     ]
   }
 }

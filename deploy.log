@@ -2548,3 +2548,14 @@ response looked like a deliberate 'not supported yet' and hid the missing method
 [0;36m[2026-08-27 08:00:03][0m   ShulePay — Release
 [0;36m[2026-08-27 08:00:03][0m ══════════════════════════════════════════
 [0;36m[2026-08-27 08:00:03][0m Checking working tree...
+[0;36m[2026-08-27 08:00:03][0m Files staged for commit:
+[0;36m[2026-08-27 08:00:04][0m Committing: "fix(reports): missing translations, print-only cards, dynamic branding header"
+[0;32m✔ Committed[0m
+[0;36m[2026-08-27 08:00:04][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-27 08:00:09][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-27 09:47:32][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 09:47:32][0m   ShulePay — Release
+[0;36m[2026-08-27 09:47:32][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 09:47:32][0m Checking working tree...
