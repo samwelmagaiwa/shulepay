@@ -303,6 +303,7 @@ export default {
     middleName:   'Middle Name',
     lastName:     'Last Name',
     dob:          'Date of Birth',
+    details: 'Student Details',
     admitDate:    'Admission Date',
     gender:       'Gender',
     male:         'Male',

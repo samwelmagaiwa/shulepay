@@ -2764,3 +2764,33 @@ Tables throughout, since DomPDF does not implement flexbox."
 [0;36m[2026-08-27 19:37:00][0m   ShulePay — Release
 [0;36m[2026-08-27 19:37:00][0m ══════════════════════════════════════════
 [0;36m[2026-08-27 19:37:00][0m Checking working tree...
+[0;36m[2026-08-27 19:37:01][0m Files staged for commit:
+[0;36m[2026-08-27 19:37:01][0m Committing: "fix(pdf): logo never rendered; portrait viewer; statement fits any invoice count
+
+Logo: BrandingController uploads with ->store(..., 'public') but the letterhead
+read it with a bare Storage::exists(), which uses the default disk
+(FILESYSTEM_DISK, unset here so 'local'). That checked storage/app/ while the
+file sits in storage/app/public/, so exists() was always false and the logo was
+silently dropped from every PDF. Confirmed on production: default disk false,
+public disk true. Now reads the public disk explicitly and tolerates the legacy
+'public/' prefix.
+
+Motto now prints in italic capitals, the convention on school letterhead.
+
+Viewer: the frame stretched to the full modal width, leaving a portrait page as a
+small block in a wide grey field. It is now an A-series portrait box (measured
+0.707) with view=Fit so the page fills it, falling back to full width on phones.
+
+Consolidated statement: overflowed to a second page from 12 invoices — four per
+year means a pupil of six years reaches 24. Density now steps up before anything
+is hidden (payments summarised past 6, condensed rows past 6) and only the oldest
+collapse into one carried-forward row past 14. Verified single page from 4 to 40."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-27 19:37:01][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-27 19:37:07][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-28 02:11:30][0m ══════════════════════════════════════════
+[0;36m[2026-08-28 02:11:30][0m   ShulePay — Release
+[0;36m[2026-08-28 02:11:30][0m ══════════════════════════════════════════
+[0;36m[2026-08-28 02:11:30][0m Checking working tree...

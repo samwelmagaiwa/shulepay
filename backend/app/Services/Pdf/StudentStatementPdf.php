@@ -76,9 +76,10 @@ class StudentStatementPdf
             'appTagline' => $appTagline,
             'logoBase64' => $logoBase64,
             'lh' => $lh,
-            // A4 portrait — wider than the A5 this was originally designed at, per
-            // request: A5 left the printed statement looking cramped/narrow next
-            // to the viewer it's previewed in. The per-payment receipt stays A5.
+            // A4 portrait — wider than the A5 this was originally designed at:
+            // A5 left the statement looking cramped next to the viewer it is
+            // previewed in. Receipts and reports are A4 too, so every printed
+            // document now shares one paper size.
         ])->setPaper('a4')->output();
     }
 }

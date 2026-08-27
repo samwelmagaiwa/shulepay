@@ -303,6 +303,7 @@ export default {
     middleName:   'Jina la Kati',
     lastName:     'Jina la Familia',
     dob:          'Tarehe ya Kuzaliwa',
+    details: 'Maelezo ya Mwanafunzi',
     admitDate:    'Tarehe ya Kuandikishwa',
     gender:       'Jinsia',
     male:         'Kiume',

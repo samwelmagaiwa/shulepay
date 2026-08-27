@@ -511,7 +511,13 @@
       "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend tail -150 storage/logs/laravel.log 2>/dev/null | grep -B 20 'downloadStatement' | head -40\")",
       "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend cat resources/views/pdf/student_statement.blade.php\")",
       "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend grep -n 'img\\\\|logo\\\\|<img' resources/views/pdf/student_statement.blade.php\")",
-      "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend grep -n 'Undefined array key \\\\\"data\\\\\"' storage/logs/laravel.log | tail -5\")"
+      "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend grep -n 'Undefined array key \\\\\"data\\\\\"' storage/logs/laravel.log | tail -5\")",
+      "Bash(php -l app/Services/Pdf/StudentStatementPdf.php)",
+      "Bash(vendor/bin/pint app/Services/Pdf/StudentStatementPdf.php)",
+      "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend cat app/Services/Pdf/StudentStatementPdf.php\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend cat resources/views/pdf/partials/letterhead.blade.php\")",
+      "Bash(grep -n 'font-size:{{ $px\\(11\\) }}; color:#444')",
+      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_frontend sh -c 'grep -rl \\\\\"ReceiptViewerModal\\\\\" /usr/share/nginx/html/assets/ 2>/dev/null || echo NOTFOUND'\")"
     ]
   }
 }

@@ -39,33 +39,34 @@
         </div>
       </div>
 
-      <!-- Tabs -->
+      <!-- Jump links. Everything below renders at once — one click on the
+           magnifier should show the whole picture, not four tabs to click
+           through — so these only scroll to a section. -->
       <div class="d-flex gap-1 pt-3 mb-3 overflow-auto" style="flex-wrap:nowrap;">
         <button v-for="tab in tabs" :key="tab.key"
-          class="btn btn-sm px-2 text-nowrap"
-          :class="activeTab === tab.key ? 'btn-primary' : 'btn-outline-secondary'"
-          :style="activeTab === tab.key ? 'background:#007f3e; border-color:#007f3e; font-size:.75rem;' : 'font-size:.75rem;'"
-          @click="activeTab = tab.key">
+          class="btn btn-sm btn-outline-secondary px-2 text-nowrap"
+          style="font-size:.75rem;"
+          @click="scrollTo(tab.key)">
           {{ tab.label }}
           <span v-if="tab.badge" class="ms-1 badge rounded-pill"
-                :style="activeTab === tab.key ? 'background:rgba(255,255,255,.3)' : 'background:#007f3e; color:white'">
-            {{ tab.badge }}
-          </span>
+                style="background:#007f3e; color:white">{{ tab.badge }}</span>
         </button>
       </div>
 
-      <!-- Tab: Maelezo -->
-      <div v-if="activeTab === 'maelezo'">
-        <InfoRow :label="t('students.admissionNo')" :value="student.admission_number || '—'" />
-        <InfoRow :label="t('common.class')" :value="student.school_class?.name || '—'" />
+      <!-- Maelezo -->
+      <div :ref="el => sections.maelezo = el">
+        <div class="section-head">{{ t('students.details') }}</div>
+        <InfoRow :label="t('students.admissionNo')" :value="info.admission_number || '—'" />
+        <InfoRow :label="t('common.class')" :value="info.school_class?.name || '—'" />
         <InfoRow :label="t('students.gender')" :value="genderLabel" />
-        <InfoRow :label="t('common.status')" :value="student.status || '—'" />
-        <InfoRow v-if="student.date_of_birth" :label="t('students.dob')" :value="student.date_of_birth" />
-        <InfoRow v-if="student.school?.name" label="Shule" :value="student.school.name" />
+        <InfoRow :label="t('common.status')" :value="info.status || '—'" />
+        <InfoRow v-if="info.date_of_birth" :label="t('students.dob')" :value="info.date_of_birth" />
+        <InfoRow v-if="info.school?.name" label="Shule" :value="info.school.name" />
       </div>
 
-      <!-- Tab: Ankara -->
-      <div v-if="activeTab === 'ankara'">
+      <!-- Ankara + the payments made against each -->
+      <div :ref="el => sections.ankara = el" class="mt-4">
+        <div class="section-head">Ankara &amp; Malipo</div>
         <div v-if="detailLoading" class="text-center py-4"><CSpinner size="sm" /></div>
         <div v-else-if="!invoices.length" class="text-center text-muted py-4 small">Hakuna ankara.</div>
         <div v-else>
@@ -88,12 +89,27 @@
                 Deni: <strong>{{ inv.balance_due_cents > 0 ? formatMoney(inv.balance_due_cents) : '✓ 0' }}</strong>
               </span>
             </div>
+            <!-- Payments recorded against this invoice -->
+            <div v-if="paymentsByInvoice[inv.id]?.length" class="mt-2 pt-2" style="border-top:1px dashed #dee2e6;">
+              <div v-for="p in paymentsByInvoice[inv.id]" :key="p.id"
+                   class="d-flex justify-content-between align-items-center py-1" style="font-size:.72rem;">
+                <span class="text-muted">
+                  {{ formatDate(p.paid_at) }} · {{ methodLabel(p.method) }}
+                  <span v-if="p.receipt?.receipt_number" class="ms-1">· {{ p.receipt.receipt_number }}</span>
+                </span>
+                <span class="text-success fw-semibold">+{{ formatMoney(p.amount_cents) }}</span>
+              </div>
+            </div>
+            <div v-else class="mt-2 pt-2 text-muted" style="border-top:1px dashed #dee2e6; font-size:.72rem;">
+              Hakuna malipo bado.
+            </div>
+
             <!-- Installment mini-indicator if this invoice has a plan -->
             <div v-if="installmentsByInvoice[inv.id]" class="mt-2">
               <div class="d-flex justify-content-between align-items-center mb-1" style="font-size:.68rem; color:#6c757d;">
                 <span>Awamu: {{ installmentsByInvoice[inv.id].paid_count }}/{{ installmentsByInvoice[inv.id].total }}</span>
                 <span style="color:#007f3e; cursor:pointer; text-decoration:underline;"
-                      @click="activeTab = 'awamu'">Angalia Awamu →</span>
+                      @click="scrollTo('awamu')">Angalia Awamu →</span>
               </div>
               <div class="progress" style="height:4px;">
                 <div class="progress-bar bg-success" role="progressbar"
@@ -104,12 +120,12 @@
         </div>
       </div>
 
-      <!-- Tab: Malipo -->
-      <div v-if="activeTab === 'malipo'">
+      <!-- Malipo yasiyo na ankara -->
+      <div v-if="unlinkedPayments.length" :ref="el => sections.malipo = el" class="mt-4">
+        <div class="section-head">Malipo Mengine</div>
         <div v-if="detailLoading" class="text-center py-4"><CSpinner size="sm" /></div>
-        <div v-else-if="!payments.length" class="text-center text-muted py-4 small">Hakuna malipo.</div>
-        <div v-else>
-          <div v-for="p in payments" :key="p.id"
+        <div>
+          <div v-for="p in unlinkedPayments" :key="p.id"
                class="mb-2 p-2 rounded border d-flex justify-content-between align-items-start">
             <div>
               <div class="fw-semibold small text-success">+{{ formatMoney(p.amount_cents) }}</div>
@@ -125,8 +141,9 @@
         </div>
       </div>
 
-      <!-- Tab: Awamu (Installments) -->
-      <div v-if="activeTab === 'awamu'">
+      <!-- Awamu -->
+      <div v-if="installments.length" :ref="el => sections.awamu = el" class="mt-4">
+        <div class="section-head">Awamu</div>
         <div v-if="detailLoading" class="text-center py-4"><CSpinner size="sm" /></div>
         <div v-else-if="!installments.length" class="text-center text-muted py-4 small">
           <div style="font-size:1.5rem; margin-bottom:4px;">📋</div>
@@ -229,6 +246,33 @@ const props = defineProps({ student: Object })
 defineEmits(['close'])
 
 const activeTab = ref('maelezo')
+const fullStudent = ref(null)
+const sections = ref({})
+
+function scrollTo(key) {
+  sections.value[key]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+// Merge the richer record over the list summary, so fields missing from the
+// invoice payload fill in once the full student arrives.
+const info = computed(() => ({ ...(props.student || {}), ...(fullStudent.value || {}) }))
+
+// Each invoice's own payments, so a debt and what has been paid against it read
+// together rather than in two separate tabs.
+const paymentsByInvoice = computed(() => {
+  const map = {}
+  for (const p of payments.value) {
+    const key = p.invoice_id ?? p.invoice?.id
+    if (!key) continue
+    ;(map[key] ||= []).push(p)
+  }
+  return map
+})
+
+// Payments that could not be tied back to an invoice in this list.
+const unlinkedPayments = computed(() =>
+  payments.value.filter(p => !(p.invoice_id ?? p.invoice?.id)),
+)
 
 const detailLoading = ref(false)
 const invoices     = ref([])
@@ -236,7 +280,7 @@ const payments     = ref([])
 const installments = ref([])
 
 const genderLabel = computed(() => {
-  const g = props.student?.gender
+  const g = info.value?.gender
   return g === 'male' || g === 'me' ? t('students.male')
        : g === 'female' || g === 'ke' ? t('students.female') : '—'
 })
@@ -321,11 +365,17 @@ async function loadDetails() {
   if (!props.student?.id) return
   detailLoading.value = true
   try {
-    const [invRes, payRes, instRes] = await Promise.all([
-      api.get('/invoices',      { params: { student_id: props.student.id, per_page: 50 } }),
-      api.get('/payments',      { params: { student_id: props.student.id, per_page: 50 } }),
+    // The student object handed in by the invoice list is InvoiceResource's nested
+    // summary — it carries name, admission number and class but not gender, status
+    // or date of birth, which is why those rows used to render as em-dashes. Fetch
+    // the full record alongside the financials.
+    const [stuRes, invRes, payRes, instRes] = await Promise.all([
+      api.get(`/students/${props.student.id}`).catch(() => null),
+      api.get('/invoices',      { params: { student_id: props.student.id, per_page: 100 } }),
+      api.get('/payments',      { params: { student_id: props.student.id, per_page: 100 } }),
       api.get('/installments',  { params: { student_id: props.student.id, per_page: 100 } }),
     ])
+    fullStudent.value  = stuRes ? (stuRes.data?.data ?? stuRes.data) : null
     invoices.value     = invRes.data?.data || []
     payments.value     = payRes.data?.data || []
     installments.value = instRes.data?.data || []
@@ -338,13 +388,24 @@ async function loadDetails() {
 
 watch(() => props.student?.id, (id) => {
   if (id) {
-    activeTab.value = 'maelezo'
+    fullStudent.value = null
     loadDetails()
   }
 }, { immediate: true })
 </script>
 
 <style scoped>
+.section-head {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #007f3e;
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+  border-bottom: 2px solid rgba(0, 127, 62, .18);
+}
+
 .drawer-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1050;
   display: flex; justify-content: flex-end;
