@@ -78,25 +78,27 @@
 </head>
 <body>
 
-  {{-- ── Header ─────────────────────────────────────────────── --}}
-  <div class="center">
-    @if($logoBase64)
-      <img src="{{ $logoBase64 }}" class="logo-img" alt="Logo"><br>
-    @endif
-    <div class="app-name">{{ $appName }}</div>
-    <div class="sub">{{ $appTagline }}</div>
-    @if($enrollment?->school && $enrollment->school->name !== $appName)
-      <div class="sub bold">{{ $enrollment->school->name }}</div>
-    @endif
-  </div>
+  {{-- ── Letterhead (shared with statements and reports) ─────── --}}
+  @include('pdf.partials.letterhead', [
+    'lh' => $lh,
+    'docTitle' => 'Risiti ya Malipo',
+    'compact' => true,
+  ])
 
-  <div class="hr"></div>
-
-  <div class="center">
-    <div class="doc-title">RISITI YA MALIPO</div>
-    <div class="receipt-no">{{ $receipt->receipt_number }}</div>
-    <div class="sub">{{ $receipt->issued_at?->format('d/m/Y H:i') }}</div>
-  </div>
+  {{-- Receipt number and issue date, boxed so they read as the document's
+       reference rather than part of the school's address block. --}}
+  <table style="width:100%; border-collapse:collapse; margin-top:8px;">
+    <tr>
+      <td style="font-size:8px; color:#666; letter-spacing:.5px;">NAMBA YA RISITI</td>
+      <td style="font-size:8px; color:#666; text-align:right; letter-spacing:.5px;">TAREHE</td>
+    </tr>
+    <tr>
+      <td style="font-size:15px; font-weight:bold; color:#007f3e;">{{ $receipt->receipt_number }}</td>
+      <td style="font-size:10px; text-align:right; font-weight:bold;">
+        {{ $receipt->issued_at?->format('d/m/Y H:i') }}
+      </td>
+    </tr>
+  </table>
 
   <div class="hr"></div>
 

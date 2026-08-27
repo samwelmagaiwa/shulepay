@@ -3,8 +3,8 @@
 namespace App\Services\Pdf;
 
 use App\Models\Receipt;
+use App\Support\SchoolLetterhead;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Storage;
 
 class ReceiptPdf
 {
@@ -24,20 +24,14 @@ class ReceiptPdf
         ]);
 
         $school = $receipt->student?->school ?? $receipt->student?->currentEnrollment?->school;
-        $settings = $school?->settings ?? [];
-        $branding = $settings['branding'] ?? [];
 
-        $appName = $branding['app_name'] ?? ($school?->name ?? 'ShulePay');
-        $appTagline = $branding['app_tagline'] ?? 'nexoryaTECH';
-        $logoBase64 = null;
+        // Single source of truth for the letterhead — see App\Support\SchoolLetterhead.
+        $lh = SchoolLetterhead::for($school);
+        $appName = $lh['name'];
+        $appTagline = $lh['tagline'];
+        $logoBase64 = $lh['logo'];
 
-        if (isset($branding['logo_path']) && Storage::exists($branding['logo_path'])) {
-            $mime = Storage::mimeType($branding['logo_path']);
-            $data = base64_encode(Storage::get($branding['logo_path']));
-            $logoBase64 = "data:{$mime};base64,{$data}";
-        }
-
-        return Pdf::loadView('pdf.receipt', compact('receipt', 'appName', 'appTagline', 'logoBase64'))
+        return Pdf::loadView('pdf.receipt', compact('receipt', 'appName', 'appTagline', 'logoBase64', 'lh'))
             // A5 (148mm × 210mm) — printed from the browser to office paper rather
             // than a thermal roll. Replaces the earlier 80mm strip, which left the
             // page mostly empty and the content squeezed into a narrow column.

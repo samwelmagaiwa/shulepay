@@ -4,8 +4,8 @@ namespace App\Services\Pdf;
 
 use App\Models\Invoice;
 use App\Models\Student;
+use App\Support\SchoolLetterhead;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * A single consolidated receipt/statement covering every invoice a student
@@ -60,15 +60,10 @@ class StudentStatementPdf
         $settings = $school?->settings ?? [];
         $branding = $settings['branding'] ?? [];
 
-        $appName = $branding['app_name'] ?? ($school?->name ?? 'ShulePay');
-        $appTagline = $branding['app_tagline'] ?? 'nexoryaTECH';
-        $logoBase64 = null;
-
-        if (isset($branding['logo_path']) && Storage::exists($branding['logo_path'])) {
-            $mime = Storage::mimeType($branding['logo_path']);
-            $data = base64_encode(Storage::get($branding['logo_path']));
-            $logoBase64 = "data:{$mime};base64,{$data}";
-        }
+        $lh = SchoolLetterhead::for($school);
+        $appName = $lh['name'];
+        $appTagline = $lh['tagline'];
+        $logoBase64 = $lh['logo'];
 
         return Pdf::loadView('pdf.student_statement', [
             'student' => $student,
@@ -80,6 +75,7 @@ class StudentStatementPdf
             'appName' => $appName,
             'appTagline' => $appTagline,
             'logoBase64' => $logoBase64,
+            'lh' => $lh,
         ])->setPaper('a5')->output();
     }
 }

@@ -32,6 +32,8 @@ const schoolCode      = ref('')
 const schoolCodeOrig  = ref('')   // to warn only when it actually changes
 const schoolLevel     = ref('')
 const fieldErrors     = ref({})
+// Letterhead lines printed on receipts, statements and reports.
+const lh = ref({ phone_2: '', phone_3: '', po_box: '', address_line1: '', address_line2: '', city_country: '', website: '', motto: '' })
 const logoFile        = ref(null)
 const logoPreview     = ref(null)
 const logoLoadError   = ref(false)   // true when server URL failed to render — does NOT clear logoPreview
@@ -60,6 +62,14 @@ async function fetchBranding(id) {
     schoolCode.value    = res.data.code  || ''
     schoolCodeOrig.value = res.data.code || ''
     schoolLevel.value   = res.data.level || ''
+    lh.value.phone_2 = res.data.phone_2 || ''
+    lh.value.phone_3 = res.data.phone_3 || ''
+    lh.value.po_box = res.data.po_box || ''
+    lh.value.address_line1 = res.data.address_line1 || ''
+    lh.value.address_line2 = res.data.address_line2 || ''
+    lh.value.city_country = res.data.city_country || ''
+    lh.value.website = res.data.website || ''
+    lh.value.motto = res.data.motto || ''
   } catch {
     error.value = 'Failed to load branding.'
   } finally {
@@ -83,6 +93,7 @@ async function save() {
     fd.append('email', schoolEmail.value ?? '')
     // Only sent when it belongs to a school — system-wide defaults have no code.
     if (schoolCode.value) fd.append('code', schoolCode.value.toUpperCase())
+    Object.entries(lh.value).forEach(([k, v]) => fd.append(k, v ?? ''))
     if (logoFile.value) fd.append('logo', logoFile.value)
     if (auth.isSuperAdmin && selectedSchoolId.value) {
       fd.append('school_id', selectedSchoolId.value)
@@ -100,6 +111,7 @@ async function save() {
     schoolEmail.value    = data.email ?? schoolEmail.value
     schoolCode.value     = data.code  ?? schoolCode.value
     schoolCodeOrig.value = data.code  ?? schoolCodeOrig.value
+    Object.keys(lh.value).forEach(k => { if (data[k] !== undefined) lh.value[k] = data[k] || '' })
     success.value     = data.message || 'Branding saved!'
     setTimeout(() => { success.value = '' }, 3000)
 
@@ -299,6 +311,63 @@ const codeChanged = computed(() =>
                   admission numbers (<code>{{ admissionPrefix }}/{{ schoolCodeOrig }}/…</code>).
                   Only new registrations will use <code>{{ schoolCode.toUpperCase() }}</code>.
                 </div>
+              </div>
+
+              <!-- ── Letterhead: printed at the top of receipts & statements ── -->
+              <div class="col-12">
+                <hr class="my-2" />
+                <div class="fw-semibold text-uppercase text-muted small mb-1" style="letter-spacing:.06em;">
+                  📄 Letterhead — printed on receipts and statements
+                </div>
+                <div class="form-text mb-2">
+                  Enter these exactly as they appear on your official letterhead.
+                  Leave any line blank to omit it.
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold mb-1">Phone 2</label>
+                <input v-model="lh.phone_2" type="tel" class="form-control"
+                       placeholder="+255 762 916 066" maxlength="30" :disabled="loadingBranding" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold mb-1">Phone 3</label>
+                <input v-model="lh.phone_3" type="tel" class="form-control"
+                       placeholder="+255 783 138 346" maxlength="30" :disabled="loadingBranding" />
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold mb-1">Address Line 1</label>
+                <input v-model="lh.address_line1" type="text" class="form-control"
+                       placeholder="KT. 407 MOHARANGO" maxlength="80" :disabled="loadingBranding" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold mb-1">Address Line 2</label>
+                <input v-model="lh.address_line2" type="text" class="form-control"
+                       placeholder="31433 REGICHERI" maxlength="80" :disabled="loadingBranding" />
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold mb-1">P.O. Box</label>
+                <input v-model="lh.po_box" type="text" class="form-control"
+                       placeholder="P.O. Box 125" maxlength="60" :disabled="loadingBranding" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold mb-1">City / Country</label>
+                <input v-model="lh.city_country" type="text" class="form-control"
+                       placeholder="TARIME DC TANZANIA" maxlength="80" :disabled="loadingBranding" />
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold mb-1">Website</label>
+                <input v-model="lh.website" type="text" class="form-control"
+                       placeholder="www.magrethmary.ac.tz" maxlength="120" :disabled="loadingBranding" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold mb-1">Motto</label>
+                <input v-model="lh.motto" type="text" class="form-control"
+                       placeholder="Education for Excellence" maxlength="120" :disabled="loadingBranding" />
+                <div class="form-text">Replaces the tagline on printed documents.</div>
               </div>
 
               <!-- Logo -->

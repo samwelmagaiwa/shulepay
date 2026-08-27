@@ -2595,3 +2595,29 @@ Verified an open modal keeps its backdrop, so dimming still works."
 [0;36m[2026-08-27 17:27:25][0m   ShulePay — Release
 [0;36m[2026-08-27 17:27:25][0m ══════════════════════════════════════════
 [0;36m[2026-08-27 17:27:25][0m Checking working tree...
+[0;36m[2026-08-27 17:27:25][0m Files staged for commit:
+[0;36m[2026-08-27 17:27:25][0m Committing: "feat(branding): add school phone, email and short code to the branding page
+
+phone, email and code already existed as columns on the schools table but were
+not editable anywhere in the UI. The branding endpoint now reads and writes them
+alongside the display settings.
+
+They are saved to the school record rather than the branding JSON, because they
+are record fields the receipt, statement and SMS templates read — not display
+preferences.
+
+code is the middle segment of every admission number the school issues
+(SEC/MGRTHMR/0001/2026), so it is validated as unique (ignoring the school's own
+current value) and restricted to letters and digits; anything else would corrupt
+that format. The form previews the resulting admission number and warns that
+students already registered keep their existing numbers — only new registrations
+use the new code."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-27 17:27:26][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-27 17:27:32][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-27 18:23:20][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 18:23:21][0m   ShulePay — Release
+[0;36m[2026-08-27 18:23:21][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 18:23:21][0m Checking working tree...

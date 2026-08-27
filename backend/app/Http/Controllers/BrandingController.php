@@ -95,6 +95,17 @@ class BrandingController extends Controller
                 'regex:/^[A-Za-z0-9]+$/',
                 Rule::unique('schools', 'code')->ignore($targetSchoolId),
             ],
+            // Letterhead block printed on receipts, statements and reports.
+            // Stored in settings.letterhead rather than as columns — these are
+            // presentation lines that vary per school and are only ever printed.
+            'phone_2' => 'sometimes|nullable|string|max:30',
+            'phone_3' => 'sometimes|nullable|string|max:30',
+            'po_box' => 'sometimes|nullable|string|max:60',
+            'address_line1' => 'sometimes|nullable|string|max:80',
+            'address_line2' => 'sometimes|nullable|string|max:80',
+            'city_country' => 'sometimes|nullable|string|max:80',
+            'website' => 'sometimes|nullable|string|max:120',
+            'motto' => 'sometimes|nullable|string|max:120',
         ], [
             'code.regex' => 'School code may contain only letters and numbers.',
             'code.unique' => 'That school code is already used by another school.',
@@ -202,6 +213,17 @@ class BrandingController extends Controller
 
         $settings['branding'] = $branding;
 
+        // Letterhead lines live in settings, keyed individually so an unsent field
+        // keeps its existing value rather than being wiped by a partial save.
+        $letterhead = $settings['letterhead'] ?? [];
+        foreach (['phone_2', 'phone_3', 'po_box', 'address_line1', 'address_line2',
+            'city_country', 'website', 'motto'] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $letterhead[$field] = $validated[$field] ?: null;
+            }
+        }
+        $settings['letterhead'] = $letterhead;
+
         // Contact details and the short code are columns on the school itself, not
         // branding preferences — receipts, statements, SMS and admission numbers
         // read them from there.
@@ -284,6 +306,12 @@ class BrandingController extends Controller
             'email' => $school?->email,
             'code' => $school?->code,
             'level' => $school?->level?->value,
+
+            // Letterhead lines, flattened so the settings form binds to them directly.
+            ...collect(['phone_2', 'phone_3', 'po_box', 'address_line1', 'address_line2',
+                'city_country', 'website', 'motto'])
+                ->mapWithKeys(fn ($k) => [$k => ($school?->settings['letterhead'][$k] ?? null)])
+                ->all(),
         ];
     }
 }

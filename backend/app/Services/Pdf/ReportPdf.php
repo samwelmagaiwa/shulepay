@@ -3,9 +3,9 @@
 namespace App\Services\Pdf;
 
 use App\Models\Student;
+use App\Support\SchoolLetterhead;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 
 class ReportPdf
 {
@@ -27,15 +27,10 @@ class ReportPdf
         $settings = $school?->settings ?? [];
         $branding = $settings['branding'] ?? [];
 
-        $appName = $branding['app_name'] ?? ($school?->name ?? 'ShulePay');
-        $appTagline = $branding['app_tagline'] ?? 'nexoryaTECH';
-        $logoBase64 = null;
-
-        if (isset($branding['logo_path']) && Storage::exists($branding['logo_path'])) {
-            $mime = Storage::mimeType($branding['logo_path']);
-            $data = base64_encode(Storage::get($branding['logo_path']));
-            $logoBase64 = "data:{$mime};base64,{$data}";
-        }
+        $lh = SchoolLetterhead::for($school);
+        $appName = $lh['name'];
+        $appTagline = $lh['tagline'];
+        $logoBase64 = $lh['logo'];
 
         // Oldest first — a statement reads chronologically.
         $rows = $invoices
@@ -58,6 +53,7 @@ class ReportPdf
             'appName' => $appName,
             'appTagline' => $appTagline,
             'logoBase64' => $logoBase64,
+            'lh' => $lh,
         ])->setPaper('a4')->output();
     }
 }
