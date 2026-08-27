@@ -27,19 +27,20 @@
 
 {{-- ── School name, centred across the full width ─────────────────────── --}}
 <div style="text-align:center;">
-  <div style="font-size:{{ $px(22) }}; font-weight:bold; color:#007f3e;
-              letter-spacing:{{ $px(0.6) }}; line-height:1.15;">
+  <div style="font-size:{{ $px(28) }}; font-weight:bold; color:#007f3e;
+              letter-spacing:{{ $px(0.6) }}; line-height:1.15;
+              text-decoration:underline;">
     {{ strtoupper($lh['name']) }}
   </div>
   @if(!empty($lh['motto']))
     {{-- Mottos print in italic capitals, the convention on school letterhead --}}
-    <div style="font-size:{{ $px(9.5) }}; color:#555; font-style:italic;
+    <div style="font-size:{{ $px(9.5) }}; color:#555; font-style:italic; font-weight:bold;
                 text-transform:uppercase; letter-spacing:{{ $px(0.5) }};
                 margin-top:{{ $px(2) }};">
       {{ $lh['motto'] }}
     </div>
   @elseif(!empty($lh['tagline']))
-    <div style="font-size:{{ $px(9.5) }}; color:#555; letter-spacing:{{ $px(1.6) }};
+    <div style="font-size:{{ $px(9.5) }}; color:#555; font-weight:bold; letter-spacing:{{ $px(1.6) }};
                 text-transform:uppercase; margin-top:{{ $px(2) }};">
       {{ $lh['tagline'] }}
     </div>
@@ -52,7 +53,7 @@
   <tr>
     {{-- Left: how to reach the school --}}
     <td style="width:35%; vertical-align:middle; text-align:left;
-               font-size:{{ $px(11) }}; color:#444; line-height:1.55;">
+               font-size:{{ $px(11) }}; font-weight:bold; color:#444; line-height:1.55;">
       @foreach($lh['phones'] as $i => $phone)
         <div>{{ $i === 0 ? 'Tel: ' : '' }}{{ $phone }}</div>
       @endforeach
@@ -74,7 +75,7 @@
 
     {{-- Right: where the school is --}}
     <td style="width:35%; vertical-align:middle; text-align:right;
-               font-size:{{ $px(11) }}; color:#444; line-height:1.55;">
+               font-size:{{ $px(11) }}; font-weight:bold; color:#444; line-height:1.55;">
       @foreach($lh['address_lines'] as $line)
         <div>{{ $line }}</div>
       @endforeach
