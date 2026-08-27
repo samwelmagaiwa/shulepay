@@ -465,7 +465,10 @@
       "Bash(ssh root@169.58.188.122 'curl -s -w '\\\\''\\\\nHTTP:%{http_code}\\\\n'\\\\'' '\\\\''https://magrethschools.sc.tz/api/reports/collections?from=2026-01-01&to=2026-12-31'\\\\'' -H '\\\\''Authorization: Bearer 59|W7Ylr0cFKf4Oc04MoWNuKgBWBVbQ6WVnsphSGTexd89c802f'\\\\'' -H '\\\\''X-School-Id: 2'\\\\'' -H '\\\\''Accept: application/json'\\\\''')",
       "Bash(ssh root@169.58.188.122 'curl -s -w '\\\\''\\\\nHTTP:%{http_code}\\\\n'\\\\'' '\\\\''https://magrethschools.sc.tz/api/reports/debtor-aging'\\\\'' -H '\\\\''Authorization: Bearer 59|W7Ylr0cFKf4Oc04MoWNuKgBWBVbQ6WVnsphSGTexd89c802f'\\\\'' -H '\\\\''X-School-Id: 2'\\\\'' -H '\\\\''Accept: application/json'\\\\''')",
       "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend tail -5 storage/logs/laravel.log | grep -A5 ERROR\")",
-      "Bash(bash deploy.sh release \"fix\\(reports\\): chart canvases stuck at 300x150, leaving a large empty gap\")"
+      "Bash(bash deploy.sh release \"fix\\(reports\\): chart canvases stuck at 300x150, leaving a large empty gap\")",
+      "Bash(scp \"C:\\\\Users\\\\MAMC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-shulepay\\\\039ed5d6-2581-4d94-b85b-ed1582e7dc9b\\\\scratchpad\\\\check_due_dates.php\" root@169.58.188.122:/tmp/check_due_dates.php)",
+      "Bash(ssh root@169.58.188.122 \"docker cp /tmp/check_due_dates.php shulepay_backend:/tmp/check_due_dates.php && docker exec shulepay_backend php artisan tinker /tmp/check_due_dates.php\")",
+      "Bash(bash deploy.sh release \"fix\\(reports\\): Print PDF blank page + debtors table sort order\")"
     ]
   }
 }
