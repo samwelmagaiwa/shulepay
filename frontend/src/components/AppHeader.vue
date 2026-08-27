@@ -132,6 +132,7 @@ function go(path) {
           <RouterLink v-if="!auth.isTeacher" class="btn btn-ghost-secondary text-start" to="/inventory" @click="mobileNavOpen=false">📦 {{ t('nav.inventory') }}</RouterLink>
           <RouterLink v-if="auth.isStaff" class="btn btn-ghost-secondary text-start" to="/stationary/mine" @click="mobileNavOpen=false">{{ t('stationary.navMine') }}</RouterLink>
           <RouterLink v-if="auth.isAccountant || auth.isOwner || auth.isSuperAdmin" class="btn btn-ghost-secondary text-start" to="/stationary/manage" @click="mobileNavOpen=false">{{ t('stationary.navManage') }}</RouterLink>
+          <RouterLink v-if="auth.isAccountant || auth.isOwner" class="btn btn-ghost-secondary text-start" to="/ada/msingi" @click="mobileNavOpen=false">💵 {{ t('nav.primaryFees') }}</RouterLink>
         </template>
 
         <!-- Notifications: all roles -->
@@ -301,6 +302,10 @@ function go(path) {
             </CDropdownItem>
             <CDropdownItem v-if="auth.isAccountant || auth.isOwner || auth.isSuperAdmin" @click="router.push('/stationary/manage')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/stationary/manage') }">
               {{ t('stationary.navManage') }}
+            </CDropdownItem>
+            <CDropdownDivider v-if="auth.isAccountant || auth.isOwner" />
+            <CDropdownItem v-if="auth.isAccountant || auth.isOwner" @click="router.push('/ada/msingi')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/ada/msingi') }">
+              💵 {{ t('nav.primaryFees') }}
             </CDropdownItem>
           </CDropdownMenu>
         </CDropdown>

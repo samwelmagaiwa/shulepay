@@ -66,6 +66,12 @@ const routes = [
         meta: { requiresAuth: true, roles: ['accountant', 'owner'] },
       },
       {
+        path: 'ada/msingi',
+        name: 'PrimaryFees',
+        component: () => import('@/views/ada/PrimaryFees.vue'),
+        meta: { requiresAuth: true, roles: ['accountant', 'owner'] },
+      },
+      {
         path: 'malipo/rekodi',
         name: 'RekodaMalipo',
         component: () => import('@/views/malipo/RekodaMalipo.vue'),

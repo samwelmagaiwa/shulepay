@@ -555,6 +555,33 @@
           ⚠ {{ t('fees.noFees') }} — {{ t('students.generateFirstInvoiceHint') }}
         </CAlert>
 
+        <!-- ── Defined Primary Fees (Std 4-6) ──────────────────────────── -->
+        <div v-if="isDefinedPrimaryClass" class="p-3 rounded-3 border mb-3" style="background:#fffbeb;border-color:#f59e0b!important;">
+          <label class="form-label fw-bold small mb-1 d-flex align-items-center gap-2">
+            🏷️ {{ t('primaryFees.selectCategory') }}
+          </label>
+          <div class="text-muted mb-2" style="font-size:.72rem;">{{ t('primaryFees.selectCategoryHint') }}</div>
+
+          <div v-if="loadingPrimaryFeeCategories" class="text-center py-2 text-muted small">
+            <CSpinner size="sm" class="me-1" /> {{ t('common.loading') }}
+          </div>
+          <div v-else style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.5rem;">
+            <button
+              v-for="c in primaryFeeCategories"
+              :key="c.category"
+              type="button"
+              class="btn text-start"
+              :class="selectedPrimaryFeeCategory === c.category ? 'btn-warning' : 'btn-outline-warning'"
+              @click="selectPrimaryFeeCategory(c.category)"
+            >
+              <div class="fw-semibold small">{{ t(PRIMARY_FEE_LABEL_KEYS[c.category] || c.category) }}</div>
+              <div class="small" :class="selectedPrimaryFeeCategory === c.category ? '' : 'text-muted'">
+                {{ formatMoney(c.amount_cents) }}
+              </div>
+            </button>
+          </div>
+        </div>
+
         <!-- ── Total Tuition Fee (manual override) ───────────────────── -->
         <CRow class="g-3 mb-3">
           <CCol md="6">
@@ -1311,6 +1338,51 @@ const selectedClassName = computed(() =>
   allClasses.value.find(c => String(c.id) === String(form.value.school_class_id))?.name || '—'
 )
 
+// ── Defined Primary Fees (Standard 4-6 only) ────────────────────────────────
+// "Darasa la 4/5/6" — matches the class-naming convention used for primary
+// schools (see PrimaryFees.vue / primary-fee-categories backend).
+const isDefinedPrimaryClass = computed(() => /darasa\s*la\s*[456]\b/i.test(selectedClassName.value))
+
+const PRIMARY_FEE_LABEL_KEYS = {
+  day_transport_food: 'primaryFees.dayTransportFood',
+  hostel: 'primaryFees.hostel',
+  day_food_only: 'primaryFees.dayFoodOnly',
+  day_none: 'primaryFees.dayNone',
+}
+
+const primaryFeeCategories = ref([])
+const loadingPrimaryFeeCategories = ref(false)
+const selectedPrimaryFeeCategory = ref('')
+
+async function loadPrimaryFeeCategories() {
+  loadingPrimaryFeeCategories.value = true
+  try {
+    const { data } = await api.get('/primary-fee-categories')
+    primaryFeeCategories.value = data.categories || []
+  } catch {
+    primaryFeeCategories.value = []
+  } finally {
+    loadingPrimaryFeeCategories.value = false
+  }
+}
+
+function selectPrimaryFeeCategory(category) {
+  selectedPrimaryFeeCategory.value = category
+  const row = primaryFeeCategories.value.find(c => c.category === category)
+  if (row) {
+    form.value.total_tuition_fee = Math.round((row.amount_cents || 0) / 100)
+  }
+}
+
+watch(isDefinedPrimaryClass, (isDefined) => {
+  if (isDefined && !primaryFeeCategories.value.length) {
+    loadPrimaryFeeCategories()
+  }
+  if (!isDefined) {
+    selectedPrimaryFeeCategory.value = ''
+  }
+}, { immediate: true })
+
 // ── Photo ─────────────────────────────────────────────────────────────────────
 function onPhotoChange(e) {
   const file = e.target.files[0]
@@ -1925,6 +1997,7 @@ function resetForm() {
   hasAllergies.value = false
   currentDraft.value = null
   draftSaved.value   = false
+  selectedPrimaryFeeCategory.value = ''
 }
 
 const showResumeDialog = ref(false)

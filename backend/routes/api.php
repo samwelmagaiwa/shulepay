@@ -16,6 +16,7 @@ use App\Http\Controllers\Accountant\PaymentController;
 use App\Http\Controllers\Accountant\PaymentPromiseController;
 use App\Http\Controllers\Accountant\PayrollController;
 use App\Http\Controllers\Accountant\PettyCashController;
+use App\Http\Controllers\Accountant\PrimaryFeeCategoryController;
 use App\Http\Controllers\Accountant\ReceiptController;
 use App\Http\Controllers\Accountant\RefundController;
 use App\Http\Controllers\Accountant\RolloverController;
@@ -152,6 +153,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Fee Structures
         Route::apiResource('fee-structures', FeeStructureController::class);
+
+        // Defined Primary Fees (Std 4-6 category amounts)
+        Route::get('primary-fee-categories', [PrimaryFeeCategoryController::class, 'index']);
+        Route::put('primary-fee-categories', [PrimaryFeeCategoryController::class, 'update']);
 
         // Discounts
         Route::apiResource('discounts', DiscountController::class)->only(['index', 'store', 'destroy']);
