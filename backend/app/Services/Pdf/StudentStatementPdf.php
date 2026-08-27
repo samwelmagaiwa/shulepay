@@ -42,6 +42,12 @@ class StudentStatementPdf
                     'paid_cents' => $paid,
                     'balance_cents' => max(0, $gross - $paid),
                     'status' => $inv->status instanceof \BackedEnum ? $inv->status->value : $inv->status,
+                    // Only shown when a term settled through exactly one payment — a
+                    // term split across several payments (different methods) has no
+                    // single "method" that would be accurate to print.
+                    'method_label' => $inv->payments->count() === 1
+                        ? $inv->payments->first()->method?->label()
+                        : null,
                     'payments' => $inv->payments->map(fn ($p) => (object) [
                         'paid_at' => $p->paid_at,
                         'amount_cents' => $p->amount_cents->cents(),
@@ -65,9 +71,15 @@ class StudentStatementPdf
         $appTagline = $lh['tagline'];
         $logoBase64 = $lh['logo'];
 
+        // A statement covers many invoices/receipts at once, so it has no single
+        // receipt number of its own — this reference lets one printout still be
+        // identified/reissued later, the same way a receipt number does.
+        $statementNumber = 'STM-'.($enrollment?->admission_number ?: $student->id).'-'.now()->format('Ymd');
+
         return Pdf::loadView('pdf.student_statement', [
             'student' => $student,
             'enrollment' => $enrollment,
+            'statementNumber' => $statementNumber,
             'invoices' => $invoices,
             'totalInvoiced' => $totalInvoiced,
             'totalPaid' => $totalPaid,

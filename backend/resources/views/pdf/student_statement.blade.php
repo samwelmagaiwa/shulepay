@@ -57,6 +57,8 @@
   .status-paid    { color: #007f3e; font-weight: bold; }
   .status-partial { color: #b45309; font-weight: bold; }
   .status-unpaid  { color: #c0292b; font-weight: bold; }
+  .row-meta { display: block; font-size: 9.5px; color: #777; margin-top: 1px; }
+  table.items.dense .row-meta { display: inline; margin-left: 4px; }
 
   /* Applied once a student has enough invoices that full-detail rows would
      push the totals onto a second page. */
@@ -85,9 +87,20 @@
     'compact' => true,
   ])
 
-  <div class="center" style="margin-top:6px;">
-    <div class="sub">{{ now()->format('d/m/Y H:i') }}</div>
-  </div>
+  {{-- Statement reference and issue date, boxed the same way a single-payment
+       receipt boxes its receipt number — this document covers many invoices/
+       receipts at once, so it carries its own reference instead of any one
+       receipt's number. --}}
+  <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+    <tr>
+      <td style="font-size:10px; color:#666; letter-spacing:1px;">TAARIFA NA.</td>
+      <td style="font-size:10px; color:#666; text-align:right; letter-spacing:1px;">TAREHE</td>
+    </tr>
+    <tr>
+      <td style="font-size:16px; font-weight:bold; color:#007f3e;">{{ $statementNumber }}</td>
+      <td style="font-size:13px; text-align:right; font-weight:bold;">{{ now()->format('d/m/Y H:i') }}</td>
+    </tr>
+  </table>
 
   <div class="hr"></div>
 
@@ -104,6 +117,12 @@
     <tr>
       <td class="k">Darasa</td>
       <td class="v">{{ $enrollment->schoolClass->name }}</td>
+    </tr>
+    @endif
+    @if($enrollment?->academicYear)
+    <tr>
+      <td class="k">Mwaka wa Masomo</td>
+      <td class="v">{{ $enrollment->academicYear->name }}</td>
     </tr>
     @endif
     @if($guardian)
@@ -140,6 +159,10 @@
           {{ $inv->term ?: '—' }}
           <span class="status-{{ $inv->status }}"{!! $dense ? '' : ' style="display:block"' !!}>
             {{ ['paid' => 'Amelipa', 'partial' => 'Amelipa Kiasi', 'unpaid' => 'Hajalipa'][$inv->status] ?? $inv->status }}
+          </span>
+          <span class="row-meta">
+            Ankara: {{ $inv->invoice_number ?: '—' }}
+            @if($inv->method_label) &middot; {{ $inv->method_label }} @endif
           </span>
         </td>
         <td class="amt">{{ $money($inv->gross_cents) }}</td>
