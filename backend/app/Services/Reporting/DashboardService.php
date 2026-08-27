@@ -63,6 +63,14 @@ class DashboardService
         // ── Paid invoices total amount (1 query) ───────────────────────────────
         $paidAmountCents = (clone $invoiceQ)->where('status', 'paid')->sum('total_amount_cents');
 
+        // ── Paid + partial invoices: count and actual amount collected (1 query) ─
+        // Uses payments actually received rather than invoice totals, since a
+        // partial invoice's total_amount_cents overstates what's been collected.
+        $paidPartialCount = (int) ($statusCounts['paid'] ?? 0) + (int) ($statusCounts['partial'] ?? 0);
+        $paidPartialAmountCents = (clone $paymentQ)
+            ->whereHas('invoice', fn ($q) => $q->whereIn('status', ['paid', 'partial']))
+            ->sum('amount_cents');
+
         // ── Outstanding balance — DB-level aggregation (1 query) ──────────────
         $totalOutstanding = (clone $invoiceQ)
             ->whereIn('status', ['unpaid', 'partial'])
@@ -262,6 +270,8 @@ class DashboardService
             'yesterday_collections' => (int) $yesterdayCollections,
             'paid_invoices' => (int) ($statusCounts['paid'] ?? 0),
             'paid_amount_cents' => (int) $paidAmountCents,
+            'paid_partial_invoices' => $paidPartialCount,
+            'paid_partial_amount_cents' => (int) $paidPartialAmountCents,
             'partial_invoices' => (int) ($statusCounts['partial'] ?? 0),
             'unpaid_invoices' => (int) ($statusCounts['unpaid'] ?? 0),
             'weekly_trend' => $weeklyTrend,
