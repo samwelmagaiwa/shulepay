@@ -589,10 +589,15 @@
               <label class="form-label fw-bold small mb-2 d-flex align-items-center gap-2">
                 💵 {{ t('students.totalTuitionFee') || 'Total Tuition Fee' }} <span class="text-danger">*</span>
               </label>
-              <div class="text-muted small mb-2" style="font-size:.7rem;">{{ t('students.totalTuitionFeeHint') || 'Define the total tuition fee if no fee structure exists' }}</div>
+              <div class="text-muted small mb-2" style="font-size:.7rem;">
+                {{ isDefinedPrimaryClass
+                  ? t('primaryFees.totalTuitionFeeLockedHint')
+                  : (t('students.totalTuitionFeeHint') || 'Define the total tuition fee if no fee structure exists') }}
+              </div>
               <CFormInput
                 type="text"
                 inputmode="numeric"
+                :readonly="isDefinedPrimaryClass"
                 :value="formatAmount(form.total_tuition_fee || 0)"
                 @input="form.total_tuition_fee = parseAmount($event.target.value)"
                 placeholder="0"

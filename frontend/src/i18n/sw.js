@@ -696,6 +696,7 @@ export default {
     dayNoneHint: 'Mwanafunzi wa kutwa asiyetumia huduma yoyote ya shule',
     selectCategory: 'Chagua aina ya huduma',
     selectCategoryHint: 'Darasa la 4–6 tu — chagua aina ya huduma ili ada ijae kiotomatiki',
+    totalTuitionFeeLockedHint: 'Imefungwa kwa Darasa la 4–6 — chagua aina ya huduma hapo juu ili kuweka kiasi hiki',
   },
   guardians: {
     title:       'Walezi',

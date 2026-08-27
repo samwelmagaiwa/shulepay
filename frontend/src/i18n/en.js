@@ -696,6 +696,7 @@ export default {
     dayNoneHint: 'Day scholar using no school services at all',
     selectCategory: 'Select service category',
     selectCategoryHint: 'Standard 4–6 only — pick the service category to auto-fill the tuition fee',
+    totalTuitionFeeLockedHint: 'Locked for Standard 4–6 — pick a service category above to set this amount',
   },
   guardians: {
     title:       'Guardians',
