@@ -147,10 +147,9 @@
               {{ t('invoices.payNow') }}
             </CButton>
             <CButton v-for="r in receiptsFor(inv)" :key="r.id" size="sm" color="success" variant="outline"
-                     @click="printReceipt(r.id)" :disabled="printingReceiptId === r.id"
+                     @click="openReceipt({ ...r, student_name: inv.student?.full_name })"
                      style="min-height:44px;">
-              <CSpinner v-if="printingReceiptId === r.id" size="sm" class="me-1" />
-              <span v-else>🖨 </span>{{ t('payments.printReceipt') }}
+              🖨 {{ t('payments.printReceipt') }}
               <span v-if="receiptsFor(inv).length > 1" class="small ms-1">{{ formatMoney(r.amount_cents) }}</span>
             </CButton>
           </div>
@@ -183,7 +182,14 @@
                   <!-- Well-designed dropdown: a student's other invoices stay hidden
                        here until this toggle is opened — keeps one row per student
                        instead of one row per term. -->
-                  <CDropdown v-if="group.others.length" variant="btn-group" class="d-inline-block ms-1">
+                  <!-- teleport: the menu is rendered into <body> instead of inside
+                       .table-responsive. CSS alone cannot fix this — per the overflow
+                       spec, when one axis is `visible` and the other is not, the
+                       `visible` one computes to `auto`, so `overflow-y: visible` on a
+                       horizontally scrolling wrapper is silently ignored and the menu
+                       stays clipped no matter how high its z-index. -->
+                  <CDropdown v-if="group.others.length" variant="btn-group" class="d-inline-block ms-1"
+                             teleport>
                     <CDropdownToggle size="sm" color="secondary" variant="outline" style="min-height:26px; padding:.1rem .4rem; font-size:.75rem;">
                       +{{ group.others.length }} {{ t('invoices.moreInvoices') }}
                     </CDropdownToggle>
@@ -235,11 +241,9 @@
                          terms' debts, payments made, and remaining balance — on one
                          printout, not just group.primary's own invoice. -->
                     <CButton size="sm" color="success" variant="outline"
-                             @click="printStatement(group.studentId)"
-                             :disabled="printingStatementFor === group.studentId"
+                             @click="openStudentStatement(group.primary)"
                              :title="t('invoices.printAllReceipt')" style="min-height:36px; min-width:40px;">
-                      <CSpinner v-if="printingStatementFor === group.studentId" size="sm" />
-                      <span v-else>🖨</span>
+                      🖨
                     </CButton>
                   </div>
                 </CTableDataCell>
@@ -273,6 +277,15 @@
     </div>
 
     <!-- Payment Modal -->
+    <ReceiptViewerModal
+      :visible="viewer.visible"
+      :src="viewer.src"
+      :title="viewer.title"
+      :subtitle="viewer.subtitle"
+      :filename="viewer.filename"
+      @close="viewer.visible = false"
+    />
+
     <LipiaModal
       :visible="showPayModal"
       :invoice="selectedInvoice"
@@ -311,11 +324,11 @@ import { useSchoolsStore }  from '@/stores/schools'
 import { useSchoolStore }   from '@/stores/school'
 import StatusBadge           from '@/components/StatusBadge.vue'
 import LipiaModal            from '@/components/LipiaModal.vue'
+import ReceiptViewerModal    from '@/components/ReceiptViewerModal.vue'
 import MwanafunziDrawer      from '@/components/MwanafunziDrawer.vue'
 import GenerateInvoiceModal  from '@/components/GenerateInvoiceModal.vue'
 import SmsBlastModal         from '@/components/SmsBlastModal.vue'
 import api                   from '@/services/api'
-import { printReceipt as printReceiptPdf, printStudentStatement as printStudentStatementPdf, cleanupReceiptFrame } from '@/utils/receipt'
 
 const { t } = useI18n()
 const invoicesStore = useInvoicesStore()
@@ -449,39 +462,37 @@ function receiptsFor(inv) {
     }))
 }
 
-const printingReceiptId = ref(null)
 const receiptError = ref('')
 
-async function printReceipt(receiptId) {
-  if (!receiptId) return
-  printingReceiptId.value = receiptId
+// Receipt preview — opens inside the app rather than firing the browser print
+// dialog blind, so the user can check the document before printing or saving.
+const viewer = ref({ visible: false, src: '', title: '', subtitle: '', filename: 'receipt.pdf' })
+
+function openReceipt(r) {
+  if (!r?.id) return
   receiptError.value = ''
-  try {
-    await printReceiptPdf(receiptId)
-  } catch (e) {
-    receiptError.value = e?.response?.data?.message || t('payments.receiptPrintFailed')
-  } finally {
-    printingReceiptId.value = null
+  viewer.value = {
+    visible: true,
+    src: `/receipts/${r.id}/download`,
+    title: r.receipt_number || t('payments.receipt'),
+    subtitle: r.student_name || '',
+    filename: `Risiti-${r.receipt_number || r.id}.pdf`,
   }
 }
 
-// One consolidated receipt for every invoice a student has — all terms'
-// debts, payments made, and the remaining balance on a single printout.
-const printingStatementFor = ref(null)
-async function printStatement(studentId) {
-  if (!studentId) return
-  printingStatementFor.value = studentId
+function openStudentStatement(inv) {
+  const sid = inv?.student?.id
+  if (!sid) return
   receiptError.value = ''
-  try {
-    await printStudentStatementPdf(studentId)
-  } catch (e) {
-    receiptError.value = e?.response?.data?.message || t('payments.receiptPrintFailed')
-  } finally {
-    printingStatementFor.value = null
+  viewer.value = {
+    visible: true,
+    src: `/students/${sid}/statement-receipt`,
+    title: t('invoices.consolidatedReceipt'),
+    subtitle: inv.student?.full_name || '',
+    filename: `Risiti-${inv.student?.admission_number || sid}.pdf`,
   }
 }
 
-onBeforeUnmount(cleanupReceiptFrame)
 function closePayModal() {
   showPayModal.value = false
   selectedInvoice.value = null
@@ -527,16 +538,12 @@ onMounted(async () => {
   .btn { min-height: 44px; }
 }
 
-/* The "+N more invoices" dropdown was rendering clipped/behind the table.
-   .table-responsive sets overflow-x: auto, and per spec a browser then also
-   computes overflow-y as auto (not visible) — that clips the dropdown's
-   menu vertically since its containing block is this scrollable wrapper.
-   Keeping overflow-x for the horizontal scroll but freeing overflow-y lets
-   the menu escape without losing the table's responsive scrolling. */
-:deep(.table-responsive) {
-  overflow-x: auto;
-  overflow-y: visible;
-}
+/* The "+N more invoices" menu is teleported to <body> (see the CDropdown above),
+   so it is no longer inside .table-responsive and cannot be clipped by it.
+   The earlier attempt here set `overflow-y: visible` on that wrapper, but the
+   overflow spec turns a `visible` axis into `auto` whenever the other axis is
+   not visible — so on a horizontally scrolling table it never took effect.
+   Only the stacking order still needs raising, above the sticky summary bar. */
 :deep(.dropdown-menu) {
   z-index: 1060;
 }

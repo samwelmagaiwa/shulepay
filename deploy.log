@@ -2650,3 +2650,26 @@ stacked the receipt's rows before."
 [0;36m[2026-08-27 18:33:26][0m   ShulePay — Release
 [0;36m[2026-08-27 18:33:26][0m ══════════════════════════════════════════
 [0;36m[2026-08-27 18:33:26][0m Checking working tree...
+[0;36m[2026-08-27 18:33:27][0m Files staged for commit:
+[0;36m[2026-08-27 18:33:27][0m Committing: "fix(branding): System Default showed one school's details while saving elsewhere
+
+With 'System Default (all schools)' selected, GET /branding fell through to the
+superadmin's OWN school, so the form displayed that school's name, code and
+contact details while the dropdown said system-wide. Saving then routed to
+updateSystem(), which only persists app_name, app_tagline and logo — so the
+phone, email, code and letterhead the user had typed were silently discarded
+behind a 'saved successfully' message.
+
+GET now returns system values for a superadmin who sent no school_id, matching
+how update() already routed the same request. The settings form hides the
+school-record fields on System Default and explains that those belong to an
+individual school, instead of accepting input that goes nowhere."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-27 18:33:27][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-27 18:33:33][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-27 18:44:33][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 18:44:33][0m   ShulePay — Release
+[0;36m[2026-08-27 18:44:34][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 18:44:34][0m Checking working tree...
