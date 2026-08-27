@@ -841,6 +841,8 @@ export default {
     collectionsCol: 'Collections (TZS)',
     totalPartialPaid: 'Total Partial Paid',
     debtorsColumn: 'Debtors (Terms Not Paid)',
+    debtorsCount: '{count} debtors',
+    paginationInfo: 'Showing {from}-{to} of {total}',
     paymentCount: 'Payment Count',
     daysOverdue:  'Days Overdue',
     agingStatus:  'Aging Status',

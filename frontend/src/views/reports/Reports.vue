@@ -148,13 +148,29 @@
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              <CTableRow v-for="row in colRows" :key="row.date">
+              <CTableRow v-for="row in pagedColRows" :key="row.date">
                 <CTableDataCell>{{ row.date }}</CTableDataCell>
                 <CTableDataCell class="fw-semibold text-success">{{ formatTZS(row.amount_cents) }}</CTableDataCell>
                 <CTableDataCell class="fw-semibold text-danger">{{ formatTZS(row.total_debt_cents) }}</CTableDataCell>
-                <CTableDataCell class="d-none d-lg-table-cell small">
+                <CTableDataCell class="d-none d-lg-table-cell small" style="position:relative; min-width:180px;">
                   <div v-if="!row.debtors || !row.debtors.length" class="text-muted">—</div>
-                  <div v-for="(d, i) in row.debtors" :key="i">{{ d }}</div>
+                  <div v-else-if="row.debtors.length <= 1">{{ row.debtors[0] }}</div>
+                  <div v-else class="no-print">
+                    <button
+                      type="button"
+                      class="debtors-toggle-btn"
+                      @click="toggleDebtorsDropdown(row.date)"
+                    >
+                      {{ t('reports.debtorsCount', { count: row.debtors.length }) }}
+                      <span class="ms-1">{{ openDebtorsRow === row.date ? '▲' : '▼' }}</span>
+                    </button>
+                    <div v-if="openDebtorsRow === row.date" class="debtors-dropdown">
+                      <div v-for="(d, i) in row.debtors" :key="i" class="debtors-dropdown-item">{{ d }}</div>
+                    </div>
+                  </div>
+                  <div v-if="row.debtors.length > 1" class="print-only">
+                    <div v-for="(d, i) in row.debtors" :key="i">{{ d }}</div>
+                  </div>
                 </CTableDataCell>
                 <CTableDataCell class="fw-semibold text-warning">{{ formatTZS(row.total_partial_paid_cents) }}</CTableDataCell>
                 <CTableDataCell class="d-none d-md-table-cell">{{ row.count }}</CTableDataCell>
@@ -164,6 +180,21 @@
               </CTableRow>
             </CTableBody>
           </CTable>
+
+          <!-- Pagination -->
+          <div v-if="colRows.length > colPageSize" class="d-flex align-items-center justify-content-between gap-2 mt-2 no-print">
+            <div class="small text-muted">
+              {{ t('reports.paginationInfo', { from: colPageFrom, to: colPageTo, total: colRows.length }) }}
+            </div>
+            <div class="d-flex gap-1">
+              <CButton size="sm" color="secondary" variant="outline" :disabled="colPage === 1" @click="colPage--">
+                {{ t('common.previous', 'Previous') }}
+              </CButton>
+              <CButton size="sm" color="secondary" variant="outline" :disabled="colPage === colTotalPages" @click="colPage++">
+                {{ t('common.next', 'Next') }}
+              </CButton>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -389,6 +420,21 @@ const tabs = computed(() => [
 const loadingCol = ref(false)
 const colRows = ref([])
 const colStats = ref({})
+const colPage = ref(1)
+const colPageSize = 10
+const colTotalPages = computed(() => Math.max(1, Math.ceil(colRows.value.length / colPageSize)))
+const pagedColRows = computed(() => {
+  const start = (colPage.value - 1) * colPageSize
+  return colRows.value.slice(start, start + colPageSize)
+})
+const colPageFrom = computed(() => colRows.value.length ? (colPage.value - 1) * colPageSize + 1 : 0)
+const colPageTo = computed(() => Math.min(colPage.value * colPageSize, colRows.value.length))
+watch(colPage, (p) => { if (p < 1) colPage.value = 1; if (p > colTotalPages.value) colPage.value = colTotalPages.value })
+
+const openDebtorsRow = ref(null)
+const toggleDebtorsDropdown = (date) => {
+  openDebtorsRow.value = openDebtorsRow.value === date ? null : date
+}
 const byDiscountType = ref([])
 const bySponsorshipType = ref([])
 const discountTypeLabel = (type) => t(`reports.discountTypes.${type}`, type)
@@ -475,6 +521,8 @@ function agingColor(days) {
 
 async function loadCollections() {
   loadingCol.value = true
+  colPage.value = 1
+  openDebtorsRow.value = null
   try {
     const { data } = await api.get('/reports/collections', {
       params: { from: colFilters.value.date_from, to: colFilters.value.date_to },
@@ -607,6 +655,43 @@ onMounted(async () => { try { await loadCollections() } catch {} })
 
 <style>
 .print-only { display: none; }
+
+.debtors-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.debtors-toggle-btn:hover { background: #fee2e2; }
+
+.debtors-dropdown {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  padding: 6px 0;
+  min-width: 260px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.debtors-dropdown-item {
+  padding: 5px 12px;
+  font-size: .8rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+.debtors-dropdown-item:last-child { border-bottom: none; }
 
 @media print {
   /* Hide everything except the print area. #print-area is nested several

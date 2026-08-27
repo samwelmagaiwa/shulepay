@@ -841,6 +841,8 @@ export default {
     collectionsCol: 'Makusanyo (TZS)',
     totalPartialPaid: 'Jumla ya Malipo ya Sehemu',
     debtorsColumn: 'Wenye Madeni (Muhula Ambao Haujalipwa)',
+    debtorsCount: 'wadaiwa {count}',
+    paginationInfo: 'Inaonyesha {from}-{to} kati ya {total}',
     paymentCount: 'Idadi ya Malipo',
     daysOverdue:  'Siku (Zimepita)',
     agingStatus:  'Hali ya Umri',
