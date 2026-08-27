@@ -464,7 +464,8 @@
       "Bash(ssh root@169.58.188.122 \"docker inspect shulepay_backend --format '{{.Created}}' && docker inspect shulepay_backend --format '{{.State.StartedAt}}'\")",
       "Bash(ssh root@169.58.188.122 'curl -s -w '\\\\''\\\\nHTTP:%{http_code}\\\\n'\\\\'' '\\\\''https://magrethschools.sc.tz/api/reports/collections?from=2026-01-01&to=2026-12-31'\\\\'' -H '\\\\''Authorization: Bearer 59|W7Ylr0cFKf4Oc04MoWNuKgBWBVbQ6WVnsphSGTexd89c802f'\\\\'' -H '\\\\''X-School-Id: 2'\\\\'' -H '\\\\''Accept: application/json'\\\\''')",
       "Bash(ssh root@169.58.188.122 'curl -s -w '\\\\''\\\\nHTTP:%{http_code}\\\\n'\\\\'' '\\\\''https://magrethschools.sc.tz/api/reports/debtor-aging'\\\\'' -H '\\\\''Authorization: Bearer 59|W7Ylr0cFKf4Oc04MoWNuKgBWBVbQ6WVnsphSGTexd89c802f'\\\\'' -H '\\\\''X-School-Id: 2'\\\\'' -H '\\\\''Accept: application/json'\\\\''')",
-      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend tail -5 storage/logs/laravel.log | grep -A5 ERROR\")"
+      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend tail -5 storage/logs/laravel.log | grep -A5 ERROR\")",
+      "Bash(bash deploy.sh release \"fix\\(reports\\): chart canvases stuck at 300x150, leaving a large empty gap\")"
     ]
   }
 }
