@@ -52,7 +52,7 @@
   <tr>
     {{-- Left: how to reach the school --}}
     <td style="width:35%; vertical-align:middle; text-align:left;
-               font-size:{{ $px(8.5) }}; color:#444; line-height:1.55;">
+               font-size:{{ $px(11) }}; color:#444; line-height:1.55;">
       @foreach($lh['phones'] as $i => $phone)
         <div>{{ $i === 0 ? 'Tel: ' : '' }}{{ $phone }}</div>
       @endforeach
@@ -74,7 +74,7 @@
 
     {{-- Right: where the school is --}}
     <td style="width:35%; vertical-align:middle; text-align:right;
-               font-size:{{ $px(8.5) }}; color:#444; line-height:1.55;">
+               font-size:{{ $px(11) }}; color:#444; line-height:1.55;">
       @foreach($lh['address_lines'] as $line)
         <div>{{ $line }}</div>
       @endforeach
