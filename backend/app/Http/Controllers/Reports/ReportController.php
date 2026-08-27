@@ -233,11 +233,15 @@ class ReportController extends Controller
             ->get()
             ->keyBy('type');
 
-        $byDiscountType = array_map(fn ($type) => [
-            'type' => $type,
-            'count' => (int) ($discountRows[$type]->cnt ?? 0),
-            'amount_cents' => (int) ($discountRows[$type]->getRawOriginal('amount_cents') ?? 0),
-        ], $discountTypes);
+        $byDiscountType = array_map(function ($type) use ($discountRows) {
+            $row = $discountRows[$type] ?? null;
+
+            return [
+                'type' => $type,
+                'count' => $row ? (int) $row->cnt : 0,
+                'amount_cents' => $row ? (int) $row->getRawOriginal('amount_cents') : 0,
+            ];
+        }, $discountTypes);
 
         // ── Sponsorships by type (half / full / full_paid) ─────────────────────
         // Counted off active enrollments (a student can only be actively
@@ -261,11 +265,15 @@ class ReportController extends Controller
             ->where('method', 'sponsor')
             ->sum('amount_cents');
 
-        $bySponsorshipType = array_map(fn ($type) => [
-            'type' => $type,
-            'count' => (int) ($sponsorshipRows[$type]->cnt ?? 0),
-            'amount_cents' => $type === 'full_paid' ? $sponsorPaidAmountCents : 0,
-        ], $sponsorshipTypes);
+        $bySponsorshipType = array_map(function ($type) use ($sponsorshipRows, $sponsorPaidAmountCents) {
+            $row = $sponsorshipRows[$type] ?? null;
+
+            return [
+                'type' => $type,
+                'count' => $row ? (int) $row->cnt : 0,
+                'amount_cents' => $type === 'full_paid' ? $sponsorPaidAmountCents : 0,
+            ];
+        }, $sponsorshipTypes);
 
         $data = [
             'summary' => [
