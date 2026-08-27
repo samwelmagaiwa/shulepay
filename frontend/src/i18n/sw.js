@@ -179,6 +179,7 @@ export default {
     // Stat cards
     cardTotalStudents:  'Wanafunzi Wote',
     cardDebt:           'Madeni',
+    printOutstandingDebts: 'Chapisha madeni kwenda Excel',
     cardNewStudents:    'Wanafunzi Wapya',
     cardSponsoredFree:  'Wamefadhiliwa Kikamilifu (Bila Malipo)',
     cardTodayCollect:   'Makusanyo ya Leo',

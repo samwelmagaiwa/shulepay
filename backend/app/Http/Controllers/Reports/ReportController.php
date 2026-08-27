@@ -818,6 +818,66 @@ class ReportController extends Controller
                 }
                 break;
 
+            case 'outstanding-debts':
+                $view = 'outstanding_debts';
+                $school = $this->resolveSchool($request);
+                $schoolId = $this->activeSchoolId($request);
+                $invoiceTable = (new Invoice)->getTable();
+                $paymentTable = (new Payment)->getTable();
+
+                $unpaidInvoices = Invoice::allSchools()
+                    ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+                    ->whereIn('status', ['unpaid', 'partial'])
+                    ->leftJoin(
+                        DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} GROUP BY invoice_id) as p"),
+                        'p.invoice_id', '=', "{$invoiceTable}.id"
+                    )
+                    ->select("{$invoiceTable}.*", DB::raw("({$invoiceTable}.total_amount_cents - COALESCE(p.paid_sum, 0)) as balance_cents"))
+                    ->with(['student.guardians', 'term'])
+                    ->get();
+
+                $byStudent = [];
+                foreach ($unpaidInvoices as $inv) {
+                    $student = $inv->student;
+                    if (! $student) {
+                        continue;
+                    }
+                    $sid = $student->id;
+                    if (! isset($byStudent[$sid])) {
+                        $guardian = $student->guardians->firstWhere('pivot.is_primary', true) ?? $student->guardians->first();
+                        $byStudent[$sid] = [
+                            'student_name' => $student->fullName(),
+                            'guardian_name' => $guardian ? trim($guardian->first_name.' '.$guardian->last_name) : '',
+                            'guardian_phone' => $guardian->phone ?? '',
+                            'village_street' => $student->street ?: $student->address ?: '',
+                            'debt_cents' => 0,
+                            'terms' => [],
+                        ];
+                    }
+                    $byStudent[$sid]['debt_cents'] += (int) $inv->balance_cents;
+                    if ($inv->term && ! in_array($inv->term->name, $byStudent[$sid]['terms'], true)) {
+                        $byStudent[$sid]['terms'][] = $inv->term->name;
+                    }
+                }
+
+                $report = ['rows' => array_values($byStudent)];
+                $data = compact('report', 'school');
+
+                if ($forCsv) {
+                    $csvHeaders = ['Student Name', 'Parent/Guardian Name', 'Parent Phone', 'Village/Street', 'Debt Amount (TZS)', 'Terms Not Paid'];
+                    foreach ($byStudent as $r) {
+                        $csvRows[] = [
+                            $r['student_name'],
+                            $r['guardian_name'],
+                            $r['guardian_phone'],
+                            $r['village_street'],
+                            round($r['debt_cents'] / 100),
+                            implode(', ', $r['terms']),
+                        ];
+                    }
+                }
+                break;
+
             case 'income-statement':
                 $report = $this->incomeStatement($request)->getData(true);
                 $view = 'income_statement';

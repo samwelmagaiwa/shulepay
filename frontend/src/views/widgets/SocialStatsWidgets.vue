@@ -15,10 +15,12 @@ import {
   cilChevronBottom,
   cilChevronTop,
   cilInfo,
+  cilPrint,
 } from '@coreui/icons'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useI18n } from 'vue-i18n'
 import { ref, computed, watch } from 'vue'
+import api from '@/services/api'
 
 const { t } = useI18n()
 
@@ -73,6 +75,27 @@ watch(
   },
   { deep: true },
 )
+
+// ── Outstanding debts → Excel export ───────────────────────────────────────
+const isExportingDebts = ref(false)
+const exportOutstandingDebts = async () => {
+  isExportingDebts.value = true
+  try {
+    const response = await api.get('/reports/outstanding-debts/excel', { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `outstanding_debts_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('exportOutstandingDebts error', e)
+  } finally {
+    isExportingDebts.value = false
+  }
+}
 
 // ── Legacy pending list (kept to avoid breaking other callers) ────────────
 const showPendingList = ref(false)
@@ -151,6 +174,16 @@ const fetchPendingPatients = () => {}
               </div>
               <span class="stat-label">{{ t('dashboard.cardDebt') }}</span>
             </div>
+            <button
+              type="button"
+              class="stat-print-btn"
+              :title="t('dashboard.printOutstandingDebts', 'Print outstanding debts to Excel')"
+              :disabled="isExportingDebts"
+              @click.stop="exportOutstandingDebts"
+            >
+              <span v-if="isExportingDebts" class="spinner-border spinner-border-sm" style="width:0.9rem;height:0.9rem;border-width:2px;"></span>
+              <CIcon v-else :icon="cilPrint" size="sm" style="color:#f43f5e" />
+            </button>
           </div>
           <div
             v-if="dashboard.compLabel"
@@ -231,7 +264,7 @@ const fetchPendingPatients = () => {}
             </div>
             <div class="stat-main-info">
               <h3 class="stat-value" style="color: #10b981">
-                {{ getValue('consulted') }}
+                {{ getValue('consulted') }} | TZS {{ getValue('consulted_amount') }}
               </h3>
               <span class="stat-label">{{ t('dashboard.cardPaidInvoices') }}</span>
             </div>
@@ -328,11 +361,37 @@ const fetchPendingPatients = () => {}
 }
 
 .stat-value {
-  font-size: 1.5rem;
+  font-size: clamp(0.95rem, 1.6vw, 1.5rem);
   font-weight: 850;
   margin-bottom: 0;
   line-height: 1.1;
   word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.stat-print-btn {
+  margin-left: auto;
+  align-self: flex-start;
+  background: rgba(244, 63, 94, 0.1);
+  border: none;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.stat-print-btn:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.2);
+}
+
+.stat-print-btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .stat-label {

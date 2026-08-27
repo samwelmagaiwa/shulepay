@@ -179,6 +179,7 @@ export default {
     // Stat cards
     cardTotalStudents:  'All Students',
     cardDebt:           'Outstanding Debt',
+    printOutstandingDebts: 'Print outstanding debts to Excel',
     cardNewStudents:    'New Students',
     cardSponsoredFree:  'Fully Sponsored (Free)',
     cardTodayCollect:   "Today's Collections",

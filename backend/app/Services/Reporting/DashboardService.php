@@ -60,6 +60,9 @@ class DashboardService
             ->groupBy('status')
             ->pluck('cnt', 'status');
 
+        // ── Paid invoices total amount (1 query) ───────────────────────────────
+        $paidAmountCents = (clone $invoiceQ)->where('status', 'paid')->sum('total_amount_cents');
+
         // ── Outstanding balance — DB-level aggregation (1 query) ──────────────
         $totalOutstanding = (clone $invoiceQ)
             ->whereIn('status', ['unpaid', 'partial'])
@@ -258,6 +261,7 @@ class DashboardService
             'today_collections' => (int) $todayCollections,
             'yesterday_collections' => (int) $yesterdayCollections,
             'paid_invoices' => (int) ($statusCounts['paid'] ?? 0),
+            'paid_amount_cents' => (int) $paidAmountCents,
             'partial_invoices' => (int) ($statusCounts['partial'] ?? 0),
             'unpaid_invoices' => (int) ($statusCounts['unpaid'] ?? 0),
             'weekly_trend' => $weeklyTrend,

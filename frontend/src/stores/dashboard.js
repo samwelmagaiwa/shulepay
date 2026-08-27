@@ -67,6 +67,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       new_visits:       s.sponsored_free_count || 0,
       followups:        Math.round((s.today_collections || 0) / 100), // TZS
       consulted:        s.paid_invoices    || 0,
+      consulted_amount: Math.round((s.paid_amount_cents || 0) / 100), // TZS
       pending:          (s.unpaid_invoices || 0) + (s.partial_invoices || 0),
     }
   })
