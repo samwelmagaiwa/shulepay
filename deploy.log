@@ -2697,3 +2697,30 @@ the document stays reachable on short viewports."
 [0;36m[2026-08-27 19:03:59][0m   ShulePay — Release
 [0;36m[2026-08-27 19:03:59][0m ══════════════════════════════════════════
 [0;36m[2026-08-27 19:03:59][0m Checking working tree...
+[0;36m[2026-08-27 19:04:00][0m Files staged for commit:
+[0;36m[2026-08-27 19:04:00][0m Committing: "fix(receipts): CSP blocked the PDF preview; move documents to A4
+
+The viewer showed 'This content is blocked' on production. The nginx CSP declared
+no frame-src, so it fell back to default-src 'self' — and a blob: URL is not
+'self'. (img-src already allowed blob:, which is why blob images worked and
+frames did not.) Adds frame-src and object-src 'self' blob:. blob: URLs are
+minted by this origin's own script and cannot be set remotely; frame-ancestors
+'none' still prevents the app being embedded elsewhere.
+
+Receipts and student statements move from A5 to A4, the paper the school prints
+on — an A5 page sent to an A4 tray prints as a small block in one corner. The
+receipt layout is rescaled for the wider sheet and the letterhead is no longer
+rendered in compact mode.
+
+Re-measured the single-page guarantee after the change: the first A4 attempt
+overflowed from six fee lines because the larger type and padding ate the extra
+height. Spacing trimmed and verified single-page from 1 to 200 lines."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-27 19:04:07][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-27 19:04:13][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-27 19:10:25][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 19:10:25][0m   ShulePay — Release
+[0;36m[2026-08-27 19:10:25][0m ══════════════════════════════════════════
+[0;36m[2026-08-27 19:10:25][0m Checking working tree...
