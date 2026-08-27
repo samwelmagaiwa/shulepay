@@ -6,13 +6,14 @@ use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class OutstandingDebtsExport implements FromArray, ShouldAutoSize, WithEvents, WithHeadings, WithStyles
+class OutstandingDebtsExport implements FromArray, ShouldAutoSize, WithEvents, WithHeadings, WithStrictNullComparison, WithStyles
 {
     /**
      * @param  array<int, array{student_name:string, student_class:string, guardian_name:string, guardian_phone:string, village_street:string, debt_cents:int, terms:array<int,string>}>  $rows

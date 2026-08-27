@@ -5,6 +5,7 @@ namespace App\Exports;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -13,8 +14,13 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  * Reusable .xlsx export for any of the Reports page tabs — takes plain
  * headers + rows (the same shape already built for the CSV download) and
  * renders a styled header row plus an optional bold "Total" row at the end.
+ *
+ * WithStrictNullComparison matters here: without it, Laravel-Excel writes
+ * cells with a loose `$value == null` check, and PHP considers `0 == null`
+ * true — every legitimate TZS 0 / zero-count cell silently disappears
+ * instead of rendering as "0".
  */
-class GenericArrayExport implements FromArray, ShouldAutoSize, WithHeadings, WithStyles
+class GenericArrayExport implements FromArray, ShouldAutoSize, WithHeadings, WithStrictNullComparison, WithStyles
 {
     /**
      * @param  array<int,string>  $headers
