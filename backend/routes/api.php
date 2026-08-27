@@ -242,6 +242,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('outstanding-debts/xlsx', [ReportController::class, 'exportOutstandingDebtsXlsx']);
             Route::get('{type}/pdf', [ReportController::class, 'exportPdf']);
             Route::get('{type}/excel', [ReportController::class, 'exportExcel']);
+            Route::get('{type}/xlsx', [ReportController::class, 'exportReportXlsx']);
         });
 
         // ── Phase 4: SMS ──────────────────────────────────────────

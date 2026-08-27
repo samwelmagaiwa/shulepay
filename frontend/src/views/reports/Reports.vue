@@ -34,6 +34,13 @@
           </CButton>
         </template>
 
+        <!-- Export Excel Button -->
+        <CButton color="success" size="sm" variant="outline" :disabled="isExportingExcel" @click="exportExcel">
+          <CSpinner v-if="isExportingExcel" size="sm" class="me-1" />
+          <CIcon v-else icon="cilCloudDownload" class="me-1" />
+          {{ t('reports.exportExcel') }}
+        </CButton>
+
         <!-- Print Button -->
         <CButton color="secondary" size="sm" variant="outline" @click="printReport">
           <CIcon icon="cilPrint" class="me-1" /> {{ t('reports.print') }}
@@ -147,7 +154,10 @@
               <CTableRow>
                 <CTableHeaderCell>{{ t('reports.student') }}</CTableHeaderCell>
                 <CTableHeaderCell class="d-none d-md-table-cell">{{ t('common.class') }}</CTableHeaderCell>
+                <CTableHeaderCell class="d-none d-lg-table-cell">{{ t('reports.guardian') }}</CTableHeaderCell>
+                <CTableHeaderCell class="d-none d-lg-table-cell">{{ t('reports.village') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('invoices.balance') }}</CTableHeaderCell>
+                <CTableHeaderCell class="d-none d-md-table-cell">{{ t('reports.termsNotPaid') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.daysOverdue') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.agingStatus') }}</CTableHeaderCell>
               </CTableRow>
@@ -159,14 +169,20 @@
                   <div class="text-muted small">{{ d.admission_number }}</div>
                 </CTableDataCell>
                 <CTableDataCell class="d-none d-md-table-cell small">{{ d.school_class }}</CTableDataCell>
+                <CTableDataCell class="d-none d-lg-table-cell small">
+                  <div>{{ d.guardian_name }}</div>
+                  <div class="text-muted">{{ d.guardian_phone }}</div>
+                </CTableDataCell>
+                <CTableDataCell class="d-none d-lg-table-cell small">{{ d.village_street }}</CTableDataCell>
                 <CTableDataCell class="fw-bold text-danger">{{ formatTZS(d.outstanding_cents) }}</CTableDataCell>
+                <CTableDataCell class="d-none d-md-table-cell small">{{ d.terms_not_paid }}</CTableDataCell>
                 <CTableDataCell class="small">{{ d.oldest_age || 0 }}</CTableDataCell>
                 <CTableDataCell>
                   <CBadge :color="agingColor(d.oldest_age)" shape="rounded-pill">{{ agingLabel(d.oldest_age) }}</CBadge>
                 </CTableDataCell>
               </CTableRow>
               <CTableRow v-if="!debtors.length">
-                <CTableDataCell colspan="5" class="text-center text-muted py-4">{{ t('reports.noData') }}</CTableDataCell>
+                <CTableDataCell colspan="8" class="text-center text-muted py-4">{{ t('reports.noData') }}</CTableDataCell>
               </CTableRow>
             </CTableBody>
           </CTable>
@@ -220,6 +236,9 @@
                 <CTableHeaderCell>{{ t('reports.classReport.invoiced') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.classReport.collected') }}</CTableHeaderCell>
                 <CTableHeaderCell class="d-none d-md-table-cell">{{ t('reports.classReport.debt') }}</CTableHeaderCell>
+                <CTableHeaderCell class="d-none d-lg-table-cell text-center">{{ t('reports.classReport.paidInv') }}</CTableHeaderCell>
+                <CTableHeaderCell class="d-none d-lg-table-cell text-center">{{ t('reports.classReport.partialInv') }}</CTableHeaderCell>
+                <CTableHeaderCell class="d-none d-lg-table-cell text-center">{{ t('reports.classReport.unpaidInv') }}</CTableHeaderCell>
                 <CTableHeaderCell class="d-none d-md-table-cell">{{ t('reports.classReport.pct') }}</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
@@ -230,6 +249,9 @@
                 <CTableDataCell>{{ formatTZS(c.total_billed_cents) }}</CTableDataCell>
                 <CTableDataCell class="text-success">{{ formatTZS(c.total_collected_cents) }}</CTableDataCell>
                 <CTableDataCell class="d-none d-md-table-cell text-danger">{{ formatTZS(c.total_outstanding_cents) }}</CTableDataCell>
+                <CTableDataCell class="d-none d-lg-table-cell text-center text-success">{{ c.paid_count || 0 }}</CTableDataCell>
+                <CTableDataCell class="d-none d-lg-table-cell text-center text-warning">{{ c.partial_count || 0 }}</CTableDataCell>
+                <CTableDataCell class="d-none d-lg-table-cell text-center text-danger">{{ c.unpaid_count || 0 }}</CTableDataCell>
                 <CTableDataCell class="d-none d-md-table-cell">
                   <div class="d-flex align-items-center gap-2">
                     <div class="progress flex-grow-1" style="height:6px;">
@@ -240,7 +262,7 @@
                 </CTableDataCell>
               </CTableRow>
               <CTableRow v-if="!classData.length">
-                <CTableDataCell colspan="6" class="text-center text-muted py-4">{{ t('reports.noData') }}</CTableDataCell>
+                <CTableDataCell colspan="9" class="text-center text-muted py-4">{{ t('reports.noData') }}</CTableDataCell>
               </CTableRow>
             </CTableBody>
           </CTable>
@@ -482,6 +504,36 @@ async function loadVsData() {
     const d = data.data || data
     vsData.value = d.rows || d || []
   } catch {} finally { loadingVs.value = false }
+}
+
+// ── Export current tab to Excel ────────────────────────────────────────────
+const isExportingExcel = ref(false)
+const reportTypeByTab = { collections: 'collections', debtors: 'debtor-aging', byclass: 'by-class', vs: 'vs' }
+
+async function exportExcel() {
+  const type = reportTypeByTab[activeTab.value]
+  if (!type) return
+  isExportingExcel.value = true
+  try {
+    const params = activeTab.value === 'collections'
+      ? { from: colFilters.value.date_from, to: colFilters.value.date_to }
+      : activeTab.value === 'vs'
+        ? { year: vsYear.value }
+        : {}
+    const response = await api.get(`/reports/${type}/xlsx`, { params, responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `${type}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('exportExcel error', e)
+  } finally {
+    isExportingExcel.value = false
+  }
 }
 
 function printReport() {

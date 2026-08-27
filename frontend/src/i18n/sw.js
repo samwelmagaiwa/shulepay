@@ -845,6 +845,10 @@ export default {
     agingStatus:  'Hali ya Umri',
     student:      'Mwanafunzi',
     invoicesShort: 'ankara',
+    exportExcel:  'Pakua Excel',
+    guardian:     'Mzazi/Mlezi',
+    village:      'Kijiji/Mtaa',
+    termsNotPaid: 'Muhula Ambao Haujalipwa',
     agingBuckets: {
       current:  'Sasa (0-30)',
       days31:   '31-60 siku',
@@ -862,6 +866,9 @@ export default {
       totalBilled: 'Jumla Iliyotozwa',
       totalCollected: 'Jumla Iliyokusanywa',
       totalDebt:   'Jumla ya Madeni',
+      paidInv:     'Amelipa',
+      partialInv:  'Kiasi',
+      unpaidInv:   'Hajalipa',
     },
     vsReport: {
       surplus:  'Ziada/Nakisi',

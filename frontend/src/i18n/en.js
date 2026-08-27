@@ -845,6 +845,10 @@ export default {
     agingStatus:  'Aging Status',
     student:      'Student',
     invoicesShort: 'invoices',
+    exportExcel:  'Export Excel',
+    guardian:     'Guardian',
+    village:      'Village/Street',
+    termsNotPaid: 'Terms Not Paid',
     agingBuckets: {
       current:  'Current (0-30)',
       days31:   '31-60 days',
@@ -862,6 +866,9 @@ export default {
       totalBilled: 'Total Billed',
       totalCollected: 'Total Collected',
       totalDebt:   'Total Debt',
+      paidInv:     'Paid',
+      partialInv:  'Partial',
+      unpaidInv:   'Unpaid',
     },
     vsReport: {
       surplus:  'Surplus/Deficit',

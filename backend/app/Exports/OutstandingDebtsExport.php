@@ -21,7 +21,7 @@ class OutstandingDebtsExport implements FromArray, ShouldAutoSize, WithEvents, W
 
     public function array(): array
     {
-        return array_map(fn (array $r) => [
+        $rows = array_map(fn (array $r) => [
             $r['student_name'],
             $r['student_class'],
             $r['guardian_name'],
@@ -30,6 +30,11 @@ class OutstandingDebtsExport implements FromArray, ShouldAutoSize, WithEvents, W
             round($r['debt_cents'] / 100),
             implode(', ', $r['terms']),
         ], $this->rows);
+
+        $totalDebt = array_sum(array_column($this->rows, 'debt_cents'));
+        $rows[] = ['TOTAL ('.count($this->rows).' debtors)', '', '', '', '', round($totalDebt / 100), ''];
+
+        return $rows;
     }
 
     public function headings(): array
@@ -44,6 +49,13 @@ class OutstandingDebtsExport implements FromArray, ShouldAutoSize, WithEvents, W
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()->setRGB('F43F5E');
         $sheet->getStyle('A1:G1')->getFont()->getColor()->setRGB('FFFFFF');
+
+        $totalRow = count($this->rows) + 2;
+        $sheet->getStyle("A{$totalRow}:G{$totalRow}")->getFont()->setBold(true);
+        $sheet->getStyle("A{$totalRow}:G{$totalRow}")->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setRGB('FEE2E2');
+        $sheet->mergeCells("A{$totalRow}:E{$totalRow}");
 
         return [];
     }

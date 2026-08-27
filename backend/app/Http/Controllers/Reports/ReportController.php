@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Reports;
 
+use App\Exports\GenericArrayExport;
 use App\Exports\OutstandingDebtsExport;
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
@@ -257,7 +258,7 @@ class ReportController extends Controller
 
         // Fetch unpaid / partial invoices with student info
         $invoices = Invoice::allSchools()
-            ->with(['student.currentEnrollment.schoolClass'])
+            ->with(['student.currentEnrollment.schoolClass', 'student.guardians', 'term'])
             ->whereIn('status', ['unpaid', 'partial'])
             ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
             ->get();
@@ -284,14 +285,19 @@ class ReportController extends Controller
 
             if (! isset($studentMap[$sid])) {
                 $enrollment = $inv->student?->currentEnrollment;
+                $guardian = $inv->student?->guardians->firstWhere('pivot.is_primary', true) ?? $inv->student?->guardians->first();
                 $studentMap[$sid] = [
                     'id' => $inv->student_id,
                     'full_name' => $inv->student?->fullName() ?? '—',
                     'admission_number' => $enrollment?->admission_number ?? '—',
                     'school_class' => $enrollment?->schoolClass?->name ?? '—',
+                    'guardian_name' => $guardian ? trim($guardian->first_name.' '.$guardian->last_name) : '—',
+                    'guardian_phone' => $guardian->phone ?? '—',
+                    'village_street' => $inv->student?->street ?: $inv->student?->address ?: '—',
                     'oldest_invoice_date' => $dueDate->toDateString(),
                     'oldest_age' => $age,
                     'outstanding_cents' => $balance,
+                    'terms_not_paid' => [],
                 ];
             } else {
                 $studentMap[$sid]['outstanding_cents'] += $balance;
@@ -299,6 +305,9 @@ class ReportController extends Controller
                     $studentMap[$sid]['oldest_age'] = $age;
                     $studentMap[$sid]['oldest_invoice_date'] = $dueDate->toDateString();
                 }
+            }
+            if ($inv->term && ! in_array($inv->term->name, $studentMap[$sid]['terms_not_paid'], true)) {
+                $studentMap[$sid]['terms_not_paid'][] = $inv->term->name;
             }
         }
 
@@ -325,9 +334,13 @@ class ReportController extends Controller
                 'full_name' => $s['full_name'],
                 'admission_number' => $s['admission_number'],
                 'school_class' => $s['school_class'],
+                'guardian_name' => $s['guardian_name'],
+                'guardian_phone' => $s['guardian_phone'],
+                'village_street' => $s['village_street'],
                 'oldest_invoice_date' => $s['oldest_invoice_date'],
                 'oldest_age' => $age,
                 'outstanding_cents' => $s['outstanding_cents'],
+                'terms_not_paid' => implode(', ', $s['terms_not_paid']),
             ];
 
             $buckets[$bucket]['count']++;
@@ -617,6 +630,9 @@ class ReportController extends Controller
                 'total_billed_cents' => (int) $billed,
                 'total_collected_cents' => (int) $collected,
                 'total_outstanding_cents' => max(0, (int) $billed - (int) $collected),
+                'paid_count' => $invoices->filter(fn (Invoice $inv) => $inv->status->value === 'paid')->count(),
+                'partial_count' => $invoices->filter(fn (Invoice $inv) => $inv->status->value === 'partial')->count(),
+                'unpaid_count' => $invoices->filter(fn (Invoice $inv) => $inv->status->value === 'unpaid')->count(),
             ];
         })->values();
 
@@ -660,10 +676,13 @@ class ReportController extends Controller
 
         $rows = [];
         for ($m = 1; $m <= 12; $m++) {
+            $collections = (int) ($collectionsByMonth[$m] ?? 0);
+            $expenses = (int) ($expensesByMonth[$m] ?? 0);
             $rows[] = [
                 'month' => $m,
-                'collections_cents' => (int) ($collectionsByMonth[$m] ?? 0),
-                'expenses_cents' => (int) ($expensesByMonth[$m] ?? 0),
+                'collections_cents' => $collections,
+                'expenses_cents' => $expenses,
+                'net_cents' => $collections - $expenses,
             ];
         }
 
@@ -774,6 +793,20 @@ class ReportController extends Controller
      * the generic exportExcel() above only produces a .csv, and the user
      * specifically asked for an actual Excel file.
      */
+    /**
+     * Real .xlsx download for any Reports page tab — the "Export Excel" button
+     * next to the Print button. Reuses the same headers/rows already built for
+     * the CSV download instead of duplicating each report's shape again.
+     */
+    public function exportReportXlsx(Request $request, string $type): BinaryFileResponse
+    {
+        [, , $csvHeaders, $csvRows] = $this->resolveReportData($request, $type, true);
+
+        $filename = $type.'_'.now()->format('Ymd_His').'.xlsx';
+
+        return Excel::download(new GenericArrayExport($csvHeaders, $csvRows), $filename);
+    }
+
     public function exportOutstandingDebtsXlsx(Request $request): BinaryFileResponse
     {
         $rows = $this->outstandingDebtsByStudent($request);
@@ -856,9 +889,58 @@ class ReportController extends Controller
                 $school = $this->resolveSchool($request);
                 $data = compact('report', 'school');
                 if ($forCsv) {
-                    $csvHeaders = ['Period', 'Amount (cents)', 'Payment Count'];
+                    $csvHeaders = ['Period', 'Collected (TZS)', 'Total Debt (TZS)', 'Total Partial Paid (TZS)', 'Payment Count'];
                     $csvRows = array_map(
-                        fn ($r) => [$r['period'], $r['amount_cents'], $r['payment_count']],
+                        fn ($r) => [
+                            $r['period'],
+                            round(($r['amount_cents'] ?? 0) / 100),
+                            round(($r['total_debt_cents'] ?? 0) / 100),
+                            round(($r['total_partial_paid_cents'] ?? 0) / 100),
+                            $r['payment_count'],
+                        ],
+                        $report['rows']
+                    );
+                }
+                break;
+
+            case 'by-class':
+                $report = $this->byClass($request)->getData(true);
+                $view = 'by_class';
+                $school = $this->resolveSchool($request);
+                $data = compact('report', 'school');
+                if ($forCsv) {
+                    $csvHeaders = ['Class', 'Students', 'Billed (TZS)', 'Collected (TZS)', 'Outstanding (TZS)', 'Paid Invoices', 'Partial Invoices', 'Unpaid Invoices'];
+                    $csvRows = array_map(
+                        fn ($r) => [
+                            $r['class_name'],
+                            $r['student_count'],
+                            round($r['total_billed_cents'] / 100),
+                            round($r['total_collected_cents'] / 100),
+                            round($r['total_outstanding_cents'] / 100),
+                            $r['paid_count'],
+                            $r['partial_count'],
+                            $r['unpaid_count'],
+                        ],
+                        $report['rows']
+                    );
+                }
+                break;
+
+            case 'vs':
+                $report = $this->expensesVsCollections($request)->getData(true);
+                $view = 'expenses_vs_collections';
+                $school = $this->resolveSchool($request);
+                $data = compact('report', 'school');
+                if ($forCsv) {
+                    $months = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                    $csvHeaders = ['Month', 'Collections (TZS)', 'Expenses (TZS)', 'Net (TZS)'];
+                    $csvRows = array_map(
+                        fn ($r) => [
+                            $months[$r['month']] ?? $r['month'],
+                            round($r['collections_cents'] / 100),
+                            round($r['expenses_cents'] / 100),
+                            round($r['net_cents'] / 100),
+                        ],
                         $report['rows']
                     );
                 }
@@ -870,15 +952,20 @@ class ReportController extends Controller
                 $school = $this->resolveSchool($request);
                 $data = compact('report', 'school');
                 if ($forCsv) {
-                    $csvHeaders = ['Full Name', 'Admission No.', 'Class', 'Oldest Invoice Date', 'Outstanding (cents)', 'Bucket'];
+                    $csvHeaders = ['Full Name', 'Admission No.', 'Class', 'Guardian Name', 'Guardian Phone', 'Village/Street', 'Oldest Invoice Date', 'Days Overdue', 'Outstanding (TZS)', 'Terms Not Paid', 'Bucket'];
                     foreach ($report['buckets'] as $bucket => $info) {
                         foreach ($info['students'] as $s) {
                             $csvRows[] = [
                                 $s['full_name'],
                                 $s['admission_number'],
                                 $s['school_class'],
+                                $s['guardian_name'],
+                                $s['guardian_phone'] !== '—' ? "'".$s['guardian_phone'] : $s['guardian_phone'],
+                                $s['village_street'],
                                 $s['oldest_invoice_date'],
-                                $s['outstanding_cents'],
+                                $s['oldest_age'],
+                                round($s['outstanding_cents'] / 100),
+                                $s['terms_not_paid'],
                                 $bucket,
                             ];
                         }
