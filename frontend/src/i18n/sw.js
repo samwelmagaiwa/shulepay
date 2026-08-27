@@ -433,6 +433,7 @@ export default {
     allFeesPaidInFull: 'Ada zote zimelipwa kikamilifu',
     annualDebtSummary: 'Muhtasari wa Deni la Mwaka',
     totalChargedFees: 'Jumla Iliyotozwa',
+    fromStep5TuitionFee: 'kutoka Jumla ya Ada ya Masomo — Hatua ya 5',
     totalPaidAmount: 'Jumla Iliyolipwa',
     outstandingBalance: 'Bakaa Inayodaiwa',
     completionRate: 'Asilimia Iliyolipwa',

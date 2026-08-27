@@ -433,6 +433,7 @@ export default {
     allFeesPaidInFull: 'All fees paid in full',
     annualDebtSummary: 'Annual Debt Summary',
     totalChargedFees: 'Total Charged',
+    fromStep5TuitionFee: 'from Step 5 Total Tuition Fee',
     totalPaidAmount: 'Total Paid',
     outstandingBalance: 'Outstanding Balance',
     completionRate: 'Paid %',

@@ -874,14 +874,14 @@
           <CRow class="g-2 mb-2">
             <CCol xs="12" sm="4">
               <label class="form-label fw-semibold mb-1">{{ t('students.academicYear') }} <span class="text-danger">*</span></label>
-              <CFormSelect v-model="entry.academic_year_id">
+              <CFormSelect v-model="entry.academic_year_id" @update:modelValue="autoFillFee(ei)">
                 <option value="">— {{ t('students.selectYear') }} —</option>
                 <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
               </CFormSelect>
             </CCol>
             <CCol xs="12" sm="4">
               <label class="form-label fw-semibold mb-1">{{ t('students.term') }} <span class="text-danger">*</span></label>
-              <CFormSelect v-model="entry.term_id">
+              <CFormSelect v-model="entry.term_id" @update:modelValue="autoFillFee(ei)">
                 <option value="">— {{ t('students.selectTerm') }} —</option>
                 <option v-for="tm in terms" :key="tm.id" :value="tm.id">{{ tm.name }}</option>
               </CFormSelect>
@@ -893,14 +893,7 @@
                 :value="formatAmount(entry.fee_amount)"
                 @input="entry.fee_amount = parseAmount($event.target.value)"
                 placeholder="0"
-                :class="{'is-invalid': errors[`payment_history.${ei}.fee_amount_cents`]}"
               />
-              <div class="invalid-feedback d-block" v-if="errors[`payment_history.${ei}.fee_amount_cents`]">
-                {{ errors[`payment_history.${ei}.fee_amount_cents`] }}
-              </div>
-              <div v-else-if="form.total_tuition_fee > 0" class="text-muted mt-1" style="font-size:.68rem;">
-                {{ t('students.termFeeCapHint', { amount: formatMoney(form.total_tuition_fee * 100) }) }}
-              </div>
             </CCol>
           </CRow>
 
@@ -951,9 +944,6 @@
             <span :class="termBalance(entry) > 0 ? 'text-danger fw-bold' : 'text-success fw-bold'">
               {{ t('common.balance') }}: {{ formatMoney(termBalance(entry)) }}
             </span>
-          </div>
-          <div v-if="errors[`payment_history.${ei}.payments_total`]" class="alert alert-danger py-1 px-2 mt-2 mb-0 small">
-            ⚠️ {{ errors[`payment_history.${ei}.payments_total`] }}
           </div>
         </div>
 
@@ -1042,6 +1032,10 @@
           </CAlert>
         </div>
 
+        <CAlert v-if="errors.payment_history_total" color="danger" class="mt-3 mb-0 small">
+          ⚠️ {{ errors.payment_history_total }}
+        </CAlert>
+
         <!-- Annual Debt Summary -->
         <CCard v-if="form.payment_history.length > 0" class="mt-4 border-0" style="background:#f0f8ff;border-left:4px solid #d32f2f!important;">
           <CCardBody class="py-3">
@@ -1053,7 +1047,10 @@
                 <div class="text-center">
                   <div class="small text-muted mb-1">💰 {{ t('students.totalChargedFees') || 'Total Charged' }}</div>
                   <div class="fw-bold text-dark" style="font-size:1.15rem;">
-                    {{ formatMoney(totalHistoryFees() * 100) }}
+                    {{ formatMoney(annualChargedCents()) }}
+                  </div>
+                  <div v-if="form.total_tuition_fee > 0" class="text-muted" style="font-size:.68rem;">
+                    {{ t('students.fromStep5TuitionFee') }}
                   </div>
                 </div>
               </CCol>
@@ -1528,11 +1525,7 @@ function defaultTermEntry() {
   return {
     academic_year_id: form.value.academic_year_id || '',
     term_id: '',
-    // Defaults to the Step 5 Total Tuition Fee — every term is expected to
-    // carry the same fixed fee, and the balance still owed for a term is
-    // meant to come from a shortfall in payments recorded below, not from
-    // typing in a smaller fee here.
-    fee_amount: form.value.total_tuition_fee || 0,
+    fee_amount: 0,
     payments: [],
   }
 }
@@ -1565,16 +1558,25 @@ function totalHistoryPaid() {
   }, 0)
 }
 
+// The Annual Debt Summary's "charged" figure is the Total Tuition Fee set in
+// Step 5 (the annual amount the terms below are a breakdown of) whenever it's
+// been filled in — falling back to whatever's been typed into the term rows
+// only if Step 5 was left at 0 (e.g. this student's history predates that
+// requirement).
+function annualChargedCents() {
+  const stepFiveFee = (form.value.total_tuition_fee || 0) * 100
+  return stepFiveFee > 0 ? stepFiveFee : totalHistoryFees() * 100
+}
+
 function totalHistoryBalance() {
-  const totalFees = totalHistoryFees() * 100
   const totalPaid = totalHistoryPaid()
-  return Math.max(0, totalFees - totalPaid)
+  return Math.max(0, annualChargedCents() - totalPaid)
 }
 
 function completionPercentage() {
-  const totalFees = totalHistoryFees()
+  const totalFees = annualChargedCents()
   if (totalFees === 0) return 0
-  const totalPaid = totalHistoryPaid() / 100
+  const totalPaid = totalHistoryPaid()
   return Math.round((totalPaid / totalFees) * 100)
 }
 
@@ -1583,6 +1585,28 @@ function lumpsumBalance() {
   const totalCharged = (form.value.lumpsum_total_charged || 0) * 100
   const totalPaid = (form.value.lumpsum_total_paid || 0) * 100
   return Math.max(0, totalCharged - totalPaid)
+}
+
+async function autoFillFee(ei) {
+  const entry = form.value.payment_history[ei]
+  const f = form.value
+  if (!f.school_id || !f.school_class_id || !entry.academic_year_id || !entry.term_id) return
+  try {
+    const res = await api.get('/fee-structures', {
+      params: {
+        school_id: f.school_id,
+        school_class_id: f.school_class_id,
+        academic_year_id: entry.academic_year_id,
+        term_id: entry.term_id,
+      },
+    })
+    const structures = res.data.data ?? res.data
+    if (structures.length) {
+      const items = structures.flatMap(s => s.fee_items ?? s.feeItems ?? [])
+      const totalCents = items.reduce((sum, i) => sum + (i.amount_cents ?? 0), 0)
+      if (totalCents > 0) entry.fee_amount = Math.round(totalCents / 100)
+    }
+  } catch {}
 }
 
 function termPaid(entry) {
@@ -1693,23 +1717,14 @@ function validateStep() {
             })
           })
 
-          // Each term's fee is expected to equal the Step 5 Total Tuition Fee —
-          // it must never exceed it, and payments recorded for a term must
-          // never exceed that term's fee either (a shortfall there is normal:
-          // it's the term's unpaid debt, not an error).
+          // The sum of every term's "Fee amount for this term" must not exceed the
+          // annual Total Tuition Fee defined in Step 5 — that figure is the cap for
+          // the whole year's history.
           const cap = form.value.total_tuition_fee || 0
-          form.value.payment_history.forEach((entry, ei) => {
-            if (cap > 0 && (entry.fee_amount || 0) > cap) {
-              errors.value[`payment_history.${ei}.fee_amount_cents`] =
-                `${t('students.errors.termFeeExceedsTuition')}: ${formatMoney((entry.fee_amount || 0) * 100)} > ${formatMoney(cap * 100)}`
-            }
-            const paidCents = termPaid(entry)
-            const feeCents = (entry.fee_amount || 0) * 100
-            if (paidCents > feeCents) {
-              errors.value[`payment_history.${ei}.payments_total`] =
-                `${t('students.errors.termPaymentsExceedFee')}: ${formatMoney(paidCents)} > ${formatMoney(feeCents)}`
-            }
-          })
+          if (cap > 0 && totalHistoryFees() > cap) {
+            errors.value['payment_history_total'] =
+              `${t('students.errors.termFeesExceedTuition') || 'Total term fees exceed the Total Tuition Fee'}: ${formatMoney(totalHistoryFees() * 100)} > ${formatMoney(cap * 100)}`
+          }
         }
       }
       // Lumpsum mode: validate lumpsum fields
@@ -1737,14 +1752,6 @@ function nextStep() {
     hasOpeningBalance.value = false
     form.value.opening_balance = 0
     fetchFeePreview()
-  }
-  if (step.value === 6) {
-    // Entries seeded before Step 5's Total Tuition Fee was known (or before
-    // it was edited) still carry a stale/zero fee — sync any that were never
-    // manually overridden away from the default so they match Step 5.
-    form.value.payment_history.forEach(entry => {
-      if (!entry.fee_amount) entry.fee_amount = form.value.total_tuition_fee || 0
-    })
   }
 }
 
