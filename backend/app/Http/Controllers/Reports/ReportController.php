@@ -803,7 +803,7 @@ class ReportController extends Controller
                 'p.invoice_id', '=', "{$invoiceTable}.id"
             )
             ->select("{$invoiceTable}.*", DB::raw("({$invoiceTable}.total_amount_cents - COALESCE(p.paid_sum, 0)) as balance_cents"))
-            ->with(['student.guardians', 'term'])
+            ->with(['student.guardians', 'student.currentEnrollment.schoolClass', 'term'])
             ->get();
 
         $byStudent = [];
@@ -817,6 +817,7 @@ class ReportController extends Controller
                 $guardian = $student->guardians->firstWhere('pivot.is_primary', true) ?? $student->guardians->first();
                 $byStudent[$sid] = [
                     'student_name' => $student->fullName(),
+                    'student_class' => $student->currentEnrollment?->schoolClass?->name ?? '',
                     'guardian_name' => $guardian ? trim($guardian->first_name.' '.$guardian->last_name) : '',
                     'guardian_phone' => $guardian->phone ?? '',
                     'village_street' => $student->street ?: $student->address ?: '',
@@ -894,12 +895,15 @@ class ReportController extends Controller
                 $data = compact('report', 'school');
 
                 if ($forCsv) {
-                    $csvHeaders = ['Student Name', 'Parent/Guardian Name', 'Parent Phone', 'Village/Street', 'Debt Amount (TZS)', 'Terms Not Paid'];
+                    $csvHeaders = ['Student Name', 'Class', 'Parent/Guardian Name', 'Parent Phone', 'Village/Street', 'Debt Amount (TZS)', 'Terms Not Paid'];
                     foreach ($byStudent as $r) {
                         $csvRows[] = [
                             $r['student_name'],
+                            $r['student_class'],
                             $r['guardian_name'],
-                            $r['guardian_phone'],
+                            // Leading apostrophe forces Excel/Sheets to keep this as text
+                            // instead of rendering a long digit string in scientific notation.
+                            $r['guardian_phone'] !== '' ? "'".$r['guardian_phone'] : '',
                             $r['village_street'],
                             round($r['debt_cents'] / 100),
                             implode(', ', $r['terms']),
