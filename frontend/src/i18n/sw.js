@@ -580,6 +580,7 @@ export default {
       termFeesExceedTuition:  'Jumla ya ada za muhula zinazidi Jumla ya Ada ya Masomo',
       termFeeExceedsTuition:  'Ada ya muhula huu haiwezi kuzidi Jumla ya Ada ya Masomo',
       termPaymentsExceedFee:  'Malipo yaliyorekodiwa kwa muhula huu yanazidi kiasi cha ada yake',
+      totalPaidExceedsCharged: 'Jumla ya malipo ya muhula yote inazidi Jumla Iliyotozwa',
       lumpsumPaymentDateRequired: 'Ingiza tarehe kiasi hiki kililipwa',
     },
     lumpsumPaymentDate:      'Kililipwa Lini?',

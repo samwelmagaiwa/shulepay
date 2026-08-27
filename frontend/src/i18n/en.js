@@ -580,6 +580,7 @@ export default {
       termFeesExceedTuition:  'Total term fees exceed the Total Tuition Fee',
       termFeeExceedsTuition:  'This term\'s fee cannot exceed the Total Tuition Fee',
       termPaymentsExceedFee:  'Payments recorded for this term exceed its fee amount',
+      totalPaidExceedsCharged: 'Total paid across all terms exceeds the Total Charged amount',
       lumpsumPaymentDateRequired: 'Enter the date this amount was actually paid',
     },
     lumpsumPaymentDate:      'When Was This Paid?',

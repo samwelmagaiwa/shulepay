@@ -950,6 +950,9 @@
               {{ t('common.balance') }}: {{ formatMoney(termBalance(entry)) }}
             </span>
           </div>
+          <div v-if="errors[`payment_history.${ei}.payments_total`]" class="alert alert-danger py-1 px-2 mt-2 mb-0 small">
+            ⚠️ {{ errors[`payment_history.${ei}.payments_total`] }}
+          </div>
         </div>
 
           <CButton color="warning" variant="outline" @click="addTermHistory"
@@ -1039,6 +1042,9 @@
 
         <CAlert v-if="errors.payment_history_total" color="danger" class="mt-3 mb-0 small">
           ⚠️ {{ errors.payment_history_total }}
+        </CAlert>
+        <CAlert v-if="errors.payment_history_paid_total" color="danger" class="mt-3 mb-0 small">
+          ⚠️ {{ errors.payment_history_paid_total }}
         </CAlert>
 
         <!-- Annual Debt Summary -->
@@ -1720,6 +1726,16 @@ function validateStep() {
                 errors.value[`payment_history.${ei}.payments.${pi}.paid_at`] = t('students.paidDate') + ' ' + t('common.required')
               }
             })
+
+            // A term's recorded payments can never exceed that term's own fee —
+            // regardless of how the fee relates to the annual total, paying more
+            // than what was billed for THIS term is never legitimate.
+            const entryPaidCents = termPaid(entry)
+            const entryFeeCents = (entry.fee_amount || 0) * 100
+            if (entryFeeCents > 0 && entryPaidCents > entryFeeCents) {
+              errors.value[`payment_history.${ei}.payments_total`] =
+                `${t('students.errors.termPaymentsExceedFee')}: ${formatMoney(entryPaidCents)} > ${formatMoney(entryFeeCents)}`
+            }
           })
 
           // The sum of every term's "Fee amount for this term" must not exceed the
@@ -1729,6 +1745,16 @@ function validateStep() {
           if (cap > 0 && totalHistoryFees() > cap) {
             errors.value['payment_history_total'] =
               `${t('students.errors.termFeesExceedTuition') || 'Total term fees exceed the Total Tuition Fee'}: ${formatMoney(totalHistoryFees() * 100)} > ${formatMoney(cap * 100)}`
+          }
+
+          // Total paid across every term can never exceed the annual Total
+          // Charged figure (Step 5's Total Tuition Fee, or the sum of terms
+          // when Step 5 wasn't filled) — this is what catches a single term
+          // being wildly overpaid even when every other check passes.
+          const chargedCents = annualChargedCents()
+          if (chargedCents > 0 && totalHistoryPaid() > chargedCents) {
+            errors.value['payment_history_paid_total'] =
+              `${t('students.errors.totalPaidExceedsCharged')}: ${formatMoney(totalHistoryPaid())} > ${formatMoney(chargedCents)}`
           }
         }
       }

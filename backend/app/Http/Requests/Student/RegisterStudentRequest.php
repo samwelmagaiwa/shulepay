@@ -213,16 +213,41 @@ class RegisterStudentRequest extends FormRequest
                     'Select a discount type for the amount entered.');
             }
 
-            // Term fees for the year cannot exceed the annual tuition fee.
+            // Term fees for the year cannot exceed the annual tuition fee, and
+            // — independent of that annual relationship — a term's recorded
+            // payments can never exceed that term's own fee: paying more than
+            // what was billed for one specific term is never legitimate, no
+            // matter how the fee relates to the annual total.
             $history = $this->input('payment_history', []);
-            if (is_array($history) && $history && $fee > 0) {
-                $sum = array_sum(array_map(
-                    fn ($e) => (int) ($e['fee_amount_cents'] ?? 0),
-                    $history
-                ));
-                if ($sum > $fee) {
+            if (is_array($history) && $history) {
+                $sumOfFees = 0;
+                $totalPaid = 0;
+
+                foreach ($history as $i => $entry) {
+                    $entryFee = (int) ($entry['fee_amount_cents'] ?? 0);
+                    $sumOfFees += $entryFee;
+
+                    $entryPaid = array_sum(array_map(
+                        fn ($p) => (int) ($p['amount_cents'] ?? 0),
+                        $entry['payments'] ?? []
+                    ));
+                    $totalPaid += $entryPaid;
+
+                    if ($entryFee > 0 && $entryPaid > $entryFee) {
+                        $validator->errors()->add("payment_history.{$i}.payments",
+                            'Payments recorded for this term exceed its fee amount.');
+                    }
+                }
+
+                if ($fee > 0 && $sumOfFees > $fee) {
                     $validator->errors()->add('payment_history',
                         'The terms total more than the annual tuition fee.');
+                }
+
+                $chargedCap = $fee > 0 ? $fee : $sumOfFees;
+                if ($chargedCap > 0 && $totalPaid > $chargedCap) {
+                    $validator->errors()->add('payment_history_paid_total',
+                        'Total paid across all terms exceeds the Total Charged amount.');
                 }
             }
         });
