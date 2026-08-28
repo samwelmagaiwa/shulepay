@@ -12,25 +12,28 @@
         {{ t('primaryFees.saved') }}
       </CAlert>
 
-      <CRow class="g-3">
-        <CCol md="6" lg="3" v-for="c in categories" :key="c.category">
-          <CCard class="h-100 border-0 shadow-sm" :style="`border-left:4px solid ${categoryColor(c.category)} !important`">
-            <CCardBody>
-              <div class="fw-semibold small mb-1">{{ categoryLabel(c.category) }}</div>
-              <div class="text-muted mb-2" style="font-size:.72rem;">{{ categoryHint(c.category) }}</div>
-              <CInputGroup size="sm">
-                <CInputGroupText>TZS</CInputGroupText>
-                <CFormInput
-                  type="text"
-                  inputmode="numeric"
-                  :value="formatAmount(c.amount)"
-                  @input="c.amount = parseAmount($event.target.value)"
-                />
-              </CInputGroup>
-            </CCardBody>
-          </CCard>
-        </CCol>
-      </CRow>
+      <div v-for="tier in TIERS" :key="tier" class="mb-4">
+        <h6 class="fw-bold text-muted small text-uppercase mb-2">{{ t(TIER_LABEL_KEYS[tier]) }}</h6>
+        <CRow class="g-3">
+          <CCol md="6" lg="3" v-for="c in tiers[tier]" :key="c.category">
+            <CCard class="h-100 border-0 shadow-sm" :style="`border-left:4px solid ${categoryColor(c.category)} !important`">
+              <CCardBody>
+                <div class="fw-semibold small mb-1">{{ categoryLabel(c.category) }}</div>
+                <div class="text-muted mb-2" style="font-size:.72rem;">{{ categoryHint(c.category) }}</div>
+                <CInputGroup size="sm">
+                  <CInputGroupText>TZS</CInputGroupText>
+                  <CFormInput
+                    type="text"
+                    inputmode="numeric"
+                    :value="formatAmount(c.amount)"
+                    @input="c.amount = parseAmount($event.target.value)"
+                  />
+                </CInputGroup>
+              </CCardBody>
+            </CCard>
+          </CCol>
+        </CRow>
+      </div>
 
       <div class="mt-3">
         <CButton color="primary" :disabled="saving" @click="save">
@@ -52,7 +55,13 @@ const { t } = useI18n()
 const loading = ref(true)
 const saving = ref(false)
 const saved = ref(false)
-const categories = ref([])
+const TIERS = ['std_4_6', 'std_1_3']
+const tiers = ref({ std_4_6: [], std_1_3: [] })
+
+const TIER_LABEL_KEYS = {
+  std_4_6: 'primaryFees.tierStd46',
+  std_1_3: 'primaryFees.tierStd13',
+}
 
 const CATEGORY_META = {
   day_transport_food: { label: 'primaryFees.dayTransportFood', hint: 'primaryFees.dayTransportFoodHint', color: '#0ea5e9' },
@@ -72,14 +81,22 @@ function parseAmount(str) {
   return parseInt(String(str).replace(/[^0-9]/g, ''), 10) || 0
 }
 
+function mapTiers(rawTiers) {
+  const mapped = {}
+  for (const tier of TIERS) {
+    mapped[tier] = (rawTiers[tier] || []).map(c => ({
+      category: c.category,
+      amount: Math.round((c.amount_cents || 0) / 100),
+    }))
+  }
+  return mapped
+}
+
 async function load() {
   loading.value = true
   try {
     const { data } = await api.get('/primary-fee-categories')
-    categories.value = (data.categories || []).map(c => ({
-      category: c.category,
-      amount: Math.round((c.amount_cents || 0) / 100),
-    }))
+    tiers.value = mapTiers(data.tiers || {})
   } catch {} finally { loading.value = false }
 }
 
@@ -88,16 +105,16 @@ async function save() {
   saved.value = false
   try {
     const payload = {
-      categories: categories.value.map(c => ({
-        category: c.category,
-        amount_cents: Math.round((c.amount || 0) * 100),
-      })),
+      tiers: Object.fromEntries(TIERS.map(tier => [
+        tier,
+        (tiers.value[tier] || []).map(c => ({
+          category: c.category,
+          amount_cents: Math.round((c.amount || 0) * 100),
+        })),
+      ])),
     }
     const { data } = await api.put('/primary-fee-categories', payload)
-    categories.value = (data.categories || []).map(c => ({
-      category: c.category,
-      amount: Math.round((c.amount_cents || 0) / 100),
-    }))
+    tiers.value = mapTiers(data.tiers || {})
     saved.value = true
   } catch {} finally { saving.value = false }
 }

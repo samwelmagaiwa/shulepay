@@ -712,8 +712,10 @@ export default {
   },
   primaryFees: {
     title:    'Defined Primary Fees',
-    subtitle: 'Configure the fixed fee for each service category — Standard 4, 5 and 6 only.',
+    subtitle: 'Configure the fixed fee for each service category, by class tier.',
     saved:    'Saved successfully.',
+    tierStd46: 'Standard 4, 5 and 6',
+    tierStd13: 'Standard 1, 2 and 3',
     dayTransportFood:     'Transport + Food + Tuition',
     dayTransportFoodHint: 'Day scholar using school transport and eating at school',
     hostel:      'Hostel (Boarding)',
@@ -723,8 +725,8 @@ export default {
     dayNone:     'Day — No Services',
     dayNoneHint: 'Day scholar using no school services at all',
     selectCategory: 'Select service category',
-    selectCategoryHint: 'Standard 4–6 only — pick the service category to auto-fill the tuition fee',
-    totalTuitionFeeLockedHint: 'Locked for Standard 4–6 — pick a service category above to set this amount',
+    selectCategoryHint: 'Pick the service category to auto-fill the tuition fee',
+    totalTuitionFeeLockedHint: 'Locked — pick a service category above to set this amount',
   },
   guardians: {
     title:       'Guardians',

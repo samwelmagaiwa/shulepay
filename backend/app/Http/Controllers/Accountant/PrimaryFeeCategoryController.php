@@ -16,6 +16,12 @@ class PrimaryFeeCategoryController extends Controller
      */
     private const CATEGORIES = ['day_transport_food', 'hostel', 'day_food_only', 'day_none'];
 
+    /**
+     * The two class tiers the school prices separately. Order matters here —
+     * it's the order both the admin page and the registration form render.
+     */
+    private const TIERS = ['std_4_6', 'std_1_3'];
+
     public function index(Request $request): JsonResponse
     {
         $schoolId = $this->activeSchoolId($request);
@@ -23,33 +29,43 @@ class PrimaryFeeCategoryController extends Controller
         $existing = PrimaryFeeCategory::allSchools()
             ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
             ->get()
-            ->keyBy('category');
+            ->groupBy('class_tier');
 
-        $rows = array_map(fn ($category) => [
-            'category' => $category,
-            'amount_cents' => $existing[$category]->amount_cents
-                ?? PrimaryFeeCategory::DEFAULT_AMOUNTS_CENTS[$category],
-        ], self::CATEGORIES);
+        $tiers = [];
+        foreach (self::TIERS as $tier) {
+            $existingForTier = ($existing[$tier] ?? collect())->keyBy('category');
+            $tiers[$tier] = array_map(fn ($category) => [
+                'category' => $category,
+                'amount_cents' => $existingForTier[$category]->amount_cents
+                    ?? PrimaryFeeCategory::DEFAULT_AMOUNTS_CENTS[$tier][$category],
+            ], self::CATEGORIES);
+        }
 
-        return response()->json(['categories' => $rows]);
+        return response()->json(['tiers' => $tiers]);
     }
 
     public function update(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'categories' => 'required|array',
-            'categories.*.category' => ['required', 'string', 'in:'.implode(',', self::CATEGORIES)],
-            'categories.*.amount_cents' => 'required|integer|min:0',
+            'tiers' => 'required|array',
+            'tiers.*' => 'array',
+            'tiers.*.*.category' => ['required', 'string', 'in:'.implode(',', self::CATEGORIES)],
+            'tiers.*.*.amount_cents' => 'required|integer|min:0',
         ]);
 
         $schoolId = $this->activeSchoolId($request);
         abort_if(! $schoolId, 422, 'No active school selected.');
 
-        foreach ($data['categories'] as $row) {
-            PrimaryFeeCategory::allSchools()->updateOrCreate(
-                ['school_id' => $schoolId, 'category' => $row['category']],
-                ['amount_cents' => $row['amount_cents']]
-            );
+        foreach ($data['tiers'] as $tier => $rows) {
+            if (! in_array($tier, self::TIERS, true)) {
+                continue;
+            }
+            foreach ($rows as $row) {
+                PrimaryFeeCategory::allSchools()->updateOrCreate(
+                    ['school_id' => $schoolId, 'class_tier' => $tier, 'category' => $row['category']],
+                    ['amount_cents' => $row['amount_cents']]
+                );
+            }
         }
 
         return $this->index($request);

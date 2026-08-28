@@ -712,8 +712,10 @@ export default {
   },
   primaryFees: {
     title:    'Ada za Msingi Zilizofafanuliwa',
-    subtitle: 'Weka ada iliyowekwa kwa kila aina ya huduma — Darasa la 4, 5 na 6 tu.',
+    subtitle: 'Weka ada iliyowekwa kwa kila aina ya huduma, kwa kila kundi la madarasa.',
     saved:    'Imehifadhiwa kikamilifu.',
+    tierStd46: 'Darasa la 4, 5 na 6',
+    tierStd13: 'Darasa la 1, 2 na 3',
     dayTransportFood:     'Usafiri + Chakula + Ada',
     dayTransportFoodHint: 'Mwanafunzi wa kutwa anayetumia usafiri wa shule na kula shuleni',
     hostel:      'Hosteli (Bweni)',
@@ -723,8 +725,8 @@ export default {
     dayNone:     'Kutwa — Bila Huduma',
     dayNoneHint: 'Mwanafunzi wa kutwa asiyetumia huduma yoyote ya shule',
     selectCategory: 'Chagua aina ya huduma',
-    selectCategoryHint: 'Darasa la 4–6 tu — chagua aina ya huduma ili ada ijae kiotomatiki',
-    totalTuitionFeeLockedHint: 'Imefungwa kwa Darasa la 4–6 — chagua aina ya huduma hapo juu ili kuweka kiasi hiki',
+    selectCategoryHint: 'Chagua aina ya huduma ili ada ijae kiotomatiki',
+    totalTuitionFeeLockedHint: 'Imefungwa — chagua aina ya huduma hapo juu ili kuweka kiasi hiki',
   },
   guardians: {
     title:       'Walezi',

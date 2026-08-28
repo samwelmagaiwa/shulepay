@@ -559,7 +559,7 @@
           ⚠ {{ t('fees.noFees') }} — {{ t('students.generateFirstInvoiceHint') }}
         </CAlert>
 
-        <!-- ── Defined Primary Fees (Std 4-6) ──────────────────────────── -->
+        <!-- ── Defined Primary Fees (Std 1-3 / Std 4-6) ────────────────── -->
         <div v-if="isDefinedPrimaryClass" class="p-3 rounded-3 border mb-3" style="background:#fffbeb;border-color:#f59e0b!important;">
           <label class="form-label fw-bold small mb-1 d-flex align-items-center gap-2">
             🏷️ {{ t('primaryFees.selectCategory') }}
@@ -1369,10 +1369,17 @@ const selectedClassName = computed(() =>
   allClasses.value.find(c => String(c.id) === String(form.value.school_class_id))?.name || '—'
 )
 
-// ── Defined Primary Fees (Standard 4-6 only) ────────────────────────────────
-// "Darasa la 4/5/6" — matches the class-naming convention used for primary
-// schools (see PrimaryFees.vue / primary-fee-categories backend).
-const isDefinedPrimaryClass = computed(() => /darasa\s*la\s*[456]\b/i.test(selectedClassName.value))
+// ── Defined Primary Fees (Standard 1-3 and 4-6) ─────────────────────────────
+// "Darasa la 1/2/3/4/5/6" — matches the class-naming convention used for
+// primary schools (see PrimaryFees.vue / primary-fee-categories backend).
+// The two class groups price the same 4 service categories differently, so
+// which tier applies depends on the selected class.
+const primaryFeeClassTier = computed(() => {
+  const m = /darasa\s*la\s*([123456])\b/i.exec(selectedClassName.value)
+  if (!m) return null
+  return Number(m[1]) <= 3 ? 'std_1_3' : 'std_4_6'
+})
+const isDefinedPrimaryClass = computed(() => primaryFeeClassTier.value !== null)
 
 const PRIMARY_FEE_LABEL_KEYS = {
   day_transport_food: 'primaryFees.dayTransportFood',
@@ -1381,17 +1388,18 @@ const PRIMARY_FEE_LABEL_KEYS = {
   day_none: 'primaryFees.dayNone',
 }
 
-const primaryFeeCategories = ref([])
+const primaryFeeTiers = ref({})
 const loadingPrimaryFeeCategories = ref(false)
 const selectedPrimaryFeeCategory = ref('')
+const primaryFeeCategories = computed(() => primaryFeeTiers.value[primaryFeeClassTier.value] || [])
 
 async function loadPrimaryFeeCategories() {
   loadingPrimaryFeeCategories.value = true
   try {
     const { data } = await api.get('/primary-fee-categories')
-    primaryFeeCategories.value = data.categories || []
+    primaryFeeTiers.value = data.tiers || {}
   } catch {
-    primaryFeeCategories.value = []
+    primaryFeeTiers.value = {}
   } finally {
     loadingPrimaryFeeCategories.value = false
   }
@@ -1406,13 +1414,21 @@ function selectPrimaryFeeCategory(category) {
 }
 
 watch(isDefinedPrimaryClass, (isDefined) => {
-  if (isDefined && !primaryFeeCategories.value.length) {
+  if (isDefined && !Object.keys(primaryFeeTiers.value).length) {
     loadPrimaryFeeCategories()
   }
   if (!isDefined) {
     selectedPrimaryFeeCategory.value = ''
   }
 }, { immediate: true })
+
+// Switching between a Std 1-3 class and a Std 4-6 class changes which tier's
+// amounts apply — a category selected under one tier has no matching amount
+// under the other, so the stale selection is cleared rather than silently
+// keeping an unrelated fee locked in.
+watch(primaryFeeClassTier, () => {
+  selectedPrimaryFeeCategory.value = ''
+})
 
 // ── Photo ─────────────────────────────────────────────────────────────────────
 function onPhotoChange(e) {
