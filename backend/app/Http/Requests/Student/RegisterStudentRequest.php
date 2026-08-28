@@ -173,7 +173,7 @@ class RegisterStudentRequest extends FormRequest
                         'A fully sponsored student with no payments cannot have a tuition fee.'
                     );
                 }
-                if (!empty($this->input('payment_history'))) {
+                if (! empty($this->input('payment_history'))) {
                     $validator->errors()->add(
                         'payment_history',
                         'A fully sponsored student with no payments cannot have payment history.'
@@ -244,7 +244,7 @@ class RegisterStudentRequest extends FormRequest
                     $sumOfFees += $entryFee;
 
                     $entryPaid = array_sum(array_map(
-                        fn($p) => (int) ($p['amount_cents'] ?? 0),
+                        fn ($p) => (int) ($p['amount_cents'] ?? 0),
                         $entry['payments'] ?? []
                     ));
                     $totalPaid += $entryPaid;

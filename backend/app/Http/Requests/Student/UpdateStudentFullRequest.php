@@ -15,11 +15,11 @@ class UpdateStudentFullRequest extends FormRequest
     public function authorize(): bool
     {
         $user = $this->user();
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
-        if (!($user->hasRole('superadmin') || $user->hasRole('accountant') || $user->hasRole('owner'))) {
+        if (! ($user->hasRole('superadmin') || $user->hasRole('accountant') || $user->hasRole('owner'))) {
             return false;
         }
 
@@ -82,7 +82,7 @@ class UpdateStudentFullRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            if (!$this->boolean('generate_new_invoice')) {
+            if (! $this->boolean('generate_new_invoice')) {
                 return;
             }
 
