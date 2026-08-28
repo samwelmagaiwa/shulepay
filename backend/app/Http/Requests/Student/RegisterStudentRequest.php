@@ -33,7 +33,7 @@ class RegisterStudentRequest extends FormRequest
             'district' => 'nullable|string|max:100',
             'ward' => 'nullable|string|max:100',
             'street' => 'nullable|string|max:100',
-            'status' => 'required|in:active,transferred,graduated,dropped,sponsored,orphaned',
+            'status' => 'required|in:active,transferred,graduated,dropped,sponsored,orphaned,half_sponsored',
             'sponsorship_type' => 'nullable|in:none,half,full,full_paid',
             'notes' => 'nullable|string',
 

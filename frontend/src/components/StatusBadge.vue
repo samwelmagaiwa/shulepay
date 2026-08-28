@@ -14,6 +14,7 @@ const colorMap = {
   unpaid:      'danger',
   active:      'success',
   sponsored:   'info',
+  half_sponsored: 'info',
   orphaned:    'warning',
   transferred: 'info',
   graduated:   'primary',

@@ -94,12 +94,17 @@ class Student extends Model
     }
 
     /**
-     * A half- or fully-sponsored student is always shown as "Sponsored" in the
-     * general status field — that combination shouldn't depend on whoever filled
-     * the form also remembering to set both dropdowns consistently.
+     * A half- or fully-sponsored student always shows a sponsorship-derived
+     * status — that combination shouldn't depend on whoever filled the form
+     * also remembering to set both dropdowns consistently. Half and full are
+     * kept as distinct status values so the two levels stay distinguishable.
      */
     public static function effectiveStatus(?string $sponsorshipType, ?string $requestedStatus): string
     {
-        return in_array($sponsorshipType, ['full', 'half'], true) ? 'sponsored' : ($requestedStatus ?? 'active');
+        return match ($sponsorshipType) {
+            'full' => 'sponsored',
+            'half' => 'half_sponsored',
+            default => $requestedStatus ?? 'active',
+        };
     }
 }

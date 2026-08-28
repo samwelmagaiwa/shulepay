@@ -155,14 +155,18 @@
               </CCol>
               <CCol xs="6" sm="3">
                 <label class="form-label fw-semibold">{{ t('common.status') }} <span class="text-danger">*</span></label>
-                <CFormSelect v-model="form.status">
+                <CFormSelect v-model="form.status" :disabled="!!sponsorshipLockedStatus">
                   <option value="active">{{ t('students.statuses.active') }}</option>
                   <option value="sponsored">{{ t('students.statuses.sponsored') }}</option>
+                  <option value="half_sponsored">{{ t('students.statuses.half_sponsored') }}</option>
                   <option value="orphaned">{{ t('students.statuses.orphaned') }}</option>
                   <option value="transferred">{{ t('students.statuses.transferred') }}</option>
                   <option value="graduated">{{ t('students.statuses.graduated') }}</option>
                   <option value="dropped">{{ t('students.statuses.dropped') }}</option>
                 </CFormSelect>
+                <small v-if="sponsorshipLockedStatus" class="text-medium-emphasis">
+                  {{ t('students.statusLockedBySponsorship') }}
+                </small>
               </CCol>
               <CCol xs="6" sm="3">
                 <label class="form-label">{{ t('students.nationality') }}</label>
@@ -739,7 +743,7 @@
                 <CCol xs="6" sm="4"><span class="text-muted">{{ t('students.nationality') }}:</span><br><strong>{{ form.nationality || '—' }}</strong></CCol>
                 <CCol xs="6" sm="4"><span class="text-muted">{{ t('students.religion') }}:</span><br><strong>{{ form.religion || '—' }}</strong></CCol>
                 <CCol xs="6" sm="4"><span class="text-muted">{{ t('students.status') }}:</span><br>
-                  <CBadge :color="form.status === 'active' ? 'success' : form.status === 'sponsored' ? 'info' : form.status === 'orphaned' ? 'warning' : 'secondary'" style="font-size:.72rem;">
+                  <CBadge :color="form.status === 'active' ? 'success' : (form.status === 'sponsored' || form.status === 'half_sponsored') ? 'info' : form.status === 'orphaned' ? 'warning' : 'secondary'" style="font-size:.72rem;">
                     {{ form.status ? t('students.statuses.' + form.status) : '—' }}
                   </CBadge>
                 </CCol>
@@ -1325,6 +1329,19 @@ const form = ref(blankForm())
 watch(steps, (newSteps) => {
   if (step.value > newSteps.length) step.value = newSteps.length
 })
+
+// Mirrors Student::effectiveStatus() on the backend: a half- or fully-sponsored
+// student's Status is always sponsorship-derived, never manually "Active".
+// The Status field locks to that value so the two dropdowns can't disagree —
+// the backend would silently override a mismatched value anyway.
+const sponsorshipLockedStatus = computed(() => {
+  if (form.value.sponsorship_type === 'full') return 'sponsored'
+  if (form.value.sponsorship_type === 'half') return 'half_sponsored'
+  return null
+})
+watch(sponsorshipLockedStatus, (locked) => {
+  if (locked) form.value.status = locked
+}, { immediate: true })
 
 function formatAmount(val) {
   if (!val && val !== 0) return ''

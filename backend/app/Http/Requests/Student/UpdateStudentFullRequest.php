@@ -40,7 +40,7 @@ class UpdateStudentFullRequest extends FormRequest
             'last_name' => 'sometimes|string|max:100',
             'date_of_birth' => 'nullable|date|before:today',
             'gender' => 'nullable|in:male,female',
-            'status' => 'sometimes|in:active,transferred,graduated,dropped,sponsored,orphaned',
+            'status' => 'sometimes|in:active,transferred,graduated,dropped,sponsored,orphaned,half_sponsored',
             'sponsorship_type' => 'sometimes|in:none,half,full,full_paid',
             'birth_certificate_no' => 'nullable|string|max:50',
             'nationality' => 'nullable|string|max:50',

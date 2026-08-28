@@ -334,6 +334,7 @@ export default {
     statuses: {
       active:      'Active',
       sponsored:   'Sponsored',
+      half_sponsored: 'Half Sponsored',
       orphaned:    'Orphaned',
       transferred: 'Transferred',
       graduated:   'Graduated',
@@ -421,6 +422,7 @@ export default {
     halfSponsoredHint: 'Partially covered by a sponsor — tracked as a label only; billing continues as normal below.',
     fullySponsoredHint: 'Fully covered by a sponsor — no tuition fee to enter, no payment history step.',
     fullySponsoredConfirm: 'This student is fully sponsored — no tuition fee or payment history is needed. They will be saved with no invoices.',
+    statusLockedBySponsorship: 'Status follows the sponsorship level selected above.',
     totalTuitionFee: 'Total Tuition Fee',
     totalTuitionFeeHint: 'Define the total tuition fee if no fee structure exists',
     invoiceCalculation: 'Calculated Invoice',
@@ -1698,6 +1700,7 @@ export default {
   statusBadge: {
     active:      'Active',
     sponsored:   'Sponsored',
+    half_sponsored: 'Half Sponsored',
     orphaned:    'Orphaned',
     paid:        'Paid',
     partial:     'Partial',

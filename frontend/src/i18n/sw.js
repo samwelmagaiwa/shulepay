@@ -335,6 +335,7 @@ export default {
     statuses: {
       active:      'Wanaosoma',
       sponsored:   'Wanaolipiwa',
+      half_sponsored: 'Wanaolipiwa Nusu',
       orphaned:    'Yatima',
       transferred: 'Waliohama',
       graduated:   'Wahitimu',
@@ -421,6 +422,7 @@ export default {
     halfSponsoredHint: 'Anafadhiliwa sehemu na mfadhili — hii ni lebo tu ya kumbukumbu; malipo yataendelea kama kawaida hapa chini.',
     fullySponsoredHint: 'Anafadhiliwa kikamilifu na mfadhili — hakuna ada ya masomo ya kuingiza, wala hatua ya historia ya malipo.',
     fullySponsoredConfirm: 'Mwanafunzi huyu anafadhiliwa kikamilifu — hakuna ada ya masomo au historia ya malipo inayohitajika. Ataandikishwa bila ankara yoyote.',
+    statusLockedBySponsorship: 'Hali inafuata kiwango cha ufadhili kilichochaguliwa hapo juu.',
     totalTuitionFee: 'Jumla ya Ada ya Masomo',
     totalTuitionFeeHint: 'Weka jumla ya ada ya masomo kama hakuna muundo wa ada uliopo',
     invoiceCalculation: 'Ankara Iliyohesabiwa',
@@ -1698,6 +1700,7 @@ export default {
   statusBadge: {
     active:      'Anasoma',
     sponsored:   'Wanaolipiwa',
+    half_sponsored: 'Wanaolipiwa Nusu',
     orphaned:    'Yatima',
     paid:        'Imelipwa',
     partial:     'Kiasi',
