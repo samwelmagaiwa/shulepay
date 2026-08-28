@@ -46,6 +46,12 @@ class StudentUpdateService
                 array_intersect_key($data, array_flip($fields)),
                 fn ($v) => ! is_null($v)
             );
+            if (array_key_exists('sponsorship_type', $studentData) || array_key_exists('status', $studentData)) {
+                $studentData['status'] = Student::effectiveStatus(
+                    $studentData['sponsorship_type'] ?? $student->sponsorship_type,
+                    $studentData['status'] ?? $student->status
+                );
+            }
             if (! empty($studentData)) {
                 $student->update($studentData);
             }

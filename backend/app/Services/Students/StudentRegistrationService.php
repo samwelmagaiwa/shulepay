@@ -73,7 +73,7 @@ class StudentRegistrationService
                 'ward' => $data['ward'] ?? null,
                 'street' => $data['street'] ?? null,
                 'photo' => $photoPath,
-                'status' => $data['status'] ?? 'active',
+                'status' => Student::effectiveStatus($data['sponsorship_type'] ?? 'none', $data['status'] ?? null),
                 'sponsorship_type' => $data['sponsorship_type'] ?? 'none',
                 'notes' => $data['notes'] ?? null,
             ]);

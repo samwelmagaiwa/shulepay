@@ -92,4 +92,14 @@ class Student extends Model
     {
         return $this->invoices->sum(fn (Invoice $inv) => $inv->balanceDueCents());
     }
+
+    /**
+     * A fully-sponsored (free tuition) student is always shown as "Sponsored" in
+     * the general status field — that combination shouldn't depend on whoever
+     * filled the form also remembering to set both dropdowns consistently.
+     */
+    public static function effectiveStatus(?string $sponsorshipType, ?string $requestedStatus): string
+    {
+        return $sponsorshipType === 'full' ? 'sponsored' : ($requestedStatus ?? 'active');
+    }
 }
