@@ -183,12 +183,17 @@ class StudentRegistrationService
 
     public function resolveGuardian(array $gData): Guardian
     {
-        $gData['phone'] = self::normalizePhone($gData['phone']);
+        $rawPhone = $gData['phone'] ?? null;
+        $gData['phone'] = ($rawPhone !== null && $rawPhone !== '')
+            ? self::normalizePhone($rawPhone)
+            : null;
         $gData['alt_phone'] = isset($gData['alt_phone']) && $gData['alt_phone']
             ? self::normalizePhone($gData['alt_phone']) : null;
 
-        // Find existing user by phone — reuse guardian if found
-        $existingUser = User::where('phone', $gData['phone'])->first();
+        // Find existing user by phone — reuse guardian if found (only when phone given)
+        $existingUser = $gData['phone']
+            ? User::where('phone', $gData['phone'])->first()
+            : null;
 
         if ($existingUser) {
             // Reuse existing guardian, or create one for the existing user
@@ -224,9 +229,16 @@ class StudentRegistrationService
         // absence of any password-reset route, that made every guardian account
         // permanently unreachable: nobody, including the school, could log in as a
         // parent.
+        //
+        // When no phone is provided, fall back to a unique placeholder e-mail so
+        // the users table unique constraint is still satisfied.
+        $fallbackEmail = $gData['phone']
+            ? $gData['phone'].'@guardian.local'
+            : Str::uuid().'@guardian.local';
+
         $user = User::create([
             'name' => $gData['full_name'],
-            'email' => $email ?? $gData['phone'].'@guardian.local',
+            'email' => $email ?? $fallbackEmail,
             'phone' => $gData['phone'],
             'password' => Hash::make('SCHOOL'),
             'must_change_password' => true,
@@ -294,11 +306,13 @@ class StudentRegistrationService
             }
 
             // Skip if invoice already exists for this student+term (idempotent)
-            if (Invoice::withoutGlobalScope('school')
-                ->where('student_id', $student->id)
-                ->where('school_id', $schoolId)
-                ->where('term_id', $termId)
-                ->exists()) {
+            if (
+                Invoice::withoutGlobalScope('school')
+                    ->where('student_id', $student->id)
+                    ->where('school_id', $schoolId)
+                    ->where('term_id', $termId)
+                    ->exists()
+            ) {
                 continue;
             }
 
