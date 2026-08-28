@@ -2819,3 +2819,25 @@ over that summary."
 [0;36m[2026-08-28 03:36:36][0m   ShulePay — Release
 [0;36m[2026-08-28 03:36:36][0m ══════════════════════════════════════════
 [0;36m[2026-08-28 03:36:36][0m Checking working tree...
+[0;36m[2026-08-28 03:36:37][0m Files staged for commit:
+[0;36m[2026-08-28 03:36:37][0m Committing: "fix(ada-madeni): paginate invoices by student so the page fills
+
+The list renders one row per student (a student's four term invoices collapse
+into a single row with a dropdown), but the API paginated invoices. per_page=20
+therefore returned 20 invoices that rendered as ~5 rows, leaving the table half
+empty while the counter claimed 'showing 1-20'. It also split a student across
+a page boundary whenever their invoices straddled one.
+
+InvoiceController@index now accepts group_by_student=1: it paginates distinct
+student_ids (ordered by their latest invoice) and returns every invoice for
+that page of students, with meta.total counting students. The ungrouped path
+is unchanged for other callers. Summary card relabelled to match what it counts."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-28 03:36:38][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-28 03:36:44][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-28 16:43:09][0m ══════════════════════════════════════════
+[0;36m[2026-08-28 16:43:09][0m   ShulePay — Release
+[0;36m[2026-08-28 16:43:09][0m ══════════════════════════════════════════
+[0;36m[2026-08-28 16:43:09][0m Checking working tree...

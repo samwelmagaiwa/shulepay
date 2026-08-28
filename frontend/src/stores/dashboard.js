@@ -247,6 +247,56 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const metrics = computed(() => [])
   const clinics  = computed(() => [])
 
+  // ── Dashboard privacy lock ────────────────────────────────────────────────
+  // The backend omits the money figures entirely while locked and marks the
+  // payload `locked: true`. Nothing here decrypts anything — there is nothing
+  // to decrypt, because the numbers were never sent. This state only decides
+  // whether a card draws its value or a row of dots.
+  const lockConfigured = ref(false)
+  const unlockedUntil  = ref(null)
+
+  const isLocked = computed(() => stats.value?.locked === true)
+
+  async function fetchLockStatus() {
+    try {
+      const { data } = await api.get('/dashboard/lock')
+      lockConfigured.value = !!data.configured
+      unlockedUntil.value  = data.unlocked_until || null
+      return data
+    } catch {
+      // A failure here must not blank the dashboard; assume no lock.
+      lockConfigured.value = false
+      return null
+    }
+  }
+
+  /** Set the code the first time, or re-lock when one already exists. */
+  async function setLock(code, confirmation) {
+    const { data } = await api.post('/dashboard/lock', {
+      code, code_confirmation: confirmation,
+    })
+    lockConfigured.value = !!data.configured
+    unlockedUntil.value  = null
+    await fetchStats()
+    return data
+  }
+
+  async function unlock(code) {
+    const { data } = await api.post('/dashboard/lock/unlock', { code })
+    unlockedUntil.value = data.unlocked_until || null
+    await fetchStats()
+    return data
+  }
+
+  /** Remove the lock entirely — gated on the account password, not the code. */
+  async function removeLock(password) {
+    const { data } = await api.delete('/dashboard/lock', { data: { password } })
+    lockConfigured.value = false
+    unlockedUntil.value  = null
+    await fetchStats()
+    return data
+  }
+
   // ── Actions ───────────────────────────────────────────────────────────────
   async function fetchStats() {
     loading.value = true
@@ -320,5 +370,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
     metrics, clinics,
     // Actions
     fetchStats, fetchPendingPatients, fetchAbsentByClass, fetchDiscountedByClass, setBreakdownMode, calculateDateRange, stopPulse,
+    // Privacy lock
+    isLocked, lockConfigured, unlockedUntil,
+    fetchLockStatus, setLock, unlock, removeLock,
   }
 })

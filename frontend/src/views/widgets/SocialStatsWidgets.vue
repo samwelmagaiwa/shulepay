@@ -21,19 +21,40 @@ import { useDashboardStore } from '@/stores/dashboard'
 import { useI18n } from 'vue-i18n'
 import { ref, computed, watch } from 'vue'
 import api from '@/services/api'
+import { MASK } from '@/utils/maskedValue'
+import DashboardLockModal from '@/components/DashboardLockModal.vue'
 
 const { t } = useI18n()
 
 const dashboard = useDashboardStore()
 
+// ── Privacy lock ──────────────────────────────────────────────────────────
+// While locked the backend omits these figures, so realStats holds 0 for them.
+// Rendering that 0 would be worse than useless — it reads as "nothing was
+// collected" — hence the explicit mask.
+const LOCKED_KEYS = new Set([
+  'emergency_visits',      // outstanding debt
+  'followups',             // today's collections
+  'paid_partial_count',    // paid invoices — count
+  'paid_partial_amount',   // paid invoices — amount
+])
+
+const isLocked = computed(() => dashboard.isLocked)
+
 const getValue = (key) => {
+  if (isLocked.value && LOCKED_KEYS.has(key)) return MASK
   return (dashboard.realStats?.[key] || 0).toLocaleString()
 }
 
-
 const getPrevValue = (key) => {
+  if (isLocked.value && LOCKED_KEYS.has(key)) return MASK
   return (dashboard.previousStats?.[key] || 0).toLocaleString()
 }
+
+/** The 'TZS' prefix is dropped while masked — a currency label on dots reads as broken. */
+const moneyPrefix = (key) => (isLocked.value && LOCKED_KEYS.has(key) ? '' : 'TZS ')
+
+const showLockModal = ref(false)
 
 // ── Students with discount card (formerly "Absent Today") ─────────────────
 const showDiscountList  = ref(false)
@@ -65,6 +86,7 @@ const loadDiscountedByClass = async () => {
 
 // Auto-load on mount so the count shows immediately
 loadDiscountedByClass()
+dashboard.fetchLockStatus()
 
 // Refresh when school changes
 watch(
@@ -107,6 +129,22 @@ const fetchPendingPatients = () => {}
 
 <template>
   <div class="metrics-grid mb-0 px-0">
+    <!-- Privacy lock control. One toggle covers every money figure on the page:
+         unlocking one card while the class breakdown still showed the same
+         totals would be no protection at all. -->
+    <div class="d-flex justify-content-end mb-1">
+      <button type="button" class="btn btn-sm btn-link text-decoration-none px-1"
+              :title="isLocked ? t('dashboardLock.unlockTitle') : t('dashboardLock.setTitle')"
+              @click="showLockModal = true">
+        <span class="me-1">{{ isLocked ? '🔒' : '🔓' }}</span>
+        <span class="small">
+          {{ isLocked ? t('dashboardLock.locked') : t('dashboardLock.lockAmounts') }}
+        </span>
+      </button>
+    </div>
+
+    <DashboardLockModal v-model:visible="showLockModal" />
+
     <CRow
       :gutter="3"
       class="row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3 px-0 mx-0 metrics-row"
@@ -169,7 +207,7 @@ const fetchPendingPatients = () => {}
             <div class="stat-main-info">
               <div class="d-flex align-items-center mb-0">
                 <h3 class="stat-value mb-0" style="color: #f43f5e">
-                  TZS {{ getValue('emergency_visits') }}
+                  {{ moneyPrefix('emergency_visits') }}{{ getValue('emergency_visits') }}
                 </h3>
               </div>
               <span class="stat-label">{{ t('dashboard.cardDebt') }}</span>
@@ -178,7 +216,7 @@ const fetchPendingPatients = () => {}
               type="button"
               class="stat-print-btn"
               :title="t('dashboard.printOutstandingDebts', 'Print outstanding debts to Excel')"
-              :disabled="isExportingDebts"
+              :disabled="isExportingDebts || isLocked"
               @click.stop="exportOutstandingDebts"
             >
               <span v-if="isExportingDebts" class="spinner-border spinner-border-sm" style="width:0.9rem;height:0.9rem;border-width:2px;"></span>
@@ -264,7 +302,8 @@ const fetchPendingPatients = () => {}
             </div>
             <div class="stat-main-info">
               <h3 class="stat-value" style="color: #10b981">
-                {{ getValue('paid_partial_count') }} | TZS {{ getValue('paid_partial_amount') }}
+                <template v-if="isLocked">{{ MASK }}</template>
+                <template v-else>{{ getValue('paid_partial_count') }} | TZS {{ getValue('paid_partial_amount') }}</template>
               </h3>
               <span class="stat-label">{{ t('dashboard.cardPaidInvoices') }}</span>
             </div>

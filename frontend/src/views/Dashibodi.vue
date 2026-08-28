@@ -35,7 +35,7 @@
                 <CIcon icon="cilDollar" class="text-primary" size="xl" />
               </div>
               <div>
-                <div class="fs-5 fw-bold text-primary">{{ fmtCents(store.stats?.total_collected_cents) }}</div>
+                <div class="fs-5 fw-bold text-primary">{{ store.isLocked ? MASK : fmtCents(store.stats?.total_collected_cents) }}</div>
                 <div class="text-muted small">{{ t('dashboard.collections') }}</div>
               </div>
             </CCardBody>
@@ -48,7 +48,7 @@
                 <CIcon icon="cilWarning" class="text-danger" size="xl" />
               </div>
               <div>
-                <div class="fs-5 fw-bold text-danger">{{ fmtCents(store.stats?.total_outstanding_cents) }}</div>
+                <div class="fs-5 fw-bold text-danger">{{ store.isLocked ? MASK : fmtCents(store.stats?.total_outstanding_cents) }}</div>
                 <div class="text-muted small">{{ t('dashboard.debt') }}</div>
               </div>
             </CCardBody>
@@ -122,6 +122,9 @@
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDashboardStore } from '@/stores/dashboard'
+// Same figures as the locked dashboard cards, reached by different keys — masked
+// here too, or this page becomes the way around the lock.
+import { MASK } from '@/utils/maskedValue'
 
 const { t } = useI18n()
 const store = useDashboardStore()

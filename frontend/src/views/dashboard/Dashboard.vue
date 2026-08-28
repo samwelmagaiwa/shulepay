@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useDashboardStore } from '@/stores/dashboard'
 import { getAutoScrollState } from '@/composables/useAutoScroll'
 import LoadingBanner from '@/components/LoadingBanner.vue'
+import { MASK } from '@/utils/maskedValue'
 import { CIcon } from '@coreui/icons-vue'
 import {
   cilPeople,
@@ -177,6 +178,12 @@ const patientCategories = computed(() => {
   // class_breakdown counts enrollments, which is a different metric.
   const cb = dashboard.stats?.class_fee_breakdown_cents || {}
 
+  // While the dashboard is locked the backend sends no class breakdown at all,
+  // so every tile would compute to "TZS 0" — which reads as a real figure. Show
+  // the mask instead. numericValue stays 0 so the charts below simply draw flat
+  // rather than erroring.
+  const locked = dashboard.isLocked
+
   const cats = Object.keys(CLASS_KEY_MAP).map((title) => {
     // Look up real data from class_fee_breakdown_cents using all possible key variants
     const keys = CLASS_KEY_MAP[title]
@@ -185,9 +192,9 @@ const patientCategories = computed(() => {
 
     return {
       title,
-      value: 'TZS ' + amount.toLocaleString(),
+      value: locked ? MASK : 'TZS ' + amount.toLocaleString(),
       color: colors[title] || '#6c757d',
-      numericValue: amount,
+      numericValue: locked ? 0 : amount,
     }
   })
 
@@ -195,7 +202,7 @@ const patientCategories = computed(() => {
 
   return [
     ...cats,
-    { title: 'Total', value: 'TZS ' + totalSum.toLocaleString(), color: 'grey' },
+    { title: 'Total', value: locked ? MASK : 'TZS ' + totalSum.toLocaleString(), color: 'grey' },
   ]
 })
 // Patient Category Chart Data (Bar + Line combination)

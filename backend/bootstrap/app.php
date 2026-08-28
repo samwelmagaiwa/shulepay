@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureDashboardUnlocked;
 use App\Http\Middleware\EnsureParentOwnsStudent;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\SetActiveSchool;
@@ -35,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'parent.owns_student' => EnsureParentOwnsStudent::class,
+            'dashboard.unlocked' => EnsureDashboardUnlocked::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

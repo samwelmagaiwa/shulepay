@@ -35,6 +35,7 @@ use App\Http\Controllers\Inventory\InventoryController;
 use App\Http\Controllers\Inventory\StationaryController;
 use App\Http\Controllers\Owner\BudgetController;
 use App\Http\Controllers\Owner\DashboardController;
+use App\Http\Controllers\Owner\DashboardLockController;
 use App\Http\Controllers\Owner\UserController;
 use App\Http\Controllers\Owner\UserSchoolAccessController;
 use App\Http\Controllers\ParentPortal\ChildController;
@@ -137,6 +138,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Dashboard
         Route::get('dashboard/stats', [DashboardController::class, 'stats']);
+
+        // Per-user dashboard privacy lock. Every action resolves the acting
+        // user's own lock, so one user can never reach another's.
+        Route::get('dashboard/lock', [DashboardLockController::class, 'status']);
+        Route::post('dashboard/lock', [DashboardLockController::class, 'store']);
+        Route::post('dashboard/lock/unlock', [DashboardLockController::class, 'unlock']);
+        Route::delete('dashboard/lock', [DashboardLockController::class, 'destroy']);
 
         // Students — custom routes MUST precede apiResource to avoid {student} capturing them
         Route::post('students/register', [StudentController::class, 'register']);
@@ -245,7 +253,10 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('balance-sheet', [ReportController::class, 'balanceSheet']);
             Route::get('cash-flow', [ReportController::class, 'cashFlow']);
             Route::get('student-statement', [ReportController::class, 'studentStatement']);
-            Route::get('outstanding-debts/xlsx', [ReportController::class, 'exportOutstandingDebtsXlsx']);
+            // Same figures as the locked dashboard cards, in a spreadsheet — gated
+            // too, or the lock is bypassable via the card's own print button.
+            Route::get('outstanding-debts/xlsx', [ReportController::class, 'exportOutstandingDebtsXlsx'])
+                ->middleware('dashboard.unlocked');
             Route::get('{type}/pdf', [ReportController::class, 'exportPdf']);
             Route::get('{type}/excel', [ReportController::class, 'exportExcel']);
             Route::get('{type}/xlsx', [ReportController::class, 'exportReportXlsx']);

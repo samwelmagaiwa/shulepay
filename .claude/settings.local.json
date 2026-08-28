@@ -522,7 +522,31 @@
       "Bash(php -l resources/views/pdf/student_statement.blade.php)",
       "Bash(php -l resources/views/pdf/receipt.blade.php)",
       "Bash(php -l app/Http/Controllers/ParentPortal/DashboardController.php)",
-      "Bash(vendor/bin/pint app/Http/Controllers/ParentPortal/DashboardController.php routes/api.php)"
+      "Bash(vendor/bin/pint app/Http/Controllers/ParentPortal/DashboardController.php routes/api.php)",
+      "Bash(curl -s \"https://api.github.com/repos/samwelmagaiwa/shulepay/commits/$\\(git rev-parse HEAD\\)/check-runs\")",
+      "Bash(git commit -m 'feat\\(students\\): add sponsorship type filter to students list *)",
+      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend php artisan tinker --execute=\\\\\"echo App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\Student::query\\(\\)->selectRaw\\('sponsorship_type, count\\(*\\) c'\\)->groupBy\\('sponsorship_type'\\)->get\\(\\);\\\\\"\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend php artisan tinker --execute=\\\\\"echo App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\Student::query\\(\\)->where\\('sponsorship_type','full'\\)->get\\(['id','first_name','last_name','status','sponsorship_type','created_at']\\)->toJson\\(\\);\\\\\"\")",
+      "Bash(grep -n \"^use App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\Student;\" \"/d/Projects/shulepay/backend/app/Http/Controllers/Accountant/StudentController.php\" \"/d/Projects/shulepay/backend/app/Services/Students/StudentUpdateService.php\")",
+      "Bash(vendor/bin/pint --test app/Models/Student.php app/Services/Students/StudentRegistrationService.php app/Services/Students/StudentUpdateService.php app/Http/Controllers/Accountant/StudentController.php)",
+      "Bash(git commit -m 'fix\\(students\\): fully-sponsored-free students always show status Sponsored *)",
+      "Bash(curl -s \"https://api.github.com/repos/samwelmagaiwa/shulepay/commits/8ff853af726b8fcc37c92f80ab94fbc42b8115d1/check-runs\")",
+      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_backend php artisan tinker --execute=\\\\\"echo App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\Student::query\\(\\)->where\\('sponsorship_type','full'\\)->where\\('status','!=','sponsored'\\)->count\\(\\);\\\\\"\")",
+      "Bash(ssh root@169.58.188.122 'docker exec shulepay_backend php artisan tinker --execute=\"\\\\$n = App\\\\\\\\Models\\\\\\\\Student::query\\(\\)->where\\('\\\\''sponsorship_type'\\\\'','\\\\''full'\\\\''\\)->where\\('\\\\''status'\\\\'','\\\\''!='\\\\'','\\\\''sponsored'\\\\''\\)->update\\(['\\\\''status'\\\\'' => '\\\\''sponsored'\\\\'']\\); echo '\\\\''updated='\\\\''.\\\\$n;\"')",
+      "Bash(ssh root@169.58.188.122 'docker exec shulepay_backend php artisan tinker --execute=\"\\\\$n = App\\\\Models\\\\Student::query\\(\\)->where\\(\\\\\"sponsorship_type\\\\\",\\\\\"full\\\\\"\\)->where\\(\\\\\"status\\\\\",\\\\\"!=\\\\\",\\\\\"sponsored\\\\\"\\)->update\\([\\\\\"status\\\\\" => \\\\\"sponsored\\\\\"]\\); echo \\\\\"updated=\\\\\".\\\\$n;\"')",
+      "Bash(ssh root@169.58.188.122 'docker exec shulepay_backend php artisan tinker --execute=\"echo App\\\\Models\\\\Student::query\\(\\)->where\\(\\\\\"sponsorship_type\\\\\",\\\\\"full\\\\\"\\)->where\\(\\\\\"status\\\\\",\\\\\"!=\\\\\",\\\\\"sponsored\\\\\"\\)->count\\(\\);\"')",
+      "Bash(ssh root@169.58.188.122 'docker exec shulepay_backend php artisan tinker --execute=\"echo App\\\\Models\\\\Student::query\\(\\)->selectRaw\\(\\\\\"sponsorship_type, status, count\\(*\\) c\\\\\"\\)->groupBy\\(\\\\\"sponsorship_type\\\\\",\\\\\"status\\\\\"\\)->get\\(\\)->toJson\\(\\);\"')",
+      "Bash(vendor/bin/pint --test app/Models/Student.php)",
+      "Bash(ssh root@169.58.188.122 'docker exec shulepay_backend php artisan tinker --execute=\"\\\\$n = App\\\\Models\\\\Student::query\\(\\)->where\\(\\\\\"sponsorship_type\\\\\",\\\\\"half\\\\\"\\)->where\\(\\\\\"status\\\\\",\\\\\"!=\\\\\",\\\\\"sponsored\\\\\"\\)->update\\([\\\\\"status\\\\\" => \\\\\"sponsored\\\\\"]\\); echo \\\\\"updated=\\\\\".\\\\$n;\"')",
+      "Bash(vendor/bin/pint --test app/Models/Student.php app/Http/Requests/Student/RegisterStudentRequest.php app/Http/Requests/Student/UpdateStudentFullRequest.php app/Http/Requests/Student/UpdateStudentRequest.php database/migrations/2026_08_28_120000_add_half_sponsored_to_students_status.php)",
+      "Bash(git commit -m 'feat\\(students\\): distinct '\\\\''Half Sponsored'\\\\'' status, separate from '\\\\''Sponsored'\\\\'' *)",
+      "Bash(ssh root@169.58.188.122 'docker exec shulepay_backend php artisan migrate --status | grep half_sponsored')",
+      "Bash(ssh root@169.58.188.122 'docker exec shulepay_backend php artisan migrate --status | tail -10')",
+      "Bash(ssh root@169.58.188.122 'docker exec shulepay_backend php artisan migrate:status | tail -5')",
+      "Bash(ssh root@169.58.188.122 'docker exec shulepay_backend php artisan tinker --execute=\"echo App\\\\Models\\\\Student::query\\(\\)->where\\(\\\\\"sponsorship_type\\\\\",\\\\\"half\\\\\"\\)->get\\([\\\\\"id\\\\\",\\\\\"first_name\\\\\",\\\\\"last_name\\\\\",\\\\\"status\\\\\"]\\)->toJson\\(\\);\"')",
+      "Bash(ssh root@169.58.188.122 'docker exec shulepay_backend php artisan tinker --execute=\"\\\\$n = App\\\\Models\\\\Student::query\\(\\)->where\\(\\\\\"sponsorship_type\\\\\",\\\\\"half\\\\\"\\)->where\\(\\\\\"status\\\\\",\\\\\"sponsored\\\\\"\\)->update\\([\\\\\"status\\\\\" => \\\\\"half_sponsored\\\\\"]\\); echo \\\\\"updated=\\\\\".\\\\$n;\"')",
+      "Bash(ssh root@169.58.188.122 'docker exec shulepay_backend php artisan tinker --execute=\"echo App\\\\Models\\\\Invoice::withoutGlobalScope\\(\\\\\"school\\\\\"\\)->where\\(\\\\\"status\\\\\",\\\\\"partial\\\\\"\\)->distinct\\(\\\\\"student_id\\\\\"\\)->count\\(\\\\\"student_id\\\\\"\\);\"')",
+      "Bash(git commit -m 'fix\\(dashboard\\): remove manual Change Data override from Fee Collection by Class *)"
     ]
   }
 }
