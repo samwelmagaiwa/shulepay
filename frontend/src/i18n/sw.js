@@ -313,6 +313,7 @@ export default {
     allPaymentStatus: 'Hali Yote ya Malipo',
     allSponsorshipTypes: 'Aina Zote za Ufadhili',
     hasDebt:          'Wanaodaiwa (Deni)',
+    partialPaid:      'Amelipa Kiasi',
     noDebt:           'Wamekwisha Lipa',
     noStudents:   'Hakuna wanafunzi walioorodheshwa.',
     deleteTitle:  'Futa Mwanafunzi',

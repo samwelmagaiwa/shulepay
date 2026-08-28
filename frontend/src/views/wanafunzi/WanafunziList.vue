@@ -38,6 +38,7 @@
             <CFormSelect v-model="filters.has_debt" @update:modelValue="page = 1; fetchData()">
               <option value="">💰 {{ t('students.allPaymentStatus') }}</option>
               <option value="1">🔴 {{ t('students.hasDebt') }}</option>
+              <option value="partial">🟡 {{ t('students.partialPaid') }}</option>
               <option value="0">✅ {{ t('students.noDebt') }}</option>
             </CFormSelect>
           </CCol>

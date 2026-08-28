@@ -92,10 +92,15 @@ class StudentController extends Controller
             $query->whereHas('enrollments', fn ($q) => $q->where('school_class_id', $request->school_class_id));
         }
 
-        // has_debt=1 → only students with unpaid balance; has_debt=0 → only fully paid
+        // has_debt=1 → unpaid or partial; has_debt=partial → partial only; has_debt=0 → fully paid
         if ($request->filled('has_debt')) {
             $schoolIdForDebt = $schoolId ?? auth()->user()->school_id;
-            if ((int) $request->has_debt === 1) {
+            if ($request->has_debt === 'partial') {
+                // has at least one invoice that's been started but not fully paid off
+                $query->whereHas('invoices', function ($q) use ($schoolIdForDebt) {
+                    $q->where('school_id', $schoolIdForDebt)->where('status', 'partial');
+                });
+            } elseif ((int) $request->has_debt === 1) {
                 // has at least one invoice where balance > 0
                 $query->whereHas('invoices', function ($q) use ($schoolIdForDebt) {
                     $q->where('school_id', $schoolIdForDebt)

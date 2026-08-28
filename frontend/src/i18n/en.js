@@ -313,6 +313,7 @@ export default {
     allPaymentStatus: 'All Payment Status',
     allSponsorshipTypes: 'All Sponsorship Types',
     hasDebt:          'Has Debt (Unpaid)',
+    partialPaid:      'Partial Paid',
     noDebt:           'Fully Paid',
     noStudents:   'No students found.',
     deleteTitle:  'Delete Student',
