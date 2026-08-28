@@ -2,7 +2,6 @@
 import { defineAsyncComponent, computed, ref, onMounted, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDashboardStore } from '@/stores/dashboard'
-import { useAuthStore } from '@/stores/auth'
 import { getAutoScrollState } from '@/composables/useAutoScroll'
 import LoadingBanner from '@/components/LoadingBanner.vue'
 import { CIcon } from '@coreui/icons-vue'
@@ -20,7 +19,6 @@ import {
 
 const { t } = useI18n()
 const dashboard = useDashboardStore()
-const authStore = useAuthStore()
 const autoScroll = getAutoScrollState()
 
 import { ChartLine, ChartBar } from '../charts/index.js'
@@ -158,8 +156,6 @@ const CLASS_KEY_MAP = {
   'FORM 4': ['kidato_la_4', 'form_4', 'form4', 'form_four'],
 }
 
-const classOverrides = ref(JSON.parse(localStorage.getItem('shulepay_class_overrides') || '{}'))
-
 const patientCategories = computed(() => {
   const colors = {
     'PP1':    '#007bff',
@@ -182,12 +178,6 @@ const patientCategories = computed(() => {
   const cb = dashboard.stats?.class_fee_breakdown_cents || {}
 
   const cats = Object.keys(CLASS_KEY_MAP).map((title) => {
-    // Custom override takes priority
-    if (classOverrides.value[title] !== undefined && classOverrides.value[title] !== '') {
-      const val = parseInt(classOverrides.value[title]) || 0
-      return { title, value: 'TZS ' + val.toLocaleString(), color: colors[title] || '#6c757d', numericValue: val }
-    }
-
     // Look up real data from class_fee_breakdown_cents using all possible key variants
     const keys = CLASS_KEY_MAP[title]
     const totalCents = keys.reduce((sum, k) => sum + (cb[k] || 0), 0)
@@ -208,32 +198,6 @@ const patientCategories = computed(() => {
     { title: 'Total', value: 'TZS ' + totalSum.toLocaleString(), color: 'grey' },
   ]
 })
-// Configuration Modal State & Methods (Superadmin / Accountant / Owner)
-const showClassConfigModal = ref(false)
-const tempOverrides = ref({})
-
-const canConfigure = computed(() => {
-  return authStore.isSuperAdmin || authStore.isOwner || authStore.isAccountant
-})
-
-function openClassConfigModal() {
-  tempOverrides.value = { ...classOverrides.value }
-  showClassConfigModal.value = true
-}
-
-function saveClassConfig() {
-  classOverrides.value = { ...tempOverrides.value }
-  localStorage.setItem('shulepay_class_overrides', JSON.stringify(classOverrides.value))
-  showClassConfigModal.value = false
-}
-
-function resetClassConfig() {
-  classOverrides.value = {}
-  tempOverrides.value = {}
-  localStorage.removeItem('shulepay_class_overrides')
-  showClassConfigModal.value = false
-}
-
 // Patient Category Chart Data (Bar + Line combination)
 const categoryChartData = computed(() => {
   const categories = patientCategories.value.filter((c) => c.title !== 'Total')
@@ -574,14 +538,6 @@ const formatDate = (dateStr) => {
             <h4 class="mb-0 fw-bold text-primary" style="font-size: 20px">
               {{ t('dashboard.classSummaryTitle') }}
             </h4>
-            <button
-              v-if="canConfigure"
-              class="btn btn-outline-primary btn-sm px-2 py-0 ms-2"
-              :title="t('dashboard.configClassTitle')"
-              @click="openClassConfigModal"
-            >
-              ⚙️ {{ t('dashboard.changeData') }}
-            </button>
           </div>
           <span class="badge bg-light text-dark border fw-normal">{{ t('dashboard.primarySecondary') }}</span>
         </div>
@@ -633,39 +589,6 @@ const formatDate = (dateStr) => {
           </div>
         </div>
       </div>
-
-      <!-- Class Configuration Modal (Superadmin / Accountant / Owner) -->
-      <CModal :visible="showClassConfigModal" @close="showClassConfigModal = false">
-        <CModalHeader>
-          <CModalTitle class="fw-bold">{{ t('dashboard.configClassTitle') }}</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          <p class="text-muted small mb-3">{{ t('dashboard.configClassHint') }}</p>
-          <div class="row g-2">
-            <div
-              v-for="cls in ['PP1', 'PP2', 'STD 1', 'STD 2', 'STD 3', 'STD 4', 'STD 5', 'STD 6', 'STD 7', 'FORM 1', 'FORM 2', 'FORM 3', 'FORM 4']"
-              :key="cls"
-              class="col-6"
-            >
-              <label class="form-label small fw-bold mb-1">{{ cls }}</label>
-              <input
-                type="number"
-                class="form-control form-control-sm"
-                v-model="tempOverrides[cls]"
-                placeholder="0"
-              />
-            </div>
-          </div>
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" variant="outline" size="sm" @click="resetClassConfig">
-            {{ t('dashboard.resetDefault') }}
-          </CButton>
-          <CButton color="primary" size="sm" @click="saveClassConfig">
-            {{ t('common.saveChanges') }}
-          </CButton>
-        </CModalFooter>
-      </CModal>
 
       <!-- Patient Category Analytics - Two Cards Side by Side -->
       <CRow class="mb-4">
