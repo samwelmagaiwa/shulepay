@@ -311,6 +311,7 @@ export default {
     status:       'Hali',
     debt:             'Deni',
     allPaymentStatus: 'Hali Yote ya Malipo',
+    allSponsorshipTypes: 'Aina Zote za Ufadhili',
     hasDebt:          'Wanaodaiwa (Deni)',
     noDebt:           'Wamekwisha Lipa',
     noStudents:   'Hakuna wanafunzi walioorodheshwa.',

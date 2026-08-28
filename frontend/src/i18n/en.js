@@ -311,6 +311,7 @@ export default {
     status:       'Status',
     debt:             'Outstanding',
     allPaymentStatus: 'All Payment Status',
+    allSponsorshipTypes: 'All Sponsorship Types',
     hasDebt:          'Has Debt (Unpaid)',
     noDebt:           'Fully Paid',
     noStudents:   'No students found.',

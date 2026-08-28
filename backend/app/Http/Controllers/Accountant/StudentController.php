@@ -85,6 +85,9 @@ class StudentController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
+        if ($request->filled('sponsorship_type')) {
+            $query->where('sponsorship_type', $request->sponsorship_type);
+        }
         if ($request->filled('school_class_id')) {
             $query->whereHas('enrollments', fn ($q) => $q->where('school_class_id', $request->school_class_id));
         }

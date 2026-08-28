@@ -4,7 +4,7 @@
     <CCard class="mb-2">
       <CCardBody class="py-2">
         <CRow class="g-2">
-          <CCol sm="4" md="3">
+          <CCol sm="4" md="2">
             <CFormInput v-model="filters.search" :placeholder="t('students.searchPlaceholder')" @input="debouncedFetch" />
           </CCol>
           <CCol sm="3" md="2">
@@ -24,7 +24,16 @@
               <option value="dropped">{{ t('students.statuses.dropped') }}</option>
             </CFormSelect>
           </CCol>
-          <CCol sm="3" md="3">
+          <CCol sm="3" md="2">
+            <CFormSelect v-model="filters.sponsorship_type" @update:modelValue="page = 1; fetchData()">
+              <option value="">🎗️ {{ t('students.allSponsorshipTypes') }}</option>
+              <option value="none">{{ t('students.notSponsored') }}</option>
+              <option value="half">{{ t('students.halfSponsored') }}</option>
+              <option value="full_paid">{{ t('students.fullySponsoredPaid') }}</option>
+              <option value="full">{{ t('students.fullySponsoredFree') }}</option>
+            </CFormSelect>
+          </CCol>
+          <CCol sm="3" md="2">
             <CFormSelect v-model="filters.has_debt" @update:modelValue="page = 1; fetchData()">
               <option value="">💰 {{ t('students.allPaymentStatus') }}</option>
               <option value="1">🔴 {{ t('students.hasDebt') }}</option>
@@ -173,7 +182,7 @@ const studentsStore = useStudentsStore()
 const schoolsStore  = useSchoolsStore()
 const schoolStore   = useSchoolStore()
 
-const filters        = ref({ search: '', school_id: '', status: '', has_debt: '' })
+const filters        = ref({ search: '', school_id: '', status: '', sponsorship_type: '', has_debt: '' })
 const selectedStudent  = ref(null)
 const showAddModal     = ref(false)
 const showEditModal    = ref(false)
@@ -214,6 +223,7 @@ async function fetchData() {
   if (filters.value.search)    params.search    = filters.value.search
   if (filters.value.school_id) params.school_id = filters.value.school_id
   if (filters.value.status)    params.status    = filters.value.status
+  if (filters.value.sponsorship_type) params.sponsorship_type = filters.value.sponsorship_type
   if (filters.value.has_debt !== '') params.has_debt = filters.value.has_debt
   await studentsStore.fetchStudents(params)
   meta.value = studentsStore.pagination || meta.value
@@ -230,7 +240,7 @@ function debouncedFetch() {
 }
 
 function resetFilters() {
-  filters.value = { search: '', school_id: '', status: '', has_debt: '' }
+  filters.value = { search: '', school_id: '', status: '', sponsorship_type: '', has_debt: '' }
   if (schoolStore.activeSchoolId) {
     filters.value.school_id = String(schoolStore.activeSchoolId)
   }
