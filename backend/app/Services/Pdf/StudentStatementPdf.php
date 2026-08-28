@@ -73,8 +73,11 @@ class StudentStatementPdf
 
         // A statement covers many invoices/receipts at once, so it has no single
         // receipt number of its own — this reference lets one printout still be
-        // identified/reissued later, the same way a receipt number does.
-        $statementNumber = 'STM-'.($enrollment?->admission_number ?: $student->id).'-'.now()->format('Ymd');
+        // identified/reissued later, the same way a receipt number does. The
+        // admission number's own slashes (e.g. "SEC/MGRTHMR/0075/2026") are
+        // replaced with dashes so this reads as one clean token, not a path.
+        $admissionRef = str_replace('/', '-', $enrollment?->admission_number ?: (string) $student->id);
+        $statementNumber = 'STM-'.$admissionRef.'-'.now()->format('Ymd');
 
         return Pdf::loadView('pdf.student_statement', [
             'student' => $student,

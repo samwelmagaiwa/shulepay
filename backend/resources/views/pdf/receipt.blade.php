@@ -43,7 +43,7 @@
   .right  { text-align: right; }
   .bold   { font-weight: bold; }
   .hr     { border-top: 1px dashed #555; margin: 7px 0; }
-  .hr-solid { border-top: 1.5px solid #111; margin: 8px 0; }
+  .hr-solid { border-top: 1.5px dashed #111; margin: 8px 0; }
   .logo-img { max-width: 90px; max-height: 60px; margin-bottom: 3px; }
   .app-name { font-size: 19px; font-weight: bold; color: #007f3e; letter-spacing: .5px; }
   .sub    { font-size: 10px; color: #555; }
