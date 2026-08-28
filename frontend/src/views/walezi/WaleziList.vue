@@ -135,7 +135,7 @@
             <CFormInput v-model="form.name" />
           </CCol>
           <CCol sm="6">
-            <label class="form-label">{{ t('guardians.phone') }} *</label>
+            <label class="form-label">{{ t('guardians.phone') }}</label>
             <CFormInput v-model="form.phone" type="tel" />
           </CCol>
           <CCol sm="6">

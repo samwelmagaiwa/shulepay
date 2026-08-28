@@ -56,7 +56,7 @@ class RegisterStudentRequest extends FormRequest
             'guardians' => 'required|array|min:1',
             'guardians.*.full_name' => 'required|string|max:200',
             'guardians.*.relationship' => 'required|in:father,mother,guardian',
-            'guardians.*.phone' => 'required|string|max:20',
+            'guardians.*.phone' => 'nullable|string|max:20',
             'guardians.*.alt_phone' => 'nullable|string|max:20',
             'guardians.*.email' => 'nullable|email|max:200',
             'guardians.*.national_id' => 'nullable|string|max:50',
@@ -139,7 +139,7 @@ class RegisterStudentRequest extends FormRequest
             'guardians.*.full_name.required' => 'Guardian full name is required.',
             'guardians.*.relationship.required' => 'Guardian relationship is required.',
             'guardians.*.relationship.in' => 'Relationship must be: father, mother, or guardian.',
-            'guardians.*.phone.required' => 'Guardian phone number is required.',
+
             'guardians.*.email.email' => 'Guardian email address is invalid.',
             // Financial
             'discount_amount_cents.integer' => 'Discount amount must be a number.',
@@ -168,12 +168,16 @@ class RegisterStudentRequest extends FormRequest
             // variant that does still bill, so it is excluded here.
             if ($sponsorship === 'full') {
                 if ($fee > 0) {
-                    $validator->errors()->add('total_tuition_fee_cents',
-                        'A fully sponsored student with no payments cannot have a tuition fee.');
+                    $validator->errors()->add(
+                        'total_tuition_fee_cents',
+                        'A fully sponsored student with no payments cannot have a tuition fee.'
+                    );
                 }
-                if (! empty($this->input('payment_history'))) {
-                    $validator->errors()->add('payment_history',
-                        'A fully sponsored student with no payments cannot have payment history.');
+                if (!empty($this->input('payment_history'))) {
+                    $validator->errors()->add(
+                        'payment_history',
+                        'A fully sponsored student with no payments cannot have payment history.'
+                    );
                 }
 
                 return;
@@ -181,8 +185,10 @@ class RegisterStudentRequest extends FormRequest
 
             // Every other type must carry a positive fee.
             if ($fee <= 0) {
-                $validator->errors()->add('total_tuition_fee_cents',
-                    'Total tuition fee is required.');
+                $validator->errors()->add(
+                    'total_tuition_fee_cents',
+                    'Total tuition fee is required.'
+                );
             }
 
             // 'full_paid': the sponsor's covered amount is separate from the fee —
@@ -190,11 +196,15 @@ class RegisterStudentRequest extends FormRequest
             if ($sponsorship === 'full_paid') {
                 $sponsored = (int) $this->input('sponsored_amount_cents', 0);
                 if ($sponsored <= 0) {
-                    $validator->errors()->add('sponsored_amount_cents',
-                        'Enter the amount the sponsor is covering.');
+                    $validator->errors()->add(
+                        'sponsored_amount_cents',
+                        'Enter the amount the sponsor is covering.'
+                    );
                 } elseif ($fee > 0 && $sponsored > $fee) {
-                    $validator->errors()->add('sponsored_amount_cents',
-                        'Sponsored amount cannot be greater than the total tuition fee.');
+                    $validator->errors()->add(
+                        'sponsored_amount_cents',
+                        'Sponsored amount cannot be greater than the total tuition fee.'
+                    );
                 }
             }
 
@@ -202,15 +212,21 @@ class RegisterStudentRequest extends FormRequest
             // never exceed the fee it is applied to.
             if ($discountType) {
                 if ($discount <= 0) {
-                    $validator->errors()->add('discount_amount_cents',
-                        'Enter the discount amount for the selected discount type.');
+                    $validator->errors()->add(
+                        'discount_amount_cents',
+                        'Enter the discount amount for the selected discount type.'
+                    );
                 } elseif ($fee > 0 && $discount > $fee) {
-                    $validator->errors()->add('discount_amount_cents',
-                        'Discount cannot be greater than the total tuition fee.');
+                    $validator->errors()->add(
+                        'discount_amount_cents',
+                        'Discount cannot be greater than the total tuition fee.'
+                    );
                 }
             } elseif ($discount > 0) {
-                $validator->errors()->add('discount_type',
-                    'Select a discount type for the amount entered.');
+                $validator->errors()->add(
+                    'discount_type',
+                    'Select a discount type for the amount entered.'
+                );
             }
 
             // Term fees for the year cannot exceed the annual tuition fee, and
@@ -228,26 +244,32 @@ class RegisterStudentRequest extends FormRequest
                     $sumOfFees += $entryFee;
 
                     $entryPaid = array_sum(array_map(
-                        fn ($p) => (int) ($p['amount_cents'] ?? 0),
+                        fn($p) => (int) ($p['amount_cents'] ?? 0),
                         $entry['payments'] ?? []
                     ));
                     $totalPaid += $entryPaid;
 
                     if ($entryFee > 0 && $entryPaid > $entryFee) {
-                        $validator->errors()->add("payment_history.{$i}.payments",
-                            'Payments recorded for this term exceed its fee amount.');
+                        $validator->errors()->add(
+                            "payment_history.{$i}.payments",
+                            'Payments recorded for this term exceed its fee amount.'
+                        );
                     }
                 }
 
                 if ($fee > 0 && $sumOfFees > $fee) {
-                    $validator->errors()->add('payment_history',
-                        'The terms total more than the annual tuition fee.');
+                    $validator->errors()->add(
+                        'payment_history',
+                        'The terms total more than the annual tuition fee.'
+                    );
                 }
 
                 $chargedCap = $fee > 0 ? $fee : $sumOfFees;
                 if ($chargedCap > 0 && $totalPaid > $chargedCap) {
-                    $validator->errors()->add('payment_history_paid_total',
-                        'Total paid across all terms exceeds the Total Charged amount.');
+                    $validator->errors()->add(
+                        'payment_history_paid_total',
+                        'Total paid across all terms exceeds the Total Charged amount.'
+                    );
                 }
             }
         });

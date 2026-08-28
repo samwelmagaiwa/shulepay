@@ -15,11 +15,11 @@ class UpdateStudentFullRequest extends FormRequest
     public function authorize(): bool
     {
         $user = $this->user();
-        if (! $user) {
+        if (!$user) {
             return false;
         }
 
-        if (! ($user->hasRole('superadmin') || $user->hasRole('accountant') || $user->hasRole('owner'))) {
+        if (!($user->hasRole('superadmin') || $user->hasRole('accountant') || $user->hasRole('owner'))) {
             return false;
         }
 
@@ -61,7 +61,7 @@ class UpdateStudentFullRequest extends FormRequest
             'guardians' => 'nullable|array',
             'guardians.*.full_name' => 'required_with:guardians|string|max:200',
             'guardians.*.relationship' => 'required_with:guardians|in:father,mother,guardian',
-            'guardians.*.phone' => 'required_with:guardians|string|max:20',
+            'guardians.*.phone' => 'nullable|string|max:20',
             'guardians.*.alt_phone' => 'nullable|string|max:20',
             'guardians.*.email' => 'nullable|email|max:200',
             'guardians.*.national_id' => 'nullable|string|max:50',
@@ -82,7 +82,7 @@ class UpdateStudentFullRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            if (! $this->boolean('generate_new_invoice')) {
+            if (!$this->boolean('generate_new_invoice')) {
                 return;
             }
 
@@ -92,8 +92,10 @@ class UpdateStudentFullRequest extends FormRequest
             $discount = (int) $this->input('discount_amount_cents', 0);
 
             if ($sponsorship === 'full') {
-                $validator->errors()->add('generate_new_invoice',
-                    'A fully sponsored student with no payments cannot have an invoice generated.');
+                $validator->errors()->add(
+                    'generate_new_invoice',
+                    'A fully sponsored student with no payments cannot have an invoice generated.'
+                );
 
                 return;
             }
@@ -107,18 +109,24 @@ class UpdateStudentFullRequest extends FormRequest
                 if ($sponsored <= 0) {
                     $validator->errors()->add('sponsored_amount_cents', 'Enter the amount the sponsor is covering.');
                 } elseif ($fee > 0 && $sponsored > $fee) {
-                    $validator->errors()->add('sponsored_amount_cents',
-                        'Sponsored amount cannot be greater than the total tuition fee.');
+                    $validator->errors()->add(
+                        'sponsored_amount_cents',
+                        'Sponsored amount cannot be greater than the total tuition fee.'
+                    );
                 }
             }
 
             if ($discountType) {
                 if ($discount <= 0) {
-                    $validator->errors()->add('discount_amount_cents',
-                        'Enter the discount amount for the selected discount type.');
+                    $validator->errors()->add(
+                        'discount_amount_cents',
+                        'Enter the discount amount for the selected discount type.'
+                    );
                 } elseif ($fee > 0 && $discount > $fee) {
-                    $validator->errors()->add('discount_amount_cents',
-                        'Discount cannot be greater than the total tuition fee.');
+                    $validator->errors()->add(
+                        'discount_amount_cents',
+                        'Discount cannot be greater than the total tuition fee.'
+                    );
                 }
             } elseif ($discount > 0) {
                 $validator->errors()->add('discount_type', 'Select a discount type for the amount entered.');

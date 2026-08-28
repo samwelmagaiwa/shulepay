@@ -2934,3 +2934,24 @@ labels, and that the ratios are true proportions. Full suite 30 passed."
 [0;36m[2026-08-28 18:31:11][0m   ShulePay — Release
 [0;36m[2026-08-28 18:31:11][0m ══════════════════════════════════════════
 [0;36m[2026-08-28 18:31:11][0m Checking working tree...
+[0;36m[2026-08-28 18:31:11][0m Files staged for commit:
+[0;36m[2026-08-28 18:31:11][0m Committing: "fix(dashboard): strip every value field from trend rows, not just 'amount'
+
+Caught by probing the live payload: weekly_trend names its value 'amount' but
+payment_trend names it 'total_cents'. toShape() only stripped 'amount', so under
+the lock the monthly trend still shipped total_cents in full — 8,188,000,000 sat
+in plain sight in a response that claimed to be locked, and its shape computed
+to 0 because no 'amount' key was found.
+
+toShape() now recognises every spelling a value could arrive under and, when a
+row's value field is not recognised at all, emits shape 0 rather than passing the
+row through — failing closed instead of open.
+
+The regression test's stub now mirrors the real payload's field names, asserts
+none of the six value spellings survive on any trend row, and scans the whole
+serialised body for the monthly amounts. Full suite 30 passed, 168 assertions."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-28 18:31:11][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-28 18:31:17][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions

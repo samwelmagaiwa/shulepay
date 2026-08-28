@@ -414,7 +414,7 @@
             </div>
             <!-- Phone -->
             <div>
-              <label class="form-label fw-semibold mb-1">{{ t('guardians.phone') }} <span class="text-danger">*</span></label>
+              <label class="form-label fw-semibold mb-1">{{ t('guardians.phone') }}</label>
               <CFormInput v-model="g.phone" type="tel" placeholder="0712345678"
                           :class="{'is-invalid': errors[`guardians.${gi}.phone`]}"
                           @blur="checkGuardianExists(gi)" />
@@ -1700,7 +1700,7 @@ function validateStep() {
   if (step.value === 4) {
     const g = form.value.guardians[0]
     if (!g?.full_name)    errors.value['guardians.0.full_name']    = t('guardians.errors.nameRequired')
-    if (!g?.phone)        errors.value['guardians.0.phone']        = t('guardians.errors.phoneRequired')
+
     if (!g?.relationship) errors.value['guardians.0.relationship'] = t('guardians.errors.relationshipRequired')
   }
   if (step.value === 5) {
