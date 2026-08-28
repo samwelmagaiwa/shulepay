@@ -61,7 +61,10 @@ class DashboardLockTest extends TestCase
                     'paid_amount_cents' => 6534700000,
                     'total_expenses_cents' => 120000000,
                     'collection_rate' => 68.4,
-                    'weekly_trend' => [['date' => '25/08', 'amount' => 1370000000]],
+                    'weekly_trend' => [
+                        ['date' => '25/08', 'amount' => 1370000000],
+                        ['date' => '26/08', 'amount' => 6680000000],
+                    ],
                     'payment_trend' => [['month' => 'Aug', 'amount' => 6680000000]],
                     'method_breakdown' => [['method' => 'cash', 'count' => 4, 'total' => 990000]],
                     'recent_payments' => [['student' => 'Juma', 'amount_cents' => 500000]],
@@ -126,6 +129,27 @@ class DashboardLockTest extends TestCase
         }
     }
 
+    /**
+     * The shape the chart draws must carry no recoverable scale: ratios only,
+     * relative to the tallest bar, with the amounts themselves gone.
+     */
+    public function test_trend_shape_is_a_ratio_not_a_scaled_amount(): void
+    {
+        $user = $this->userWith('accountant');
+        $token = $this->token($user);
+
+        $this->withToken($token)
+            ->postJson('/api/dashboard/lock', ['code' => '1234', 'code_confirmation' => '1234']);
+
+        $rows = $this->withToken($token)->getJson('/api/dashboard/stats')->json('weekly_trend');
+
+        // Stub amounts are 1_370_000_000 and 6_680_000_000 — the taller is the
+        // reference at 100, the other its true proportion of it.
+        $this->assertSame(100.0, (float) $rows[1]['shape']);
+        $this->assertEqualsWithDelta(20.51, (float) $rows[0]['shape'], 0.01);
+        $this->assertSame('25/08', $rows[0]['date'], 'labels must survive');
+    }
+
     public function test_non_money_data_still_flows_while_locked(): void
     {
         $user = $this->userWith('accountant');
@@ -159,8 +183,21 @@ class DashboardLockTest extends TestCase
 
         $res = $this->withToken($token)->getJson('/api/dashboard/stats')->assertOk();
 
-        foreach (['weekly_trend', 'payment_trend', 'method_breakdown', 'recent_payments', 'top_debtors'] as $key) {
+        foreach (['method_breakdown', 'recent_payments', 'top_debtors'] as $key) {
             $this->assertEmpty($res->json($key), "{$key} still carries amounts while locked");
+        }
+
+        // The trends keep their shape so the chart still draws, but every row
+        // must have lost its amount in favour of a 0-100 ratio.
+        foreach (['weekly_trend', 'payment_trend'] as $key) {
+            $rows = $res->json($key);
+            $this->assertNotEmpty($rows, "{$key} should keep its shape so the chart still draws");
+            foreach ($rows as $row) {
+                $this->assertArrayNotHasKey('amount', $row, "{$key} still exposes an amount");
+                $this->assertArrayHasKey('shape', $row, "{$key} lost its shape");
+                $this->assertGreaterThanOrEqual(0, $row['shape']);
+                $this->assertLessThanOrEqual(100, $row['shape']);
+            }
         }
         $this->assertNull($res->json('paid_amount_cents'));
         $this->assertNull($res->json('total_expenses_cents'));

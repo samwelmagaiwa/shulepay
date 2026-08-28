@@ -41,11 +41,6 @@ class DashboardPrivacy
         'paid_amount_cents',
         'total_expenses_cents',
         'collection_rate',
-        // The trends plot the same amounts day by day and month by month — the
-        // final bar of weekly_trend IS today's collections, so leaving these
-        // would have shown in a chart exactly what the card above it hides.
-        'weekly_trend',
-        'payment_trend',
         'method_breakdown',
         // Both name a student next to an amount they paid or owe.
         'recent_payments',
@@ -95,9 +90,44 @@ class DashboardPrivacy
             }
         }
 
+        // The trends keep their SHAPE but lose their scale, so the chart still
+        // draws a real curve while every label reads as dots. Each bar becomes a
+        // 0-100 ratio against the tallest bar in the series; no amount, and no
+        // figure any amount could be divided out of, reaches the browser.
+        //
+        // Known limit, accepted deliberately: the proportions remain visible, so
+        // someone who independently knows one real figure — from a receipt, say —
+        // could estimate the rest. Hiding the shape as well is the stricter
+        // option; this one trades that for a chart that still reads.
+        foreach (['weekly_trend', 'payment_trend'] as $key) {
+            if (! empty($stats[$key]) && is_array($stats[$key])) {
+                $stats[$key] = self::toShape($stats[$key]);
+            }
+        }
+
         $stats['locked'] = true;
 
         return $stats;
+    }
+
+    /**
+     * Replace each row's amount with its height relative to the largest amount
+     * in the series (0-100), dropping the amount itself.
+     */
+    private static function toShape(array $rows): array
+    {
+        $max = 0;
+        foreach ($rows as $row) {
+            $max = max($max, (int) ($row['amount'] ?? 0));
+        }
+
+        return array_map(function (array $row) use ($max) {
+            // An all-zero series has no shape to preserve; flat is the truth.
+            $row['shape'] = $max > 0 ? round(((int) ($row['amount'] ?? 0)) / $max * 100, 2) : 0;
+            unset($row['amount']);
+
+            return $row;
+        }, $rows);
     }
 
     private static function grantKey(User $user): string

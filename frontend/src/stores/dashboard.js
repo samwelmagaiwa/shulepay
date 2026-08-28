@@ -146,7 +146,12 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
     const wt = s.weekly_trend || []
     const labels = wt.map(d => d.date)
-    const amounts = wt.map(d => Math.round((d.amount || 0) / 100)) // TZS
+    // While locked the backend sends `shape` (0-100 relative to the tallest bar)
+    // instead of `amount`, so the chart keeps its real curve without any figure
+    // reaching the browser. Labels and axis are masked where they are drawn.
+    const amounts = s.locked
+      ? wt.map(d => d.shape || 0)
+      : wt.map(d => Math.round((d.amount || 0) / 100)) // TZS
 
     return {
       labels,

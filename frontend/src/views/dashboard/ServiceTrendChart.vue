@@ -6,6 +6,7 @@ import { useDashboardStore } from '@/stores/dashboard'
 import { Chart, registerables } from 'chart.js'
 import { CIcon } from '@coreui/icons-vue'
 import { cilHospital, cilChart, cilBarChart } from '@coreui/icons'
+import { MASK } from '@/utils/maskedValue'
 
 Chart.register(...registerables)
 
@@ -302,7 +303,8 @@ const barLabelsPlugin = {
           if (v >= 1_000)     return (v / 1_000).toFixed(v % 1_000 === 0 ? 0 : 1) + 'k'
           return String(v)
         }
-        const displayValue = formatShort(value)
+        // While locked the bar heights are ratios, not money — never print them.
+        const displayValue = dashboard.isLocked ? MASK : formatShort(value)
 
         ctx.save()
         // SPECIAL HANDLING FOR TREND LINE (Index 0)
@@ -466,7 +468,7 @@ const chartOptions = computed(() => {
               }
             }
             
-            return `${label}: ${value.toLocaleString()}`
+            return `${label}: ${dashboard.isLocked ? MASK : value.toLocaleString()}`
           },
         },
       },
@@ -507,6 +509,9 @@ const chartOptions = computed(() => {
           color: '#94a3b8',
           font: { size: 12, weight: '600' },
           maxTicksLimit: 10,
+          // While locked the scale is a 0-100 ratio, not money — showing the
+          // numbers would be meaningless and hint at the real magnitudes.
+          display: !dashboard.isLocked,
           callback: (value) => value.toLocaleString(),
         },
       },

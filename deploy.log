@@ -2878,3 +2878,30 @@ registration and every other write path are unaffected -- covered by test.
 [0;36m[2026-08-28 18:19:08][0m   ShulePay — Release
 [0;36m[2026-08-28 18:19:08][0m ══════════════════════════════════════════
 [0;36m[2026-08-28 18:19:08][0m Checking working tree...
+[0;36m[2026-08-28 18:19:09][0m Files staged for commit:
+[0;36m[2026-08-28 18:19:09][0m Committing: "fix(dashboard): withhold trend and breakdown amounts under the privacy lock
+
+The Collection Trend Analysis chart kept plotting the very figures the cards
+above it were hiding — the final bar of weekly_trend IS today's collections, so
+a locked dashboard showed 66.8M in a graph while the card read dots.
+
+Extends the redaction set to every remaining money-bearing key: weekly_trend,
+payment_trend, method_breakdown, recent_payments and top_debtors (the last two
+also pair a student name with an amount), plus paid_amount_cents,
+total_expenses_cents and collection_rate. class_breakdown and school_breakdown
+stay — they are enrollment counts, and the lock hides money, not the school.
+
+Dashibodi's monthly-expenses card and collection-rate gauge mask too, and the
+trend chart shows a lock chip so an empty chart does not read as a load failure.
+
+New test asserts none of the stubbed amounts appear anywhere in the serialised
+payload while locked. Full suite 29 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-28 18:19:09][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-28 18:19:15][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-28 18:26:12][0m ══════════════════════════════════════════
+[0;36m[2026-08-28 18:26:12][0m   ShulePay — Release
+[0;36m[2026-08-28 18:26:12][0m ══════════════════════════════════════════
+[0;36m[2026-08-28 18:26:13][0m Checking working tree...
