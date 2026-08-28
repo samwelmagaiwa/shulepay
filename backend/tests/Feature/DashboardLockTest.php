@@ -58,6 +58,17 @@ class DashboardLockTest extends TestCase
                     'paid_partial_invoices' => 313,
                     'paid_partial_amount_cents' => 6534700000,
                     'class_fee_breakdown_cents' => ['STD 4' => 2013300000],
+                    'paid_amount_cents' => 6534700000,
+                    'total_expenses_cents' => 120000000,
+                    'collection_rate' => 68.4,
+                    'weekly_trend' => [['date' => '25/08', 'amount' => 1370000000]],
+                    'payment_trend' => [['month' => 'Aug', 'amount' => 6680000000]],
+                    'method_breakdown' => [['method' => 'cash', 'count' => 4, 'total' => 990000]],
+                    'recent_payments' => [['student' => 'Juma', 'amount_cents' => 500000]],
+                    'top_debtors' => [['student' => 'Asha', 'balance' => 700000]],
+                    // Not money: these must survive the redaction untouched.
+                    'class_breakdown' => ['darasa_la_1' => 30],
+                    'school_breakdown' => [['school' => 'Msingi', 'count' => 137]],
                 ];
             }
         });
@@ -129,6 +140,37 @@ class DashboardLockTest extends TestCase
         $this->assertArrayHasKey('total_students', $res->json());
         $this->assertNotNull($res->json('total_students'));
         $this->assertNotNull($res->json('sponsored_free_count'));
+        $this->assertNotEmpty($res->json('class_breakdown'));
+        $this->assertNotEmpty($res->json('school_breakdown'));
+    }
+
+    /**
+     * The trend charts plot the same amounts as the cards. The final bar of
+     * weekly_trend is literally today's collections, so a locked dashboard that
+     * still shipped these would be showing in a graph what the card hides.
+     */
+    public function test_trend_and_breakdown_amounts_are_withheld_too(): void
+    {
+        $user = $this->userWith('accountant');
+        $token = $this->token($user);
+
+        $this->withToken($token)
+            ->postJson('/api/dashboard/lock', ['code' => '1234', 'code_confirmation' => '1234']);
+
+        $res = $this->withToken($token)->getJson('/api/dashboard/stats')->assertOk();
+
+        foreach (['weekly_trend', 'payment_trend', 'method_breakdown', 'recent_payments', 'top_debtors'] as $key) {
+            $this->assertEmpty($res->json($key), "{$key} still carries amounts while locked");
+        }
+        $this->assertNull($res->json('paid_amount_cents'));
+        $this->assertNull($res->json('total_expenses_cents'));
+        $this->assertNull($res->json('collection_rate'));
+
+        // No amount from the stub may appear anywhere in the serialised payload.
+        $body = $res->getContent();
+        foreach (['1370000000', '6680000000', '6534700000', '3082800000', '5165900000'] as $amount) {
+            $this->assertStringNotContainsString($amount, $body, "amount {$amount} leaked while locked");
+        }
     }
 
     public function test_correct_code_reveals_the_figures_again(): void

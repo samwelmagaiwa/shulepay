@@ -525,6 +525,15 @@ const chartOptions = computed(() => {
           </h5>
         </div>
         <div class="d-flex align-items-center gap-3">
+          <!-- The trend plots the same amounts as the cards above, so it goes
+               blank while they are hidden. Say so, or an empty chart reads as a
+               loading failure. -->
+          <div v-if="dashboard.isLocked" class="d-flex align-items-center gap-2 px-3 py-1 border rounded-pill shadow-sm">
+            <span>🔒</span>
+            <span class="fw-bold text-medium-emphasis" style="font-size: 11px; letter-spacing: 0.5px">
+              {{ t('dashboardLock.locked') }}
+            </span>
+          </div>
           <div v-if="dashboard.remoteApiAvailable === false && dashboard.isOfflineUIReported" class="d-flex align-items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200 rounded-pill shadow-sm">
             <div class="spinner-grow spinner-grow-sm text-amber-500" role="status" style="width: 8px; height: 8px;"></div>
             <span class="fw-bold text-amber-700" style="font-size: 11px; letter-spacing: 0.5px">RECONNECTING... (CACHED)</span>

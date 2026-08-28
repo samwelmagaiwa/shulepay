@@ -61,7 +61,7 @@
                 <CIcon icon="cilCash" class="text-warning" size="xl" />
               </div>
               <div>
-                <div class="fs-5 fw-bold text-warning">{{ fmtCents(store.stats?.total_expenses_cents) }}</div>
+                <div class="fs-5 fw-bold text-warning">{{ store.isLocked ? MASK : fmtCents(store.stats?.total_expenses_cents) }}</div>
                 <div class="text-muted small">{{ t('dashboard.monthlyExpenses') }}</div>
               </div>
             </CCardBody>
@@ -105,10 +105,10 @@
             <CCardBody class="d-flex flex-column justify-content-center gap-2">
               <div class="d-flex justify-content-between small text-muted mb-1">
                 <span>{{ t('dashboard.collectionRate') }}</span>
-                <span class="fw-bold text-dark">{{ collectionRate }}%</span>
+                <span class="fw-bold text-dark">{{ store.isLocked ? MASK : collectionRate + '%' }}</span>
               </div>
               <CProgress :value="collectionRate" color="primary" height="18" class="rounded-pill">
-                <CProgressBar>{{ collectionRate }}%</CProgressBar>
+                <CProgressBar>{{ store.isLocked ? '' : collectionRate + '%' }}</CProgressBar>
               </CProgress>
             </CCardBody>
           </CCard>

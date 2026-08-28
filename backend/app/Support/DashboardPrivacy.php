@@ -38,6 +38,21 @@ class DashboardPrivacy
         'paid_partial_invoices',
         'paid_partial_amount_cents',
         'class_fee_breakdown_cents',
+        'paid_amount_cents',
+        'total_expenses_cents',
+        'collection_rate',
+        // The trends plot the same amounts day by day and month by month — the
+        // final bar of weekly_trend IS today's collections, so leaving these
+        // would have shown in a chart exactly what the card above it hides.
+        'weekly_trend',
+        'payment_trend',
+        'method_breakdown',
+        // Both name a student next to an amount they paid or owe.
+        'recent_payments',
+        'top_debtors',
+        // Deliberately absent: class_breakdown and school_breakdown hold
+        // enrollment counts, and total_students / sponsored_free_count are
+        // headcounts. The lock hides money, not the school.
     ];
 
     public static function lockFor(User $user): ?DashboardLock

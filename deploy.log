@@ -2841,3 +2841,40 @@ is unchanged for other callers. Summary card relabelled to match what it counts.
 [0;36m[2026-08-28 16:43:09][0m   ShulePay — Release
 [0;36m[2026-08-28 16:43:09][0m ══════════════════════════════════════════
 [0;36m[2026-08-28 16:43:09][0m Checking working tree...
+[0;36m[2026-08-28 16:43:09][0m Files staged for commit:
+[0;36m[2026-08-28 16:43:09][0m Committing: "feat(dashboard): per-user privacy lock for money figures
+
+The three money cards (Outstanding Debt, Paid Invoices, Today's Collections)
+and the Fee Collection Summary by Class can be hidden behind a code each user
+sets for themselves.
+
+Redaction happens server-side, not in the browser: while locked the API omits
+those values entirely and marks the payload locked:true, so there is nothing to
+recover from the network response. The frontend only decides how to draw the
+absence, showing dots instead of the 0 it would otherwise compute.
+
+Keys are redacted by VALUE rather than by which card shows them --
+/dashibodi renders the same collections and debt from total_collected_cents /
+total_outstanding_cents, so redacting only the /dashboard keys would leave the
+lock bypassable by opening the other page. The outstanding-debts spreadsheet
+export is gated by the same rule for the same reason.
+
+Per user: each superadmin, owner and accountant sets an independent code, and
+one user locking never affects a colleague. Only a bcrypt hash is stored.
+Unlocking grants a 5-minute server-side pass that expires on its own. Unlock
+attempts are rate-limited (a 4-digit code falls in seconds otherwise), and a
+forgotten code is cleared with the account password.
+
+Existing logic untouched: DashboardService is not modified, and student
+registration and every other write path are unaffected -- covered by test.
+
+13 new tests, full suite 28 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-28 16:43:09][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-28 16:43:15][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-28 18:19:08][0m ══════════════════════════════════════════
+[0;36m[2026-08-28 18:19:08][0m   ShulePay — Release
+[0;36m[2026-08-28 18:19:08][0m ══════════════════════════════════════════
+[0;36m[2026-08-28 18:19:08][0m Checking working tree...
