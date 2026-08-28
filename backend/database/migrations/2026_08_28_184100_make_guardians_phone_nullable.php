@@ -13,14 +13,14 @@ return new class extends Migration {
             // The unique constraint is kept so that two guardians cannot
             // share the same number, but multiple phone-less guardians
             // are allowed (MySQL treats each NULL as distinct).
-            $table->string('phone', 20)->nullable()->unique()->change();
+            $table->string('phone', 20)->nullable()->change();
         });
     }
 
     public function down(): void
     {
         Schema::table('guardians', function (Blueprint $table) {
-            $table->string('phone', 20)->nullable(false)->unique()->change();
+            $table->string('phone', 20)->nullable(false)->change();
         });
     }
 };
