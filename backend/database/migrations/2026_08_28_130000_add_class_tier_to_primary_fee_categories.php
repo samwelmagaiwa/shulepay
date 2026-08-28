@@ -19,30 +19,42 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('primary_fee_categories', function (Blueprint $table) {
-            $table->dropUnique(['school_id', 'category']);
             $table->string('class_tier')->default('std_4_6')->after('school_id');
         });
 
         DB::table('primary_fee_categories')->update(['class_tier' => 'std_4_6']);
 
+        // The old unique(school_id, category) index is also what backs the
+        // school_id foreign key — MySQL refuses to drop it while it's the
+        // only index covering that column, so the new composite unique
+        // (which also starts with school_id) must exist first.
         Schema::table('primary_fee_categories', function (Blueprint $table) {
             $table->unique(['school_id', 'class_tier', 'category']);
+        });
+
+        Schema::table('primary_fee_categories', function (Blueprint $table) {
+            $table->dropUnique(['school_id', 'category']);
         });
     }
 
     public function down(): void
     {
+        // Standard 1-3 rows have no home in the narrower schema — drop them
+        // rather than silently merging them into a Standard 4-6 amount. Must
+        // happen before the old unique(school_id, category) index goes back
+        // on, or a school with both tiers configured would violate it.
+        DB::table('primary_fee_categories')->where('class_tier', 'std_1_3')->delete();
+
+        Schema::table('primary_fee_categories', function (Blueprint $table) {
+            $table->unique(['school_id', 'category']);
+        });
+
         Schema::table('primary_fee_categories', function (Blueprint $table) {
             $table->dropUnique(['school_id', 'class_tier', 'category']);
         });
 
-        // Standard 1-3 rows have no home in the narrower schema — drop them
-        // rather than silently merging them into a Standard 4-6 amount.
-        DB::table('primary_fee_categories')->where('class_tier', 'std_1_3')->delete();
-
         Schema::table('primary_fee_categories', function (Blueprint $table) {
             $table->dropColumn('class_tier');
-            $table->unique(['school_id', 'category']);
         });
     }
 };
