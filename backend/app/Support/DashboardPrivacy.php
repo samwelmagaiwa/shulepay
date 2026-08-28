@@ -116,15 +116,38 @@ class DashboardPrivacy
      */
     private static function toShape(array $rows): array
     {
+        // The two trends do not agree on a field name: weekly_trend carries
+        // `amount`, payment_trend carries `total_cents`. Stripping only `amount`
+        // left the monthly totals fully exposed under the lock. Anything that
+        // looks like a value is stripped, and a row whose amount field is not
+        // recognised is emptied rather than passed through — failing closed.
+        $valueKeys = ['amount', 'total_cents', 'total', 'amount_cents', 'balance', 'cents'];
+
+        $valueOf = function (array $row) use ($valueKeys): ?int {
+            foreach ($valueKeys as $k) {
+                if (array_key_exists($k, $row)) {
+                    return (int) $row[$k];
+                }
+            }
+
+            return null;
+        };
+
         $max = 0;
         foreach ($rows as $row) {
-            $max = max($max, (int) ($row['amount'] ?? 0));
+            $max = max($max, $valueOf($row) ?? 0);
         }
 
-        return array_map(function (array $row) use ($max) {
-            // An all-zero series has no shape to preserve; flat is the truth.
-            $row['shape'] = $max > 0 ? round(((int) ($row['amount'] ?? 0)) / $max * 100, 2) : 0;
-            unset($row['amount']);
+        return array_map(function (array $row) use ($max, $valueKeys, $valueOf) {
+            $value = $valueOf($row);
+
+            foreach ($valueKeys as $k) {
+                unset($row[$k]);
+            }
+
+            // Unrecognised row: no shape can be trusted, so claim none.
+            // An all-zero series has no shape either; flat is the truth.
+            $row['shape'] = ($value !== null && $max > 0) ? round($value / $max * 100, 2) : 0;
 
             return $row;
         }, $rows);

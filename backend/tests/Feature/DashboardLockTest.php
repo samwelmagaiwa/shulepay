@@ -65,7 +65,12 @@ class DashboardLockTest extends TestCase
                         ['date' => '25/08', 'amount' => 1370000000],
                         ['date' => '26/08', 'amount' => 6680000000],
                     ],
-                    'payment_trend' => [['month' => 'Aug', 'amount' => 6680000000]],
+                    // payment_trend names its value total_cents, NOT amount —
+                    // the mismatch once left these totals exposed under the lock.
+                    'payment_trend' => [
+                        ['month' => '2026-07', 'total_cents' => 4094000000],
+                        ['month' => '2026-08', 'total_cents' => 8188000000],
+                    ],
                     'method_breakdown' => [['method' => 'cash', 'count' => 4, 'total' => 990000]],
                     'recent_payments' => [['student' => 'Juma', 'amount_cents' => 500000]],
                     'top_debtors' => [['student' => 'Asha', 'balance' => 700000]],
@@ -193,7 +198,12 @@ class DashboardLockTest extends TestCase
             $rows = $res->json($key);
             $this->assertNotEmpty($rows, "{$key} should keep its shape so the chart still draws");
             foreach ($rows as $row) {
-                $this->assertArrayNotHasKey('amount', $row, "{$key} still exposes an amount");
+                // Every spelling a value could arrive under, not just 'amount' —
+                // payment_trend uses total_cents, and checking only 'amount'
+                // once let those totals through untouched.
+                foreach (['amount', 'total_cents', 'total', 'amount_cents', 'balance', 'cents'] as $valueKey) {
+                    $this->assertArrayNotHasKey($valueKey, $row, "{$key} still exposes {$valueKey}");
+                }
                 $this->assertArrayHasKey('shape', $row, "{$key} lost its shape");
                 $this->assertGreaterThanOrEqual(0, $row['shape']);
                 $this->assertLessThanOrEqual(100, $row['shape']);
@@ -205,7 +215,10 @@ class DashboardLockTest extends TestCase
 
         // No amount from the stub may appear anywhere in the serialised payload.
         $body = $res->getContent();
-        foreach (['1370000000', '6680000000', '6534700000', '3082800000', '5165900000'] as $amount) {
+        foreach ([
+            '1370000000', '6680000000', '6534700000', '3082800000', '5165900000',
+            '4094000000', '8188000000',
+        ] as $amount) {
             $this->assertStringNotContainsString($amount, $body, "amount {$amount} leaked while locked");
         }
     }

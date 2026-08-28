@@ -2905,3 +2905,32 @@ payload while locked. Full suite 29 passed."
 [0;36m[2026-08-28 18:26:12][0m   ShulePay — Release
 [0;36m[2026-08-28 18:26:12][0m ══════════════════════════════════════════
 [0;36m[2026-08-28 18:26:13][0m Checking working tree...
+[0;36m[2026-08-28 18:26:13][0m Files staged for commit:
+[0;36m[2026-08-28 18:26:13][0m Committing: "feat(dashboard): keep trend bars drawn while their values stay masked
+
+The trend chart went blank under the privacy lock, which read as a broken
+widget. It now keeps its real curve: while locked the backend replaces each
+trend row's amount with a 0-100 ratio against the tallest bar in the series and
+drops the amount itself, so the shape survives but no figure — and no figure any
+amount could be divided out of — reaches the browser.
+
+Value labels, Y-axis ticks and tooltips all render the mask instead of numbers,
+since the underlying scale is now a ratio and printing it would be both
+meaningless and a hint at the real magnitudes.
+
+Accepted limit, documented in the code: relative proportions remain visible, so
+someone who independently knows one real figure could estimate the others.
+Hiding the shape entirely is the stricter option; this trades that for a chart
+that still reads.
+
+Tests pin that trend rows lose 'amount', gain a 0-100 'shape', keep their date
+labels, and that the ratios are true proportions. Full suite 30 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-28 18:26:13][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-28 18:26:19][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-28 18:31:11][0m ══════════════════════════════════════════
+[0;36m[2026-08-28 18:31:11][0m   ShulePay — Release
+[0;36m[2026-08-28 18:31:11][0m ══════════════════════════════════════════
+[0;36m[2026-08-28 18:31:11][0m Checking working tree...
