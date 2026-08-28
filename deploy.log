@@ -2794,3 +2794,28 @@ collapse into one carried-forward row past 14. Verified single page from 4 to 40
 [0;36m[2026-08-28 02:11:30][0m   ShulePay — Release
 [0;36m[2026-08-28 02:11:30][0m ══════════════════════════════════════════
 [0;36m[2026-08-28 02:11:30][0m Checking working tree...
+[0;36m[2026-08-28 02:11:30][0m Files staged for commit:
+[0;36m[2026-08-28 02:11:30][0m Committing: "feat(invoices): one click on the magnifier shows a student's whole picture
+
+The drawer already fetched invoices, payments and installments but split them
+across four tabs and opened on the emptiest one, so seeing a student's debts and
+what had been paid against them took several clicks and mental joining.
+
+Everything now renders in one scrolling view, and each invoice carries the
+payments made against it (date, method, receipt number, amount) directly beneath
+it, or 'Hakuna malipo bado' when none. The tab buttons remain as jump links with
+their counts.
+
+Gender, status and date of birth previously showed as em-dashes: the student
+object handed in by the invoice list is InvoiceResource's nested summary, which
+omits them. The drawer now also fetches the full student record and merges it
+over that summary."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-28 02:11:30][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-28 02:11:35][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-28 03:36:36][0m ══════════════════════════════════════════
+[0;36m[2026-08-28 03:36:36][0m   ShulePay — Release
+[0;36m[2026-08-28 03:36:36][0m ══════════════════════════════════════════
+[0;36m[2026-08-28 03:36:36][0m Checking working tree...

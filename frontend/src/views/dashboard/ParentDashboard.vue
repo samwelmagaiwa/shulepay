@@ -64,9 +64,11 @@
         </CCol>
       </CRow>
 
-      <!-- Per-child cards -->
+      <!-- Per-child cards + Recent Payments, side by side on wide screens -->
       <CRow class="g-3">
-        <CCol v-for="child in children" :key="child.id" xs="12" md="6" lg="4">
+      <CCol xs="12" xl="8">
+      <CRow class="g-3">
+        <CCol v-for="child in children" :key="child.id" xs="12" md="6" xl="6">
           <CCard class="h-100">
             <CCardHeader class="d-flex align-items-center gap-2 fw-semibold">
               <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
@@ -156,9 +158,11 @@
           </CCard>
         </CCol>
       </CRow>
+      </CCol>
 
       <!-- Recent payments across this parent's children only -->
-      <CCard v-if="recentPayments.length" class="mt-4">
+      <CCol xs="12" xl="4">
+      <CCard v-if="recentPayments.length" class="h-100">
         <CCardHeader class="fw-semibold">🧾 {{ t('dashboard.recentPayments') }}</CCardHeader>
         <CCardBody class="p-0">
           <div class="table-responsive">
@@ -198,6 +202,8 @@
           </div>
         </CCardBody>
       </CCard>
+      </CCol>
+      </CRow>
 
       <CAlert v-if="actionError" color="danger" dismissible class="mt-3 py-2"
               @close="actionError = ''">

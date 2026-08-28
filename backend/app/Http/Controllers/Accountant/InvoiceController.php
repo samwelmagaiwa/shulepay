@@ -13,6 +13,7 @@ use App\Services\Billing\InvoiceGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class InvoiceController extends Controller
 {
@@ -74,6 +75,42 @@ class InvoiceController extends Controller
             }
         }
 
+        $perPage = (int) $request->input('per_page', 20);
+
+        // The list collapses a student's invoices into one row, so it must paginate
+        // by STUDENT. Paginating invoices meant 20 rows' worth of data rendered as
+        // ~5 rows (four terms each), leaving the page half empty and the "showing
+        // 1-20 of N" counter describing something other than what was on screen.
+        // It also split a student across a page boundary whenever their invoices
+        // straddled one.
+        if ($request->boolean('group_by_student')) {
+            $studentPage = (clone $query)->toBase()
+                ->select('invoices.student_id')
+                ->selectRaw('MAX(invoices.id) as latest_invoice_id')
+                ->groupBy('invoices.student_id')
+                ->orderByDesc('latest_invoice_id')
+                ->paginate($perPage, ['*'], 'page', $request->input('page'));
+
+            $studentIds = collect($studentPage->items())->pluck('student_id')->all();
+
+            $invoices = $studentIds
+                ? $query->whereIn('student_id', $studentIds)
+                    ->orderByDesc('created_at')->orderByDesc('id')->get()
+                : collect();
+
+            // Page meta counts students (what the user sees as rows); the payload is
+            // every invoice belonging to them, so no group is ever cut in half.
+            return InvoiceResource::collection(
+                new LengthAwarePaginator(
+                    $invoices,
+                    $studentPage->total(),
+                    $studentPage->perPage(),
+                    $studentPage->currentPage(),
+                    ['path' => $request->url(), 'query' => $request->query()]
+                )
+            );
+        }
+
         // created_at alone is not unique — a migration import writes every term's invoice
         // in one transaction, so they share a timestamp. Without a unique tiebreaker MySQL
         // may order those ties differently for each page, letting a row appear twice or
@@ -81,7 +118,7 @@ class InvoiceController extends Controller
         return InvoiceResource::collection(
             $query->orderByDesc('created_at')
                 ->orderByDesc('id')
-                ->paginate($request->input('per_page', 20))
+                ->paginate($perPage)
         );
     }
 

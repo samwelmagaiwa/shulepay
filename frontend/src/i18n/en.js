@@ -749,6 +749,7 @@ export default {
     total:    'Total',
     balance:  'Balance',
     allInvoices:    'All Invoices',
+    studentsWithInvoices: 'Students with Invoices',
     totalDebt:      'Total Debt',
     collected:      'Collected',
     promisedToPay:  'Promised to Pay',

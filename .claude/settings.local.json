@@ -517,7 +517,12 @@
       "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend cat app/Services/Pdf/StudentStatementPdf.php\")",
       "Bash(ssh root@169.58.188.122 \"docker exec -i shulepay_backend cat resources/views/pdf/partials/letterhead.blade.php\")",
       "Bash(grep -n 'font-size:{{ $px\\(11\\) }}; color:#444')",
-      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_frontend sh -c 'grep -rl \\\\\"ReceiptViewerModal\\\\\" /usr/share/nginx/html/assets/ 2>/dev/null || echo NOTFOUND'\")"
+      "Bash(ssh root@169.58.188.122 \"docker exec shulepay_frontend sh -c 'grep -rl \\\\\"ReceiptViewerModal\\\\\" /usr/share/nginx/html/assets/ 2>/dev/null || echo NOTFOUND'\")",
+      "Bash(php -l \"D:\\\\Projects\\\\shulepay\\\\backend\\\\resources\\\\views\\\\pdf\\\\student_statement.blade.php\")",
+      "Bash(php -l resources/views/pdf/student_statement.blade.php)",
+      "Bash(php -l resources/views/pdf/receipt.blade.php)",
+      "Bash(php -l app/Http/Controllers/ParentPortal/DashboardController.php)",
+      "Bash(vendor/bin/pint app/Http/Controllers/ParentPortal/DashboardController.php routes/api.php)"
     ]
   }
 }

@@ -749,6 +749,7 @@ export default {
     total:    'Jumla',
     balance:  'Deni',
     allInvoices:    'Ankara Zote',
+    studentsWithInvoices: 'Wanafunzi Wenye Ankara',
     totalDebt:      'Deni Lote',
     collected:      'Kilichokusanywa',
     promisedToPay:  'Waliahidi Kulipa',

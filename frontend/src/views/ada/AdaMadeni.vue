@@ -6,8 +6,10 @@
       <CCol xs="6" md="3">
         <CCard class="h-100" style="border:2px solid #6c757d; background:rgba(108,117,125,0.07); box-shadow:0 8px 24px rgba(108,117,125,0.35), 0 2px 6px rgba(0,0,0,0.12);">
           <CCardBody class="p-2 p-md-3">
-            <div class="text-muted small">{{ t('invoices.allInvoices') }}</div>
-            <div class="fw-bold fs-5">{{ pagination.total || invoices.length }}</div>
+            <!-- The list paginates by student, so this total counts students,
+                 not invoices — labelling it "All Invoices" would misreport it. -->
+            <div class="text-muted small">{{ t('invoices.studentsWithInvoices') }}</div>
+            <div class="fw-bold fs-5">{{ pagination.total || groupedInvoices.length }}</div>
           </CCardBody>
         </CCard>
       </CCol>
@@ -420,7 +422,13 @@ const groupedInvoices = computed(() => {
 })
 
 async function fetchData(page) {
-  const params = { page: page ?? pagination.value.current_page ?? 1, per_page: perPage.value }
+  // The table renders one row per student, so ask the API to paginate by student
+  // too — otherwise 20 invoices collapse into ~5 rows and the page looks empty.
+  const params = {
+    page: page ?? pagination.value.current_page ?? 1,
+    per_page: perPage.value,
+    group_by_student: 1,
+  }
   if (filters.value.school_id)   params.school_id   = filters.value.school_id
   if (filters.value.class_id)    params.school_class_id = filters.value.class_id
   if (filters.value.term_number) params.term_number = filters.value.term_number
