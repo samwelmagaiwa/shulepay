@@ -727,6 +727,7 @@ export default {
     selectCategory: 'Select service category',
     selectCategoryHint: 'Pick the service category to auto-fill the tuition fee',
     totalTuitionFeeLockedHint: 'Locked — pick a service category above to set this amount',
+    classDetectedHint: 'Detected class: {tier} — this is the right place. Pick a service category below to set the fee.',
   },
   guardians: {
     title:       'Guardians',

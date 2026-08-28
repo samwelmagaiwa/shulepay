@@ -727,6 +727,7 @@ export default {
     selectCategory: 'Chagua aina ya huduma',
     selectCategoryHint: 'Chagua aina ya huduma ili ada ijae kiotomatiki',
     totalTuitionFeeLockedHint: 'Imefungwa — chagua aina ya huduma hapo juu ili kuweka kiasi hiki',
+    classDetectedHint: 'Darasa limetambuliwa: {tier} — hapa ni sehemu sahihi. Chagua aina ya huduma hapo chini kuweka ada.',
   },
   guardians: {
     title:       'Walezi',

@@ -557,6 +557,9 @@
 
         <CAlert v-else color="warning" class="py-2 mb-3 small">
           ⚠ {{ t('fees.noFees') }} — {{ t('students.generateFirstInvoiceHint') }}
+          <span v-if="isDefinedPrimaryClass" class="d-block mt-1 fw-semibold text-success">
+            ✓ {{ t('primaryFees.classDetectedHint', { tier: t(TIER_LABEL_KEYS[primaryFeeClassTier]) }) }}
+          </span>
         </CAlert>
 
         <!-- ── Defined Primary Fees (Std 1-3 / Std 4-6) ────────────────── -->
@@ -1386,6 +1389,11 @@ const PRIMARY_FEE_LABEL_KEYS = {
   hostel: 'primaryFees.hostel',
   day_food_only: 'primaryFees.dayFoodOnly',
   day_none: 'primaryFees.dayNone',
+}
+
+const TIER_LABEL_KEYS = {
+  std_4_6: 'primaryFees.tierStd46',
+  std_1_3: 'primaryFees.tierStd13',
 }
 
 const primaryFeeTiers = ref({})
