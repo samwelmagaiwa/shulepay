@@ -61,7 +61,7 @@
   table.items th { font-size: 10px; letter-spacing: .5px; text-transform: uppercase; color: #555;
                    border-bottom: 1.5px solid #999; padding: 4px 0; text-align: left; }
   table.items th.amt, table.items td.amt { text-align: right; }
-  table.items td { font-size: 12px; padding: 4px 0; border-bottom: 1px dotted #ccc; }
+  table.items td { font-size: 12px; padding: 4px 0; border-bottom: 1.5px dashed #888; }
   /* Applied when there are many fee lines, to keep everything on one page */
   table.items.dense th { font-size: 10px; padding: 3px 0; }
   table.items.dense td { font-size: 11px; padding: 2px 0; }

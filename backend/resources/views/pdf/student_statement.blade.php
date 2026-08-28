@@ -52,7 +52,7 @@
   table.items th { font-size: 10.5px; letter-spacing: .4px; text-transform: uppercase; color: #555;
                    border-bottom: 1.5px solid #999; padding: 5px 3px; text-align: left; }
   table.items th.amt, table.items td.amt { text-align: right; }
-  table.items td { font-size: 12px; padding: 5px 3px; border-bottom: 1px dotted #ccc; vertical-align: top; }
+  table.items td { font-size: 12px; padding: 5px 3px; border-bottom: 1.5px dashed #888; vertical-align: top; }
 
   .status-paid    { color: #007f3e; font-weight: bold; }
   .status-partial { color: #b45309; font-weight: bold; }
