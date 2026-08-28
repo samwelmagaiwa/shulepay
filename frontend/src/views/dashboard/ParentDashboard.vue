@@ -185,8 +185,8 @@
                   <CTableDataCell class="text-center">
                     <CButton v-if="p.receipt_id" size="sm" color="success" variant="outline"
                              :disabled="printingId === p.receipt_id"
-                             @click="printReceipt(p.receipt_id)"
-                             :title="p.receipt_number">
+                             @click="printReceipt(p.student_id, p.receipt_id)"
+                             :title="t('invoices.printAllReceipt')">
                       <CSpinner v-if="printingId === p.receipt_id" size="sm" />
                       <span v-else>🖨</span>
                     </CButton>
@@ -352,14 +352,18 @@ async function downloadStatement(child) {
 
 let printFrame = null
 
-// Parents use their own scoped receipt route; the staff one is role-gated.
+// Prints the consolidated all-terms statement for the payment's student,
+// not just that one payment's receipt — so "Print Receipt" here shows the
+// same full picture (every term's debt/paid/balance) the accountant's
+// Invoices page prints, instead of only the single payment clicked.
+// Parents use their own scoped route; the staff one is role-gated.
 // Fetched via axios so the auth token is attached (a bare iframe src is not).
-async function printReceipt(receiptId) {
-  if (!receiptId) return
+async function printReceipt(studentId, receiptId) {
+  if (!studentId) return
   printingId.value = receiptId
   actionError.value = ''
   try {
-    const { data } = await api.get(`/parent/receipts/${receiptId}`, { responseType: 'blob' })
+    const { data } = await api.get(`/parent/students/${studentId}/statement-receipt`, { responseType: 'blob' })
     if (data.type && !data.type.includes('pdf')) throw new Error('Not a PDF')
 
     if (printFrame) printFrame.remove()

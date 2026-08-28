@@ -372,6 +372,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // parent needs this scoped equivalent to get their own proof of payment.
         Route::get('receipts/{receipt}', [ParentDashboardController::class, 'receipt'])
             ->middleware('throttle:30,1');
+        Route::get('students/{student}/statement-receipt', [ParentDashboardController::class, 'studentStatement'])
+            ->middleware('throttle:30,1');
         Route::get('children', [ChildController::class, 'index']);
         Route::get('children/{student}', [ChildController::class, 'show'])
             ->middleware('parent.owns_student');

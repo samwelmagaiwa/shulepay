@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\Receipt;
 use App\Models\Student;
 use App\Services\Pdf\ReceiptPdf;
+use App\Services\Pdf\StudentStatementPdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -159,6 +160,36 @@ class DashboardController extends Controller
 
         $content = app(ReceiptPdf::class)->generate($receipt);
         $filename = "Risiti-{$receipt->receipt_number}.pdf";
+        $disposition = $request->boolean('download') ? 'attachment' : 'inline';
+
+        return response($content, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "{$disposition}; filename=\"{$filename}\"",
+        ]);
+    }
+
+    /**
+     * GET /api/parent/students/{student}/statement-receipt
+     *
+     * The consolidated all-terms statement (same document the accountant's
+     * Invoices page prints), scoped to a parent's own child — previously the
+     * "Print Receipt" icon next to each payment only showed that one
+     * payment; this gives the parent the same full picture in one printout.
+     */
+    public function studentStatement(Request $request, Student $student): Response
+    {
+        $guardian = $request->user()?->guardian;
+
+        $owns = $guardian && $guardian->students()
+            ->where('students.id', $student->id)
+            ->exists();
+
+        if (! $owns) {
+            abort(403, 'Access denied — this student is not your child.');
+        }
+
+        $content = app(StudentStatementPdf::class)->generate($student);
+        $filename = 'Taarifa-'.str_replace(' ', '-', $student->fullName()).'.pdf';
         $disposition = $request->boolean('download') ? 'attachment' : 'inline';
 
         return response($content, 200, [
