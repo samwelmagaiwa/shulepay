@@ -1,14 +1,14 @@
 <template>
   <CContainer fluid>
     <!-- Table -->
-    <CCard style="position:relative;">
+    <CCard style="position:relative; overflow:visible;">
       <!-- Toolbar overlay: top-right above Actions column -->
       <div style="position:absolute; top:6px; right:8px; z-index:10; display:flex; align-items:center; gap:6px;">
         <CFormInput v-model="search" :placeholder="t('common.search') + '...'" @input="debouncedLoad" size="sm" style="min-width:160px; max-width:240px;" />
         <CButton color="secondary" variant="outline" size="sm" @click="search = ''; page = 1; loadData()">{{ t('common.reset') }}</CButton>
         <CButton color="primary" size="sm" @click="openAdd" style="white-space:nowrap;"><CIcon icon="cilPlus" class="me-1" />{{ t('guardians.add') }}</CButton>
       </div>
-      <CCardBody class="p-0">
+      <CCardBody class="p-0" style="overflow:visible;">
         <div v-if="store.loading" class="text-center py-5"><CSpinner color="primary" /></div>
         <div v-else-if="!store.guardians.length" class="text-muted py-5 px-3">
           <div class="text-center mt-4">{{ t('guardians.noGuardians') }}</div>
@@ -41,7 +41,7 @@
                     {{ g.students.length }} watoto ▾
                   </CButton>
                   <div v-if="activeChildRow === g.id"
-                       style="position:absolute; top:100%; left:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:6px 8px; z-index:200; min-width:180px;"
+                       style="position:absolute; top:100%; left:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:6px 8px; z-index:1055; min-width:180px;"
                        @click.stop>
                     <div v-for="s in g.students" :key="s.id"
                          style="padding:3px 0; font-size:.85rem; border-bottom:1px solid #f0f0f0;">
@@ -53,7 +53,7 @@
               <CTableDataCell style="position:relative; min-width:56px; text-align:center; white-space:nowrap;">
                 <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === g.id ? null : g.id">👁️</CButton>
                 <div v-if="activeRow === g.id"
-                     style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 4px 16px rgba(0,0,0,.14); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:200; min-width:160px;"
+                     style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 4px 16px rgba(0,0,0,.14); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:1055; min-width:160px;"
                      @click.stop>
                   <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(g); activeRow = null">👁️ {{ t('common.view') }}</CButton>
                   <CButton size="sm" color="secondary" variant="ghost" class="text-start" @click="openEdit(g); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
@@ -67,7 +67,8 @@
     </CCard>
 
     <!-- Pagination -->
-    <div v-if="meta.last_page > 1" class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+    <div v-if="meta.last_page > 1" class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2"
+         style="position:relative; z-index:1;">
       <small class="text-medium-emphasis">
         {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
       </small>
