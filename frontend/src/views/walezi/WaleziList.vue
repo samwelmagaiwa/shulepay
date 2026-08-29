@@ -37,28 +37,32 @@
                 <template v-else>
                   <CButton size="sm" color="info" variant="outline"
                            style="font-size:.75rem; padding:2px 8px;"
-                           @click.stop="activeChildRow = activeChildRow === g.id ? null : g.id">
+                           @click.stop="toggleChildMenu(g, $event)">
                     {{ g.students.length }} watoto ▾
                   </CButton>
-                  <div v-if="activeChildRow === g.id"
-                       style="position:absolute; top:100%; left:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:6px 8px; z-index:1055; min-width:180px;"
-                       @click.stop>
-                    <div v-for="s in g.students" :key="s.id"
-                         style="padding:3px 0; font-size:.85rem; border-bottom:1px solid #f0f0f0;">
-                      <CBadge color="info" shape="rounded-pill" class="me-1">{{ s.full_name }}</CBadge>
+                  <Teleport to="body">
+                    <div v-if="activeChildRow === g.id"
+                         :style="{ position: 'fixed', top: childMenuPos.top + 'px', left: childMenuPos.left + 'px', background: '#fff', border: '1px solid #dee2e6', borderRadius: '6px', boxShadow: '0 2px 8px rgba(0,0,0,.12)', padding: '6px 8px', zIndex: 2000, minWidth: '180px', maxHeight: '260px', overflowY: 'auto' }"
+                         @click.stop>
+                      <div v-for="s in g.students" :key="s.id"
+                           style="padding:3px 0; font-size:.85rem; border-bottom:1px solid #f0f0f0;">
+                        <CBadge color="info" shape="rounded-pill" class="me-1">{{ s.full_name }}</CBadge>
+                      </div>
                     </div>
-                  </div>
+                  </Teleport>
                 </template>
               </CTableDataCell>
               <CTableDataCell style="position:relative; min-width:56px; text-align:center; white-space:nowrap;">
-                <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === g.id ? null : g.id">👁️</CButton>
-                <div v-if="activeRow === g.id"
-                     style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 4px 16px rgba(0,0,0,.14); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:1055; min-width:160px;"
-                     @click.stop>
-                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(g); activeRow = null">👁️ {{ t('common.view') }}</CButton>
-                  <CButton size="sm" color="secondary" variant="ghost" class="text-start" @click="openEdit(g); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
-                  <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="remove(g); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
-                </div>
+                <CButton size="sm" color="secondary" variant="ghost" @click.stop="toggleActionMenu(g, $event)">👁️</CButton>
+                <Teleport to="body">
+                  <div v-if="activeRow === g.id"
+                       :style="{ position: 'fixed', top: actionMenuPos.top + 'px', right: actionMenuPos.right + 'px', background: '#fff', border: '1px solid #dee2e6', borderRadius: '6px', boxShadow: '0 4px 16px rgba(0,0,0,.14)', padding: '4px', display: 'flex', flexDirection: 'column', gap: '2px', zIndex: 2000, minWidth: '160px' }"
+                       @click.stop>
+                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(g); activeRow = null">👁️ {{ t('common.view') }}</CButton>
+                    <CButton size="sm" color="secondary" variant="ghost" class="text-start" @click="openEdit(g); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
+                    <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="remove(g); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
+                  </div>
+                </Teleport>
               </CTableDataCell>
             </CTableRow>
           </CTableBody>
@@ -207,6 +211,32 @@ const studentsStore = useStudentsStore()
 const search         = ref('')
 const activeRow      = ref(null)
 const activeChildRow = ref(null)
+// Positioned in the viewport (not relative to the table cell) and rendered
+// via Teleport to <body> — an ancestor further up the layout establishes its
+// own stacking context, which silently capped these dropdowns' z-index and
+// let the pagination bar paint over them for rows near the bottom of the page.
+const actionMenuPos = ref({ top: 0, right: 0 })
+const childMenuPos  = ref({ top: 0, left: 0 })
+
+function toggleActionMenu(g, event) {
+  if (activeRow.value === g.id) {
+    activeRow.value = null
+    return
+  }
+  const rect = event.currentTarget.getBoundingClientRect()
+  actionMenuPos.value = { top: rect.bottom, right: window.innerWidth - rect.right }
+  activeRow.value = g.id
+}
+
+function toggleChildMenu(g, event) {
+  if (activeChildRow.value === g.id) {
+    activeChildRow.value = null
+    return
+  }
+  const rect = event.currentTarget.getBoundingClientRect()
+  childMenuPos.value = { top: rect.bottom, left: rect.left }
+  activeChildRow.value = g.id
+}
 const showViewModal   = ref(false)
 const viewTarget      = ref(null)
 const showDeleteModal = ref(false)
@@ -309,6 +339,11 @@ async function doDelete() {
 
 function onDocClick() { activeRow.value = null; activeChildRow.value = null }
 
+// The dropdowns are position:fixed, computed once at open time — scrolling
+// the page afterward would leave them floating away from the button that
+// opened them, so close on scroll rather than track position live.
+function onScroll() { activeRow.value = null; activeChildRow.value = null }
+
 // The Children checklist (Edit/Add modal) must offer every student in the
 // school, not just one page — /students is paginated (max 100/page), so a
 // single fetchStudents() call left this list silently truncated to the
@@ -330,6 +365,7 @@ async function loadAllStudents() {
 
 onMounted(async () => {
   document.addEventListener('click', onDocClick)
+  window.addEventListener('scroll', onScroll, true)
   await loadData()
   try {
     await loadAllStudents()
@@ -338,6 +374,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('click', onDocClick)
+  window.removeEventListener('scroll', onScroll, true)
 })
 </script>
 
