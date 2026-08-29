@@ -2970,3 +2970,34 @@ serialised body for the monthly amounts. Full suite 30 passed, 168 assertions."
 [0;36m[2026-08-29 14:32:43][0m   ShulePay — Release
 [0;36m[2026-08-29 14:32:43][0m ══════════════════════════════════════════
 [0;36m[2026-08-29 14:32:43][0m Checking working tree...
+[0;36m[2026-08-29 14:32:43][0m Files staged for commit:
+[0;36m[2026-08-29 14:32:43][0m Committing: "feat(reports): give debtors their own name and terms columns
+
+The Collections table hid its debtors behind a "N debtors" dropdown, so reading
+who owed what meant opening one popup per day, and the names never reached the
+printed copy at all except through a hidden print-only block.
+
+Each debtor now occupies its own table row, with the student name and the unpaid
+terms in separate columns; the per-day figures (collections, total debt, partial
+paid, payment count) span those rows via rowspan.
+
+The report endpoint gains debtors_detailed, carrying the name and terms apart.
+The existing joined 'NAME (TERMS)' strings stay in the payload untouched because
+the xlsx export packs them into one cell -- removing them would have broken it.
+
+The two new columns render at every width rather than from lg up: they drive the
+row count through rowspan, so hiding them on small screens would have left empty
+phantom rows. The table scrolls horizontally instead.
+
+Dead dropdown state and 37 lines of its CSS removed. New test pins that the two
+fields arrive separated and that the joined form survives for the export.
+Full suite 31 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-29 14:32:44][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-29 14:32:50][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-29 17:06:44][0m ══════════════════════════════════════════
+[0;36m[2026-08-29 17:06:45][0m   ShulePay — Release
+[0;36m[2026-08-29 17:06:45][0m ══════════════════════════════════════════
+[0;36m[2026-08-29 17:06:45][0m Checking working tree...

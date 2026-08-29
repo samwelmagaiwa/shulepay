@@ -902,6 +902,11 @@ export default {
     // and the unpaid terms each get a column of their own.
     studentNameColumn: 'Student Name',
     debtTermsColumn: 'Debt Terms (Not Paid)',
+    debtorsCountColumn: 'Debtors',
+    debtorsSectionTitle: 'Debtors (Terms Not Paid)',
+    debtorsTotalOwed: 'Total owed',
+    amountOwed: 'Amount Owed',
+    noDebtors: 'No debtors in this period',
     paginationInfo: 'Showing {from}-{to} of {total}',
     paymentCount: 'Payment Count',
     daysOverdue:  'Days Overdue',

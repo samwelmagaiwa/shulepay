@@ -190,6 +190,10 @@ class ReportController extends Controller
                 $debtorsByPeriod[$period][] = [
                     'student_name' => $studentNamesById[$r->touched_student_id] ?? '—',
                     'term' => $termNamesById[$r->touched_term_id] ?? '—',
+                    // Carried per invoice so the per-student figure below is the
+                    // sum of exactly the terms listed against that student, and
+                    // the column reconciles with the day's Total Debt.
+                    'balance_cents' => $balance,
                 ];
             }
             $seenInvoicePeriod[$dedupeKey] = true;
@@ -212,10 +216,11 @@ class ReportController extends Controller
         $groupByStudent = function (array $entries): array {
             $byStudent = [];
             foreach ($entries as $e) {
-                $byStudent[$e['student_name']] ??= [];
-                if (! in_array($e['term'], $byStudent[$e['student_name']], true)) {
-                    $byStudent[$e['student_name']][] = $e['term'];
+                $byStudent[$e['student_name']] ??= ['terms' => [], 'balance_cents' => 0];
+                if (! in_array($e['term'], $byStudent[$e['student_name']]['terms'], true)) {
+                    $byStudent[$e['student_name']]['terms'][] = $e['term'];
                 }
+                $byStudent[$e['student_name']]['balance_cents'] += (int) $e['balance_cents'];
             }
 
             return $byStudent;
@@ -223,17 +228,20 @@ class ReportController extends Controller
 
         $debtorsDetailedByPeriod = array_map(
             fn ($entries) => collect($groupByStudent($entries))
-                ->map(fn ($terms, $name) => [
+                ->map(fn ($g, $name) => [
                     'student_name' => $name,
-                    'terms' => implode(', ', $terms),
+                    'terms' => implode(', ', $g['terms']),
+                    'balance_cents' => $g['balance_cents'],
                 ])
+                // Largest debt first: the list exists to be worked through.
+                ->sortByDesc('balance_cents')
                 ->values()->all(),
             $debtorsByPeriod
         );
 
         $debtorsByPeriod = array_map(
             fn ($entries) => collect($groupByStudent($entries))
-                ->map(fn ($terms, $name) => $name.' ('.implode(', ', $terms).')')
+                ->map(fn ($g, $name) => $name.' ('.implode(', ', $g['terms']).')')
                 ->values()->all(),
             $debtorsByPeriod
         );

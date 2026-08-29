@@ -901,6 +901,11 @@ export default {
     // Kila mdaiwa sasa ana safu yake kwenye jedwali la makusanyo.
     studentNameColumn: 'Jina la Mwanafunzi',
     debtTermsColumn: 'Muhula Ambao Haujalipwa',
+    debtorsCountColumn: 'Wadaiwa',
+    debtorsSectionTitle: 'Wenye Madeni (Muhula Ambao Haujalipwa)',
+    debtorsTotalOwed: 'Jumla ya deni',
+    amountOwed: 'Kiasi Kinachodaiwa',
+    noDebtors: 'Hakuna mwenye deni katika kipindi hiki',
     paginationInfo: 'Inaonyesha {from}-{to} kati ya {total}',
     paymentCount: 'Idadi ya Malipo',
     daysOverdue:  'Siku (Zimepita)',

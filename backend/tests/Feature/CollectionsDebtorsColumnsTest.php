@@ -91,6 +91,11 @@ class CollectionsDebtorsColumnsTest extends TestCase
         $this->assertSame('Juma  Mfungo', $entry['student_name']);
         $this->assertSame('Muhula 1', $entry['terms']);
 
+        // 100,000 invoiced less the 40,000 paid — the column has to reconcile
+        // with the day's Total Debt, not restate the invoice total.
+        $this->assertSame(60000, $entry['balance_cents']);
+        $this->assertSame($withDebtors['total_debt_cents'], $entry['balance_cents']);
+
         // The joined form must survive for the spreadsheet export.
         $this->assertSame('Juma  Mfungo (Muhula 1)', $withDebtors['debtors'][0]);
     }

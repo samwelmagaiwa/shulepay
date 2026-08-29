@@ -136,60 +136,31 @@
             </CRow>
           </div>
 
+          <!-- Daily summary: one row per day. The debtor names used to live in
+               this table too, which forced either a dropdown or a rowspan
+               spanning 100+ rows; they now have their own table below. -->
           <CTable responsive hover class="mb-0" style="font-size:.85rem;">
             <CTableHead class="table-light">
               <CTableRow>
                 <CTableHeaderCell>{{ t('common.date') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.collectionsCol') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.totalDebt') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('reports.studentNameColumn') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('reports.debtTermsColumn') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.totalPartialPaid') }}</CTableHeaderCell>
                 <CTableHeaderCell class="d-none d-md-table-cell">{{ t('reports.paymentCount') }}</CTableHeaderCell>
+                <CTableHeaderCell class="text-end">{{ t('reports.debtorsCountColumn') }}</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              <!-- One line per debtor. The list used to be collapsed behind a
-                   "N debtors" dropdown, which hid the names from both the page
-                   and the printed copy; each debtor now occupies its own row and
-                   the per-day figures span them via rowspan. -->
-              <template v-for="row in pagedColRows" :key="row.date">
-                <CTableRow v-for="(entry, i) in rowDebtorLines(row)" :key="row.date + '-' + i">
-                  <CTableDataCell v-if="i === 0" :rowspan="rowDebtorLines(row).length" class="align-middle">
-                    {{ row.date }}
-                  </CTableDataCell>
-                  <CTableDataCell v-if="i === 0" :rowspan="rowDebtorLines(row).length"
-                                  class="fw-semibold text-success align-middle">
-                    {{ formatTZS(row.amount_cents) }}
-                  </CTableDataCell>
-                  <CTableDataCell v-if="i === 0" :rowspan="rowDebtorLines(row).length"
-                                  class="fw-semibold text-danger align-middle">
-                    {{ formatTZS(row.total_debt_cents) }}
-                  </CTableDataCell>
-
-                  <CTableDataCell class="small" style="min-width:180px;">
-                    <span :class="entry.student_name ? '' : 'text-muted'">
-                      {{ entry.student_name || '—' }}
-                    </span>
-                  </CTableDataCell>
-                  <CTableDataCell class="small" style="min-width:140px;">
-                    <span :class="entry.terms ? 'text-danger' : 'text-muted'">
-                      {{ entry.terms || '—' }}
-                    </span>
-                  </CTableDataCell>
-
-                  <CTableDataCell v-if="i === 0" :rowspan="rowDebtorLines(row).length"
-                                  class="fw-semibold text-warning align-middle">
-                    {{ formatTZS(row.total_partial_paid_cents) }}
-                  </CTableDataCell>
-                  <CTableDataCell v-if="i === 0" :rowspan="rowDebtorLines(row).length"
-                                  class="d-none d-md-table-cell align-middle">
-                    {{ row.count }}
-                  </CTableDataCell>
-                </CTableRow>
-              </template>
+              <CTableRow v-for="row in pagedColRows" :key="row.date">
+                <CTableDataCell>{{ row.date }}</CTableDataCell>
+                <CTableDataCell class="fw-semibold text-success">{{ formatTZS(row.amount_cents) }}</CTableDataCell>
+                <CTableDataCell class="fw-semibold text-danger">{{ formatTZS(row.total_debt_cents) }}</CTableDataCell>
+                <CTableDataCell class="fw-semibold text-warning">{{ formatTZS(row.total_partial_paid_cents) }}</CTableDataCell>
+                <CTableDataCell class="d-none d-md-table-cell">{{ row.count }}</CTableDataCell>
+                <CTableDataCell class="text-end">{{ debtorCountFor(row) }}</CTableDataCell>
+              </CTableRow>
               <CTableRow v-if="!colRows.length">
-                <CTableDataCell colspan="7" class="text-center text-muted py-4">{{ t('reports.noData') }}</CTableDataCell>
+                <CTableDataCell colspan="6" class="text-center text-muted py-4">{{ t('reports.noData') }}</CTableDataCell>
               </CTableRow>
             </CTableBody>
           </CTable>
@@ -206,6 +177,62 @@
               <CButton size="sm" color="secondary" variant="outline" :disabled="colPage === colTotalPages" @click="colPage++">
                 {{ t('common.next', 'Next') }}
               </CButton>
+            </div>
+          </div>
+
+          <!-- Debtor list. Its own table because it is a different granularity
+               from the summary above: one line per student per day, paginated
+               by debtor rather than by date, so a 108-debtor day no longer
+               dictates the length of the page. -->
+          <div class="mt-4">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="fw-bold mb-0">{{ t('reports.debtorsSectionTitle') }}</h6>
+              <span class="small text-muted">
+                {{ t('reports.debtorsTotalOwed') }}: <strong class="text-danger">{{ formatTZS(debtorTotalOwed) }}</strong>
+              </span>
+            </div>
+
+            <CTable responsive hover class="mb-0" style="font-size:.85rem;">
+              <CTableHead class="table-light">
+                <CTableRow>
+                  <CTableHeaderCell>{{ t('common.date') }}</CTableHeaderCell>
+                  <CTableHeaderCell>{{ t('reports.studentNameColumn') }}</CTableHeaderCell>
+                  <CTableHeaderCell>{{ t('reports.debtTermsColumn') }}</CTableHeaderCell>
+                  <CTableHeaderCell class="text-end">{{ t('reports.amountOwed') }}</CTableHeaderCell>
+                </CTableRow>
+              </CTableHead>
+              <CTableBody>
+                <CTableRow v-for="(d, i) in pagedDebtorRows" :key="d.date + '-' + d.student_name + '-' + i">
+                  <CTableDataCell class="text-nowrap">{{ d.date }}</CTableDataCell>
+                  <CTableDataCell>{{ d.student_name || '—' }}</CTableDataCell>
+                  <CTableDataCell class="text-danger">{{ d.terms || '—' }}</CTableDataCell>
+                  <CTableDataCell class="text-end fw-semibold text-danger">
+                    {{ formatTZS(d.balance_cents) }}
+                  </CTableDataCell>
+                </CTableRow>
+                <CTableRow v-if="!debtorRows.length">
+                  <CTableDataCell colspan="4" class="text-center text-muted py-4">
+                    {{ t('reports.noDebtors') }}
+                  </CTableDataCell>
+                </CTableRow>
+              </CTableBody>
+            </CTable>
+
+            <div v-if="debtorRows.length > debtorPageSize"
+                 class="d-flex align-items-center justify-content-between gap-2 mt-2 no-print">
+              <div class="small text-muted">
+                {{ t('reports.paginationInfo', { from: debtorPageFrom, to: debtorPageTo, total: debtorRows.length }) }}
+              </div>
+              <div class="d-flex gap-1">
+                <CButton size="sm" color="secondary" variant="outline"
+                         :disabled="debtorPage === 1" @click="debtorPage--">
+                  {{ t('common.previous', 'Previous') }}
+                </CButton>
+                <CButton size="sm" color="secondary" variant="outline"
+                         :disabled="debtorPage === debtorTotalPages" @click="debtorPage++">
+                  {{ t('common.next', 'Next') }}
+                </CButton>
+              </div>
             </div>
           </div>
         </div>
@@ -455,10 +482,55 @@ const rowDebtorLines = (row) => {
   // Split them back apart rather than dropping the names.
   const legacy = (row.debtors || []).map((d) => {
     const m = /^(.*?)\s*\(([^)]*)\)\s*$/.exec(d)
-    return m ? { student_name: m[1], terms: m[2] } : { student_name: d, terms: '' }
+    return m
+      ? { student_name: m[1], terms: m[2], balance_cents: 0 }
+      : { student_name: d, terms: '', balance_cents: 0 }
   })
-  return legacy.length ? legacy : [{ student_name: '', terms: '' }]
+  return legacy.length ? legacy : [{ student_name: '', terms: '', balance_cents: 0 }]
 }
+// ── Debtor list ───────────────────────────────────────────────────────────
+// Flattened across every day in range so it paginates by debtor. Paginating by
+// date meant one page could be 10 days x 108 debtors; the count of rows on
+// screen now matches the count the pager reports.
+// rowDebtorLines() pads a day that has no debtors with one blank entry, so its
+// raw length would report "1" for a day with none. Count only real names, which
+// is exactly what the debtor table lists.
+const debtorCountFor = (row) => rowDebtorLines(row).filter((d) => d.student_name).length
+
+const debtorRows = computed(() =>
+  colRows.value.flatMap((row) =>
+    rowDebtorLines(row)
+      .filter((d) => d.student_name)
+      .map((d) => ({ ...d, date: row.date })),
+  ),
+)
+
+const debtorTotalOwed = computed(() =>
+  debtorRows.value.reduce((sum, d) => sum + (d.balance_cents || 0), 0),
+)
+
+const debtorPage = ref(1)
+const debtorPageSize = 25
+const debtorTotalPages = computed(() =>
+  Math.max(1, Math.ceil(debtorRows.value.length / debtorPageSize)),
+)
+const pagedDebtorRows = computed(() => {
+  const start = (debtorPage.value - 1) * debtorPageSize
+  return debtorRows.value.slice(start, start + debtorPageSize)
+})
+const debtorPageFrom = computed(() =>
+  debtorRows.value.length ? (debtorPage.value - 1) * debtorPageSize + 1 : 0,
+)
+const debtorPageTo = computed(() =>
+  Math.min(debtorPage.value * debtorPageSize, debtorRows.value.length),
+)
+
+// A shorter result set must not strand the reader on a page that no longer
+// exists — otherwise changing the date range shows an empty table.
+watch(debtorTotalPages, (pages) => {
+  if (debtorPage.value > pages) debtorPage.value = pages
+})
+
 const byDiscountType = ref([])
 const bySponsorshipType = ref([])
 const discountTypeLabel = (type) => t(`reports.discountTypes.${type}`, type)
@@ -546,6 +618,7 @@ function agingColor(days) {
 async function loadCollections() {
   loadingCol.value = true
   colPage.value = 1
+  debtorPage.value = 1
   try {
     const { data } = await api.get('/reports/collections', {
       params: { from: colFilters.value.date_from, to: colFilters.value.date_to },
