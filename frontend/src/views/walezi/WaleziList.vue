@@ -42,7 +42,7 @@
                   </CButton>
                   <Teleport to="body">
                     <div v-if="activeChildRow === g.id"
-                         :style="{ position: 'fixed', top: childMenuPos.top + 'px', left: childMenuPos.left + 'px', background: '#fff', border: '1px solid #dee2e6', borderRadius: '6px', boxShadow: '0 2px 8px rgba(0,0,0,.12)', padding: '6px 8px', zIndex: 2000, minWidth: '180px', maxHeight: '260px', overflowY: 'auto' }"
+                         :style="{ position: 'fixed', ...vPos(childMenuPos), left: childMenuPos.left + 'px', background: '#fff', border: '1px solid #dee2e6', borderRadius: '6px', boxShadow: '0 2px 8px rgba(0,0,0,.12)', padding: '6px 8px', zIndex: 2000, minWidth: '180px', maxHeight: '260px', overflowY: 'auto' }"
                          @click.stop>
                       <div v-for="s in g.students" :key="s.id"
                            style="padding:3px 0; font-size:.85rem; border-bottom:1px solid #f0f0f0;">
@@ -56,7 +56,7 @@
                 <CButton size="sm" color="secondary" variant="ghost" @click.stop="toggleActionMenu(g, $event)">👁️</CButton>
                 <Teleport to="body">
                   <div v-if="activeRow === g.id"
-                       :style="{ position: 'fixed', top: actionMenuPos.top + 'px', right: actionMenuPos.right + 'px', background: '#fff', border: '1px solid #dee2e6', borderRadius: '6px', boxShadow: '0 4px 16px rgba(0,0,0,.14)', padding: '4px', display: 'flex', flexDirection: 'column', gap: '2px', zIndex: 2000, minWidth: '160px' }"
+                       :style="{ position: 'fixed', ...vPos(actionMenuPos), right: actionMenuPos.right + 'px', background: '#fff', border: '1px solid #dee2e6', borderRadius: '6px', boxShadow: '0 4px 16px rgba(0,0,0,.14)', padding: '4px', display: 'flex', flexDirection: 'column', gap: '2px', zIndex: 2000, minWidth: '160px' }"
                        @click.stop>
                     <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(g); activeRow = null">👁️ {{ t('common.view') }}</CButton>
                     <CButton size="sm" color="secondary" variant="ghost" class="text-start" @click="openEdit(g); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
@@ -215,8 +215,21 @@ const activeChildRow = ref(null)
 // via Teleport to <body> — an ancestor further up the layout establishes its
 // own stacking context, which silently capped these dropdowns' z-index and
 // let the pagination bar paint over them for rows near the bottom of the page.
-const actionMenuPos = ref({ top: 0, right: 0 })
-const childMenuPos  = ref({ top: 0, left: 0 })
+const actionMenuPos = ref({ top: 0, bottom: null, right: 0 })
+const childMenuPos  = ref({ top: 0, bottom: null, left: 0 })
+
+// Estimated menu heights — the action menu is always 3 fixed rows; the
+// children menu grows with the guardian's child count, capped by its own
+// max-height. Rough figures are enough to decide which side has room.
+const ACTION_MENU_HEIGHT = 130
+const CHILD_MENU_HEIGHT_CAP = 260
+
+// Only one of top/bottom is ever set on a menu position — the other stays
+// null so it's left out of the style object rather than rendering as the
+// literal string "nullpx".
+function vPos(pos) {
+  return pos.bottom !== null ? { bottom: pos.bottom + 'px' } : { top: pos.top + 'px' }
+}
 
 function toggleActionMenu(g, event) {
   if (activeRow.value === g.id) {
@@ -224,7 +237,11 @@ function toggleActionMenu(g, event) {
     return
   }
   const rect = event.currentTarget.getBoundingClientRect()
-  actionMenuPos.value = { top: rect.bottom, right: window.innerWidth - rect.right }
+  const spaceBelow = window.innerHeight - rect.bottom
+  const openUpward = spaceBelow < ACTION_MENU_HEIGHT && rect.top > spaceBelow
+  actionMenuPos.value = openUpward
+    ? { top: null, bottom: window.innerHeight - rect.top, right: window.innerWidth - rect.right }
+    : { top: rect.bottom, bottom: null, right: window.innerWidth - rect.right }
   activeRow.value = g.id
 }
 
@@ -234,7 +251,11 @@ function toggleChildMenu(g, event) {
     return
   }
   const rect = event.currentTarget.getBoundingClientRect()
-  childMenuPos.value = { top: rect.bottom, left: rect.left }
+  const spaceBelow = window.innerHeight - rect.bottom
+  const openUpward = spaceBelow < Math.min(CHILD_MENU_HEIGHT_CAP, g.students.length * 30 + 16) && rect.top > spaceBelow
+  childMenuPos.value = openUpward
+    ? { top: null, bottom: window.innerHeight - rect.top, left: rect.left }
+    : { top: rect.bottom, bottom: null, left: rect.left }
   activeChildRow.value = g.id
 }
 const showViewModal   = ref(false)
