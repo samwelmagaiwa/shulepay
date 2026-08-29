@@ -308,12 +308,30 @@ async function doDelete() {
 
 function onDocClick() { activeRow.value = null; activeChildRow.value = null }
 
+// The Children checklist (Edit/Add modal) must offer every student in the
+// school, not just one page — /students is paginated (max 100/page), so a
+// single fetchStudents() call left this list silently truncated to the
+// first 20/100 students while Guardian Details (which reads the guardian's
+// own `students` relation, not this list) showed the guardian's real,
+// complete set of children. Loop every page to build the full roster.
+async function loadAllStudents() {
+  const all = []
+  let page = 1
+  let lastPage = 1
+  do {
+    await studentsStore.fetchStudents({ page, per_page: 100 })
+    all.push(...studentsStore.students)
+    lastPage = studentsStore.pagination?.last_page || 1
+    page++
+  } while (page <= lastPage)
+  students.value = all
+}
+
 onMounted(async () => {
   document.addEventListener('click', onDocClick)
   await loadData()
   try {
-    await studentsStore.fetchStudents()
-    students.value = studentsStore.students
+    await loadAllStudents()
   } catch {}
 })
 
