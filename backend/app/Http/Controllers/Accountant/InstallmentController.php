@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Services\AuditLogger;
 use App\Services\Sms\SmsService;
 use App\Services\Sms\SmsTemplates;
+use App\Support\NameSearch;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,8 +40,7 @@ class InstallmentController extends Controller
             $s = $request->search;
             $query->whereHas(
                 'student',
-                fn ($q) => $q->where('first_name', 'like', "%{$s}%")
-                    ->orWhere('last_name', 'like', "%{$s}%")
+                fn ($q) => NameSearch::apply($q, ['first_name', 'middle_name', 'last_name'], $s)
             );
         }
 

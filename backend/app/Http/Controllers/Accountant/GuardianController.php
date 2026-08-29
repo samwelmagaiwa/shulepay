@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accountant;
 use App\Http\Controllers\Controller;
 use App\Models\Guardian;
 use App\Models\User;
+use App\Support\NameSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -30,15 +31,18 @@ class GuardianController extends Controller
             )
             ->when($request->student_id, fn ($q) => $q->whereHas('students', fn ($s) => $s->where('students.id', $request->student_id))
             )
-            ->when($request->search, fn ($q) => $q->where(fn ($sub) => $sub->where('first_name', 'like', "%{$request->search}%")
-                ->orWhere('last_name', 'like', "%{$request->search}%")
-                ->orWhere('phone', 'like', "%{$request->search}%")
-                ->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%{$request->search}%")
-                    ->orWhere('email', 'like', "%{$request->search}%")
-                    ->orWhere('phone', 'like', "%{$request->search}%")
-                )
-            )
-            )
+            ->when($request->search, function ($q) use ($request) {
+                $s = $request->search;
+                $q->where(function ($sub) use ($s) {
+                    $sub->where(fn ($nameQ) => NameSearch::apply($nameQ, ['first_name', 'last_name'], $s))
+                        ->orWhere('phone', 'like', "%{$s}%")
+                        ->orWhereHas('user', function ($u) use ($s) {
+                            $u->where(fn ($nameQ) => NameSearch::apply($nameQ, ['name'], $s))
+                                ->orWhere('email', 'like', "%{$s}%")
+                                ->orWhere('phone', 'like', "%{$s}%");
+                        });
+                });
+            })
             ->paginate(20);
 
         $items = $guardians->getCollection()->map(fn ($g) => [

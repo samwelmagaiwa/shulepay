@@ -14,6 +14,7 @@ use App\Models\School;
 use App\Models\Student;
 use App\Services\Students\StudentRegistrationService;
 use App\Services\Students\StudentUpdateService;
+use App\Support\NameSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -74,13 +75,11 @@ class StudentController extends Controller
 
         if ($request->filled('search')) {
             $s = $request->search;
-            $query->where(
-                fn ($q) => $q
-                    ->where('first_name', 'like', "%{$s}%")
-                    ->orWhere('last_name', 'like', "%{$s}%")
+            $query->where(function ($q) use ($s) {
+                $q->where(fn ($nameQ) => NameSearch::apply($nameQ, ['first_name', 'middle_name', 'last_name'], $s))
                     ->orWhereHas('enrollments', fn ($eq) => $eq->where('admission_number', 'like', "%{$s}%"))
-                    ->orWhereHas('invoices', fn ($iq) => $iq->where('invoice_number', 'like', "%{$s}%"))
-            );
+                    ->orWhereHas('invoices', fn ($iq) => $iq->where('invoice_number', 'like', "%{$s}%"));
+            });
         }
         if ($request->filled('status')) {
             $query->where('status', $request->status);

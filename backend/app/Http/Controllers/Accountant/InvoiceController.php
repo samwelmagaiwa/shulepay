@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\Student;
 use App\Models\Term;
 use App\Services\Billing\InvoiceGenerator;
+use App\Support\NameSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -55,11 +56,9 @@ class InvoiceController extends Controller
             $s = $request->search;
             $query->where(function ($q) use ($s) {
                 $q->where('invoice_number', 'like', "%{$s}%")
-                    ->orWhereHas('student', fn ($sq) => $sq
-                        ->where('first_name', 'like', "%{$s}%")
-                        ->orWhere('middle_name', 'like', "%{$s}%")
-                        ->orWhere('last_name', 'like', "%{$s}%")
-                    )
+                    ->orWhereHas('student', fn ($sq) => NameSearch::apply(
+                        $sq, ['first_name', 'middle_name', 'last_name'], $s
+                    ))
                     ->orWhereHas('student.currentEnrollment', fn ($sq) => $sq
                         ->where('admission_number', 'like', "%{$s}%")
                     );
