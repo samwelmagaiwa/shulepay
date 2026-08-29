@@ -202,7 +202,14 @@ class ReportController extends Controller
         // Collapse to one entry per student per period, joining their unpaid
         // terms — a student can have more than one touched invoice in the
         // same period (e.g. two terms both still owing).
-        $debtorsByPeriod = array_map(function ($entries) {
+        //
+        // Two shapes are produced from the same grouping:
+        //   debtors           - "NAME (TERM, TERM)" strings, kept because the
+        //                       xlsx export joins them into a single cell.
+        //   debtors_detailed  - name and terms separately, so the report table
+        //                       can give each its own column instead of hiding
+        //                       the list behind a dropdown.
+        $groupByStudent = function (array $entries): array {
             $byStudent = [];
             foreach ($entries as $e) {
                 $byStudent[$e['student_name']] ??= [];
@@ -211,13 +218,31 @@ class ReportController extends Controller
                 }
             }
 
-            return collect($byStudent)->map(fn ($terms, $name) => $name.' ('.implode(', ', $terms).')')->values()->all();
-        }, $debtorsByPeriod);
+            return $byStudent;
+        };
 
-        $rows = array_map(function ($row) use ($debtByPeriod, $partialPaidByPeriod, $debtorsByPeriod) {
+        $debtorsDetailedByPeriod = array_map(
+            fn ($entries) => collect($groupByStudent($entries))
+                ->map(fn ($terms, $name) => [
+                    'student_name' => $name,
+                    'terms' => implode(', ', $terms),
+                ])
+                ->values()->all(),
+            $debtorsByPeriod
+        );
+
+        $debtorsByPeriod = array_map(
+            fn ($entries) => collect($groupByStudent($entries))
+                ->map(fn ($terms, $name) => $name.' ('.implode(', ', $terms).')')
+                ->values()->all(),
+            $debtorsByPeriod
+        );
+
+        $rows = array_map(function ($row) use ($debtByPeriod, $partialPaidByPeriod, $debtorsByPeriod, $debtorsDetailedByPeriod) {
             $row['total_debt_cents'] = (int) ($debtByPeriod[$row['period']] ?? 0);
             $row['total_partial_paid_cents'] = (int) ($partialPaidByPeriod[$row['period']] ?? 0);
             $row['debtors'] = $debtorsByPeriod[$row['period']] ?? [];
+            $row['debtors_detailed'] = $debtorsDetailedByPeriod[$row['period']] ?? [];
 
             return $row;
         }, $rows);

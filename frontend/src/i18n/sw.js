@@ -898,8 +898,9 @@ export default {
     month:        'Mwezi',
     collectionsCol: 'Makusanyo (TZS)',
     totalPartialPaid: 'Jumla ya Malipo ya Sehemu',
-    debtorsColumn: 'Wenye Madeni (Muhula Ambao Haujalipwa)',
-    debtorsCount: 'wadaiwa {count}',
+    // Kila mdaiwa sasa ana safu yake kwenye jedwali la makusanyo.
+    studentNameColumn: 'Jina la Mwanafunzi',
+    debtTermsColumn: 'Muhula Ambao Haujalipwa',
     paginationInfo: 'Inaonyesha {from}-{to} kati ya {total}',
     paymentCount: 'Idadi ya Malipo',
     daysOverdue:  'Siku (Zimepita)',

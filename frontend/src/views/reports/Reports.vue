@@ -142,41 +142,54 @@
                 <CTableHeaderCell>{{ t('common.date') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.collectionsCol') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.totalDebt') }}</CTableHeaderCell>
-                <CTableHeaderCell class="d-none d-lg-table-cell">{{ t('reports.debtorsColumn') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('reports.studentNameColumn') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('reports.debtTermsColumn') }}</CTableHeaderCell>
                 <CTableHeaderCell>{{ t('reports.totalPartialPaid') }}</CTableHeaderCell>
                 <CTableHeaderCell class="d-none d-md-table-cell">{{ t('reports.paymentCount') }}</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              <CTableRow v-for="row in pagedColRows" :key="row.date">
-                <CTableDataCell>{{ row.date }}</CTableDataCell>
-                <CTableDataCell class="fw-semibold text-success">{{ formatTZS(row.amount_cents) }}</CTableDataCell>
-                <CTableDataCell class="fw-semibold text-danger">{{ formatTZS(row.total_debt_cents) }}</CTableDataCell>
-                <CTableDataCell class="d-none d-lg-table-cell small" style="position:relative; min-width:180px;">
-                  <div v-if="!row.debtors || !row.debtors.length" class="text-muted">—</div>
-                  <div v-else-if="row.debtors.length <= 1">{{ row.debtors[0] }}</div>
-                  <div v-else class="no-print">
-                    <button
-                      type="button"
-                      class="debtors-toggle-btn"
-                      @click="toggleDebtorsDropdown(row.date)"
-                    >
-                      {{ t('reports.debtorsCount', { count: row.debtors.length }) }}
-                      <span class="ms-1">{{ openDebtorsRow === row.date ? '▲' : '▼' }}</span>
-                    </button>
-                    <div v-if="openDebtorsRow === row.date" class="debtors-dropdown">
-                      <div v-for="(d, i) in row.debtors" :key="i" class="debtors-dropdown-item">{{ d }}</div>
-                    </div>
-                  </div>
-                  <div v-if="row.debtors.length > 1" class="print-only">
-                    <div v-for="(d, i) in row.debtors" :key="i">{{ d }}</div>
-                  </div>
-                </CTableDataCell>
-                <CTableDataCell class="fw-semibold text-warning">{{ formatTZS(row.total_partial_paid_cents) }}</CTableDataCell>
-                <CTableDataCell class="d-none d-md-table-cell">{{ row.count }}</CTableDataCell>
-              </CTableRow>
+              <!-- One line per debtor. The list used to be collapsed behind a
+                   "N debtors" dropdown, which hid the names from both the page
+                   and the printed copy; each debtor now occupies its own row and
+                   the per-day figures span them via rowspan. -->
+              <template v-for="row in pagedColRows" :key="row.date">
+                <CTableRow v-for="(entry, i) in rowDebtorLines(row)" :key="row.date + '-' + i">
+                  <CTableDataCell v-if="i === 0" :rowspan="rowDebtorLines(row).length" class="align-middle">
+                    {{ row.date }}
+                  </CTableDataCell>
+                  <CTableDataCell v-if="i === 0" :rowspan="rowDebtorLines(row).length"
+                                  class="fw-semibold text-success align-middle">
+                    {{ formatTZS(row.amount_cents) }}
+                  </CTableDataCell>
+                  <CTableDataCell v-if="i === 0" :rowspan="rowDebtorLines(row).length"
+                                  class="fw-semibold text-danger align-middle">
+                    {{ formatTZS(row.total_debt_cents) }}
+                  </CTableDataCell>
+
+                  <CTableDataCell class="small" style="min-width:180px;">
+                    <span :class="entry.student_name ? '' : 'text-muted'">
+                      {{ entry.student_name || '—' }}
+                    </span>
+                  </CTableDataCell>
+                  <CTableDataCell class="small" style="min-width:140px;">
+                    <span :class="entry.terms ? 'text-danger' : 'text-muted'">
+                      {{ entry.terms || '—' }}
+                    </span>
+                  </CTableDataCell>
+
+                  <CTableDataCell v-if="i === 0" :rowspan="rowDebtorLines(row).length"
+                                  class="fw-semibold text-warning align-middle">
+                    {{ formatTZS(row.total_partial_paid_cents) }}
+                  </CTableDataCell>
+                  <CTableDataCell v-if="i === 0" :rowspan="rowDebtorLines(row).length"
+                                  class="d-none d-md-table-cell align-middle">
+                    {{ row.count }}
+                  </CTableDataCell>
+                </CTableRow>
+              </template>
               <CTableRow v-if="!colRows.length">
-                <CTableDataCell colspan="6" class="text-center text-muted py-4">{{ t('reports.noData') }}</CTableDataCell>
+                <CTableDataCell colspan="7" class="text-center text-muted py-4">{{ t('reports.noData') }}</CTableDataCell>
               </CTableRow>
             </CTableBody>
           </CTable>
@@ -431,9 +444,20 @@ const colPageFrom = computed(() => colRows.value.length ? (colPage.value - 1) * 
 const colPageTo = computed(() => Math.min(colPage.value * colPageSize, colRows.value.length))
 watch(colPage, (p) => { if (p < 1) colPage.value = 1; if (p > colTotalPages.value) colPage.value = colTotalPages.value })
 
-const openDebtorsRow = ref(null)
-const toggleDebtorsDropdown = (date) => {
-  openDebtorsRow.value = openDebtorsRow.value === date ? null : date
+// Each day renders one table line per debtor. A day with no debtors still needs
+// a single line, otherwise its collections/partial-paid figures would have no
+// row to sit in and the day would vanish from the report entirely.
+const rowDebtorLines = (row) => {
+  const detailed = row.debtors_detailed || []
+  if (detailed.length) return detailed
+
+  // Older cached responses only carried the joined "NAME (TERMS)" strings.
+  // Split them back apart rather than dropping the names.
+  const legacy = (row.debtors || []).map((d) => {
+    const m = /^(.*?)\s*\(([^)]*)\)\s*$/.exec(d)
+    return m ? { student_name: m[1], terms: m[2] } : { student_name: d, terms: '' }
+  })
+  return legacy.length ? legacy : [{ student_name: '', terms: '' }]
 }
 const byDiscountType = ref([])
 const bySponsorshipType = ref([])
@@ -522,7 +546,6 @@ function agingColor(days) {
 async function loadCollections() {
   loadingCol.value = true
   colPage.value = 1
-  openDebtorsRow.value = null
   try {
     const { data } = await api.get('/reports/collections', {
       params: { from: colFilters.value.date_from, to: colFilters.value.date_to },
@@ -533,6 +556,7 @@ async function loadCollections() {
       amount_cents: r.amount_cents,
       total_debt_cents: r.total_debt_cents,
       debtors: r.debtors || [],
+      debtors_detailed: r.debtors_detailed || [],
       total_partial_paid_cents: r.total_partial_paid_cents,
       count: r.payment_count,
     }))
@@ -655,43 +679,6 @@ onMounted(async () => { try { await loadCollections() } catch {} })
 
 <style>
 .print-only { display: none; }
-
-.debtors-toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
-  border-radius: 6px;
-  padding: 2px 8px;
-  font-size: .78rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.debtors-toggle-btn:hover { background: #fee2e2; }
-
-.debtors-dropdown {
-  position: absolute;
-  z-index: 20;
-  top: 100%;
-  left: 0;
-  margin-top: 4px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.12);
-  padding: 6px 0;
-  min-width: 260px;
-  max-height: 220px;
-  overflow-y: auto;
-}
-.debtors-dropdown-item {
-  padding: 5px 12px;
-  font-size: .8rem;
-  border-bottom: 1px solid #f3f4f6;
-}
-.debtors-dropdown-item:last-child { border-bottom: none; }
 
 @media print {
   /* Hide everything except the print area. #print-area is nested several

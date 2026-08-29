@@ -898,8 +898,10 @@ export default {
     month:        'Month',
     collectionsCol: 'Collections (TZS)',
     totalPartialPaid: 'Total Partial Paid',
-    debtorsColumn: 'Debtors (Terms Not Paid)',
-    debtorsCount: '{count} debtors',
+    // The collections table lists each debtor on its own row now, so the name
+    // and the unpaid terms each get a column of their own.
+    studentNameColumn: 'Student Name',
+    debtTermsColumn: 'Debt Terms (Not Paid)',
     paginationInfo: 'Showing {from}-{to} of {total}',
     paymentCount: 'Payment Count',
     daysOverdue:  'Days Overdue',
