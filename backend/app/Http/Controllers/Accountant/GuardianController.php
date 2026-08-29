@@ -13,7 +13,21 @@ class GuardianController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $guardians = Guardian::with(['user', 'students' => fn ($q) => $q->withPivot(['relation', 'is_primary'])])
+        // A guardian can have children enrolled at different schools. Scoped
+        // to the active school so switching schools shows only that school's
+        // children — both which guardians appear and which of their students
+        // are listed — matching every other school-switchable list page.
+        $schoolId = $this->activeSchoolId($request);
+
+        $guardians = Guardian::with(['user', 'students' => function ($q) use ($schoolId) {
+            $q->withPivot(['relation', 'is_primary']);
+            if ($schoolId) {
+                $q->whereHas('enrollments', fn ($e) => $e->where('school_id', $schoolId));
+            }
+        }])
+            ->when($schoolId, fn ($q) => $q->whereHas('students', fn ($s) => $s->whereHas('enrollments', fn ($e) => $e->where('school_id', $schoolId))
+            )
+            )
             ->when($request->student_id, fn ($q) => $q->whereHas('students', fn ($s) => $s->where('students.id', $request->student_id))
             )
             ->when($request->search, fn ($q) => $q->where(fn ($sub) => $sub->where('first_name', 'like', "%{$request->search}%")
@@ -122,7 +136,21 @@ class GuardianController extends Controller
         ], fn ($v) => ! is_null($v)));
 
         if (isset($data['student_ids'])) {
-            $guardian->students()->sync($data['student_ids']);
+            // The checklist that produced student_ids only ever offers the
+            // active school's students (see index()), so a plain sync() here
+            // would silently detach every child the guardian has at any
+            // OTHER school. Keep those associations and replace only the
+            // active school's slice with what was submitted.
+            $schoolId = $this->activeSchoolId($request);
+            if ($schoolId) {
+                $otherSchoolIds = $guardian->students()
+                    ->whereDoesntHave('enrollments', fn ($e) => $e->where('school_id', $schoolId))
+                    ->pluck('students.id')
+                    ->all();
+                $guardian->students()->sync(array_values(array_unique(array_merge($otherSchoolIds, $data['student_ids']))));
+            } else {
+                $guardian->students()->sync($data['student_ids']);
+            }
         }
 
         return response()->json($guardian->load(['user', 'students']));
@@ -135,5 +163,14 @@ class GuardianController extends Controller
         $guardian->delete();
 
         return response()->json(null, 204);
+    }
+
+    private function activeSchoolId(Request $request): ?int
+    {
+        if ($request->filled('school_id')) {
+            return $request->integer('school_id');
+        }
+
+        return app()->bound('active_school') ? app('active_school')?->id : null;
     }
 }
