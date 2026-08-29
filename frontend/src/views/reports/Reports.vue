@@ -185,11 +185,22 @@
                by debtor rather than by date, so a 108-debtor day no longer
                dictates the length of the page. -->
           <div class="mt-4">
-            <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="d-flex align-items-center justify-content-between mb-2 gap-2 flex-wrap">
               <h6 class="fw-bold mb-0">{{ t('reports.debtorsSectionTitle') }}</h6>
-              <span class="small text-muted">
-                {{ t('reports.debtorsTotalOwed') }}: <strong class="text-danger">{{ formatTZS(debtorTotalOwed) }}</strong>
-              </span>
+              <div class="d-flex align-items-center gap-3">
+                <span class="small text-muted">
+                  {{ t('reports.debtorsTotalOwed') }}: <strong class="text-danger">{{ formatTZS(debtorTotalOwed) }}</strong>
+                </span>
+                <!-- The total stays a range total: it sums every debtor in the
+                     date range, not just the page, so changing this does not
+                     change the figure beside it. -->
+                <div class="d-flex align-items-center gap-2 no-print">
+                  <CFormSelect v-model.number="debtorPageSize" size="sm" style="width:90px;">
+                    <option v-for="n in debtorPageSizes" :key="n" :value="n">{{ n }}</option>
+                  </CFormSelect>
+                  <span class="small text-muted text-nowrap">{{ t('common.perPage') }}</span>
+                </div>
+              </div>
             </div>
 
             <CTable responsive hover class="mb-0" style="font-size:.85rem;">
@@ -510,25 +521,32 @@ const debtorTotalOwed = computed(() =>
 )
 
 const debtorPage = ref(1)
-const debtorPageSize = 25
+const debtorPageSizes = [20, 50, 100, 200, 500]
+const debtorPageSize = ref(20)
 const debtorTotalPages = computed(() =>
-  Math.max(1, Math.ceil(debtorRows.value.length / debtorPageSize)),
+  Math.max(1, Math.ceil(debtorRows.value.length / debtorPageSize.value)),
 )
 const pagedDebtorRows = computed(() => {
-  const start = (debtorPage.value - 1) * debtorPageSize
-  return debtorRows.value.slice(start, start + debtorPageSize)
+  const start = (debtorPage.value - 1) * debtorPageSize.value
+  return debtorRows.value.slice(start, start + debtorPageSize.value)
 })
 const debtorPageFrom = computed(() =>
-  debtorRows.value.length ? (debtorPage.value - 1) * debtorPageSize + 1 : 0,
+  debtorRows.value.length ? (debtorPage.value - 1) * debtorPageSize.value + 1 : 0,
 )
 const debtorPageTo = computed(() =>
-  Math.min(debtorPage.value * debtorPageSize, debtorRows.value.length),
+  Math.min(debtorPage.value * debtorPageSize.value, debtorRows.value.length),
 )
 
 // A shorter result set must not strand the reader on a page that no longer
 // exists — otherwise changing the date range shows an empty table.
 watch(debtorTotalPages, (pages) => {
   if (debtorPage.value > pages) debtorPage.value = pages
+})
+
+// Changing the page size renumbers every page, so staying on page 5 would land
+// on unrelated rows. Start again from the top.
+watch(debtorPageSize, () => {
+  debtorPage.value = 1
 })
 
 const byDiscountType = ref([])

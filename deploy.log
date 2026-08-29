@@ -3001,3 +3001,38 @@ Full suite 31 passed."
 [0;36m[2026-08-29 17:06:45][0m   ShulePay — Release
 [0;36m[2026-08-29 17:06:45][0m ══════════════════════════════════════════
 [0;36m[2026-08-29 17:06:45][0m Checking working tree...
+[0;36m[2026-08-29 17:06:45][0m Files staged for commit:
+[0;36m[2026-08-29 17:06:45][0m Committing: "refactor(reports): split the collections view into summary and debtor tables
+
+The rowspan layout put two granularities in one table: a per-day financial
+summary and a per-debtor chase-list. With 108 debtors on a single day the day's
+figures floated in a column of whitespace, and pagination counted DATES, so one
+page of 10 days could render 500+ rows.
+
+They are now two tables. The summary keeps one row per day and gains a plain
+debtor count. Below it, a debtor table lists one line per student per day with
+the unpaid terms and, new, the amount owed - paginated by debtor at 25 a page,
+so the number of rows on screen matches what the pager claims.
+
+Amount owed is the invoice total less payments, accumulated per student across
+exactly the terms named on that row, so the column reconciles with the day's
+Total Debt; a test asserts that equality rather than just the number. Rows sort
+by largest debt first, since the list exists to be worked through, and a running
+total of what is owed sits above the table.
+
+Two defects found while building it: rowDebtorLines() pads an empty day with a
+blank entry, so counting it raw would have reported '1 debtor' for a day with
+none; and shortening the date range could strand the pager on a page that no
+longer exists. Both fixed.
+
+The joined 'NAME (TERMS)' strings stay in the payload for the xlsx export.
+Full suite 31 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-29 17:06:46][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-29 17:06:52][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-29 17:13:08][0m ══════════════════════════════════════════
+[0;36m[2026-08-29 17:13:08][0m   ShulePay — Release
+[0;36m[2026-08-29 17:13:08][0m ══════════════════════════════════════════
+[0;36m[2026-08-29 17:13:08][0m Checking working tree...
