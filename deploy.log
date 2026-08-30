@@ -3036,3 +3036,29 @@ Full suite 31 passed."
 [0;36m[2026-08-29 17:13:08][0m   ShulePay — Release
 [0;36m[2026-08-29 17:13:08][0m ══════════════════════════════════════════
 [0;36m[2026-08-29 17:13:08][0m Checking working tree...
+[0;36m[2026-08-29 17:13:08][0m Files staged for commit:
+[0;36m[2026-08-29 17:13:08][0m Committing: "feat(reports): per-page selector for the debtor list
+
+Adds a 20/50/100/200/500 page-size control on the same row as Total owed, so a
+108-debtor day can be read in one screen instead of five pages of clicking.
+
+Page size is now state rather than a constant. Two consequences handled:
+changing it renumbers every page, so the pager resets to page 1 rather than
+landing the reader on unrelated rows; and the existing clamp on total pages
+still catches a shortened date range.
+
+Total owed deliberately stays a range total - it sums every debtor between the
+selected dates, not just the visible page - so the figure does not move when the
+page size changes. Noted in the markup so it is not 'fixed' later.
+
+The control carries no-print: the printed report should contain the rows, not
+the widget that chose how many to show."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-29 17:13:09][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-29 17:13:15][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-30 16:23:55][0m ══════════════════════════════════════════
+[0;36m[2026-08-30 16:23:55][0m   ShulePay — Release
+[0;36m[2026-08-30 16:23:55][0m ══════════════════════════════════════════
+[0;36m[2026-08-30 16:23:55][0m Checking working tree...

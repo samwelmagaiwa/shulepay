@@ -181,6 +181,44 @@ class DashboardService
                 strtolower(str_replace(' ', '_', $r->class_name ?? 'unknown')) => (int) $r->total,
             ])->toArray();
 
+        // ── Class debt breakdown (1 query) ────────────────────────────────────
+        // Powers the Invoice Distribution panel, which ranks classes by how much
+        // they still owe. Distinct from the two breakdowns above: $classBreakdown
+        // counts enrolled students and $classFeeBreakdown sums money collected,
+        // whereas this sums what is still OUTSTANDING and counts how many
+        // students that debt is spread across.
+        //
+        // The balance is the invoice total less its payments, so a partly paid
+        // invoice contributes only its remainder — matching how the reports
+        // page computes debt, rather than counting whole invoice totals.
+        $classDebtBreakdown = Invoice::allSchools()
+            ->when($schoolId, fn ($q) => $q->where("{$invoiceTable}.school_id", $schoolId))
+            ->whereIn("{$invoiceTable}.status", ['unpaid', 'partial'])
+            ->leftJoin(
+                DB::raw("(SELECT invoice_id, SUM(amount_cents) AS paid_sum FROM {$paymentTable} GROUP BY invoice_id) AS pd"),
+                'pd.invoice_id', '=', "{$invoiceTable}.id"
+            )
+            ->join('enrollments', function ($join) use ($invoiceTable) {
+                $join->on('enrollments.student_id', '=', "{$invoiceTable}.student_id")
+                    ->where('enrollments.status', 'active');
+            })
+            ->join('school_classes', 'school_classes.id', '=', 'enrollments.school_class_id')
+            ->selectRaw('school_classes.name AS class_name')
+            ->selectRaw("SUM(GREATEST({$invoiceTable}.total_amount_cents - COALESCE(pd.paid_sum, 0), 0)) AS debt_cents")
+            ->selectRaw("COUNT(DISTINCT {$invoiceTable}.student_id) AS unpaid_students")
+            ->groupBy('school_classes.name')
+            ->orderByDesc('debt_cents')
+            ->get()
+            ->map(fn ($r) => [
+                'class_name' => $r->class_name ?? 'Unknown',
+                'debt_cents' => (int) $r->debt_cents,
+                'unpaid_students' => (int) $r->unpaid_students,
+            ])
+            // A class whose invoices are all settled has no debt to rank.
+            ->filter(fn ($r) => $r['debt_cents'] > 0)
+            ->values()
+            ->all();
+
         // ── Top 5 debtors — DB-level sort (replaces full load + PHP sort) ─────
         $topDebtors = (clone $invoiceQ)
             ->whereIn('status', ['unpaid', 'partial'])
@@ -279,6 +317,7 @@ class DashboardService
             'school_breakdown' => $schoolBreakdown,
             'class_breakdown' => $classBreakdown,
             'class_fee_breakdown_cents' => $classFeeBreakdown,
+            'class_debt_breakdown' => $classDebtBreakdown,
             'top_debtors' => $topDebtors,
         ];
     }

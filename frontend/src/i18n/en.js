@@ -254,6 +254,12 @@ export default {
     trendAnalysisTitle:  'Collection Trend Analysis',
     totalInvoices:       'Total Invoices',
     invoiceDistTitle:    'Invoice Distribution',
+    // Invoice Distribution panel, reworked to rank classes by outstanding debt.
+    classDebtTitle:      'Debt by Class',
+    totalDebtLabel:      'Total Debt',
+    classColumn:         'Class',
+    debtColumn:          'Outstanding Debt',
+    unpaidStudentsCount: '{count} students not paid',
     classSummaryTitle:   'Fee Collection Summary by Class',
     feesChartTitle:      'Fee Collection Chart',
     feesDistTitle:       'Fee Collection Distribution',

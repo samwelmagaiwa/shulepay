@@ -548,13 +548,13 @@ const chartOptions = computed(() => {
             style="scale: 0.9; margin: -5px 0"
           >
             <span
-              class="pill-label bg-primary text-white border-0"
+              class="pill-label bg-danger text-white border-0"
               style="padding: 4px 8px; font-size: 11px"
-              >{{ t('dashboard.totalInvoices') }}</span
+              >{{ t('dashboard.totalDebtLabel') }}</span
             >
             <span v-if="referralLoading" class="pill-value text-muted fs-6 px-3">...</span>
-            <span v-else class="pill-value text-primary fs-6 px-3">{{
-              totalReferrals.toLocaleString()
+            <span v-else class="pill-value text-danger fs-6 px-3">{{
+              dashboard.isLocked ? MASK : 'TZS ' + totalReferrals.toLocaleString()
             }}</span>
           </div>
           <CBadge
@@ -683,7 +683,7 @@ const chartOptions = computed(() => {
               <div class="mb-4">
                 <h6 class="fw-bold text-dark-emphasis mb-0 d-flex align-items-center">
                   <CIcon :icon="cilHospital" class="me-2 text-primary" />
-                  {{ t('dashboard.invoiceDistTitle') }}
+                  {{ t('dashboard.classDebtTitle') }}
                 </h6>
               </div>
 
@@ -694,7 +694,7 @@ const chartOptions = computed(() => {
                 <table class="table table-hover align-middle mb-0 referral-table">
                   <thead class="table-light">
                     <tr>
-                      <th class="py-2 text-uppercase" style="font-size: 11px">JINA LA DARASA / SHULE</th>
+                      <th class="py-2 text-uppercase" style="font-size: 11px">{{ t('dashboard.classColumn') }}</th>
                       <th
                         class="py-2 text-uppercase"
                         style="font-size: 11px; width: 50px; text-align: center"
@@ -705,12 +705,12 @@ const chartOptions = computed(() => {
                         class="text-end pe-3 py-2 text-uppercase"
                         style="font-size: 11px; width: 120px; white-space: nowrap"
                       >
-                        IDADI YA ANKARA
+                        {{ t('dashboard.debtColumn') }}
                       </th>
                     </tr>
                   </thead>
                   <tbody class="bg-white">
-                    <tr v-for="(hosp, index) in referralData" :key="hosp.code" 
+                    <tr v-for="(hosp, index) in referralData" :key="hosp.name" 
                       class="referral-row" 
                       :class="[
                         index % 2 === 0 ? 'even-row' : 'odd-row',
@@ -756,15 +756,18 @@ const chartOptions = computed(() => {
                       </td>
                       <td class="text-end pe-3 py-2" style="width: 120px">
                         <div class="d-flex flex-column align-items-end gap-1">
-                          <span class="fw-bold text-primary" style="font-size: 15px">{{
-                            (hosp.count || 0).toLocaleString()
+                          <span class="fw-bold text-danger" style="font-size: 15px">{{
+                            dashboard.isLocked ? MASK : 'TZS ' + (hosp.count || 0).toLocaleString()
                           }}</span>
+                          <span class="text-muted" style="font-size: 11px; white-space: nowrap">
+                            {{ t('dashboard.unpaidStudentsCount', { count: hosp.unpaidStudents || 0 }) }}
+                          </span>
                           <div
                             class="progress shadow-sm"
                             style="width: 60px; height: 5px; border-radius: 4px"
                           >
                             <div
-                              class="progress-bar bg-primary"
+                              class="progress-bar bg-danger"
                               role="progressbar"
                               :style="{
                                 width: (hosp.count / (referralData[0]?.count || 1)) * 100 + '%',

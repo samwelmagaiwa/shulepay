@@ -58,6 +58,9 @@ class DashboardLockTest extends TestCase
                     'paid_partial_invoices' => 313,
                     'paid_partial_amount_cents' => 6534700000,
                     'class_fee_breakdown_cents' => ['STD 4' => 2013300000],
+                    'class_debt_breakdown' => [
+                        ['class_name' => 'STD 4', 'debt_cents' => 2013300000, 'unpaid_students' => 12],
+                    ],
                     'paid_amount_cents' => 6534700000,
                     'total_expenses_cents' => 120000000,
                     'collection_rate' => 68.4,

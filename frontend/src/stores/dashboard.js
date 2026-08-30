@@ -232,20 +232,24 @@ export const useDashboardStore = defineStore('dashboard', () => {
     })
   })
 
-  // ── Referral stats (school invoice distribution) ──────────────────────────
-  // ServiceTrendChart.vue expects referralStats: [{ name, code, count }]
+  // ── Invoice Distribution panel ────────────────────────────────────────────
+  // Ranks the ACTIVE school's classes by how much they still owe, biggest debt
+  // first. It used to list schools by invoice count, which said nothing once a
+  // school was selected in the header — every invoice belonged to that one
+  // school, so the panel always read "100%".
+  //
+  // count is the debt in TZS, since that is what the panel ranks and shows a
+  // percentage of; unpaid_students rides alongside for the headcount.
   const referralStats = computed(() => {
     const s = stats.value
     if (!s) return []
 
-    if (s.school_breakdown && s.school_breakdown.length) {
-      return s.school_breakdown.map(school => ({
-        name:  school.school || 'Unknown',
-        code:  school.code   || '',
-        count: school.count  || 0,
-      }))
-    }
-    return []
+    return (s.class_debt_breakdown || []).map(row => ({
+      name: row.class_name || 'Unknown',
+      code: '',
+      count: Math.round((row.debt_cents || 0) / 100),
+      unpaidStudents: row.unpaid_students || 0,
+    }))
   })
 
   // ── Legacy stubs (Dashboard.vue patientCategories uses these) ────────────
