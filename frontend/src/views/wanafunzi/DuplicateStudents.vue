@@ -42,17 +42,10 @@ onMounted(load)
 </script>
 
 <template>
-  <CContainer fluid class="p-2 p-md-3">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-      <div>
-        <h4 class="fw-bold mb-0">{{ t('duplicates.title') }}</h4>
-        <p class="text-muted small mb-0">{{ t('duplicates.subtitle') }}</p>
-      </div>
-      <CButton size="sm" color="secondary" variant="outline" :disabled="loading" @click="load">
-        {{ t('common.refresh') }}
-      </CButton>
-    </div>
-
+  <CContainer fluid class="px-2 px-md-3 pt-2 pb-3">
+    <!-- No page heading: the nav item already names the screen, and the summary
+         cards are the first thing worth reading. Refresh sits alongside them
+         rather than in a title bar of its own. -->
     <CAlert v-if="error" color="danger" class="py-2">{{ error }}</CAlert>
 
     <div v-if="loading" class="text-center py-5"><CSpinner color="primary" /></div>
@@ -61,6 +54,12 @@ onMounted(load)
       <!-- Summary. The money figure is the one that matters: it is what the
            books may be overstating if a payment was recorded against both
            records rather than received twice. -->
+      <div class="d-flex justify-content-end mb-2">
+        <CButton size="sm" color="secondary" variant="outline" :disabled="loading" @click="load">
+          {{ t('common.refresh') }}
+        </CButton>
+      </div>
+
       <CRow class="g-2 mb-3">
         <CCol xs="12" md="4">
           <CCard class="h-100" style="border-left:4px solid #6366f1;">

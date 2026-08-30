@@ -198,8 +198,6 @@ export default {
   },
 
   duplicates: {
-    title:          'Wanafunzi Waliorudiwa',
-    subtitle:       'Wanafunzi waliosajiliwa zaidi ya mara moja, kwa jina na tarehe ya kuzaliwa. Kwa kusoma tu.',
     groupsCard:     'Wanafunzi waliorudiwa',
     recordsCard:    'Kumbukumbu zilizoathirika',
     paidCard:       'Malipo yaliyoandikwa mara mbili',

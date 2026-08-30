@@ -3243,3 +3243,35 @@ Full suite 47 passed."
 [0;36m[2026-08-30 18:27:07][0m   ShulePay — Release
 [0;36m[2026-08-30 18:27:07][0m ══════════════════════════════════════════
 [0;36m[2026-08-30 18:27:07][0m Checking working tree...
+[0;36m[2026-08-30 18:27:07][0m Files staged for commit:
+[0;36m[2026-08-30 18:27:07][0m Committing: "feat(students): read-only Duplicated Students page under the Students menu
+
+Students > Duplicated Students lists every child registered more than once,
+matched on first name + last name + date of birth - the same test registration
+now refuses on, so the page shows exactly what the guard would have caught.
+
+Each group renders its records side by side with admission number, class,
+invoice count, billed and paid, and when the amounts on both records are
+identical the group is flagged and the duplicated total called out. Groups sort
+by that figure, worst first, because a pair with duplicated payments is the one
+that distorts collections.
+
+The page is deliberately read-only: no merge, no delete. Which record of a pair
+is authoritative, and whether money was received twice or merely recorded twice,
+is a judgement about the school's books that no automatic rule should make. The
+page presents the evidence; a person decides.
+
+Also: the Student List nav item no longer stays highlighted on sibling routes
+(it matched any path starting /wanafunzi), and common.refresh was missing from
+both locale files - the button it backs would have rendered blank.
+
+Full suite 47 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-30 18:27:08][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-30 18:27:14][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-30 18:34:16][0m ══════════════════════════════════════════
+[0;36m[2026-08-30 18:34:16][0m   ShulePay — Release
+[0;36m[2026-08-30 18:34:16][0m ══════════════════════════════════════════
+[0;36m[2026-08-30 18:34:16][0m Checking working tree...

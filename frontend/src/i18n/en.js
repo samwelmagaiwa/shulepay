@@ -200,8 +200,6 @@ export default {
   },
 
   duplicates: {
-    title:          'Duplicated Students',
-    subtitle:       'Students registered more than once, matched on name and date of birth. Read only.',
     groupsCard:     'Duplicated students',
     recordsCard:    'Records affected',
     paidCard:       'Payments recorded twice',
