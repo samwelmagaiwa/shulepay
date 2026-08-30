@@ -1,5 +1,4 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
 
@@ -36,7 +35,6 @@ function clamp(value, min, max, fallback) {
  * defaults apply, so the feature is never silently disabled.
  */
 export function useIdleSession() {
-  const router = useRouter()
   const auth = useAuthStore()
 
   const showWarning = ref(false)
@@ -99,16 +97,21 @@ export function useIdleSession() {
     lastActivity = Date.now()
   }
 
-  async function forceLogout() {
+  function forceLogout() {
     stopCountdown()
     showWarning.value = false
     try {
-      await auth.logout()
+      auth.logout()
     } catch {
       // Logout should still send the user to the login screen even if the
       // network call to invalidate the token server-side fails.
     }
-    router.push('/login')
+    // A hard redirect, not router.push — matches api.js's own 401 handler.
+    // CModal here (see utils/modalGuard.js) can leave an invisible backdrop
+    // stuck over the next page when navigation happens while it's open or
+    // mid-close-transition; a full reload guarantees a clean start instead
+    // of a login page that silently swallows every click.
+    window.location.href = '/login'
   }
 
   onMounted(async () => {
