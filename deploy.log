@@ -3062,3 +3062,37 @@ the widget that chose how many to show."
 [0;36m[2026-08-30 16:23:55][0m   ShulePay — Release
 [0;36m[2026-08-30 16:23:55][0m ══════════════════════════════════════════
 [0;36m[2026-08-30 16:23:55][0m Checking working tree...
+[0;36m[2026-08-30 16:23:55][0m Files staged for commit:
+[0;36m[2026-08-30 16:23:55][0m Committing: "feat(dashboard): rank classes by outstanding debt in the distribution panel
+
+The Invoice Distribution panel listed schools by invoice count, which said
+nothing once a school was picked in the header switcher: every invoice belonged
+to that one school, so the panel always read '100%, TOP #1'.
+
+It now ranks the active school's CLASSES by how much they still owe - biggest
+debt first - keeping the percentage and adding the number of students that debt
+is spread across.
+
+New class_debt_breakdown aggregate sums the invoice total less its payments, so
+a partly paid invoice contributes only its remainder, matching how the reports
+page computes debt rather than counting whole invoice totals. Classes with
+nothing outstanding are dropped rather than ranked at zero. It is one grouped
+query, not a per-class loop.
+
+Two knock-ons handled: the field is money, so it joins MONEY_KEYS and hides with
+the rest under the privacy lock - a test pins that; and the 'Total Invoices'
+pill beside the chart reads the same total, which now sums debt, so it is
+relabelled Total Debt and masked when locked instead of showing a debt figure
+under an invoice label.
+
+Hardcoded Swahili column headers replaced with keys so both locales stay in
+step. Full suite 31 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-30 16:23:55][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-30 16:24:01][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-30 16:35:53][0m ══════════════════════════════════════════
+[0;36m[2026-08-30 16:35:53][0m   ShulePay — Release
+[0;36m[2026-08-30 16:35:53][0m ══════════════════════════════════════════
+[0;36m[2026-08-30 16:35:53][0m Checking working tree...

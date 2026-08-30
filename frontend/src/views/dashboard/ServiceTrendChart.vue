@@ -572,7 +572,7 @@ const chartOptions = computed(() => {
 
     <CCardBody class="p-0 border-0">
       <CRow class="m-0 mx-0">
-        <CCol :xl="9" :lg="12" class="p-0 border-end bg-white">
+        <CCol :xl="8" :lg="12" class="p-0 border-end bg-white">
           <div class="px-4 py-2 bg-light-subtle border-bottom">
             <div
               class="custom-legend d-flex flex-wrap align-items-center gap-3 mb-1 p-2 bg-white rounded-4 shadow-sm border"
@@ -674,7 +674,7 @@ const chartOptions = computed(() => {
           </div>
         </CCol>
 
-        <CCol :xl="3" :lg="12" class="p-0 bg-light-subtle">
+        <CCol :xl="4" :lg="12" class="p-0 bg-light-subtle">
           <div
             class="referral-container"
             :style="{ height: breakdownEnabled ? '660px' : '580px', overflowY: 'auto' }"
@@ -694,16 +694,18 @@ const chartOptions = computed(() => {
                 <table class="table table-hover align-middle mb-0 referral-table">
                   <thead class="table-light">
                     <tr>
-                      <th class="py-2 text-uppercase" style="font-size: 11px">{{ t('dashboard.classColumn') }}</th>
+                      <th class="py-2 text-uppercase" style="font-size: 11px; width: auto">
+                        {{ t('dashboard.classColumn') }}
+                      </th>
                       <th
                         class="py-2 text-uppercase"
-                        style="font-size: 11px; width: 50px; text-align: center"
+                        style="font-size: 11px; width: 1%; text-align: center; white-space: nowrap"
                       >
                         %
                       </th>
                       <th
                         class="text-end pe-3 py-2 text-uppercase"
-                        style="font-size: 11px; width: 120px; white-space: nowrap"
+                        style="font-size: 11px; width: 1%; white-space: nowrap"
                       >
                         {{ t('dashboard.debtColumn') }}
                       </th>
@@ -744,6 +746,7 @@ const chartOptions = computed(() => {
                           vertical-align: middle;
                           padding-top: 6px;
                           padding-bottom: 6px;
+                          white-space: nowrap;
                         "
                       >
                         <span class="fw-bold" style="font-size: 16px; color: #4f46e5">
@@ -754,7 +757,7 @@ const chartOptions = computed(() => {
                           }}
                         </span>
                       </td>
-                      <td class="text-end pe-3 py-2" style="width: 120px">
+                      <td class="text-end pe-3 py-2" style="width: 1%; white-space: nowrap">
                         <div class="d-flex flex-column align-items-end gap-1">
                           <span class="fw-bold text-danger" style="font-size: 15px">{{
                             dashboard.isLocked ? MASK : 'TZS ' + (hosp.count || 0).toLocaleString()
