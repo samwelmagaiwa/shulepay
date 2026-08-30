@@ -24,9 +24,11 @@ const error = ref('')
 const busy = ref(false)
 const showRemove = ref(false)
 
-// Three states: no code set yet, locked (needs the code), unlocked (can re-lock).
+// Four states: no code set yet, deactivated (configured but not enforcing),
+// locked (needs the code), unlocked (can re-lock).
 const mode = computed(() => {
   if (!dashboard.lockConfigured) return 'create'
+  if (!dashboard.lockEnabled) return 'deactivated'
   return dashboard.isLocked ? 'unlock' : 'relock'
 })
 
@@ -57,9 +59,26 @@ async function submit() {
     } else if (mode.value === 'unlock') {
       await dashboard.unlock(code.value)
     } else {
-      // Re-lock uses the code already stored; nothing new is submitted.
+      // Re-lock/reactivate uses the code already stored; nothing new is submitted.
       await dashboard.setLock(null, null)
     }
+    close()
+  } catch (e) {
+    error.value = e?.response?.data?.message
+      || e?.response?.data?.errors?.code?.[0]
+      || t('dashboardLock.failed')
+  } finally {
+    busy.value = false
+  }
+}
+
+// Turns enforcement off without deleting the stored code — available from the
+// unlock screen, reusing whatever code the user already typed there.
+async function deactivate() {
+  error.value = ''
+  busy.value = true
+  try {
+    await dashboard.deactivateLock(code.value)
     close()
   } catch (e) {
     error.value = e?.response?.data?.message
@@ -90,6 +109,7 @@ async function remove() {
       <CModalTitle>
         {{ mode === 'create' ? t('dashboardLock.setTitle')
          : mode === 'unlock' ? t('dashboardLock.unlockTitle')
+         : mode === 'deactivated' ? t('dashboardLock.deactivatedTitle')
          : t('dashboardLock.relockTitle') }}
       </CModalTitle>
     </CModalHeader>
@@ -101,10 +121,11 @@ async function remove() {
         <p class="text-medium-emphasis small">
           {{ mode === 'create' ? t('dashboardLock.setHelp')
            : mode === 'unlock' ? t('dashboardLock.unlockHelp')
+           : mode === 'deactivated' ? t('dashboardLock.deactivatedHelp')
            : t('dashboardLock.relockHelp') }}
         </p>
 
-        <template v-if="mode !== 'relock'">
+        <template v-if="mode === 'create' || mode === 'unlock'">
           <CFormInput
             v-model="code"
             type="password"
@@ -153,10 +174,18 @@ async function remove() {
       <CButton color="secondary" variant="ghost" :disabled="busy" @click="close">
         {{ t('common.cancel') }}
       </CButton>
+      <!-- Turn the requirement off entirely — same code as "Show", one click over. -->
+      <CButton
+        v-if="!showRemove && mode === 'unlock'"
+        color="warning" variant="outline" :disabled="busy || !code" @click="deactivate"
+      >
+        {{ t('dashboardLock.deactivateAction') }}
+      </CButton>
       <CButton v-if="!showRemove" color="primary" :disabled="busy" @click="submit">
         <span v-if="busy" class="spinner-border spinner-border-sm me-1"></span>
         {{ mode === 'create' ? t('dashboardLock.setAction')
          : mode === 'unlock' ? t('dashboardLock.unlockAction')
+         : mode === 'deactivated' ? t('dashboardLock.reactivateAction')
          : t('dashboardLock.relockAction') }}
       </CButton>
       <CButton v-else color="danger" :disabled="busy" @click="remove">

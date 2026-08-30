@@ -151,6 +151,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('dashboard/lock', [DashboardLockController::class, 'status']);
         Route::post('dashboard/lock', [DashboardLockController::class, 'store']);
         Route::post('dashboard/lock/unlock', [DashboardLockController::class, 'unlock']);
+        Route::post('dashboard/lock/deactivate', [DashboardLockController::class, 'deactivate']);
         Route::delete('dashboard/lock', [DashboardLockController::class, 'destroy']);
 
         // Students — custom routes MUST precede apiResource to avoid {student} capturing them

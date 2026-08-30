@@ -268,6 +268,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   // to decrypt, because the numbers were never sent. This state only decides
   // whether a card draws its value or a row of dots.
   const lockConfigured = ref(false)
+  const lockEnabled    = ref(true)
   const unlockedUntil  = ref(null)
 
   const isLocked = computed(() => stats.value?.locked === true)
@@ -276,21 +277,24 @@ export const useDashboardStore = defineStore('dashboard', () => {
     try {
       const { data } = await api.get('/dashboard/lock')
       lockConfigured.value = !!data.configured
+      lockEnabled.value    = data.enabled !== false
       unlockedUntil.value  = data.unlocked_until || null
       return data
     } catch {
       // A failure here must not blank the dashboard; assume no lock.
       lockConfigured.value = false
+      lockEnabled.value    = true
       return null
     }
   }
 
-  /** Set the code the first time, or re-lock when one already exists. */
+  /** Set the code the first time, or re-lock (and re-enable) when one already exists. */
   async function setLock(code, confirmation) {
     const { data } = await api.post('/dashboard/lock', {
       code, code_confirmation: confirmation,
     })
     lockConfigured.value = !!data.configured
+    lockEnabled.value    = data.enabled !== false
     unlockedUntil.value  = null
     await fetchStats()
     return data
@@ -303,10 +307,23 @@ export const useDashboardStore = defineStore('dashboard', () => {
     return data
   }
 
+  /**
+   * Stop enforcing the lock without deleting it — the code stays stored so
+   * setLock() (relock) can turn it back on later without a new one.
+   */
+  async function deactivateLock(code) {
+    const { data } = await api.post('/dashboard/lock/deactivate', { code })
+    lockEnabled.value   = false
+    unlockedUntil.value = null
+    await fetchStats()
+    return data
+  }
+
   /** Remove the lock entirely — gated on the account password, not the code. */
   async function removeLock(password) {
     const { data } = await api.delete('/dashboard/lock', { data: { password } })
     lockConfigured.value = false
+    lockEnabled.value    = true
     unlockedUntil.value  = null
     await fetchStats()
     return data
@@ -386,7 +403,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     // Actions
     fetchStats, fetchPendingPatients, fetchAbsentByClass, fetchDiscountedByClass, setBreakdownMode, calculateDateRange, stopPulse,
     // Privacy lock
-    isLocked, lockConfigured, unlockedUntil,
-    fetchLockStatus, setLock, unlock, removeLock,
+    isLocked, lockConfigured, lockEnabled, unlockedUntil,
+    fetchLockStatus, setLock, unlock, deactivateLock, removeLock,
   }
 })

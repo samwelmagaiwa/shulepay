@@ -460,4 +460,73 @@ class DashboardLockTest extends TestCase
 
         $this->assertDatabaseCount('dashboard_locks', 0);
     }
+
+    /**
+     * Deactivate: the correct code turns enforcement off without deleting the
+     * lock — figures are unredacted immediately, and the code/hash survive so
+     * store() (relock) can turn it back on later without a brand-new code.
+     */
+    public function test_correct_code_deactivates_the_lock(): void
+    {
+        $user = $this->userWith('owner');
+        $token = $this->token($user);
+
+        $this->withToken($token)
+            ->postJson('/api/dashboard/lock', ['code' => '1234', 'code_confirmation' => '1234']);
+
+        $this->withToken($token)
+            ->postJson('/api/dashboard/lock/deactivate', ['code' => '1234'])
+            ->assertOk()->assertJson(['configured' => true, 'enabled' => false, 'locked' => false]);
+
+        $res = $this->withToken($token)->getJson('/api/dashboard/stats')->assertOk();
+        $this->assertNull($res->json('locked'));
+        $this->assertNotNull($res->json('total_outstanding_cents'));
+
+        $this->assertDatabaseHas('dashboard_locks', [
+            'user_id' => $user->id,
+            'is_enabled' => false,
+        ]);
+    }
+
+    public function test_wrong_code_does_not_deactivate(): void
+    {
+        $user = $this->userWith('owner');
+        $token = $this->token($user);
+
+        $this->withToken($token)
+            ->postJson('/api/dashboard/lock', ['code' => '1234', 'code_confirmation' => '1234']);
+
+        $this->withToken($token)
+            ->postJson('/api/dashboard/lock/deactivate', ['code' => '0000'])
+            ->assertStatus(422);
+
+        $this->assertTrue($this->withToken($token)->getJson('/api/dashboard/stats')->json('locked'));
+    }
+
+    /**
+     * Reactivating (relock, the same endpoint used to set the code) restores
+     * enforcement using the code that was there before deactivate() — the
+     * user never has to remember or re-enter it, and never re-types it here.
+     */
+    public function test_relock_reactivates_a_deactivated_lock_with_the_same_code(): void
+    {
+        $user = $this->userWith('owner');
+        $token = $this->token($user);
+
+        $this->withToken($token)
+            ->postJson('/api/dashboard/lock', ['code' => '1234', 'code_confirmation' => '1234']);
+        $this->withToken($token)
+            ->postJson('/api/dashboard/lock/deactivate', ['code' => '1234']);
+
+        $this->withToken($token)
+            ->postJson('/api/dashboard/lock')
+            ->assertOk()->assertJson(['configured' => true, 'enabled' => true, 'locked' => true]);
+
+        $this->assertTrue($this->withToken($token)->getJson('/api/dashboard/stats')->json('locked'));
+
+        // The old code — not a new one — still unlocks it.
+        $this->withToken($token)
+            ->postJson('/api/dashboard/lock/unlock', ['code' => '1234'])
+            ->assertOk()->assertJson(['locked' => false]);
+    }
 }
