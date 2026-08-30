@@ -266,27 +266,37 @@ class StudentController extends Controller
      */
     public function duplicates(Request $request): JsonResponse
     {
+        // Student carries no school_id of its own (identity-only — see the
+        // model), so scoping to the active school means filtering by
+        // enrollment. Left null in "Shule Zote" mode (no active_school
+        // bound), which keeps today's system-wide behavior there — matching
+        // how Invoice/Payment's own BelongsToSchool scope already behaves
+        // everywhere else in the app.
+        $schoolId = app()->bound('active_school') ? app('active_school')?->id : null;
+
         $keys = Student::query()
             ->selectRaw('LOWER(TRIM(first_name)) as fn, LOWER(TRIM(last_name)) as ln, date_of_birth, COUNT(*) as n')
             ->whereNotNull('date_of_birth')
+            ->when($schoolId, fn ($q) => $q->whereHas('enrollments', fn ($e) => $e->where('school_id', $schoolId)))
             ->groupBy('fn', 'ln', 'date_of_birth')
             ->havingRaw('COUNT(*) > 1')
             ->get();
 
-        $groups = $keys->map(function ($key) {
+        $groups = $keys->map(function ($key) use ($schoolId) {
             $students = Student::query()
                 ->whereRaw('LOWER(TRIM(first_name)) = ?', [$key->fn])
                 ->whereRaw('LOWER(TRIM(last_name)) = ?', [$key->ln])
                 ->whereDate('date_of_birth', $key->date_of_birth)
-                ->with(['currentEnrollment.schoolClass', 'invoices' => fn ($q) => $q->withoutGlobalScope('school')])
+                ->when($schoolId, fn ($q) => $q->whereHas('enrollments', fn ($e) => $e->where('school_id', $schoolId)))
+                // Invoice's own BelongsToSchool scope already restricts to the
+                // active school automatically — no need to strip it here.
+                ->with(['currentEnrollment.schoolClass', 'invoices'])
                 ->orderBy('id')
                 ->get();
 
             $rows = $students->map(function ($student) {
                 $invoices = $student->invoices;
-                $paid = Payment::withoutGlobalScope('school')
-                    ->where('student_id', $student->id)
-                    ->sum('amount_cents');
+                $paid = Payment::where('student_id', $student->id)->sum('amount_cents');
 
                 return [
                     'id' => $student->id,

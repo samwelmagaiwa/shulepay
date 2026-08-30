@@ -7,11 +7,13 @@
  * twice, is a judgement about the school's books; this page presents the
  * evidence for that judgement rather than pre-empting it.
  */
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
+import { useSchoolStore } from '@/stores/school'
 
 const { t } = useI18n()
+const schoolStore = useSchoolStore()
 
 const groups = ref([])
 const summary = ref({ group_count: 0, student_count: 0, duplicated_paid_cents: 0 })
@@ -39,6 +41,11 @@ async function load() {
 }
 
 onMounted(load)
+
+// The backend scopes duplicate groups to the active school (X-School-Id) —
+// without this, switching schools in the nav left the page showing whatever
+// school was active when it first loaded, same as every other list page here.
+watch(() => schoolStore.activeSchoolId, load)
 </script>
 
 <template>
