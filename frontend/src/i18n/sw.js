@@ -192,6 +192,13 @@ export default {
     mismatch:           'Misimbo miwili haifanani.',
     failed:             'Imeshindikana. Tafadhali jaribu tena.',
   },
+  session: {
+    title:         'Upo bado?',
+    message:       'Hujafanya lolote kwa muda. Kwa usalama wako, utatolewa nje kiotomatiki isipokuwa uchague kubaki.',
+    countdownHint: 'Muda uliobaki kabla ya kutolewa nje kiotomatiki',
+    stay:          'Baki umeingia',
+    logoutNow:     'Toka sasa',
+  },
   dashboard: {
     title:        'Dashibodi',
     subtitle:     'Muhtasari wa hali ya fedha za shule',

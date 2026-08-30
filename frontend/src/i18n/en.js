@@ -192,6 +192,13 @@ export default {
     mismatch:           'The two codes do not match.',
     failed:             'Could not complete that. Please try again.',
   },
+  session: {
+    title:         'Are you still there?',
+    message:       "You've been inactive for a while. For your security, you'll be signed out automatically unless you choose to stay.",
+    countdownHint: 'Time remaining before automatic sign-out',
+    stay:          'Stay signed in',
+    logoutNow:     'Log out now',
+  },
   dashboard: {
     title:        'Dashboard',
     subtitle:     'School financial overview',

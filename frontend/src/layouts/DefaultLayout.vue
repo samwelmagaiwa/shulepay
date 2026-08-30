@@ -2,6 +2,10 @@
 import { CContainer } from '@coreui/vue'
 import AppFooter from '@/components/AppFooter.vue'
 import AppHeader from '@/components/AppHeader.vue'
+import SessionTimeoutModal from '@/components/SessionTimeoutModal.vue'
+import { useIdleSession } from '@/composables/useIdleSession'
+
+const { showWarning, secondsLeft, stayLoggedIn, forceLogout } = useIdleSession()
 </script>
 
 <template>
@@ -13,6 +17,13 @@ import AppHeader from '@/components/AppHeader.vue'
       </CContainer>
     </div>
     <AppFooter />
+
+    <SessionTimeoutModal
+      :visible="showWarning"
+      :seconds-left="secondsLeft"
+      @stay="stayLoggedIn"
+      @logout="forceLogout"
+    />
   </div>
 </template>
 
