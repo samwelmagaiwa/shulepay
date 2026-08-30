@@ -141,6 +141,9 @@
     <!-- Student Detail Drawer -->
     <MwanafunziDrawer v-if="selectedStudent" :student="selectedStudent" @close="selectedStudent = null" />
 
+    <!-- Invoices left behind by the student just deleted. -->
+    <OrphanedInvoicesModal v-model:visible="showOrphanModal" />
+
     <!-- Delete Confirm -->
     <CModal :visible="showDeleteModal" @close="showDeleteModal = false" size="lg" class="modal-fullscreen-sm-down">
       <CModalHeader><CModalTitle>{{ t('students.deleteTitle') }}</CModalTitle></CModalHeader>
@@ -216,6 +219,7 @@ import { useRouter } from 'vue-router'
 import { CPagination, CPaginationItem } from '@coreui/vue'
 import { useStudentsStore } from '@/stores/students'
 import api from '@/services/api'
+import OrphanedInvoicesModal from '@/components/OrphanedInvoicesModal.vue'
 import { useSchoolsStore }  from '@/stores/schools'
 import { useSchoolStore }   from '@/stores/school'
 import StatusBadge         from '@/components/StatusBadge.vue'
@@ -303,6 +307,7 @@ function openEdit(student) {
   showEditModal.value = true
 }
 
+const showOrphanModal = ref(false)
 const preview = ref(null)
 const previewLoading = ref(false)
 
@@ -329,10 +334,18 @@ async function confirmDelete(student) {
 
 async function doDelete() {
   deleting.value = true
+  // Captured before the request, because the preview is cleared with the modal
+  // and this decides whether there is anything left to review afterwards.
+  const hadInvoices = (preview.value?.invoice_count || 0) > 0
   try {
     await studentsStore.deleteStudent(deleteTarget.value.id)
     showDeleteModal.value = false
     fetchData()
+
+    // The student is gone but their invoices are not. Open the list of invoices
+    // left behind so they can be cleared now, rather than leaving the user to
+    // find the screen later and remember why they wanted it.
+    if (hadInvoices) showOrphanModal.value = true
   } catch (e) {
     alert(e?.response?.data?.message || 'Imeshindwa kufuta.')
   } finally {

@@ -396,6 +396,8 @@ export default {
     noDebt:           'Fully Paid',
     noStudents:   'No students found.',
     deleteTitle:  'Delete Student',
+    duplicateTitle:   'This student may already be registered',
+    duplicateConfirm: 'Register anyway',
     // Shown in the delete dialog: invoices now survive the student and are
     // cleared separately, so the wording states what remains, not what is lost.
     invoiceNoColumn: 'Invoice No.',

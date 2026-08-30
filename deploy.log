@@ -3166,3 +3166,44 @@ server before rollout. Full suite 36 passed."
 [0;36m[2026-08-30 17:43:49][0m   ShulePay — Release
 [0;36m[2026-08-30 17:43:49][0m ══════════════════════════════════════════
 [0;36m[2026-08-30 17:43:50][0m Checking working tree...
+[0;36m[2026-08-30 17:43:50][0m Files staged for commit:
+[0;36m[2026-08-30 17:43:50][0m Committing: "feat(students): keep invoices when a student is deleted, clear them deliberately
+
+Deleting a student hard-deleted every invoice and force-deleted every payment in
+the same transaction. That erased the record that money had ever been collected,
+irreversibly, with nothing in the confirm dialog to say so. Deleting a student is
+a roll-call correction; it should not destroy the school's financial history.
+
+destroy() now only soft-deletes the student and drops their enrollments.
+Invoices survive and become 'orphaned' - their student is soft-deleted - which
+is the state that has to exist before there is anything to review or clear.
+
+Two places to act on it:
+
+  - The delete dialog first fetches a preview and lists the student's invoices
+    with what was billed and what was already collected, so the decision is
+    made against the figures. A failed preview does not block the delete; it is
+    context, not a gate.
+  - Invoices > 'Deleted students' lists every orphan with its amounts and
+    offers a checked selection to purge. Purging is permanent and takes payment
+    records with it, so it asks a second time and repeats the collected amount
+    on that confirmation.
+
+purgeOrphaned() re-checks server-side that each id belongs to a soft-deleted
+student and silently skips anything else, so a stale or tampered id list cannot
+reach a live student's billing - covered by a test that asserts a live
+student's invoice survives the call.
+
+New routes are registered above apiResource('invoices'), which would otherwise
+capture 'orphaned' as an {invoice} id.
+
+5 new tests, full suite 41 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-30 17:43:51][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-30 17:43:57][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-30 18:08:55][0m ══════════════════════════════════════════
+[0;36m[2026-08-30 18:08:55][0m   ShulePay — Release
+[0;36m[2026-08-30 18:08:55][0m ══════════════════════════════════════════
+[0;36m[2026-08-30 18:08:55][0m Checking working tree...

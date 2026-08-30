@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Student;
 
+use App\Models\Student;
 use Illuminate\Foundation\Http\FormRequest;
 
 class RegisterStudentRequest extends FormRequest
@@ -38,6 +39,9 @@ class RegisterStudentRequest extends FormRequest
             'notes' => 'nullable|string',
 
             // Enrollment
+            // Set by the UI when the user confirms a flagged duplicate is a
+            // genuinely different child who shares a name and birth date.
+            'confirm_duplicate' => 'sometimes|boolean',
             'school_id' => 'required|exists:schools,id',
             'school_class_id' => 'required|exists:school_classes,id',
             'academic_year_id' => 'required|exists:academic_years,id',
@@ -158,6 +162,8 @@ class RegisterStudentRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            $this->rejectLikelyDuplicate($validator);
+
             $sponsorship = $this->input('sponsorship_type', 'none');
             $fee = (int) $this->input('total_tuition_fee_cents', 0);
             $discountType = $this->input('discount_type');
@@ -273,5 +279,54 @@ class RegisterStudentRequest extends FormRequest
                 }
             }
         });
+    }
+
+    /**
+     * Block a second registration of the same child.
+     *
+     * There was no duplicate check at all, so a double-submitted form — or a
+     * second attempt after an uncertain first one — silently created a whole
+     * second student, with their own admission number, their own invoices and
+     * their own payment records. Four such pairs reached production, three of
+     * them carrying identical payment totals, which overstates collections.
+     *
+     * Name alone is not enough to refuse on: namesakes are common. Matching on
+     * name AND date of birth is specific enough that a hit is nearly always the
+     * same child, and the caller can still override with confirm_duplicate for
+     * the genuine case of two children who share both.
+     */
+    private function rejectLikelyDuplicate($validator): void
+    {
+        if ($this->boolean('confirm_duplicate')) {
+            return;
+        }
+
+        $dob = $this->input('date_of_birth');
+        if (! $dob) {
+            return;
+        }
+
+        $existing = Student::withoutGlobalScopes()
+            ->whereRaw('LOWER(TRIM(first_name)) = ?', [mb_strtolower(trim((string) $this->input('first_name')))])
+            ->whereRaw('LOWER(TRIM(last_name)) = ?', [mb_strtolower(trim((string) $this->input('last_name')))])
+            ->whereDate('date_of_birth', $dob)
+            ->with('currentEnrollment')
+            ->first();
+
+        if (! $existing) {
+            return;
+        }
+
+        $admission = $existing->currentEnrollment?->admission_number;
+
+        $validator->errors()->add(
+            'duplicate_student',
+            trim(sprintf(
+                '%s (born %s) is already registered%s. Confirm to register anyway if this is a different child.',
+                $existing->fullName(),
+                $dob,
+                $admission ? ' as '.$admission : ''
+            ))
+        );
     }
 }

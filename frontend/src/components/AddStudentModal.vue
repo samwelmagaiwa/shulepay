@@ -1114,6 +1114,22 @@
         </CAlert>
       </div>
 
+      <!-- Likely duplicate: the operator confirms or cancels. Blocking outright
+           would make genuine namesakes unregisterable; allowing silently is what
+           created four duplicate students with duplicated payments. -->
+      <CAlert v-if="duplicateWarning" color="warning" class="mt-3 mb-0">
+        <div class="fw-semibold mb-1">{{ t('students.duplicateTitle') }}</div>
+        <div class="small mb-2">{{ duplicateWarning }}</div>
+        <div class="d-flex gap-2">
+          <CButton size="sm" color="secondary" variant="outline" @click="duplicateWarning = ''">
+            {{ t('common.cancel') }}
+          </CButton>
+          <CButton size="sm" color="warning" :disabled="saving" @click="confirmAndRetry">
+            {{ t('students.duplicateConfirm') }}
+          </CButton>
+        </div>
+      </CAlert>
+
       <CAlert v-if="submitError" color="danger" class="mt-3 mb-0">
         <div class="fw-semibold mb-1">⚠️ {{ submitError }}</div>
         <ul v-if="Object.keys(errors).length" class="mb-0 ps-3" style="font-size:.875rem;">
@@ -1380,6 +1396,20 @@ const selectedClassName = computed(() =>
 // spellings are accepted deliberately: matching only the new one would silently
 // drop the fee section for any school still on the old names, and this decides
 // whether the student is billed at all.
+// A registration the backend flagged as a likely duplicate. Holding it here
+// rather than in errors{} keeps it out of the field-error styling: it is a
+// confirmation prompt, not an invalid field.
+const duplicateWarning = ref('')
+const confirmDuplicate = ref(false)
+
+async function confirmAndRetry() {
+  confirmDuplicate.value = true
+  duplicateWarning.value = ''
+  await submit()
+  // One override per prompt, so the next student does not inherit it.
+  confirmDuplicate.value = false
+}
+
 const PRIMARY_CLASS_ORDINALS = {
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7,
 }
@@ -1969,6 +1999,9 @@ async function submit() {
 
     if (photoFile.value) fd.append('photo', photoFile.value)
 
+    // Set only after the user confirms a flagged duplicate is a different child.
+    if (confirmDuplicate.value) fd.append('confirm_duplicate', '1')
+
     await api.post('/students/register', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
 
     // Delete draft after successful registration
@@ -1979,6 +2012,17 @@ async function submit() {
   } catch (e) {
     if (e?.response?.status === 422) {
       const errs = e.response.data.errors || {}
+
+      // A likely duplicate is a question, not a failure: the same name and birth
+      // date usually means the form was submitted twice, but genuine namesakes
+      // exist, so the operator gets to decide rather than being blocked.
+      if (errs.duplicate_student) {
+        duplicateWarning.value = Array.isArray(errs.duplicate_student)
+          ? errs.duplicate_student[0]
+          : errs.duplicate_student
+        return
+      }
+
       errors.value = Object.fromEntries(Object.entries(errs).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]))
       submitError.value = t('common.fixErrors')
       // Navigate to step with first error

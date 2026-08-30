@@ -393,6 +393,8 @@ export default {
     noDebt:           'Wamekwisha Lipa',
     noStudents:   'Hakuna wanafunzi walioorodheshwa.',
     deleteTitle:  'Futa Mwanafunzi',
+    duplicateTitle:   'Mwanafunzi huyu huenda tayari amesajiliwa',
+    duplicateConfirm: 'Sajili hata hivyo',
     invoiceNoColumn: 'Namba ya Ankara',
     billedColumn:    'Imedaiwa',
     paidColumn:      'Imelipwa',
