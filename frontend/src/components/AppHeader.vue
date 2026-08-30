@@ -24,7 +24,7 @@ const isStudentsActive  = computed(() => ['/wanafunzi', '/walezi', '/wanafunzi/c
 const isFinanceActive   = computed(() => ['/ada-madeni', '/installments', '/malipo', '/ada'].some(p => route.path.startsWith(p)))
 const isExpensesActive  = computed(() => ['/matumizi', '/payroll', '/wasambazaji', '/mali', '/bajeti'].some(p => route.path.startsWith(p)))
 const isSchuleActive    = computed(() => ['/mahudhurio', '/usafiri', '/inventory'].some(p => route.path.startsWith(p)))
-const isAdminActive     = computed(() => ['/admin/schools', '/admin/wafanyakazi', '/admin/rollover', '/admin/academic-years', '/admin/terms', '/admin/branding', '/audit', '/superadmin'].some(p => route.path.startsWith(p)))
+const isAdminActive     = computed(() => ['/admin/schools', '/admin/wafanyakazi', '/admin/rollover', '/admin/academic-years', '/admin/terms', '/admin/branding', '/admin/session-timeout', '/audit', '/superadmin'].some(p => route.path.startsWith(p)))
 const { t, locale } = useI18n()
 const { colorMode, setColorMode } = useColorModes('shulepay-theme')
 
@@ -354,6 +354,9 @@ function go(path) {
             </CDropdownItem>
             <CDropdownItem v-if="auth.isOwner" @click="router.push('/admin/branding')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/branding') }">
               🎨 {{ t('nav.branding') }}
+            </CDropdownItem>
+            <CDropdownItem v-if="auth.isOwner" @click="router.push('/admin/session-timeout')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/admin/session-timeout') }">
+              ⏳ {{ t('nav.sessionTimeout') }}
             </CDropdownItem>
             <template v-if="auth.isSuperAdmin">
               <CDropdownDivider />

@@ -158,6 +158,12 @@ const routes = [
         meta: { requiresAuth: true, roles: ['owner', 'superadmin'] },
       },
       {
+        path: 'admin/session-timeout',
+        name: 'SessionTimeoutSettings',
+        component: () => import('@/views/admin/SessionTimeoutSettings.vue'),
+        meta: { requiresAuth: true, roles: ['owner', 'superadmin'] },
+      },
+      {
         path: 'superadmin/roles',
         name: 'RolesPermissions',
         component: () => import('@/views/superadmin/RolesPermissionsView.vue'),

@@ -42,6 +42,7 @@ use App\Http\Controllers\ParentPortal\ChildController;
 use App\Http\Controllers\ParentPortal\DashboardController as ParentDashboardController;
 use App\Http\Controllers\ParentPortal\StatementController;
 use App\Http\Controllers\Reports\ReportController;
+use App\Http\Controllers\SessionSettingController;
 use App\Http\Controllers\Shared\AcademicYearController;
 use App\Http\Controllers\Shared\AuditLogController;
 use App\Http\Controllers\Shared\LocationController;
@@ -86,6 +87,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('branding', [BrandingController::class, 'update'])
         ->middleware('role:'.UserRole::guard(UserRole::adminStaff()));
     Route::delete('branding/logo', [BrandingController::class, 'deleteLogo'])
+        ->middleware('role:'.UserRole::guard(UserRole::adminStaff()));
+
+    // Session timeout policy — read: all authenticated (every user's idle
+    // timer needs it); write: owner/superadmin only.
+    Route::get('session-settings', [SessionSettingController::class, 'show']);
+    Route::put('session-settings', [SessionSettingController::class, 'update'])
         ->middleware('role:'.UserRole::guard(UserRole::adminStaff()));
 
     // User settings (all authenticated users)
