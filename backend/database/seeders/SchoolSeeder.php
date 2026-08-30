@@ -81,21 +81,32 @@ class SchoolSeeder extends Seeder
                 );
             }
 
-            $label = $school->level->value === 'primary' ? 'Darasa' : 'Kidato';
-            $maxGrade = $school->level->value === 'primary' ? 7 : 6;
+            // Primary classes are worded (STANDARD ONE), matching the existing
+            // secondary naming (FORM ONE) and the rename applied to live data.
+            // Seeding the old "Darasa la N" here would leave fresh installs on a
+            // naming the rest of the app no longer produces.
+            $ordinals = [1 => 'ONE', 2 => 'TWO', 3 => 'THREE', 4 => 'FOUR',
+                5 => 'FIVE', 6 => 'SIX', 7 => 'SEVEN'];
+
+            $isPrimary = $school->level->value === 'primary';
+            $label = $isPrimary ? 'STANDARD' : 'Kidato';
+            $maxGrade = $isPrimary ? 7 : 6;
             for ($i = 1; $i <= $maxGrade; $i++) {
+                $name = $isPrimary ? "STANDARD {$ordinals[$i]}" : "{$label} la {$i}";
                 SchoolClass::firstOrCreate(
-                    ['school_id' => $school->id, 'name' => "{$label} la {$i}"],
-                    ['sort_order' => $i, 'capacity' => 45]
+                    ['school_id' => $school->id, 'name' => $name],
+                    // Pre-primary occupies 1-2, so standards start at 3 — the
+                    // same offset the sort_order migration applies.
+                    ['sort_order' => $isPrimary ? $i + 2 : $i, 'capacity' => 45]
                 );
             }
 
             // Pre-primary classes for primary school
-            if ($school->level->value === 'primary') {
-                foreach (['PP 1', 'PP 2'] as $i => $ppName) {
+            if ($isPrimary) {
+                foreach (['PP ONE', 'PP TWO'] as $i => $ppName) {
                     SchoolClass::firstOrCreate(
                         ['school_id' => $school->id, 'name' => $ppName],
-                        ['sort_order' => $i, 'capacity' => 30]
+                        ['sort_order' => $i + 1, 'capacity' => 30]
                     );
                 }
             }

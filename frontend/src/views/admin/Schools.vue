@@ -544,7 +544,7 @@
       <CModalBody class="p-3">
         <div class="mb-3">
           <FieldLabel required>{{ t('schools.className') }}</FieldLabel>
-          <CFormInput v-model="classForm.name" placeholder="e.g. Darasa la 1" :invalid="!!classErrors.name" />
+          <CFormInput v-model="classForm.name" placeholder="e.g. STANDARD ONE" :invalid="!!classErrors.name" />
           <ErrMsg :errors="classErrors.name" />
         </div>
         <div class="mb-3">

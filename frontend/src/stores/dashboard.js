@@ -115,9 +115,15 @@ export const useDashboardStore = defineStore('dashboard', () => {
       return total
     }
     const ageGroups = {
-      neonate:    sumKeys('chekechea', 'pp1', 'pp2', 'nursery', 'kindergarten'),
-      infant:     sumKeys('std1', 'std2', 'std3', 'darasa1', 'darasa2', 'darasa3'),
-      child:      sumKeys('std4', 'std5', 'std6', 'std7', 'darasa4', 'darasa5', 'darasa6', 'darasa7'),
+      // sumKeys strips spaces/underscores/hyphens before comparing, so the
+      // renamed "PP ONE" / "STANDARD ONE" arrive as ppone / standardone. Both
+      // the old and new spellings are listed so a school on either naming still
+      // populates this chart.
+      neonate:    sumKeys('chekechea', 'ppone', 'pptwo', 'pp1', 'pp2', 'nursery', 'kindergarten'),
+      infant:     sumKeys('standardone', 'standardtwo', 'standardthree',
+                          'std1', 'std2', 'std3', 'darasa1', 'darasa2', 'darasa3'),
+      child:      sumKeys('standardfour', 'standardfive', 'standardsix', 'standardseven',
+                          'std4', 'std5', 'std6', 'std7', 'darasa4', 'darasa5', 'darasa6', 'darasa7'),
       adolescent: sumKeys('form1', 'form2', 'kidato1', 'kidato2'),
       adult:      sumKeys('form3', 'form4', 'kidato3', 'kidato4'),
       elderly:    sumKeys('form5', 'form6', 'kidato5', 'kidato6'),

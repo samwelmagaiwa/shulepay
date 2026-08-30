@@ -28,17 +28,23 @@ class ImportExcelStudents extends Command
 
     protected $description = 'Import students from a school fees Excel file. Each sheet = one class. Column A = full name, Column B = total fee (TZS), Columns C-F = payments already made.';
 
-    /** Sheet name → class name mapping */
+    /**
+     * Sheet name to class name mapping.
+     *
+     * These MUST match the names in school_classes: findOrCreateClass() creates
+     * a class when the lookup misses, so a stale name here would not fail — it
+     * would quietly build a second, parallel set of classes.
+     */
     private array $classMap = [
-        'pp1' => 'PP 1',
-        'pp2' => 'PP 2',
-        'std 1' => 'Darasa la 1',
-        'std 2' => 'Darasa la 2',
-        'std 3' => 'Darasa la 3',
-        'std 4' => 'Darasa la 4',
-        'std 5' => 'Darasa la 5',
-        'std 6' => 'Darasa la 6',
-        'std 7' => 'Darasa la 7',
+        'pp1' => 'PP ONE',
+        'pp2' => 'PP TWO',
+        'std 1' => 'STANDARD ONE',
+        'std 2' => 'STANDARD TWO',
+        'std 3' => 'STANDARD THREE',
+        'std 4' => 'STANDARD FOUR',
+        'std 5' => 'STANDARD FIVE',
+        'std 6' => 'STANDARD SIX',
+        'std 7' => 'STANDARD SEVEN',
     ];
 
     private int $imported = 0;

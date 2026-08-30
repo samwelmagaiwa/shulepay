@@ -1373,14 +1373,31 @@ const selectedClassName = computed(() =>
 )
 
 // ── Defined Primary Fees (Standard 1-3 and 4-6) ─────────────────────────────
-// "Darasa la 1/2/3/4/5/6" — matches the class-naming convention used for
-// primary schools (see PrimaryFees.vue / primary-fee-categories backend).
 // The two class groups price the same 4 service categories differently, so
 // which tier applies depends on the selected class.
+//
+// Primary classes were renamed from "Darasa la N" to "STANDARD <WORD>". Both
+// spellings are accepted deliberately: matching only the new one would silently
+// drop the fee section for any school still on the old names, and this decides
+// whether the student is billed at all.
+const PRIMARY_CLASS_ORDINALS = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7,
+}
 const primaryFeeClassTier = computed(() => {
-  const m = /darasa\s*la\s*([123456])\b/i.exec(selectedClassName.value)
-  if (!m) return null
-  return Number(m[1]) <= 3 ? 'std_1_3' : 'std_4_6'
+  const name = selectedClassName.value || ''
+  let n = null
+
+  const legacy = /darasa\s*la\s*([1-7])\b/i.exec(name)
+  const worded = /^\s*standard\s+([a-z]+)\b/i.exec(name)
+  const numeric = /^\s*std\s*([1-7])\b/i.exec(name)
+
+  if (legacy) n = Number(legacy[1])
+  else if (worded) n = PRIMARY_CLASS_ORDINALS[worded[1].toLowerCase()] ?? null
+  else if (numeric) n = Number(numeric[1])
+
+  // Standard 7 has no defined-fee tier, exactly as before the rename.
+  if (n === null || n < 1 || n > 6) return null
+  return n <= 3 ? 'std_1_3' : 'std_4_6'
 })
 const isDefinedPrimaryClass = computed(() => primaryFeeClassTier.value !== null)
 

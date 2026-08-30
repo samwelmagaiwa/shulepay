@@ -565,7 +565,13 @@
       "Bash(curl -s https://magrethschools.sc.tz/api/students?search=Juma+Tungucha -H 'Authorization: Bearer 93|OdCOESwVyfLri9YjL1OXFrgrt1XiLfQUTq9hVITAfe6bd2ed' -H 'X-School-Id: 1' -H 'Accept: application/json')",
       "Bash(curl -s https://magrethschools.sc.tz/api/students?search=Lenard+Tungucha -H 'Authorization: Bearer 93|OdCOESwVyfLri9YjL1OXFrgrt1XiLfQUTq9hVITAfe6bd2ed' -H 'X-School-Id: 1' -H 'Accept: application/json')",
       "Bash(fixed)",
-      "Bash(git commit -m 'fix\\(guardians\\): teleport action dropdowns to body to escape ancestor stacking context *)"
+      "Bash(git commit -m 'fix\\(guardians\\): teleport action dropdowns to body to escape ancestor stacking context *)",
+      "Bash(vendor/bin/pint --test app/Http/Controllers/SessionSettingController.php routes/api.php)",
+      "Bash(curl -s https://magrethschools.sc.tz/api/session-settings -H 'Authorization: Bearer 103|JI8dhWBt2ZFc95Y1m8UuiOd0cgNP58Dvu4omdhEL6a977b03' -H 'Accept: application/json')",
+      "Bash(curl -s -w '\\\\nHTTP:%{http_code}\\\\n' -X PUT https://magrethschools.sc.tz/api/session-settings -H 'Authorization: Bearer 103|JI8dhWBt2ZFc95Y1m8UuiOd0cgNP58Dvu4omdhEL6a977b03' -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{\"idle_minutes\":15,\"warning_seconds\":45}')",
+      "Bash(curl -s -w '\\\\nHTTP:%{http_code}\\\\n' -X PUT https://magrethschools.sc.tz/api/session-settings -H 'Authorization: Bearer 104|BDMpma60uZLeQlBBOkCSFBkV9imLoLQk58gdAwToca94392b' -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{\"idle_minutes\":0,\"warning_seconds\":45}')",
+      "Bash(curl -s -w '\\\\nHTTP:%{http_code}\\\\n' -X PUT https://magrethschools.sc.tz/api/session-settings -H 'Authorization: Bearer 104|BDMpma60uZLeQlBBOkCSFBkV9imLoLQk58gdAwToca94392b' -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{\"idle_minutes\":20,\"warning_seconds\":50}')",
+      "Bash(curl -s -X PUT https://magrethschools.sc.tz/api/session-settings -H 'Authorization: Bearer 104|BDMpma60uZLeQlBBOkCSFBkV9imLoLQk58gdAwToca94392b' -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{\"idle_minutes\":30,\"warning_seconds\":60}')"
     ]
   }
 }

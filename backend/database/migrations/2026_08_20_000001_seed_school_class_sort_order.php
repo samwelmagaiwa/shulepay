@@ -41,6 +41,29 @@ return new class extends Migration
             return 2 + (int) $m[1]; // Darasa la 1→3, la 2→4, …
         }
 
+        // PP ONE / PP TWO and STANDARD ONE..SEVEN — the naming primary classes
+        // were renamed to. Without these a fresh install would sort every
+        // renamed class to 999 and the class lists would come out arbitrary.
+        $englishOrdinals = [
+            'one' => 1, 'two' => 2, 'three' => 3, 'four' => 4, 'five' => 5,
+            'six' => 6, 'seven' => 7, 'eight' => 8, 'nine' => 9, 'ten' => 10,
+        ];
+        if (preg_match('/^pp\s+(\w+)$/i', $name, $m)) {
+            $word = strtolower($m[1]);
+            if (isset($englishOrdinals[$word])) {
+                return $englishOrdinals[$word];
+            }
+        }
+        if (preg_match('/^standard\s+(\w+)$/i', $name, $m)) {
+            $word = strtolower($m[1]);
+            if (isset($englishOrdinals[$word])) {
+                return 2 + $englishOrdinals[$word];
+            }
+        }
+        if (preg_match('/^std\s*(\d+)$/i', $name, $m)) {
+            return 2 + (int) $m[1];
+        }
+
         // Swahili ordinal words
         $ordinals = [
             'kwanza' => 1, 'pili' => 2, 'tatu' => 3, 'nne' => 4,

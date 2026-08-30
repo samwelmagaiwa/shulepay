@@ -142,15 +142,19 @@ const getCategoryIcon = (title) => {
 // Production secondary classes are spelled out ("FORM ONE".."FORM FOUR") rather
 // than numbered, so both forms need covering — form_4/form4 AND form_four.
 const CLASS_KEY_MAP = {
-  'PP1':    ['pp_1', 'pp1'],
-  'PP2':    ['pp_2', 'pp2'],
-  'STD 1':  ['darasa_la_1', 'std_1', 'std1'],
-  'STD 2':  ['darasa_la_2', 'std_2', 'std2'],
-  'STD 3':  ['darasa_la_3', 'std_3', 'std3'],
-  'STD 4':  ['darasa_la_4', 'std_4', 'std4'],
-  'STD 5':  ['darasa_la_5', 'std_5', 'std5'],
-  'STD 6':  ['darasa_la_6', 'std_6', 'std6'],
-  'STD 7':  ['darasa_la_7', 'std_7', 'std7'],
+  // Primary classes were renamed to "PP ONE" / "STANDARD ONE", which normalise
+  // to pp_one / standard_one. The former darasa_la_N keys stay listed: a key
+  // that no longer matches anything simply contributes 0, whereas a missing one
+  // makes the class read as TZS 0 on a school still using the old names.
+  'PP1':    ['pp_one', 'pp_1', 'pp1'],
+  'PP2':    ['pp_two', 'pp_2', 'pp2'],
+  'STD 1':  ['standard_one', 'darasa_la_1', 'std_1', 'std1'],
+  'STD 2':  ['standard_two', 'darasa_la_2', 'std_2', 'std2'],
+  'STD 3':  ['standard_three', 'darasa_la_3', 'std_3', 'std3'],
+  'STD 4':  ['standard_four', 'darasa_la_4', 'std_4', 'std4'],
+  'STD 5':  ['standard_five', 'darasa_la_5', 'std_5', 'std5'],
+  'STD 6':  ['standard_six', 'darasa_la_6', 'std_6', 'std6'],
+  'STD 7':  ['standard_seven', 'darasa_la_7', 'std_7', 'std7'],
   'FORM 1': ['kidato_la_1', 'form_1', 'form1', 'form_one'],
   'FORM 2': ['kidato_la_2', 'form_2', 'form2', 'form_two'],
   'FORM 3': ['kidato_la_3', 'form_3', 'form3', 'form_three'],
