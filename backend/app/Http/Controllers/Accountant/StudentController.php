@@ -265,21 +265,63 @@ class StudentController extends Controller
             // actually takes effect everywhere, not just in the students list.
             $student->enrollments()->where('status', 'active')->update(['status' => 'dropped']);
 
-            // Permanently remove the student's invoices. payments.invoice_id is a
-            // restrictOnDelete FK, and Payment uses SoftDeletes — a soft delete alone
-            // would leave the row in place and still block removing the invoice, so
-            // payments are force-deleted first. invoice_lines cascade automatically
-            // and discounts are nulled automatically (both declared at the DB FK level).
-            $invoices = $student->invoices()->withoutGlobalScope('school')->get();
-            foreach ($invoices as $invoice) {
-                $invoice->payments()->withoutGlobalScope('school')->withTrashed()->get()
-                    ->each(fn ($payment) => $payment->forceDelete());
-                $invoice->delete();
-            }
-
+            // Invoices and payments are deliberately LEFT IN PLACE.
+            //
+            // This used to hard-delete every invoice and force-delete every
+            // payment in the same transaction, which destroyed the record that
+            // money had ever been collected — irreversibly, and with nothing in
+            // the confirm dialog to say so. Deleting a student is a roll-call
+            // correction; it should not erase the school's financial history.
+            //
+            // The invoices become "orphaned" (their student is soft-deleted) and
+            // are listed by InvoiceController::orphaned() so they can be cleared
+            // deliberately, once someone has seen what they are worth.
             $student->delete();
         });
 
         return response()->json(['message' => 'Student deleted.']);
+    }
+
+    /**
+     * What deleting this student would leave behind.
+     *
+     * Shown in the confirm dialog: the totals here are the difference between a
+     * routine correction and wiping out a term's collections, and the person
+     * clicking Delete is the only one who can tell which it is.
+     */
+    public function deletionPreview(Student $student): JsonResponse
+    {
+        $invoices = $student->invoices()
+            ->withoutGlobalScope('school')
+            ->with(['term:id,name', 'payments'])
+            ->orderBy('id')
+            ->get();
+
+        $paidCents = 0;
+        $paymentCount = 0;
+
+        $rows = $invoices->map(function ($invoice) use (&$paidCents, &$paymentCount) {
+            $paid = $invoice->paidCents();
+            $paidCents += $paid;
+            $paymentCount += $invoice->payments->count();
+
+            return [
+                'id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'term' => $invoice->term->name ?? '—',
+                'total_cents' => $invoice->total_amount_cents->cents(),
+                'paid_cents' => $paid,
+                'status' => $invoice->status,
+            ];
+        });
+
+        return response()->json([
+            'student' => $student->fullName(),
+            'invoices' => $rows,
+            'invoice_count' => $rows->count(),
+            'total_billed_cents' => $rows->sum('total_cents'),
+            'payment_count' => $paymentCount,
+            'total_paid_cents' => $paidCents,
+        ]);
     }
 }

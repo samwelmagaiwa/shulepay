@@ -142,9 +142,52 @@
     <MwanafunziDrawer v-if="selectedStudent" :student="selectedStudent" @close="selectedStudent = null" />
 
     <!-- Delete Confirm -->
-    <CModal :visible="showDeleteModal" @close="showDeleteModal = false" size="sm" class="modal-fullscreen-sm-down">
+    <CModal :visible="showDeleteModal" @close="showDeleteModal = false" size="lg" class="modal-fullscreen-sm-down">
       <CModalHeader><CModalTitle>{{ t('students.deleteTitle') }}</CModalTitle></CModalHeader>
-      <CModalBody>{{ t('students.confirmDeleteMsg', { name: deleteTarget?.full_name }) }}</CModalBody>
+      <CModalBody>
+        <p class="mb-2">{{ t('students.confirmDeleteMsg', { name: deleteTarget?.full_name }) }}</p>
+
+        <div v-if="previewLoading" class="text-center py-3">
+          <CSpinner size="sm" />
+        </div>
+
+        <!-- What the deletion leaves behind. Invoices are no longer destroyed
+             with the student, so this is a statement of what survives, not a
+             warning that it is about to be lost. -->
+        <template v-else-if="preview && preview.invoice_count">
+          <CTable small responsive class="mb-2" style="font-size:.82rem;">
+            <CTableHead class="table-light">
+              <CTableRow>
+                <CTableHeaderCell>{{ t('students.invoiceNoColumn') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('common.term') }}</CTableHeaderCell>
+                <CTableHeaderCell class="text-end">{{ t('students.billedColumn') }}</CTableHeaderCell>
+                <CTableHeaderCell class="text-end">{{ t('students.paidColumn') }}</CTableHeaderCell>
+              </CTableRow>
+            </CTableHead>
+            <CTableBody>
+              <CTableRow v-for="inv in preview.invoices" :key="inv.id">
+                <CTableDataCell>{{ inv.invoice_number }}</CTableDataCell>
+                <CTableDataCell>{{ inv.term }}</CTableDataCell>
+                <CTableDataCell class="text-end">{{ fmtCents(inv.total_cents) }}</CTableDataCell>
+                <CTableDataCell class="text-end text-success">{{ fmtCents(inv.paid_cents) }}</CTableDataCell>
+              </CTableRow>
+            </CTableBody>
+          </CTable>
+
+          <CAlert :color="preview.total_paid_cents > 0 ? 'warning' : 'info'" class="py-2 mb-0 small">
+            {{ t('students.deleteKeepsInvoices', {
+              invoices: preview.invoice_count,
+              billed: fmtCents(preview.total_billed_cents),
+              payments: preview.payment_count,
+              paid: fmtCents(preview.total_paid_cents),
+            }) }}
+          </CAlert>
+        </template>
+
+        <CAlert v-else-if="preview" color="info" class="py-2 mb-0 small">
+          {{ t('students.deleteNoInvoices') }}
+        </CAlert>
+      </CModalBody>
       <CModalFooter class="gap-2">
         <CButton color="secondary" @click="showDeleteModal = false" style="min-height:44px;">{{ t('common.cancel') }}</CButton>
         <CButton color="danger" :disabled="deleting" @click="doDelete" style="min-height:44px;">
@@ -172,6 +215,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { CPagination, CPaginationItem } from '@coreui/vue'
 import { useStudentsStore } from '@/stores/students'
+import api from '@/services/api'
 import { useSchoolsStore }  from '@/stores/schools'
 import { useSchoolStore }   from '@/stores/school'
 import StatusBadge         from '@/components/StatusBadge.vue'
@@ -259,9 +303,28 @@ function openEdit(student) {
   showEditModal.value = true
 }
 
-function confirmDelete(student) {
+const preview = ref(null)
+const previewLoading = ref(false)
+
+const fmtCents = (c) => 'TZS ' + Math.round((c || 0) / 100).toLocaleString()
+
+async function confirmDelete(student) {
   deleteTarget.value = student
+  preview.value = null
   showDeleteModal.value = true
+
+  // Fetched per open rather than cached: an invoice may have been raised or paid
+  // since the list was loaded, and this is the number the decision rests on.
+  previewLoading.value = true
+  try {
+    const { data } = await api.get(`/students/${student.id}/deletion-preview`)
+    preview.value = data
+  } catch {
+    // A failed preview must not block the delete — it is context, not a gate.
+    preview.value = null
+  } finally {
+    previewLoading.value = false
+  }
 }
 
 async function doDelete() {

@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class InvoiceController extends Controller
 {
@@ -119,6 +120,94 @@ class InvoiceController extends Controller
                 ->orderByDesc('id')
                 ->paginate($perPage)
         );
+    }
+
+    /**
+     * Invoices whose student has been deleted.
+     *
+     * Deleting a student no longer destroys their invoices (see
+     * StudentController::destroy), so they collect here instead of vanishing.
+     * Listing them with what was billed and collected is the point: an invoice
+     * with payments against it is a financial record, and clearing it should be
+     * a decision, not a side effect.
+     */
+    public function orphaned(Request $request): JsonResponse
+    {
+        $invoices = Invoice::withoutGlobalScope('school')
+            ->whereHas('student', fn ($q) => $q->onlyTrashed())
+            ->when(
+                $request->filled('school_id') && (int) $request->school_id !== 0,
+                fn ($q) => $q->where('school_id', $request->school_id)
+            )
+            ->with(['term:id,name', 'payments'])
+            // student() hides soft-deleted rows, so the name has to be fetched
+            // through a relation that does not filter them out.
+            ->with(['student' => fn ($q) => $q->withTrashed()])
+            ->orderByDesc('id')
+            ->get();
+
+        $rows = $invoices->map(fn ($invoice) => [
+            'id' => $invoice->id,
+            'invoice_number' => $invoice->invoice_number,
+            'student_name' => $invoice->student?->fullName() ?? '—',
+            'student_deleted_at' => $invoice->student?->deleted_at?->toDateString(),
+            'term' => $invoice->term->name ?? '—',
+            'total_cents' => $invoice->total_amount_cents->cents(),
+            'paid_cents' => $invoice->paidCents(),
+            'payment_count' => $invoice->payments->count(),
+            'status' => $invoice->status,
+        ]);
+
+        return response()->json([
+            'rows' => $rows,
+            'count' => $rows->count(),
+            'total_billed_cents' => $rows->sum('total_cents'),
+            'total_paid_cents' => $rows->sum('paid_cents'),
+        ]);
+    }
+
+    /**
+     * Permanently remove orphaned invoices by id.
+     *
+     * Only invoices whose student is soft-deleted can be removed here: anything
+     * else is silently skipped rather than deleted, so a stale or tampered id
+     * list cannot reach a live student's billing.
+     */
+    public function purgeOrphaned(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $invoices = Invoice::withoutGlobalScope('school')
+            ->whereIn('id', $request->input('ids'))
+            ->whereHas('student', fn ($q) => $q->onlyTrashed())
+            ->with('payments')
+            ->get();
+
+        $deleted = 0;
+        $paymentsRemoved = 0;
+
+        DB::transaction(function () use ($invoices, &$deleted, &$paymentsRemoved) {
+            foreach ($invoices as $invoice) {
+                // payments.invoice_id is restrictOnDelete and Payment soft-deletes,
+                // so a soft-deleted payment still blocks removing its invoice.
+                // invoice_lines cascade and discounts null out at the FK level.
+                $payments = $invoice->payments()->withoutGlobalScope('school')->withTrashed()->get();
+                $paymentsRemoved += $payments->count();
+                $payments->each(fn ($payment) => $payment->forceDelete());
+
+                $invoice->delete();
+                $deleted++;
+            }
+        });
+
+        return response()->json([
+            'deleted' => $deleted,
+            'payments_removed' => $paymentsRemoved,
+            'skipped' => count($request->input('ids')) - $deleted,
+        ]);
     }
 
     public function show(Invoice $invoice): InvoiceResource

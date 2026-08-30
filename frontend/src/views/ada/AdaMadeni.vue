@@ -108,6 +108,12 @@
           <CButton color="success" size="sm" @click="showGenerateModal = true" style="white-space:nowrap; flex-shrink:0;">
             <CIcon icon="cilPlus" class="me-1" /> {{ t('invoices.generate') }}
           </CButton>
+          <!-- Invoices left behind by deleted students. They no longer vanish
+               with the student, so there has to be somewhere to clear them. -->
+          <CButton color="secondary" variant="outline" size="sm"
+                   @click="showOrphanModal = true" style="white-space:nowrap; flex-shrink:0;">
+            {{ t('orphanInvoices.openButton') }}
+          </CButton>
         </div>
       </CCardBody>
 
@@ -298,6 +304,8 @@
     />
 
     <!-- Generate Invoice Modal -->
+    <OrphanedInvoicesModal v-model:visible="showOrphanModal" @purged="fetchData(1)" />
+
     <GenerateInvoiceModal
       :visible="showGenerateModal"
       @close="showGenerateModal = false"
@@ -324,6 +332,7 @@ import LipiaModal            from '@/components/LipiaModal.vue'
 import MwanafunziDrawer      from '@/components/MwanafunziDrawer.vue'
 import GenerateInvoiceModal  from '@/components/GenerateInvoiceModal.vue'
 import SmsBlastModal         from '@/components/SmsBlastModal.vue'
+import OrphanedInvoicesModal from '@/components/OrphanedInvoicesModal.vue'
 import api                   from '@/services/api'
 import { printReceipt as printReceiptPdf, printStudentStatement as printStudentStatementPdf, cleanupReceiptFrame } from '@/utils/receipt'
 
@@ -337,6 +346,7 @@ const selectedInvoice  = ref(null)
 const showPayModal     = ref(false)
 const drawerStudent    = ref(null)
 const showGenerateModal = ref(false)
+const showOrphanModal = ref(false)
 const showSmsModal     = ref(false)
 const classes          = ref([])
 const promisedCount    = ref(0)

@@ -62,7 +62,7 @@ class DashboardPrivacy
     {
         $lock = self::lockFor($user);
 
-        return $lock !== null && $lock->isActive() && ! self::hasGrant($user);
+        return $lock !== null && $lock->isEnabled() && $lock->isActive() && ! self::hasGrant($user);
     }
 
     public static function hasGrant(User $user): bool

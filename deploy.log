@@ -3123,3 +3123,46 @@ No data or query change; layout only."
 [0;36m[2026-08-30 16:55:48][0m   ShulePay — Release
 [0;36m[2026-08-30 16:55:48][0m ══════════════════════════════════════════
 [0;36m[2026-08-30 16:55:48][0m Checking working tree...
+[0;36m[2026-08-30 16:55:49][0m Files staged for commit:
+[0;36m[2026-08-30 16:55:49][0m Committing: "refactor(classes): rename primary classes to the worded STANDARD naming
+
+Primary classes were stored as 'Darasa la N' and 'PP N' while secondary was
+already 'FORM ONE'..'FORM FOUR'. This brings both levels onto one convention:
+PP ONE, PP TWO, STANDARD ONE..STANDARD SEVEN.
+
+The rename itself is a migration matching exact old names, so it is idempotent
+and reversible via down(). sort_order is left alone -- it is stored per row, so
+the existing PP-then-Standard ordering survives untouched.
+
+Everything that references a class does so by school_class_id, so enrollments,
+invoices and fee structures are unaffected. Three places DID read the name as a
+string and would have broken:
+
+  - AddStudentModal derives the primary fee TIER by regex on the class name.
+    Left alone, students in the renamed classes would have silently lost the
+    Defined Primary Fees section -- ie. been billed wrongly. It now accepts the
+    worded, legacy and STD-N spellings.
+  - Dashboard's CLASS_KEY_MAP and the pie chart's sumKeys key off the
+    normalised name; the renamed classes would have read as TZS 0.
+  - ImportExcelStudents maps sheet names to class names and CREATES a class on
+    a miss, so a stale map would have quietly built a parallel set of classes.
+
+All of these accept both the old and the new spelling, so the code is safe
+whether it reaches an environment before or after the migration.
+
+Also updated for consistency: the seeder (fresh installs now produce the new
+names, with the correct PP-first sort offset), the sort_order parser (so a fresh
+run orders worded names instead of dumping them at 999), and the class-name
+placeholder in the Schools admin form.
+
+school_classes backed up to /tmp/school_classes_backup_20260830.json on the
+server before rollout. Full suite 36 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-30 16:55:49][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-30 16:55:58][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-30 17:43:49][0m ══════════════════════════════════════════
+[0;36m[2026-08-30 17:43:49][0m   ShulePay — Release
+[0;36m[2026-08-30 17:43:49][0m ══════════════════════════════════════════
+[0;36m[2026-08-30 17:43:50][0m Checking working tree...

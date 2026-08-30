@@ -172,6 +172,31 @@ export default {
     },
   },
   // Dashboard privacy lock — hides the money figures behind a per-user code.
+  // Invoices whose student was deleted, cleared deliberately rather than
+  // destroyed alongside the student.
+  orphanInvoices: {
+    openButton:      'Deleted students',
+    title:           'Invoices from deleted students',
+    help:            'These invoices belonged to students who have been deleted. Deleting an invoice here is permanent and removes its payment records too.',
+    none:            'No invoices from deleted students.',
+    summary:         '{count} invoice(s), total',
+    includingPaid:   'including {paid} already collected',
+    selectAll:       'Select all',
+    clearSelection:  'Clear selection',
+    student:         'Student',
+    invoiceNo:       'Invoice No.',
+    term:            'Term',
+    billed:          'Billed',
+    paid:            'Paid',
+    deletedOn:       'Student deleted',
+    deleteSelected:  'Delete {count} selected',
+    confirmTitle:    'Delete permanently?',
+    confirmBody:     '{count} invoice(s) and their payment records will be removed. This cannot be undone.',
+    confirmPaid:     'This includes {paid} already collected. That payment record will be lost.',
+    loadFailed:      'Could not load the list.',
+    purgeFailed:     'Could not delete the selected invoices.',
+  },
+
   dashboardLock: {
     lockAmounts:        'Hide amounts',
     locked:             'Amounts hidden',
@@ -367,6 +392,13 @@ export default {
     noDebt:           'Fully Paid',
     noStudents:   'No students found.',
     deleteTitle:  'Delete Student',
+    // Shown in the delete dialog: invoices now survive the student and are
+    // cleared separately, so the wording states what remains, not what is lost.
+    invoiceNoColumn: 'Invoice No.',
+    billedColumn:    'Billed',
+    paidColumn:      'Paid',
+    deleteKeepsInvoices: '{invoices} invoice(s) totalling {billed} will be kept, including {payments} payment(s) worth {paid} already collected. Clear them later under Invoices > Deleted students.',
+    deleteNoInvoices: 'This student has no invoices.',
     confirmDeleteMsg: 'Are you sure you want to delete {name}?',
     notFound:     'Student not found.',
     fullDetails:  'Full Details',

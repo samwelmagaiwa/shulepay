@@ -158,6 +158,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('students/next-admission-number', [StudentController::class, 'nextAdmissionNumber']);
         Route::get('students/discounted-by-class', [StudentController::class, 'discountedByClass']);
         Route::put('students/{student}/full', [StudentController::class, 'updateFull']);
+        // What deleting this student would leave behind — read by the confirm dialog.
+        Route::get('students/{student}/deletion-preview', [StudentController::class, 'deletionPreview']);
         Route::apiResource('students', StudentController::class);
 
         // Student Drafts (auto-save during registration)
@@ -181,6 +183,14 @@ Route::middleware('auth:sanctum')->group(function () {
         // to bound how often that expensive bulk write can be triggered.
         Route::post('invoices/generate-preview', [InvoiceController::class, 'generatePreview']);
         Route::post('invoices/generate', [InvoiceController::class, 'generate'])->middleware('throttle:20,1');
+        // Invoices whose student was deleted. Listed and cleared deliberately
+        // rather than destroyed with the student, so a record of collected money
+        // is never removed as a side effect.
+        Route::get('invoices/orphaned', [InvoiceController::class, 'orphaned']);
+        Route::delete('invoices/orphaned', [InvoiceController::class, 'purgeOrphaned']);
+
+        // MUST stay below the orphaned routes: apiResource registers
+        // invoices/{invoice}, which would otherwise capture "orphaned" as an id.
         Route::apiResource('invoices', InvoiceController::class)->only(['index', 'show']);
 
         // Payments

@@ -25,6 +25,7 @@ class DashboardLockController extends Controller
 
         return response()->json([
             'configured' => $lock !== null,
+            'enabled' => $lock?->isEnabled() ?? true,
             'locked' => DashboardPrivacy::isLocked($user),
             'unlocked_until' => DashboardPrivacy::hasGrant($user)
                 ? now()->addMinutes(DashboardPrivacy::GRANT_MINUTES)->toIso8601String()
@@ -32,7 +33,12 @@ class DashboardLockController extends Controller
         ]);
     }
 
-    /** Set the code for the first time, or re-lock with the code already set. */
+    /**
+     * Set the code for the first time, or re-lock with the code already set.
+     * Re-locking also re-enables a previously deactivated lock — it is the
+     * "turn protection back on" action, reusing the code that deactivate()
+     * left untouched rather than requiring a brand-new one.
+     */
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -51,10 +57,48 @@ class DashboardLockController extends Controller
 
         // Re-locking must not silently accept a new code — that would let anyone
         // at an unlocked screen overwrite the owner's code with their own.
-        $lock->update(['locked_at' => now()]);
+        $lock->update(['is_enabled' => true, 'locked_at' => now()]);
         DashboardPrivacy::revokeGrant($user);
 
-        return response()->json(['configured' => true, 'locked' => true]);
+        return response()->json(['configured' => true, 'enabled' => true, 'locked' => true]);
+    }
+
+    /**
+     * Stop enforcing the lock without deleting it — the code and its hash
+     * stay stored so store() can re-enable it later without the user having
+     * to set a new code from scratch. Gated on the code itself (like unlock,
+     * same rate limit) rather than the account password: turning privacy OFF
+     * is not the destructive, hard-to-recover action destroy() is.
+     */
+    public function deactivate(Request $request): JsonResponse
+    {
+        $request->validate(['code' => ['required', 'string']]);
+
+        $user = $request->user();
+        $lock = DashboardPrivacy::lockFor($user);
+
+        if ($lock === null) {
+            return response()->json(['message' => 'Hakuna msimbo uliowekwa.'], 422);
+        }
+
+        $throttle = 'dashboard-unlock:'.$user->id;
+        if (RateLimiter::tooManyAttempts($throttle, 5)) {
+            return response()->json([
+                'message' => 'Umejaribu mara nyingi. Subiri sekunde '.RateLimiter::availableIn($throttle).'.',
+            ], 429);
+        }
+
+        if (! Hash::check($request->string('code')->toString(), $lock->code_hash)) {
+            RateLimiter::hit($throttle, 60);
+
+            return response()->json(['message' => 'Msimbo si sahihi.'], 422);
+        }
+
+        RateLimiter::clear($throttle);
+        $lock->update(['is_enabled' => false]);
+        DashboardPrivacy::revokeGrant($user);
+
+        return response()->json(['configured' => true, 'enabled' => false, 'locked' => false]);
     }
 
     public function unlock(Request $request): JsonResponse

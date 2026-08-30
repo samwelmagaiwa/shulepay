@@ -11,13 +11,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class DashboardLock extends Model
 {
-    protected $fillable = ['user_id', 'code_hash', 'locked_at'];
+    protected $fillable = ['user_id', 'code_hash', 'is_enabled', 'locked_at'];
 
     protected $hidden = ['code_hash'];
 
     protected function casts(): array
     {
-        return ['locked_at' => 'datetime'];
+        return ['locked_at' => 'datetime', 'is_enabled' => 'boolean'];
     }
 
     public function user(): BelongsTo
@@ -28,5 +28,11 @@ class DashboardLock extends Model
     public function isActive(): bool
     {
         return $this->locked_at !== null;
+    }
+
+    /** False after a deliberate deactivate() — the code and hash stay stored. */
+    public function isEnabled(): bool
+    {
+        return $this->is_enabled;
     }
 }
