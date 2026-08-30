@@ -44,6 +44,7 @@
           <CCol xs="12" sm="6" md="2">
             <label class="form-label fw-semibold small mb-1">
               {{ t('invoices.term') }} <span class="text-danger">*</span>
+              <span v-if="activeYearName" class="text-muted fw-normal ms-1">({{ activeYearName }})</span>
             </label>
             <CFormSelect v-model="form.term_id" :disabled="saving || !form.school_id || loadingTerms"
                          size="sm" @update:modelValue="onClassOrTermChange">
@@ -320,6 +321,7 @@ const filteredClasses = ref([])
 const filteredTerms   = ref([])
 const loadingSchools  = ref(false)
 const loadingClasses  = ref(false)
+const activeYearName = ref('')
 const loadingTerms    = ref(false)
 
 // ── Preview / submit state ───────────────────────────────────────────────────
@@ -401,26 +403,37 @@ async function loadTermsForSchool(schoolId) {
     // Get academic years for this school (they include terms via with('terms'))
     const { data } = await api.get('/academic-years', { params: { school_id: schoolId } })
     const years = data.data ?? data
-    // Flatten all terms from all academic years, label with year name
-    const allTerms = []
-    for (const y of years) {
-      if (y.terms?.length) {
-        y.terms.forEach(term => {
-          allTerms.push({ ...term, _year_name: y.name })
-        })
-      } else {
-        // Fetch terms for this year if not embedded
-        try {
-          const tr = await api.get('/terms', { params: { academic_year_id: y.id } })
-          ;(tr.data.data ?? tr.data).forEach(term => {
-            allTerms.push({ ...term, _year_name: y.name })
-          })
-        } catch {}
-      }
+    // One academic year only. Flattening every year listed FIRST..FOURTH TERM
+    // once per year with nothing to tell them apart — five identical-looking
+    // options, four of them for years nobody is billing. The year name was
+    // already being collected here and then dropped by the <option>, which is
+    // why the repeats were indistinguishable rather than merely redundant.
+    //
+    // Installment plans are raised against outstanding invoices, which belong to
+    // the year being billed now, so the current year is the only sensible
+    // default. Falling back to the newest year keeps the field usable at a
+    // school that has not flagged one as current.
+    const year = years.find(y => y.is_current)
+      || [...years].sort((a, b) => String(b.name).localeCompare(String(a.name)))[0]
+
+    if (!year) { filteredTerms.value = []; activeYearName.value = ''; return }
+
+    activeYearName.value = year.name || ''
+
+    let terms = year.terms || []
+    if (!terms.length) {
+      try {
+        const tr = await api.get('/terms', { params: { academic_year_id: year.id } })
+        terms = tr.data.data ?? tr.data
+      } catch { terms = [] }
     }
-    filteredTerms.value = allTerms
+
+    // Ordered by term number so FIRST..FOURTH read in sequence rather than in
+    // whatever order the API returned them.
+    filteredTerms.value = [...terms].sort((a, b) => (a.number || 0) - (b.number || 0))
   } catch {
     filteredTerms.value = []
+    activeYearName.value = ''
   } finally {
     loadingTerms.value = false
   }

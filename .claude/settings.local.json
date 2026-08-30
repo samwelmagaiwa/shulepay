@@ -573,7 +573,12 @@
       "Bash(curl -s -w '\\\\nHTTP:%{http_code}\\\\n' -X PUT https://magrethschools.sc.tz/api/session-settings -H 'Authorization: Bearer 104|BDMpma60uZLeQlBBOkCSFBkV9imLoLQk58gdAwToca94392b' -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{\"idle_minutes\":20,\"warning_seconds\":50}')",
       "Bash(curl -s -X PUT https://magrethschools.sc.tz/api/session-settings -H 'Authorization: Bearer 104|BDMpma60uZLeQlBBOkCSFBkV9imLoLQk58gdAwToca94392b' -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{\"idle_minutes\":30,\"warning_seconds\":60}')",
       "Bash(curl -s -X POST https://magrethschools.sc.tz/api/dashboard/lock -H 'Authorization: Bearer 110|M53jBENGJI1TIqwcVFX8ataY3M7KBPEjoilC8HHp525ec1bd' -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{\"code\":\"9999\",\"code_confirmation\":\"9999\"}')",
-      "Bash(curl -s https://magrethschools.sc.tz/api/dashboard/stats -H 'Authorization: Bearer 110|M53jBENGJI1TIqwcVFX8ataY3M7KBPEjoilC8HHp525ec1bd' -H 'Accept: application/json')"
+      "Bash(curl -s https://magrethschools.sc.tz/api/dashboard/stats -H 'Authorization: Bearer 110|M53jBENGJI1TIqwcVFX8ataY3M7KBPEjoilC8HHp525ec1bd' -H 'Accept: application/json')",
+      "Bash(grep -n \"class Payment\\\\|BelongsToSchool\\\\|use App\\\\\\\\\\\\\\\\Traits\" /d/Projects/shulepay/backend/app/Models/Payment.php)",
+      "Bash(git commit -m 'fix\\(students\\): scope Duplicated Students to the active school *)",
+      "Bash(curl -s https://magrethschools.sc.tz/api/students/duplicates -H 'Authorization: Bearer 114|kfA6vhhEMQO2DsF8QoJbhBHimVoCMKzN6IwGeKFw34569e38' -H 'X-School-Id: 1' -H 'Accept: application/json')",
+      "Bash(python3 -c \"import json,sys;d=json.load\\(sys.stdin\\);print\\('group_count:',d['group_count'],'student_count:',d['student_count']\\)\")",
+      "Bash(git commit -m 'feat\\(reports\\): group the Debtors table by collection date *)"
     ]
   }
 }

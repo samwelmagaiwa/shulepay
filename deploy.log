@@ -3298,3 +3298,32 @@ entries."
 [0;36m[2026-08-30 18:39:05][0m   ShulePay — Release
 [0;36m[2026-08-30 18:39:05][0m ══════════════════════════════════════════
 [0;36m[2026-08-30 18:39:05][0m Checking working tree...
+[0;36m[2026-08-30 18:39:06][0m Files staged for commit:
+[0;36m[2026-08-30 18:39:06][0m Committing: "feat(registration): confirm a saved student instead of closing silently
+
+The Save button already blocked in-flight double-clicks, so a fast double-tap
+was never how duplicates were created: GILSON GILSON was registered twice ten
+minutes apart, DIANAROSE fifty-seven seconds apart. The cause was the modal
+closing with nothing said, which is indistinguishable from the click not having
+registered - so the operator did it again.
+
+On success the wizard is now replaced by a confirmation showing the student's
+name, their new admission number and class, with 'Done' and 'Register another'.
+The admission number matters most: it is something concrete to check against
+before registering anyone else.
+
+The modal no longer closes on the registered event. The parent still refreshes
+the list on it, but closing is left to the operator acknowledging the card -
+WanafunziList is the only consumer, so nothing else is affected.
+
+The Save button also reads 'Saving...' while in flight rather than keeping its
+idle label next to a spinner."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-30 18:39:06][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-30 18:39:12][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-30 22:12:54][0m ══════════════════════════════════════════
+[0;36m[2026-08-30 22:12:54][0m   ShulePay — Release
+[0;36m[2026-08-30 22:12:54][0m ══════════════════════════════════════════
+[0;36m[2026-08-30 22:12:54][0m Checking working tree...
