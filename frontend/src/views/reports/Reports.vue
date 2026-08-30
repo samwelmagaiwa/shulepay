@@ -206,23 +206,34 @@
             <CTable responsive hover class="mb-0" style="font-size:.85rem;">
               <CTableHead class="table-light">
                 <CTableRow>
-                  <CTableHeaderCell>{{ t('common.date') }}</CTableHeaderCell>
                   <CTableHeaderCell>{{ t('reports.studentNameColumn') }}</CTableHeaderCell>
                   <CTableHeaderCell>{{ t('reports.debtTermsColumn') }}</CTableHeaderCell>
                   <CTableHeaderCell class="text-end">{{ t('reports.amountOwed') }}</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
               <CTableBody>
-                <CTableRow v-for="(d, i) in pagedDebtorRows" :key="d.date + '-' + d.student_name + '-' + i">
-                  <CTableDataCell class="text-nowrap">{{ d.date }}</CTableDataCell>
-                  <CTableDataCell>{{ d.student_name || '—' }}</CTableDataCell>
-                  <CTableDataCell class="text-danger">{{ d.terms || '—' }}</CTableDataCell>
-                  <CTableDataCell class="text-end fw-semibold text-danger">
-                    {{ formatTZS(d.balance_cents) }}
-                  </CTableDataCell>
-                </CTableRow>
+                <template v-for="g in groupedPagedDebtors" :key="g.date">
+                  <CTableRow class="table-light">
+                    <CTableDataCell colspan="2" class="fw-bold text-nowrap">
+                      📅 {{ g.date }}
+                      <span class="text-muted fw-normal ms-1">
+                        ({{ t('reports.debtorsCountColumn') }}: {{ g.rows.length }})
+                      </span>
+                    </CTableDataCell>
+                    <CTableDataCell class="text-end fw-bold text-danger">
+                      {{ formatTZS(g.total_cents) }}
+                    </CTableDataCell>
+                  </CTableRow>
+                  <CTableRow v-for="(d, i) in g.rows" :key="g.date + '-' + d.student_name + '-' + i">
+                    <CTableDataCell class="ps-4">{{ d.student_name || '—' }}</CTableDataCell>
+                    <CTableDataCell class="text-danger">{{ d.terms || '—' }}</CTableDataCell>
+                    <CTableDataCell class="text-end fw-semibold text-danger">
+                      {{ formatTZS(d.balance_cents) }}
+                    </CTableDataCell>
+                  </CTableRow>
+                </template>
                 <CTableRow v-if="!debtorRows.length">
-                  <CTableDataCell colspan="4" class="text-center text-muted py-4">
+                  <CTableDataCell colspan="3" class="text-center text-muted py-4">
                     {{ t('reports.noDebtors') }}
                   </CTableDataCell>
                 </CTableRow>
@@ -529,6 +540,25 @@ const debtorTotalPages = computed(() =>
 const pagedDebtorRows = computed(() => {
   const start = (debtorPage.value - 1) * debtorPageSize.value
   return debtorRows.value.slice(start, start + debtorPageSize.value)
+})
+// Groups the current page's rows under their collection date, matching the
+// "Collections (TZS)" table above. debtorRows is already ordered by date
+// (it flattens colRows, which is itself date-ordered), so consecutive rows
+// sharing a date collapse into one group — a date split across a page
+// boundary simply continues as its own group on the next page, which is the
+// same trade-off the flat pagination above already accepts.
+const groupedPagedDebtors = computed(() => {
+  const groups = []
+  for (const d of pagedDebtorRows.value) {
+    const last = groups[groups.length - 1]
+    if (last && last.date === d.date) {
+      last.rows.push(d)
+      last.total_cents += d.balance_cents || 0
+    } else {
+      groups.push({ date: d.date, rows: [d], total_cents: d.balance_cents || 0 })
+    }
+  }
+  return groups
 })
 const debtorPageFrom = computed(() =>
   debtorRows.value.length ? (debtorPage.value - 1) * debtorPageSize.value + 1 : 0,
