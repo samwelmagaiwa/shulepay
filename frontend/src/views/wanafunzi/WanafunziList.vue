@@ -207,7 +207,7 @@
       :edit-student-id="showEditModal ? editStudent?.id : null"
       @close="showAddModal = false; showEditModal = false"
       @saved="onStudentSaved"
-      @registered="onStudentSaved"
+      @registered="onStudentRegistered"
     />
   </CContainer>
 </template>
@@ -351,6 +351,14 @@ async function doDelete() {
   } finally {
     deleting.value = false
   }
+}
+
+// A completed registration refreshes the list but leaves the modal open on its
+// confirmation card. Closing here would put the operator straight back on the
+// list with nothing said, which is the ambiguity that produced duplicate
+// registrations; the modal closes when they acknowledge it.
+function onStudentRegistered() {
+  fetchData()
 }
 
 function onStudentSaved() {

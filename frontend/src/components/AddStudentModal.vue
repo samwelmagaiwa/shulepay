@@ -9,6 +9,34 @@
 
     <CModalBody class="p-2 p-md-3">
 
+      <!-- Saved. The wizard is replaced rather than closed so the outcome is
+           unmistakable, and the admission number gives the operator something
+           concrete to check against before registering anyone else. -->
+      <div v-if="savedStudent" class="text-center py-4">
+        <div class="mb-3" style="font-size:3rem; line-height:1;">✅</div>
+        <h5 class="fw-bold text-success mb-1">{{ t('students.savedTitle') }}</h5>
+        <p class="text-muted small mb-3">{{ t('students.savedHelp') }}</p>
+
+        <CCard class="mx-auto text-start" style="max-width:420px;">
+          <CCardBody class="py-3">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-muted small">{{ t('students.savedName') }}</span>
+              <span class="fw-bold">{{ savedStudent.name }}</span>
+            </div>
+            <div v-if="savedStudent.admission_number" class="d-flex justify-content-between mb-2">
+              <span class="text-muted small">{{ t('students.savedAdmission') }}</span>
+              <span class="fw-bold text-success">{{ savedStudent.admission_number }}</span>
+            </div>
+            <div v-if="savedStudent.class" class="d-flex justify-content-between">
+              <span class="text-muted small">{{ t('students.savedClass') }}</span>
+              <span class="fw-bold">{{ savedStudent.class }}</span>
+            </div>
+          </CCardBody>
+        </CCard>
+      </div>
+
+      <template v-else>
+
       <!-- ── Resume vs Fresh Choice Dialog ──────────────────────────────── -->
       <div v-if="showResumeDialog" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
            style="background:rgba(0,0,0,.5);z-index:2000;">
@@ -1138,22 +1166,38 @@
       </CAlert>
 
       </div> <!-- End form content div -->
+      </template>
     </CModalBody>
 
     <CModalFooter>
-      <CButton v-if="step > 1" color="secondary" @click="step--" style="min-height:44px;">
-        {{ t('common.back') }}
-      </CButton>
-      <div class="ms-auto d-flex gap-2">
-        <CButton v-if="step < steps.length" color="primary" @click="nextStep" style="min-height:44px;min-width:120px;">
-          {{ t('common.next') }} →
+      <!-- After a save the only actions are acknowledging it or starting a new
+           registration; the wizard's own navigation would be meaningless. -->
+      <template v-if="savedStudent">
+        <CButton color="secondary" variant="outline" @click="registerAnother" style="min-height:44px;">
+          {{ t('students.registerAnother') }}
         </CButton>
-        <CButton v-if="step === steps.length" color="success" :disabled="saving" @click="submit"
-                 style="min-height:44px;min-width:160px;background:#007f3e;border-color:#007f3e;">
-          <CSpinner v-if="saving" size="sm" class="me-1" />
-          ✓ {{ t('students.save') }}
+        <CButton color="success" @click="closeAfterSave"
+                 style="min-height:44px;min-width:120px;background:#007f3e;border-color:#007f3e;">
+          {{ t('common.done') }}
         </CButton>
-      </div>
+      </template>
+
+      <template v-else>
+        <CButton v-if="step > 1" color="secondary" @click="step--" style="min-height:44px;">
+          {{ t('common.back') }}
+        </CButton>
+        <div class="ms-auto d-flex gap-2">
+          <CButton v-if="step < steps.length" color="primary" @click="nextStep" style="min-height:44px;min-width:120px;">
+            {{ t('common.next') }} →
+          </CButton>
+          <CButton v-if="step === steps.length" color="success" :disabled="saving" @click="submit"
+                   style="min-height:44px;min-width:160px;background:#007f3e;border-color:#007f3e;">
+            <CSpinner v-if="saving" size="sm" class="me-1" />
+            <span v-if="saving">{{ t('students.saving') }}</span>
+            <span v-else>✓ {{ t('students.save') }}</span>
+          </CButton>
+        </div>
+      </template>
     </CModalFooter>
   </CModal>
 </template>
@@ -1399,6 +1443,23 @@ const selectedClassName = computed(() =>
 // A registration the backend flagged as a likely duplicate. Holding it here
 // rather than in errors{} keeps it out of the field-error styling: it is a
 // confirmation prompt, not an invalid field.
+// Set once the backend confirms the student was created. Its presence swaps the
+// wizard body for a receipt, so there is never a moment where a saved
+// registration looks the same as an unsaved one.
+const savedStudent = ref(null)
+
+function closeAfterSave() {
+  savedStudent.value = null
+  resetForm()
+  emit('close')
+}
+
+function registerAnother() {
+  savedStudent.value = null
+  resetForm()
+  step.value = 1
+}
+
 const duplicateWarning = ref('')
 const confirmDuplicate = ref(false)
 
@@ -2002,13 +2063,25 @@ async function submit() {
     // Set only after the user confirms a flagged duplicate is a different child.
     if (confirmDuplicate.value) fd.append('confirm_duplicate', '1')
 
-    await api.post('/students/register', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    const { data } = await api.post('/students/register', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
 
     // Delete draft after successful registration
     await deleteDraft()
 
+    // Hold the modal open on an explicit confirmation instead of closing.
+    // Closing silently is indistinguishable from the click not registering, and
+    // that uncertainty is what produced duplicate students minutes apart — a
+    // double-click was never the cause, the in-flight guard already stops those.
+    savedStudent.value = {
+      name: [data?.first_name, data?.middle_name, data?.last_name].filter(Boolean).join(' '),
+      admission_number: data?.admission_number || null,
+      class: data?.school_class?.name || null,
+    }
+
+    // The list refreshes now; the modal closes when the user acknowledges.
     emit('registered')
-    resetForm()
   } catch (e) {
     if (e?.response?.status === 422) {
       const errs = e.response.data.errors || {}

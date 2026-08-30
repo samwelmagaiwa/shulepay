@@ -417,6 +417,15 @@ export default {
     noDebt:           'Fully Paid',
     noStudents:   'No students found.',
     deleteTitle:  'Delete Student',
+    // Shown after a successful save. The modal stays open on this so a saved
+    // registration never looks like one that did not go through.
+    savedTitle:      'Student registered',
+    savedHelp:       'The record has been saved. You do not need to register this student again.',
+    savedName:       'Name',
+    savedAdmission:  'Admission No.',
+    savedClass:      'Class',
+    registerAnother: 'Register another',
+    saving:          'Saving...',
     duplicateTitle:   'This student may already be registered',
     duplicateConfirm: 'Register anyway',
     // Shown in the delete dialog: invoices now survive the student and are
