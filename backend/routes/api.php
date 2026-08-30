@@ -158,6 +158,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('students/register', [StudentController::class, 'register']);
         Route::get('students/next-admission-number', [StudentController::class, 'nextAdmissionNumber']);
         Route::get('students/discounted-by-class', [StudentController::class, 'discountedByClass']);
+        // Read-only: students registered more than once, worst first.
+        Route::get('students/duplicates', [StudentController::class, 'duplicates']);
         Route::put('students/{student}/full', [StudentController::class, 'updateFull']);
         // What deleting this student would leave behind — read by the confirm dialog.
         Route::get('students/{student}/deletion-preview', [StudentController::class, 'deletionPreview']);

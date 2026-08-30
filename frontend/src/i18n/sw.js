@@ -2,6 +2,7 @@ export default {
   nav: {
     dashboard:    'Dashibodi',
     students:     'Wanafunzi',
+    duplicateStudents: 'Wanafunzi Waliorudiwa',
     studentList:  'Orodha ya Wanafunzi',
     fees:         'Ada',
     feeStructures:'Muundo wa Ada',
@@ -48,6 +49,7 @@ export default {
   },
   common: {
     save:        'Hifadhi',
+    refresh:     'Onyesha upya',
     cancel:      'Funga',
     delete:      'Futa',
     edit:        'Hariri',
@@ -193,6 +195,27 @@ export default {
     confirmPaid:     'Hii inajumuisha {paid} zilizokwisha kusanywa. Kumbukumbu hiyo ya malipo itapotea.',
     loadFailed:      'Imeshindwa kupakia orodha.',
     purgeFailed:     'Imeshindwa kufuta ankara zilizochaguliwa.',
+  },
+
+  duplicates: {
+    title:          'Wanafunzi Waliorudiwa',
+    subtitle:       'Wanafunzi waliosajiliwa zaidi ya mara moja, kwa jina na tarehe ya kuzaliwa. Kwa kusoma tu.',
+    groupsCard:     'Wanafunzi waliorudiwa',
+    recordsCard:    'Kumbukumbu zilizoathirika',
+    paidCard:       'Malipo yaliyoandikwa mara mbili',
+    none:           'Hakuna mwanafunzi aliyerudiwa.',
+    born:           'alizaliwa',
+    recordsBadge:   'kumbukumbu {count}',
+    identicalBadge: 'Kiasi kinafanana',
+    identicalNote:  'Kumbukumbu zote mbili zina kiasi kilekile kilichodaiwa na kulipwa, hivyo {paid} huenda kinahesabiwa mara mbili. Thibitisha kama fedha zilipokelewa mara moja au mbili kabla ya kuondoa kumbukumbu yoyote.',
+    recordNo:       'Kumbukumbu',
+    admission:      'Namba ya Usajili',
+    class:          'Darasa',
+    invoices:       'Ankara',
+    billed:         'Imedaiwa',
+    paid:           'Imelipwa',
+    registeredAt:   'Alisajiliwa',
+    loadFailed:     'Imeshindwa kupakia orodha.',
   },
 
   dashboardLock: {

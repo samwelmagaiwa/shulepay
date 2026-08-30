@@ -2,6 +2,7 @@ export default {
   nav: {
     dashboard:    'Dashboard',
     students:     'Students',
+    duplicateStudents: 'Duplicated Students',
     studentList:  'Student List',
     fees:         'Fees',
     feeStructures:'Fee Structures',
@@ -48,6 +49,7 @@ export default {
   },
   common: {
     save:        'Save',
+    refresh:     'Refresh',
     cancel:      'Cancel',
     delete:      'Delete',
     edit:        'Edit',
@@ -195,6 +197,27 @@ export default {
     confirmPaid:     'This includes {paid} already collected. That payment record will be lost.',
     loadFailed:      'Could not load the list.',
     purgeFailed:     'Could not delete the selected invoices.',
+  },
+
+  duplicates: {
+    title:          'Duplicated Students',
+    subtitle:       'Students registered more than once, matched on name and date of birth. Read only.',
+    groupsCard:     'Duplicated students',
+    recordsCard:    'Records affected',
+    paidCard:       'Payments recorded twice',
+    none:           'No duplicated students found.',
+    born:           'born',
+    recordsBadge:   '{count} records',
+    identicalBadge: 'Identical amounts',
+    identicalNote:  'Both records show the same billed and paid amounts, so {paid} may be counted twice in collections. Check whether the money was received once or twice before removing either record.',
+    recordNo:       'Record',
+    admission:      'Admission No.',
+    class:          'Class',
+    invoices:       'Invoices',
+    billed:         'Billed',
+    paid:           'Paid',
+    registeredAt:   'Registered',
+    loadFailed:     'Could not load the list.',
   },
 
   dashboardLock: {

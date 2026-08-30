@@ -47,6 +47,13 @@ const routes = [
         meta: { requiresAuth: true, roles: ['accountant', 'owner'] },
       },
       {
+        // Read-only review screen; no merge or delete, by design.
+        path: 'wanafunzi/duplicates',
+        name: 'DuplicateStudents',
+        component: () => import('@/views/wanafunzi/DuplicateStudents.vue'),
+        meta: { requiresAuth: true, roles: ['accountant', 'owner'] },
+      },
+      {
         path: 'wanafunzi/clearance',
         name: 'Clearance',
         component: () => import('@/views/wanafunzi/ClearanceCertificate.vue'),

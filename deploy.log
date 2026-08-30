@@ -3207,3 +3207,39 @@ capture 'orphaned' as an {invoice} id.
 [0;36m[2026-08-30 18:08:55][0m   ShulePay — Release
 [0;36m[2026-08-30 18:08:55][0m ══════════════════════════════════════════
 [0;36m[2026-08-30 18:08:55][0m Checking working tree...
+[0;36m[2026-08-30 18:08:55][0m Files staged for commit:
+[0;36m[2026-08-30 18:08:56][0m Committing: "feat(students): block accidental duplicate registrations, and hand off orphaned invoices after a delete
+
+Two related fixes.
+
+1. Duplicate registrations. There was NO duplicate check of any kind: a
+   double-submitted form, or a retry after an uncertain first attempt, silently
+   created a second student with their own admission number, invoices and
+   payment records. Four such pairs are live in production right now, three of
+   them carrying identical payment totals, which overstates collections.
+
+   Registration now refuses a student whose first name, last name AND date of
+   birth all match an existing record. Name alone would be wrong to refuse on --
+   namesakes are common -- but name plus birth date is specific enough that a
+   hit is nearly always the same child. The wizard shows it as a question, not a
+   failure: the operator can confirm and proceed via confirm_duplicate for the
+   genuine case of two children sharing both.
+
+2. After deleting a student, the list of invoices they left behind now opens
+   automatically when there were any, so they can be cleared in the same breath
+   rather than the user having to find that screen later and remember why.
+
+3 new tests. The two positive cases assert the duplicate guard does not fire
+rather than asserting full creation: the gender enum widening is a MySQL-only
+ALTER, so a successful registration cannot run on the SQLite test database.
+
+Full suite 47 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-30 18:08:56][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-30 18:09:02][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-30 18:27:07][0m ══════════════════════════════════════════
+[0;36m[2026-08-30 18:27:07][0m   ShulePay — Release
+[0;36m[2026-08-30 18:27:07][0m ══════════════════════════════════════════
+[0;36m[2026-08-30 18:27:07][0m Checking working tree...

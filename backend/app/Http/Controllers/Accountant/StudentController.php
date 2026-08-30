@@ -10,6 +10,7 @@ use App\Http\Requests\Student\UpdateStudentRequest;
 use App\Http\Resources\StudentResource;
 use App\Models\AuditLog;
 use App\Models\Discount;
+use App\Models\Payment;
 use App\Models\School;
 use App\Models\Student;
 use App\Services\Students\StudentRegistrationService;
@@ -250,6 +251,83 @@ class StudentController extends Controller
             ->get();
 
         return response()->json($summary);
+    }
+
+    /**
+     * Students registered more than once.
+     *
+     * Read-only on purpose: which of a pair is authoritative, and whether the
+     * money was received twice or merely recorded twice, is a judgement about
+     * the school's books that no automatic rule should make.
+     *
+     * Grouped on first name + last name + date of birth. Name alone would list
+     * every namesake; adding the birth date makes a hit nearly always the same
+     * child, which is the same test registration now refuses on.
+     */
+    public function duplicates(Request $request): JsonResponse
+    {
+        $keys = Student::query()
+            ->selectRaw('LOWER(TRIM(first_name)) as fn, LOWER(TRIM(last_name)) as ln, date_of_birth, COUNT(*) as n')
+            ->whereNotNull('date_of_birth')
+            ->groupBy('fn', 'ln', 'date_of_birth')
+            ->havingRaw('COUNT(*) > 1')
+            ->get();
+
+        $groups = $keys->map(function ($key) {
+            $students = Student::query()
+                ->whereRaw('LOWER(TRIM(first_name)) = ?', [$key->fn])
+                ->whereRaw('LOWER(TRIM(last_name)) = ?', [$key->ln])
+                ->whereDate('date_of_birth', $key->date_of_birth)
+                ->with(['currentEnrollment.schoolClass', 'invoices' => fn ($q) => $q->withoutGlobalScope('school')])
+                ->orderBy('id')
+                ->get();
+
+            $rows = $students->map(function ($student) {
+                $invoices = $student->invoices;
+                $paid = Payment::withoutGlobalScope('school')
+                    ->where('student_id', $student->id)
+                    ->sum('amount_cents');
+
+                return [
+                    'id' => $student->id,
+                    'full_name' => $student->fullName(),
+                    'date_of_birth' => $student->date_of_birth?->toDateString(),
+                    'admission_number' => $student->currentEnrollment?->admission_number,
+                    'class' => $student->currentEnrollment?->schoolClass?->name,
+                    'invoice_count' => $invoices->count(),
+                    'billed_cents' => (int) $invoices->sum(fn ($i) => $i->total_amount_cents->cents()),
+                    'paid_cents' => (int) $paid,
+                    'registered_at' => $student->created_at?->toDateTimeString(),
+                ];
+            });
+
+            // Two records billed and paid the same almost always means one
+            // registration entered twice, rather than two children who happen to
+            // share a name and a birthday. Flagging it saves reading the numbers.
+            $identical = $rows->pluck('billed_cents')->unique()->count() === 1
+                && $rows->pluck('paid_cents')->unique()->count() === 1;
+
+            return [
+                'name' => $rows->first()['full_name'],
+                'date_of_birth' => $rows->first()['date_of_birth'],
+                'count' => $rows->count(),
+                'identical_amounts' => $identical,
+                'duplicated_paid_cents' => $identical
+                    ? (int) $rows->first()['paid_cents'] * ($rows->count() - 1)
+                    : 0,
+                'students' => $rows->values(),
+            ];
+        })
+            // Worst first: the ones where money is duplicated matter most.
+            ->sortByDesc('duplicated_paid_cents')
+            ->values();
+
+        return response()->json([
+            'groups' => $groups,
+            'group_count' => $groups->count(),
+            'student_count' => $groups->sum('count'),
+            'duplicated_paid_cents' => $groups->sum('duplicated_paid_cents'),
+        ]);
     }
 
     public function destroy(Student $student): JsonResponse

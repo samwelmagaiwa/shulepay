@@ -98,6 +98,7 @@ function go(path) {
         <template v-if="auth.isAccountant || auth.isOwner || auth.isHeadmaster || auth.isHeadTeacher || auth.isAcademicTeacher">
           <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.students') }}</div>
           <RouterLink class="btn btn-ghost-secondary text-start" to="/wanafunzi" @click="mobileNavOpen=false">{{ t('nav.studentList') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/wanafunzi/duplicates" @click="mobileNavOpen=false">{{ t('nav.duplicateStudents') }}</RouterLink>
           <RouterLink class="btn btn-ghost-secondary text-start" to="/walezi" @click="mobileNavOpen=false">{{ t('nav.guardians') }}</RouterLink>
           <RouterLink class="btn btn-ghost-secondary text-start" to="/wanafunzi/clearance" @click="mobileNavOpen=false">{{ t('nav.clearance') }}</RouterLink>
           <RouterLink v-if="auth.isOwner" class="btn btn-ghost-secondary text-start" to="/admin/bulk-import" @click="mobileNavOpen=false">{{ t('nav.bulkImport') }}</RouterLink>
@@ -212,8 +213,11 @@ function go(path) {
             {{ t('nav.students') }}
           </CDropdownToggle>
           <CDropdownMenu style="min-width:220px; border-radius:12px; border:none; box-shadow:0 8px 24px rgba(0,0,0,.12);">
-            <CDropdownItem @click="router.push('/wanafunzi')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/wanafunzi') && !route.path.startsWith('/wanafunzi/clearance') }">
+            <CDropdownItem @click="router.push('/wanafunzi')" style="cursor:pointer;" :class="{ 'active': route.path === '/wanafunzi' }">
               <CIcon icon="cilPeople" class="me-2" /> {{ t('nav.studentList') }}
+            </CDropdownItem>
+            <CDropdownItem @click="router.push('/wanafunzi/duplicates')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/wanafunzi/duplicates') }">
+              <CIcon icon="cilPeople" class="me-2" /> {{ t('nav.duplicateStudents') }}
             </CDropdownItem>
             <CDropdownItem @click="router.push('/walezi')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/walezi') }">
               <CIcon icon="cilUser" class="me-2" /> {{ t('nav.guardians') }}
