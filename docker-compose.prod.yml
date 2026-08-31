@@ -10,6 +10,11 @@ services:
       APP_ENV: production
       APP_KEY: ${APP_KEY}
       APP_URL: ${APP_URL}
+      # HTTPS-only site — mark the session cookie Secure. Sanctum bearer
+      # tokens are the actual API auth mechanism, so this is defense-in-depth
+      # rather than a functional requirement, but there's no reason to leave
+      # a cookie unmarked when the app is never served over plain HTTP.
+      SESSION_SECURE_COOKIE: "true"
       DB_CONNECTION: mysql
       DB_HOST: host.docker.internal
       DB_PORT: 3306
