@@ -3561,3 +3561,40 @@ succeeds and the audit entry names them. Full suite 52 passed."
 [0;36m[2026-08-31 16:13:47][0m   ShulePay — Release
 [0;36m[2026-08-31 16:13:47][0m ══════════════════════════════════════════
 [0;36m[2026-08-31 16:13:47][0m Checking working tree...
+[0;36m[2026-08-31 16:13:47][0m Files staged for commit:
+[0;36m[2026-08-31 16:13:47][0m Committing: "feat(invoices): edit an invoice amount from the student page
+
+Invoices were read-only - the resource registered index and show only - so a
+wrong fee could not be corrected anywhere in the app. An Edit button now sits
+beside Pay in the student's Invoices tab.
+
+Three things move together or the invoice contradicts itself, so update() does
+all three in one transaction: the total, the single fee line the receipt prints,
+and the status, which syncStatus() derives from what is still owed rather than
+storing independently. Raising the total on a settled invoice correctly reopens
+it as partial; lowering it to what was paid closes it.
+
+Two refusals, both deliberate:
+
+  - Lowering a total below what has already been received is an overpayment, not
+    a correction, and quietly flipping the invoice to Paid would bury it. The
+    message names the amount paid and points at refunds.
+  - An itemised invoice is refused rather than guessed at: which component
+    changed is a judgement, and silently rewriting one line would misstate what
+    the parent was charged for. Every live invoice has a single line, so this
+    costs nothing today and prevents a silent inconsistency later.
+
+The amount field groups as you type, matching the expense form. Saving reloads
+the student so the row, its badge and the summary totals all move together.
+Changes are audited as invoice.updated with before and after.
+
+4 new tests covering both successes and both refusals. Full suite 62 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-31 16:13:47][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-31 16:13:52][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-31 16:22:47][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 16:22:47][0m   ShulePay — Release
+[0;36m[2026-08-31 16:22:47][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 16:22:47][0m Checking working tree...

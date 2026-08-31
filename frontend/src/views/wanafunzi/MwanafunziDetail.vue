@@ -265,7 +265,7 @@
                     <CTableHeaderCell>{{ t('payments.amount') }}</CTableHeaderCell>
                     <CTableHeaderCell>{{ t('payments.method') }}</CTableHeaderCell>
                     <CTableHeaderCell>{{ t('payments.reference') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('payments.receipt') }}</CTableHeaderCell>
+                    <CTableHeaderCell>{{ t('common.actions') }}</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
@@ -281,11 +281,17 @@
                     <CTableDataCell class="fw-semibold text-success">{{ formatMoney(p.amount_cents) }}</CTableDataCell>
                     <CTableDataCell>{{ p.method }}</CTableDataCell>
                     <CTableDataCell>{{ p.reference_number || '—' }}</CTableDataCell>
-                    <CTableDataCell>
+                    <CTableDataCell class="text-nowrap">
                       <CButton v-if="p.receipt_id" size="sm" color="secondary" variant="outline"
                                @click="downloadReceipt(p.receipt_id)" style="min-height:36px;">
-                        <CIcon icon="cilPrint" /> {{ t('common.download') }}
+                        <CIcon icon="cilPrint" />
                       </CButton>
+                      <CButton size="sm" color="warning" variant="outline" class="ms-1"
+                               @click="openEditPayment(p)" style="min-height:36px;">✏️</CButton>
+                      <!-- Reversal reduces recorded collections and there is a
+                           receipt in someone's hands, so it is superadmin-only. -->
+                      <CButton v-if="auth.isSuperAdmin" size="sm" color="danger" variant="outline" class="ms-1"
+                               @click="reverseTarget = p" style="min-height:36px;">🗑️</CButton>
                     </CTableDataCell>
                   </CTableRow>
                   <CTableRow v-if="!payments.length">
@@ -659,6 +665,58 @@
         </CButton>
       </CModalFooter>
     </CModal>
+    <!-- Payment correction. Amount, method, reference and date are the fields
+         that get mis-keyed; the invoice it belongs to is not editable, since
+         moving a payment between invoices is a transfer, not a correction. -->
+    <CModal :visible="!!editPayment" size="sm" alignment="center" backdrop="static"
+            @close="editPayment = null">
+      <CModalHeader><CModalTitle>{{ t('payments.editTitle') }}</CModalTitle></CModalHeader>
+      <CModalBody>
+        <div class="small text-muted mb-2">{{ editPayment?.invoice?.invoice_number }}</div>
+
+        <label class="form-label fw-semibold small mb-1">{{ t('payments.amount') }} *</label>
+        <CFormInput v-model="payAmountDisplay" type="text" inputmode="numeric"
+                    autocomplete="off" class="mb-2" @keyup.enter="savePayment" />
+
+        <label class="form-label fw-semibold small mb-1">{{ t('payments.method') }}</label>
+        <CFormSelect v-model="payForm.method" class="mb-2">
+          <option value="cash">Cash</option>
+          <option value="mpesa">M-Pesa</option>
+          <option value="bank">Bank</option>
+          <option value="cheque">Cheque</option>
+        </CFormSelect>
+
+        <label class="form-label fw-semibold small mb-1">{{ t('payments.reference') }}</label>
+        <CFormInput v-model="payForm.reference_number" class="mb-2" />
+
+        <label class="form-label fw-semibold small mb-1">{{ t('common.date') }}</label>
+        <CFormInput v-model="payForm.paid_at" type="date" />
+
+        <CAlert v-if="payError" color="danger" class="py-2 mt-2 mb-0 small">{{ payError }}</CAlert>
+      </CModalBody>
+      <CModalFooter class="gap-2">
+        <CButton color="secondary" variant="outline" :disabled="paySaving" @click="editPayment = null">
+          {{ t('common.cancel') }}
+        </CButton>
+        <CButton color="primary" :disabled="paySaving" @click="savePayment">
+          <CSpinner v-if="paySaving" size="sm" class="me-1" />{{ t('common.save') }}
+        </CButton>
+      </CModalFooter>
+    </CModal>
+
+    <CModal :visible="!!reverseTarget" size="sm" alignment="center" @close="reverseTarget = null">
+      <CModalHeader><CModalTitle>{{ t('payments.reverseTitle') }}</CModalTitle></CModalHeader>
+      <CModalBody class="small">
+        {{ t('payments.reverseBody', { amount: formatMoney(reverseTarget?.amount_cents) }) }}
+      </CModalBody>
+      <CModalFooter class="gap-2">
+        <CButton color="secondary" @click="reverseTarget = null">{{ t('common.cancel') }}</CButton>
+        <CButton color="danger" :disabled="paySaving" @click="reversePayment">
+          <CSpinner v-if="paySaving" size="sm" class="me-1" />{{ t('payments.reverseAction') }}
+        </CButton>
+      </CModalFooter>
+    </CModal>
+
     <!-- Invoice amount correction. Deliberately amount-only: the term, student
          and number identify the invoice and must not drift. -->
     <CModal :visible="!!editInvoice" size="sm" alignment="center" backdrop="static"
@@ -698,6 +756,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useStudentsStore } from '@/stores/students'
+import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
 import { usePaymentsStore } from '@/stores/payments'
 import { useInstallmentsStore } from '@/stores/installments'
@@ -712,6 +771,7 @@ const store   = useStudentsStore()
 const payStore = usePaymentsStore()
 const installStore = useInstallmentsStore()
 
+const auth = useAuthStore()
 const student  = computed(() => store.student)
 const loading  = computed(() => store.loading)
 
@@ -893,6 +953,76 @@ function installmentRowStyle(item) {
   if (item.status === 'partial') return 'background:rgba(255,193,7,.08);'
   if (isOverdue(item.due_date))  return 'background:rgba(220,53,69,.05);'
   return ''
+}
+
+// ── Payment correction ─────────────────────────────────────────────────────
+const editPayment = ref(null)
+const reverseTarget = ref(null)
+const payForm = ref({ amount: '', method: 'cash', reference_number: '', paid_at: '' })
+const paySaving = ref(false)
+const payError = ref('')
+
+const payAmountDisplay = computed({
+  get: () => (payForm.value.amount === '' ? '' : Number(payForm.value.amount).toLocaleString('en-US')),
+  set: (raw) => {
+    const digits = String(raw ?? '').replace(/[^0-9]/g, '')
+    payForm.value.amount = digits === '' ? '' : Number(digits)
+  },
+})
+
+function openEditPayment(p) {
+  editPayment.value = p
+  payForm.value = {
+    amount: Math.round((p.amount_cents || 0) / 100),
+    method: p.method || 'cash',
+    reference_number: p.reference_number || '',
+    // The list shows a date-time; the input needs a plain date.
+    paid_at: String(p.paid_at || '').slice(0, 10),
+  }
+  payError.value = ''
+}
+
+async function savePayment() {
+  if (!payForm.value.amount) { payError.value = t('invoices.amountRequired'); return }
+  paySaving.value = true
+  payError.value = ''
+  try {
+    await api.put(`/payments/${editPayment.value.id}`, {
+      amount_cents: Math.round(payForm.value.amount * 100),
+      method: payForm.value.method,
+      reference_number: payForm.value.reference_number || null,
+      paid_at: payForm.value.paid_at,
+    })
+    editPayment.value = null
+    await refreshAfterMoneyChange()
+  } catch (e) {
+    payError.value = e?.response?.data?.message
+      || Object.values(e?.response?.data?.errors || {})[0]?.[0]
+      || t('common.saveFailed')
+  } finally {
+    paySaving.value = false
+  }
+}
+
+async function reversePayment() {
+  paySaving.value = true
+  try {
+    await api.delete(`/payments/${reverseTarget.value.id}`)
+    reverseTarget.value = null
+    await refreshAfterMoneyChange()
+  } catch (e) {
+    payError.value = e?.response?.data?.message || t('common.saveFailed')
+    reverseTarget.value = null
+  } finally {
+    paySaving.value = false
+  }
+}
+
+// A payment change moves the invoice balance and its status, so both tabs and
+// the header totals are reloaded rather than only the row that was edited.
+async function refreshAfterMoneyChange() {
+  await store.fetchStudent(route.params.id)
+  if (typeof loadPayments === 'function') await loadPayments()
 }
 
 // ── Invoice amount correction ──────────────────────────────────────────────

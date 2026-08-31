@@ -197,7 +197,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('invoices', InvoiceController::class)->only(['index', 'show', 'update']);
 
         // Payments
-        Route::apiResource('payments', PaymentController::class)->only(['index', 'store']);
+        // update/destroy correct a mis-recorded payment; destroy is superadmin-only
+        // and soft-deletes, so a reversal stays visible in the audit trail.
+        Route::apiResource('payments', PaymentController::class)->only(['index', 'store', 'update', 'destroy']);
 
         // Receipts — PDF rendering is CPU-heavy, throttled to bound abuse cost.
         Route::get('receipts/{receipt}/download', [ReceiptController::class, 'download'])->middleware('throttle:30,1');
