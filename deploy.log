@@ -3470,3 +3470,36 @@ is gone and must be re-entered."
 [0;36m[2026-08-31 12:35:10][0m   ShulePay — Release
 [0;36m[2026-08-31 12:35:10][0m ══════════════════════════════════════════
 [0;36m[2026-08-31 12:35:10][0m Checking working tree...
+[0;36m[2026-08-31 12:35:10][0m Files staged for commit:
+[0;36m[2026-08-31 12:35:10][0m Committing: "feat(expenses): add Edit, and fix a fourth category display site
+
+Expenses could be created, viewed, approved and deleted but never edited, so a
+wrong amount or category could only be fixed by deleting the row and retyping it
+- and only while still pending. The PUT endpoint has existed all along with the
+same pending-only rule; nothing called it.
+
+Edit now sits beside Delete in the row menu and on the mobile card, shown on
+pending expenses only, for the same reason Delete is: approved spending is a
+financial record. The Add modal serves both modes - the fields are identical, so
+a separate dialog would be the same form twice with two places to keep in step -
+switching its title and its submit target on whether an id is set.
+
+Amount is converted back from cents and the date trimmed to YYYY-MM-DD when
+loading, since the inputs expect what the Add form produces, not what the API
+returns. A refused edit surfaces the backend's own reason rather than a generic
+failure, because the user cannot otherwise tell that approval is what blocked it.
+
+Also fixes a fourth site reading e.category?.name - the mobile card - missed in
+the previous pass. Every category render now uses category_name.
+
+Edits are already audited: AuditLog records expense.updated with before and
+after, so corrections are traceable."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-31 12:35:10][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-31 12:35:14][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-31 12:44:17][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 12:44:17][0m   ShulePay — Release
+[0;36m[2026-08-31 12:44:17][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 12:44:17][0m Checking working tree...

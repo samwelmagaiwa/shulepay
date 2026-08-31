@@ -211,7 +211,11 @@
           </CCol>
           <CCol xs="12" sm="6">
             <label class="form-label fw-semibold">{{ t('expenses.amount') }} <span class="text-danger">*</span></label>
-            <CFormInput type="number" v-model.number="addForm.amount" min="1" placeholder="e.g. 50000" />
+            <!-- type=text, not number: a number input cannot display grouping
+                 separators, and the spinner arrows are useless for a figure
+                 typed in full. inputmode keeps the numeric keypad on mobile. -->
+            <CFormInput v-model="amountDisplay" type="text" inputmode="numeric"
+                        autocomplete="off" placeholder="e.g. 500,000" />
           </CCol>
           <CCol xs="12" sm="6">
             <label class="form-label fw-semibold">{{ t('expenses.vendorName') }}</label>
@@ -328,6 +332,21 @@ function openView(expense) { viewTarget.value = expense; showViewModal.value = t
 // twice with two places to keep in step.
 const editingId = ref(null)
 
+// The field shows a grouped figure (500,000) while addForm.amount stays a plain
+// number, so nothing downstream has to know the display format. Separators are
+// stripped on the way in rather than validated away, because a pasted "500,000"
+// should be accepted as readily as a typed one.
+const amountDisplay = computed({
+  get: () => {
+    const v = addForm.value.amount
+    return v === '' || v === null || v === undefined ? '' : Number(v).toLocaleString('en-US')
+  },
+  set: (raw) => {
+    const digits = String(raw ?? '').replace(/[^0-9]/g, '')
+    addForm.value.amount = digits === '' ? '' : Number(digits)
+  },
+})
+
 function openAddModal() {
   editingId.value = null
   addForm.value = { description: '', category_id: '', amount: '', vendor_name: '', expense_date: today, notes: '' }
@@ -340,8 +359,12 @@ function openEditModal(expense) {
   addForm.value = {
     description: expense.description || '',
     category_id: expense.category_id || '',
-    // Stored in cents; the field is in shillings, same as when adding.
-    amount: (expense.amount_cents || 0) / 100,
+    // Stored in cents; the field is in whole shillings, same as when adding.
+    // Rounded explicitly: the grouped input accepts digits only, so a fractional
+    // shilling would be shown and then silently truncated on the next keystroke.
+    // Every amount entered here is a multiple of 100 cents, so this is a no-op
+    // in practice - it just makes the assumption visible.
+    amount: Math.round((expense.amount_cents || 0) / 100),
     vendor_name: expense.vendor || '',
     // The API returns a date-time; the input needs a plain date.
     expense_date: (expense.expense_date || today).slice(0, 10),
