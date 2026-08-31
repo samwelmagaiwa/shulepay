@@ -929,6 +929,7 @@ export default {
     term4:       'Muhula wa Nne',
     allStatuses: 'Hali Zote',
     searchStudent: 'Tafuta mwanafunzi...',
+    printByStatus: 'Chapisha Ankara za {status}',
     statuses: { paid: 'Imelipwa', partial: 'Kiasi', unpaid: 'Haijalipwa' },
     statusFull: {
       unpaid:  'Hawajalipia',

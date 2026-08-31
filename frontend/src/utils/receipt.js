@@ -95,6 +95,40 @@ export async function printStudentStatement(studentId) {
   activeFrame = frame
 }
 
+/**
+ * Print every invoice matching a status filter (Partial / Unpaid) as one
+ * job — reuses whatever school/class/term filters the Invoices list is
+ * currently showing, so what gets printed matches what's on screen.
+ */
+export async function printBulkInvoices(params) {
+  releaseFrame()
+
+  const { data } = await api.get('/invoices/bulk-receipt', {
+    params,
+    responseType: 'blob',
+  })
+  if (data.type && !data.type.includes('pdf')) {
+    throw new Error('Server did not return a PDF')
+  }
+
+  const url = URL.createObjectURL(data)
+  activeUrl = url
+
+  const frame = document.createElement('iframe')
+  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
+  frame.src = url
+  frame.onload = () => {
+    try {
+      frame.contentWindow.focus()
+      frame.contentWindow.print()
+    } catch {
+      window.open(url, '_blank', 'noopener')
+    }
+  }
+  document.body.appendChild(frame)
+  activeFrame = frame
+}
+
 /** Save the receipt as a file. */
 export async function downloadReceipt(receiptId, receiptNumber = null) {
   if (!receiptId) return

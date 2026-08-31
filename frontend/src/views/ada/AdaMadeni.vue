@@ -102,6 +102,17 @@
             <option value="paid">{{ t('invoices.statusFull.paid') }}</option>
           </CFormSelect>
           <CFormInput v-model="filters.search" :placeholder="t('invoices.searchStudent')" @input="debouncedFetch" size="sm" style="min-width:140px; flex:2;" />
+          <!-- Only meaningful once the Status filter narrows to one debt status —
+               "print everything, paid included" isn't a real bulk-print use case. -->
+          <CButton
+            v-if="filters.status === 'unpaid' || filters.status === 'partial'"
+            color="dark" variant="outline" size="sm"
+            :disabled="bulkPrinting" @click="printBulkByStatus"
+            style="white-space:nowrap; flex-shrink:0;"
+          >
+            <CSpinner v-if="bulkPrinting" size="sm" class="me-1" />
+            <span v-else>🖨️ </span>{{ t('invoices.printByStatus', { status: t('invoices.statusFull.' + filters.status) }) }}
+          </CButton>
           <CButton color="warning" size="sm" @click="showSmsModal = true" style="white-space:nowrap; flex-shrink:0;">
             <CIcon icon="cilSend" class="me-1" /> {{ t('invoices.sendSms') }}
           </CButton>
@@ -334,7 +345,7 @@ import GenerateInvoiceModal  from '@/components/GenerateInvoiceModal.vue'
 import SmsBlastModal         from '@/components/SmsBlastModal.vue'
 import OrphanedInvoicesModal from '@/components/OrphanedInvoicesModal.vue'
 import api                   from '@/services/api'
-import { printReceipt as printReceiptPdf, printStudentStatement as printStudentStatementPdf, cleanupReceiptFrame } from '@/utils/receipt'
+import { printReceipt as printReceiptPdf, printStudentStatement as printStudentStatementPdf, printBulkInvoices, cleanupReceiptFrame } from '@/utils/receipt'
 
 const { t } = useI18n()
 const invoicesStore = useInvoicesStore()
@@ -508,6 +519,29 @@ async function printStatement(studentId) {
     receiptError.value = e?.response?.data?.message || t('payments.receiptPrintFailed')
   } finally {
     printingStatementFor.value = null
+  }
+}
+
+// Prints every invoice currently matching the Status filter (plus whatever
+// school/class/term filters are also active) as one job — one page per
+// invoice, generated server-side (backend/app/Services/Pdf/BulkInvoicesPdf.php)
+// rather than looping printStatement per row here, so the accountant gets one
+// print dialog instead of one per student.
+const bulkPrinting = ref(false)
+async function printBulkByStatus() {
+  if (bulkPrinting.value) return
+  bulkPrinting.value = true
+  receiptError.value = ''
+  try {
+    const params = { status: filters.value.status }
+    if (filters.value.school_id)   params.school_id = filters.value.school_id
+    if (filters.value.class_id)    params.school_class_id = filters.value.class_id
+    if (filters.value.term_number) params.term_number = filters.value.term_number
+    await printBulkInvoices(params)
+  } catch (e) {
+    receiptError.value = e?.response?.data?.message || t('payments.receiptPrintFailed')
+  } finally {
+    bulkPrinting.value = false
   }
 }
 

@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Receipt;
 use App\Models\Student;
+use App\Services\Pdf\BulkInvoicesPdf;
 use App\Services\Pdf\ReceiptPdf;
 use App\Services\Pdf\StudentStatementPdf;
 use Illuminate\Http\Request;
@@ -14,7 +15,11 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ReceiptController extends Controller
 {
-    public function __construct(private ReceiptPdf $pdf, private StudentStatementPdf $statementPdf) {}
+    public function __construct(
+        private ReceiptPdf $pdf,
+        private StudentStatementPdf $statementPdf,
+        private BulkInvoicesPdf $bulkPdf,
+    ) {}
 
     public function download(Request $request, Receipt $receipt): Response
     {
@@ -63,6 +68,65 @@ class ReceiptController extends Controller
 
         $content = $this->statementPdf->generate($student);
         $filename = 'Taarifa-'.str_replace(' ', '-', $student->fullName()).'.pdf';
+
+        $disposition = $request->boolean('download') ? 'attachment' : 'inline';
+
+        return response($content, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "{$disposition}; filename=\"{$filename}\"",
+        ]);
+    }
+
+    /**
+     * Every invoice matching a status filter (Partial / Unpaid) printed as
+     * one document — the Invoices page's bulk-print action, reusing the same
+     * school/class/term filters the list itself is filtered by. Invoice's
+     * own BelongsToSchool scope already restricts this to the active school
+     * (or every accessible school in "Shule Zote" mode), same as the list —
+     * no separate ownership check needed here, unlike the single-record
+     * lookups above.
+     */
+    public function bulkByStatus(Request $request): Response
+    {
+        $request->validate([
+            'status' => 'required|in:unpaid,partial,paid',
+            'school_id' => 'nullable|integer|exists:schools,id',
+            'school_class_id' => 'nullable|integer|exists:school_classes,id',
+            'term_number' => 'nullable|integer|min:1|max:4',
+        ]);
+
+        $query = Invoice::with([
+            'student.currentEnrollment.schoolClass', 'student.guardians', 'term', 'academicYear',
+        ])->where('status', $request->status);
+
+        if ($request->filled('school_id') && (int) $request->school_id !== 0) {
+            $query->where('school_id', $request->school_id);
+        }
+        if ($request->filled('school_class_id')) {
+            $query->whereHas(
+                'student.currentEnrollment',
+                fn ($q) => $q->where('school_class_id', $request->school_class_id)
+            );
+        }
+        if ($request->filled('term_number')) {
+            $query->whereHas('term', fn ($q) => $q->where('number', (int) $request->term_number));
+        }
+
+        $invoices = $query->orderBy('school_id')->orderBy('student_id')->get();
+
+        abort_if($invoices->isEmpty(), 404, 'Hakuna ankara zinazolingana na kigezo hiki.');
+
+        // A batch this large is almost certainly a mistake (or an
+        // accidentally-cleared filter) rather than something anyone actually
+        // wants to print in one job — DomPDF also gets slow well before this.
+        abort_if(
+            $invoices->count() > 300,
+            422,
+            'Ankara ni nyingi mno kuchapisha kwa mara moja (kikomo ni 300) — punguza kigezo la kuchuja.'
+        );
+
+        $content = $this->bulkPdf->generate($invoices, $request->status);
+        $filename = 'Ankara-'.$request->status.'-'.now()->format('Ymd').'.pdf';
 
         $disposition = $request->boolean('download') ? 'attachment' : 'inline';
 

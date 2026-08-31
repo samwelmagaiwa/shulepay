@@ -939,6 +939,7 @@ export default {
     term4:       'Fourth Term',
     allStatuses: 'All Statuses',
     searchStudent: 'Search student...',
+    printByStatus: 'Print {status} Invoices',
     statuses: { paid: 'Paid', partial: 'Partial', unpaid: 'Unpaid' },
     statusFull: {
       unpaid:  'Unpaid',
