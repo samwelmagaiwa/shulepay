@@ -116,13 +116,15 @@ class ReceiptController extends Controller
 
         abort_if($invoices->isEmpty(), 404, 'Hakuna ankara zinazolingana na kigezo hiki.');
 
-        // A batch this large is almost certainly a mistake (or an
-        // accidentally-cleared filter) rather than something anyone actually
-        // wants to print in one job — DomPDF also gets slow well before this.
+        // Measured live: 257 invoices took ~39s to render even with the
+        // memory-limit fix in BulkInvoicesPdf — nginx's default 60s proxy
+        // read timeout has no override in this app's nginx.conf, so a batch
+        // near 300 risks a 504 rather than a clean response. 150 keeps the
+        // worst case comfortably under that with room for slower days.
         abort_if(
-            $invoices->count() > 300,
+            $invoices->count() > 150,
             422,
-            'Ankara ni nyingi mno kuchapisha kwa mara moja (kikomo ni 300) — punguza kigezo la kuchuja.'
+            'Ankara ni nyingi mno kuchapisha kwa mara moja (kikomo ni 150) — punguza kigezo la kuchuja.'
         );
 
         $content = $this->bulkPdf->generate($invoices, $request->status);
