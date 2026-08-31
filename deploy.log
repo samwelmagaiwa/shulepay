@@ -3635,3 +3635,42 @@ trail. Full suite 66 passed."
 [0;36m[2026-08-31 16:42:00][0m   ShulePay — Release
 [0;36m[2026-08-31 16:42:00][0m ══════════════════════════════════════════
 [0;36m[2026-08-31 16:42:00][0m Checking working tree...
+[0;36m[2026-08-31 16:42:00][0m Files staged for commit:
+[0;36m[2026-08-31 16:42:00][0m Committing: "feat(permissions): restrict invoice and payment editing per role
+
+Adds two sections to the roles screen - Edit Invoice and Edit Payments - each
+holding a single toggle. These are RESTRICTIONS, not grants: ticking one takes
+the edit button away, leaving the row read-only; unticking restores it. They sit
+in their own sections rather than among the Invoices and Payments grants, where
+a tick would naturally read as 'allowed' and mean the opposite.
+
+Two inversion traps handled:
+
+  - hasPermission() returns true for EVERY permission a superadmin could hold,
+    so reading a restriction through it would read-only the one account that
+    must never be blocked. A separate isRestricted() checks the granted list
+    literally, and the controllers exempt superadmin explicitly. Both covered by
+    tests.
+
+  - hasPermissionTo() THROWS when the permission row does not exist, which would
+    have turned every invoice edit into a 500 on any environment where the
+    matrix had not been synced. getAllPermissions()->contains() does not throw,
+    and picks up permissions inherited from the role - which is where these are
+    assigned.
+
+Enforced server-side with 403, not only by disabling the button; the button
+alone would leave the endpoint open to a direct call. It is disabled rather than
+hidden, with a tooltip saying why - a missing control reads as a feature gap,
+a greyed one reads as withheld.
+
+Permissions are auto-created from the matrix, so no seeder change is needed.
+2 new tests. Full suite 68 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-31 16:42:00][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-31 16:42:04][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-31 17:05:17][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 17:05:17][0m   ShulePay — Release
+[0;36m[2026-08-31 17:05:17][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 17:05:17][0m Checking working tree...

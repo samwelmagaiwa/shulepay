@@ -11,6 +11,23 @@ const error          = ref('')
 // selected role for permission editing
 const activeRole     = ref(null)
 const activePerms    = ref(new Set())
+
+// Permissions whose meaning is inverted: holding one REMOVES an ability. They
+// are named *_restricted so the screen can tell them apart without a hardcoded
+// list, and so a new one is styled correctly the moment it is added.
+const isRestriction = (perm) => String(perm).endsWith('_restricted')
+
+// 'invoices.edit_restricted' would otherwise render as 'edit restricted', which
+// reads as a state rather than an instruction. 'restrict editing' is the action
+// the tick actually performs.
+function permLabel(perm) {
+  if (perm === 'multi_school') return 'Multi-School Access'
+  const tail = String(perm).split('.')[1] ?? perm
+  if (isRestriction(perm)) {
+    return '🔒 restrict ' + tail.replace('_restricted', '') + 'ing'
+  }
+  return tail.replace(/_/g, ' ')
+}
 const savingPerms    = ref(false)
 const permSaved      = ref(false)
 
@@ -628,17 +645,28 @@ function initials(name) {
                         :style="activePerms.has(perm) ? 'background:rgba(0,127,62,.08);' : ''"
                         @click="togglePerm(perm)"
                       >
+                        <!-- A restriction ticked green next to 'view' and
+                             'generate' would read as another thing granted. Red,
+                             with a lock and the word 'restrict', says the
+                             opposite at a glance. -->
                         <div
                           class="rounded-circle flex-shrink-0"
                           style="width:16px; height:16px; border:2px solid #dee2e6; transition:all .15s;"
-                          :style="activePerms.has(perm) ? 'background:#007f3e; border-color:#007f3e;' : ''"
+                          :style="activePerms.has(perm)
+                            ? (isRestriction(perm) ? 'background:#c0292b; border-color:#c0292b;' : 'background:#007f3e; border-color:#007f3e;')
+                            : (isRestriction(perm) ? 'border-color:#e4a1a2;' : '')"
                         >
                           <svg v-if="activePerms.has(perm)" viewBox="0 0 12 12" width="12" height="12">
                             <polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
                           </svg>
                         </div>
-                        <span :class="activePerms.has(perm) ? 'fw-semibold text-dark' : 'text-muted'">
-                          {{ perm.split('.')[1]?.replace(/_/g,' ') ?? perm }}
+                        <span
+                          :class="activePerms.has(perm)
+                            ? (isRestriction(perm) ? 'fw-semibold text-danger' : 'fw-semibold text-dark')
+                            : (isRestriction(perm) ? 'text-danger' : 'text-muted')"
+                          :title="isRestriction(perm) ? 'When ticked, this role cannot edit — the button is shown but disabled.' : ''"
+                        >
+                          {{ permLabel(perm) }}
                         </span>
                       </div>
                     </div>
@@ -825,7 +853,7 @@ function initials(name) {
                     <!-- Label -->
                     <span :class="permSource(perm) === 'forbidden' ? 'text-danger text-decoration-line-through' :
                                   userHasPerm(perm) ? 'fw-semibold text-dark' : 'text-muted'" style="flex:1;">
-                      {{ perm === 'multi_school' ? 'Multi-School Access' : perm.split('.')[1]?.replace(/_/g,' ') ?? perm }}
+                      {{ permLabel(perm) }}
                     </span>
                     <!-- Source badge -->
                     <span v-if="permSource(perm) !== 'none'" class="badge ms-auto" style="font-size:.6rem; white-space:nowrap;"

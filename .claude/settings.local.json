@@ -588,7 +588,14 @@
       "Bash(curl -sI https://magrethschools.sc.tz/favicon.svg)",
       "Bash(vendor/bin/pint --test tests/Feature/SchoolScopingTest.php)",
       "Bash(git commit -m 'security\\(critical\\): fix cross-school IDOR on Student and Guardian *)",
-      "Bash(git commit -m 'security: harden CSP script-src and mark session cookie Secure *)"
+      "Bash(git commit -m 'security: harden CSP script-src and mark session cookie Secure *)",
+      "Bash(ssh root@169.58.188.122 ' *)",
+      "Bash(timeout 5 bash -c 'cat < /dev/null > /dev/tcp/169.58.188.122/3306')",
+      "Bash(timeout 5 bash -c 'cat < /dev/null > /dev/tcp/169.58.188.122/21')",
+      "Bash(timeout 5 bash -c 'cat < /dev/null > /dev/tcp/169.58.188.122/22')",
+      "Bash(timeout 5 bash -c 'cat < /dev/null > /dev/tcp/169.58.188.122/26158')",
+      "Bash(ssh root@169.58.188.122 'sshd -T 2>/dev/null | grep -E \"^permitrootlogin|^passwordauthentication|^port \"')",
+      "Bash(ssh root@169.58.188.122 'grep -c \"^ssh-\" /root/.ssh/authorized_keys; awk \"{print \\\\$NF}\" /root/.ssh/authorized_keys')"
     ]
   }
 }
