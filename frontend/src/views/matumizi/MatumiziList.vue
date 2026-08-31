@@ -27,8 +27,14 @@
           <CCol xs="6" sm="4" md="1">
             <CButton size="sm" color="secondary" variant="outline" class="w-100" @click="resetFilters" style="min-height:36px;">{{ t('expenses.resetFilters') }}</CButton>
           </CCol>
-          <CCol xs="12" md="2" class="ms-auto">
-            <CButton color="primary" size="sm" @click="openAddModal" class="w-100" style="min-height:36px;">
+          <CCol xs="12" md="2" class="ms-auto d-flex gap-2">
+            <!-- Category is required on every expense, so there has to be a way
+                 to create one. Sits beside Add rather than buried in settings. -->
+            <CButton color="secondary" variant="outline" size="sm" class="flex-fill"
+                     @click="showCategoriesModal = true" style="min-height:36px;">
+              {{ t('expenseCategories.openButton') }}
+            </CButton>
+            <CButton color="primary" size="sm" @click="openAddModal" class="flex-fill" style="min-height:36px;">
               <CIcon icon="cilPlus" class="me-1" /> {{ t('expenses.add') }}
             </CButton>
           </CCol>
@@ -235,6 +241,10 @@
         </CButton>
       </CModalFooter>
     </CModal>
+
+    <!-- Refetching expenses on change keeps a renamed category's label current
+         in the list behind the modal. -->
+    <ExpenseCategoriesModal v-model:visible="showCategoriesModal" @changed="loadData" />
   </CContainer>
 </template>
 
@@ -243,6 +253,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { CPagination, CPaginationItem } from '@coreui/vue'
 import { useExpensesStore } from '@/stores/expenses'
+import ExpenseCategoriesModal from '@/components/ExpenseCategoriesModal.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
@@ -261,6 +272,7 @@ const visiblePages = computed(() => {
   return Array.from({ length: end - start + 1 }, (_, i) => start + i)
 })
 const showAddModal = ref(false)
+const showCategoriesModal = ref(false)
 const showDeleteModal = ref(false)
 const activeRow = ref(null)
 const showViewModal = ref(false)

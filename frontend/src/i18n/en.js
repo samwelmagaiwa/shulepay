@@ -199,6 +199,28 @@ export default {
     purgeFailed:     'Could not delete the selected invoices.',
   },
 
+  // Managing the categories every expense must be filed under.
+  expenseCategories: {
+    openButton:      'Categories',
+    title:           'Expense Categories',
+    name:            'Name',
+    namePlaceholder: 'e.g. Electricity',
+    type:            'Type',
+    description:     'Description',
+    none:            'No categories yet. Add one above so expenses can be recorded.',
+    nameRequired:    'Name is required.',
+    saveFailed:      'Could not save the category.',
+    deleteFailed:    'Could not delete. It may already be used by an expense.',
+    deleteTitle:     'Delete category?',
+    deleteBody:      'Delete "{name}"? Expenses already filed under it are not removed.',
+    types: {
+      operational: 'Operational',
+      capital:     'Capital',
+      staff:       'Staff',
+      other:       'Other',
+    },
+  },
+
   duplicates: {
     groupsCard:     'Duplicated students',
     recordsCard:    'Records affected',

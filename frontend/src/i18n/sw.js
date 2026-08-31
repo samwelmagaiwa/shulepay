@@ -197,6 +197,27 @@ export default {
     purgeFailed:     'Imeshindwa kufuta ankara zilizochaguliwa.',
   },
 
+  expenseCategories: {
+    openButton:      'Makundi',
+    title:           'Makundi ya Matumizi',
+    name:            'Jina',
+    namePlaceholder: 'mfano: Umeme',
+    type:            'Aina',
+    description:     'Maelezo',
+    none:            'Hakuna kundi bado. Ongeza moja hapo juu ili matumizi yaweze kurekodiwa.',
+    nameRequired:    'Jina linahitajika.',
+    saveFailed:      'Imeshindwa kuhifadhi kundi.',
+    deleteFailed:    'Imeshindwa kufuta. Huenda linatumika kwenye matumizi.',
+    deleteTitle:     'Futa kundi?',
+    deleteBody:      'Futa "{name}"? Matumizi yaliyokwisha rekodiwa hayataondolewa.',
+    types: {
+      operational: 'Uendeshaji',
+      capital:     'Mtaji',
+      staff:       'Wafanyakazi',
+      other:       'Nyingine',
+    },
+  },
+
   duplicates: {
     groupsCard:     'Wanafunzi waliorudiwa',
     recordsCard:    'Kumbukumbu zilizoathirika',

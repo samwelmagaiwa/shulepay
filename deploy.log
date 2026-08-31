@@ -3327,3 +3327,30 @@ idle label next to a spinner."
 [0;36m[2026-08-30 22:12:54][0m   ShulePay — Release
 [0;36m[2026-08-30 22:12:54][0m ══════════════════════════════════════════
 [0;36m[2026-08-30 22:12:54][0m Checking working tree...
+[0;36m[2026-08-30 22:12:55][0m Files staged for commit:
+[0;36m[2026-08-30 22:12:55][0m Committing: "fix(installments): scope the bulk Term dropdown to one academic year
+
+The dropdown flattened terms from EVERY academic year the school has, so
+FIRST..FOURTH TERM appeared once per year with nothing to tell them apart -
+around twenty options, four of them for the year actually being billed.
+
+The year name was already being collected on each term and then discarded by the
+<option>, which is why the repeats were indistinguishable rather than merely
+redundant.
+
+It now lists the current academic year's terms only, falling back to the newest
+year where none is flagged current, and sorts by term number so FIRST..FOURTH
+read in sequence instead of whatever order the API returned. The year is shown
+beside the field label, so which year is being billed is stated rather than
+assumed.
+
+Data is untouched: every academic year keeps its own four terms."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-30 22:12:55][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-30 22:13:05][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-31 11:58:36][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 11:58:36][0m   ShulePay — Release
+[0;36m[2026-08-31 11:58:36][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 11:58:36][0m Checking working tree...
