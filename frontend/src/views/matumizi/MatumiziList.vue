@@ -78,6 +78,7 @@
                      @click.stop>
                   <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(e); activeRow = null">👁️ {{ t('common.view') }}</CButton>
                   <CButton v-if="e.status === 'pending' && auth.isOwner" size="sm" color="success" variant="ghost" class="text-start" @click="approve(e); activeRow = null">✅ {{ t('common.approve') }}</CButton>
+                  <CButton v-if="e.status === 'pending'" size="sm" color="warning" variant="ghost" class="text-start" @click="openEditModal(e); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
                   <CButton v-if="e.status === 'pending'" size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(e); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                 </div>
               </CTableDataCell>
@@ -99,13 +100,16 @@
             <div class="d-flex justify-content-between align-items-start">
               <div>
                 <div class="fw-bold">{{ e.description }}</div>
-                <div class="text-muted small">{{ e.expense_date?.slice(0,10) }} • {{ e.category?.name }}</div>
+                <div class="text-muted small">{{ e.expense_date?.slice(0,10) }} • {{ e.category_name || '—' }}</div>
               </div>
               <CBadge :color="statusColor(e.status)" shape="rounded-pill">{{ statusLabel(e.status) }}</CBadge>
             </div>
             <div class="d-flex justify-content-between align-items-center mt-2">
               <div class="fw-bold fs-5">{{ formatTZS(e.amount_cents) }}</div>
               <div class="d-flex gap-1">
+                <CButton v-if="e.status === 'pending'" size="sm" color="warning" variant="ghost" @click="openEditModal(e)">
+                  ✏️
+                </CButton>
                 <CButton v-if="e.status === 'pending' && auth.isOwner" size="sm" color="success" variant="ghost" @click="approve(e)">
                   <CIcon icon="cilCheck" />
                 </CButton>
@@ -189,7 +193,9 @@
 
     <!-- Add Modal -->
     <CModal :visible="showAddModal" @close="showAddModal=false" size="lg" class="modal-fullscreen-sm-down" backdrop="static">
-      <CModalHeader><CModalTitle>{{ t('expenses.addTitle') }}</CModalTitle></CModalHeader>
+      <CModalHeader>
+        <CModalTitle>{{ editingId ? t('expenses.editTitle') : t('expenses.addTitle') }}</CModalTitle>
+      </CModalHeader>
       <CModalBody class="p-3">
         <CRow class="g-3">
           <CCol xs="12" sm="6">
@@ -317,8 +323,30 @@ function resetFilters() { filters.value = { category_id: '', status: '', date_fr
 
 function openView(expense) { viewTarget.value = expense; showViewModal.value = true }
 
+// null = creating, an id = editing that expense. The same modal serves both:
+// the fields are identical, and a separate edit dialog would be the same form
+// twice with two places to keep in step.
+const editingId = ref(null)
+
 function openAddModal() {
+  editingId.value = null
   addForm.value = { description: '', category_id: '', amount: '', vendor_name: '', expense_date: today, notes: '' }
+  addError.value = ''
+  showAddModal.value = true
+}
+
+function openEditModal(expense) {
+  editingId.value = expense.id
+  addForm.value = {
+    description: expense.description || '',
+    category_id: expense.category_id || '',
+    // Stored in cents; the field is in shillings, same as when adding.
+    amount: (expense.amount_cents || 0) / 100,
+    vendor_name: expense.vendor || '',
+    // The API returns a date-time; the input needs a plain date.
+    expense_date: (expense.expense_date || today).slice(0, 10),
+    notes: expense.notes || '',
+  }
   addError.value = ''
   showAddModal.value = true
 }
@@ -329,19 +357,26 @@ async function submitExpense() {
   if (!addForm.value.amount || addForm.value.amount <= 0) { addError.value = 'Weka kiasi'; return }
   if (!addForm.value.category_id) { addError.value = 'Chagua kategoria'; return }
   saving.value = true
+  const payload = {
+    description: addForm.value.description,
+    category_id: addForm.value.category_id,
+    amount_cents: Math.round(addForm.value.amount * 100),
+    vendor: addForm.value.vendor_name || null,
+    expense_date: addForm.value.expense_date,
+    notes: addForm.value.notes || null,
+  }
   try {
-    await store.createExpense({
-      description: addForm.value.description,
-      category_id: addForm.value.category_id,
-      amount_cents: Math.round(addForm.value.amount * 100),
-      vendor: addForm.value.vendor_name || null,
-      expense_date: addForm.value.expense_date,
-      notes: addForm.value.notes || null,
-    })
+    if (editingId.value) await store.updateExpense(editingId.value, payload)
+    else await store.createExpense(payload)
     showAddModal.value = false
+    editingId.value = null
     loadData()
   } catch (e) {
-    addError.value = e?.response?.data?.message || 'Hitilafu'
+    // The backend refuses edits to anything already approved; show its reason
+    // rather than a generic failure, since the user cannot tell why otherwise.
+    addError.value = e?.response?.data?.message
+      || Object.values(e?.response?.data?.errors || {})[0]?.[0]
+      || 'Hitilafu'
   } finally {
     saving.value = false
   }

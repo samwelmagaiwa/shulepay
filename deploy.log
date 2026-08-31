@@ -3438,3 +3438,35 @@ updated; the stored values are unchanged."
 [0;36m[2026-08-31 12:27:36][0m   ShulePay — Release
 [0;36m[2026-08-31 12:27:36][0m ══════════════════════════════════════════
 [0;36m[2026-08-31 12:27:36][0m Checking working tree...
+[0;36m[2026-08-31 12:27:36][0m Files staged for commit:
+[0;36m[2026-08-31 12:27:36][0m Committing: "fix(expenses): category and vendor were silently lost or never displayed
+
+Three field-name mismatches between the form, the list and the API, all silent.
+
+1. The Category column read e.category?.name, but ExpenseResource returns
+   category_name as a flat string - there is no nested category object. The
+   badge was therefore always empty even though the category WAS saved
+   correctly (verified on the live row: category_id=7 -> 'Electricty').
+
+2. The Add form posted vendor_name. The endpoint validates 'vendor' and
+   discards anything not in its rules, so whatever the user typed never reached
+   the database - the live expense has vendor=NULL. This one lost data rather
+   than merely hiding it.
+
+3. The Vendor column and the view modal also read vendor_name, so even a
+   correctly saved vendor would not have shown.
+
+Renamed at the boundary only - the form model keeps vendor_name, the payload and
+the render sites now use the API's names. Nothing on the backend changed.
+
+Category was never at risk; vendor typed into any expense recorded before this
+is gone and must be re-entered."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-31 12:27:36][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-31 12:27:40][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-31 12:35:10][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 12:35:10][0m   ShulePay — Release
+[0;36m[2026-08-31 12:35:10][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 12:35:10][0m Checking working tree...

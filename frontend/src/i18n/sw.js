@@ -1080,6 +1080,7 @@ export default {
     title:       'Matumizi (Gharama)',
     subtitle:    'Simamia matumizi ya shule',
     add:         'Ongeza',
+    editTitle:    'Hariri Matumizi',
     addTitle:    'Ongeza Gharama',
     category:    'Kategoria',
     allCategories: 'Kategoria Zote',

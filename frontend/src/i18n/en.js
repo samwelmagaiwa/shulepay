@@ -1091,6 +1091,7 @@ export default {
     title:       'Expenses',
     subtitle:    'Manage school expenses',
     add:         'Add Expense',
+    editTitle:    'Edit Expense',
     addTitle:    'Add Expense',
     category:    'Category',
     allCategories: 'All Categories',

@@ -58,6 +58,13 @@ export const useExpensesStore = defineStore('expenses', () => {
     return data
   }
 
+  // Only pending expenses may be edited; the backend enforces that and returns
+  // 422 for anything approved, which the caller surfaces rather than swallows.
+  async function updateExpense(id, payload) {
+    const { data } = await api.put(`/expenses/${id}`, payload)
+    return data
+  }
+
   async function approveExpense(id) {
     const { data } = await api.post(`/expenses/${id}/approve`)
     return data
@@ -69,7 +76,7 @@ export const useExpensesStore = defineStore('expenses', () => {
 
   return {
     expenses, categories, loading, error, pagination,
-    fetchExpenses, fetchCategories, createExpense, approveExpense, deleteExpense,
+    fetchExpenses, fetchCategories, createExpense, updateExpense, approveExpense, deleteExpense,
     createCategory, updateCategory, deleteCategory,
   }
 })
