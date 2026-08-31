@@ -595,7 +595,10 @@
       "Bash(timeout 5 bash -c 'cat < /dev/null > /dev/tcp/169.58.188.122/22')",
       "Bash(timeout 5 bash -c 'cat < /dev/null > /dev/tcp/169.58.188.122/26158')",
       "Bash(ssh root@169.58.188.122 'sshd -T 2>/dev/null | grep -E \"^permitrootlogin|^passwordauthentication|^port \"')",
-      "Bash(ssh root@169.58.188.122 'grep -c \"^ssh-\" /root/.ssh/authorized_keys; awk \"{print \\\\$NF}\" /root/.ssh/authorized_keys')"
+      "Bash(ssh root@169.58.188.122 'grep -c \"^ssh-\" /root/.ssh/authorized_keys; awk \"{print \\\\$NF}\" /root/.ssh/authorized_keys')",
+      "Bash(ssh deploy@169.58.188.122 ' *)",
+      "Bash(timeout 15 ssh -o BatchMode=yes -o ConnectTimeout=10 deploy@169.58.188.122 'whoami')",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

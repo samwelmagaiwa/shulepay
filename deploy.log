@@ -3674,3 +3674,34 @@ Permissions are auto-created from the matrix, so no seeder change is needed.
 [0;36m[2026-08-31 17:05:17][0m   ShulePay — Release
 [0;36m[2026-08-31 17:05:17][0m ══════════════════════════════════════════
 [0;36m[2026-08-31 17:05:17][0m Checking working tree...
+[0;36m[2026-08-31 17:05:17][0m Files staged for commit:
+[0;36m[2026-08-31 17:05:17][0m Committing: "refactor(permissions): move the edit restrictions into their own modules
+
+The two restrictions now sit inside Invoices and Payments rather than in
+separate sections, so each module carries everything that governs it.
+
+That reintroduces the risk I split them out to avoid - a tick beside 'view' and
+'generate' reading as another thing granted, when it means the opposite - so the
+screen now marks them unmistakably instead of relying on placement:
+
+  - detected by name (*_restricted), not a hardcoded list, so a future
+    restriction is styled correctly the moment it is added
+  - rendered in red rather than green, ticked or not
+  - labelled with the action the tick performs: 'restrict editing', not
+    'edit restricted', which reads as a state
+  - a lock icon, and a tooltip spelling out that the button becomes disabled
+
+The per-user override panel uses the same label, so a permission cannot read one
+way on the role screen and another on the user screen.
+
+Enforcement is unchanged and already covered: 403 server-side, superadmin
+exempt, non-throwing permission lookup. Full suite 68 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-31 17:05:17][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-31 17:05:21][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-31 17:21:09][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 17:21:09][0m   ShulePay — Release
+[0;36m[2026-08-31 17:21:09][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 17:21:09][0m Checking working tree...

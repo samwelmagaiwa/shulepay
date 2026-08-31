@@ -112,7 +112,18 @@ enum UserRole: string
      */
     public static function guard(array $roles): string
     {
-        return implode('|', $roles);
+        // SuperAdmin is appended here rather than repeated in every list above.
+        // teachingStaff() omitted it, so routes guarded by it - the academic and
+        // attendance groups - refused a superadmin outright. Adding it to each
+        // list would fix today's gap and leave the next one to chance; adding it
+        // at the single point where a guard string is built cannot be forgotten.
+        //
+        // Scope is deliberate: this shapes ROUTE middleware only. The lists
+        // themselves stay honest about which roles the label really describes,
+        // so anything else reading teachingStaff() still gets teachers.
+        $roles[] = self::SuperAdmin->value;
+
+        return implode('|', array_unique($roles));
     }
 
     // ── Instance predicates ───────────────────────────────────────────────────
