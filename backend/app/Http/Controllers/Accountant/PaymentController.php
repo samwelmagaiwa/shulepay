@@ -46,6 +46,11 @@ class PaymentController extends Controller
      */
     public function update(Request $request, Payment $payment): JsonResponse
     {
+        if (! auth()->user()?->isSuperAdmin()
+            && auth()->user()?->getAllPermissions()->contains('name', 'payments.edit_restricted')) {
+            abort(403, 'Editing payments is restricted for your role.');
+        }
+
         $data = $request->validate([
             'amount_cents' => ['sometimes', 'required', 'integer', 'min:1'],
             'method' => ['sometimes', 'required', 'string'],

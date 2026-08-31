@@ -21,6 +21,13 @@ class RolePermissionController extends Controller
             'Guardians' => ['guardians.view', 'guardians.create', 'guardians.edit', 'guardians.delete'],
             'Invoices' => ['invoices.view', 'invoices.generate'],
             'Payments' => ['payments.view', 'payments.create'],
+
+            // These two are RESTRICTIONS, not grants: holding one takes the edit
+            // button away rather than handing it over. Kept in their own sections
+            // so the inversion is visible on the permissions screen instead of
+            // hiding among the grants above, where a tick would read as "allowed".
+            'Edit Invoice' => ['invoices.edit_restricted'],
+            'Edit Payments' => ['payments.edit_restricted'],
             'Installments' => ['installments.view', 'installments.create', 'installments.mark_paid'],
             'Refunds' => ['refunds.view', 'refunds.create', 'refunds.delete'],
             'Fee Structures' => ['fee_structures.view', 'fee_structures.create', 'fee_structures.edit', 'fee_structures.delete'],

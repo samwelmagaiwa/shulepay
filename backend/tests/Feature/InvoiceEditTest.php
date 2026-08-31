@@ -11,6 +11,7 @@ use App\Models\Student;
 use App\Models\Term;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -115,6 +116,38 @@ class InvoiceEditTest extends TestCase
         $this->assertDatabaseHas('invoices', [
             'id' => $this->invoice->id, 'total_amount_cents' => 20000000,
         ]);
+    }
+
+    /**
+     * The permission is a RESTRICTION: holding it removes the ability to edit.
+     * A disabled button alone would leave the endpoint open to a direct call.
+     */
+    public function test_a_restricted_role_cannot_edit_an_invoice(): void
+    {
+        Permission::firstOrCreate(['name' => 'invoices.edit_restricted', 'guard_name' => 'web']);
+        $this->accountant->givePermissionTo('invoices.edit_restricted');
+
+        $this->withToken($this->token())
+            ->putJson("/api/invoices/{$this->invoice->id}", ['total_amount_cents' => 30000000])
+            ->assertStatus(403);
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $this->invoice->id, 'total_amount_cents' => 20000000,
+        ]);
+    }
+
+    /** A superadmin implicitly holds every permission and must not be locked out. */
+    public function test_a_superadmin_is_never_restricted(): void
+    {
+        Permission::firstOrCreate(['name' => 'invoices.edit_restricted', 'guard_name' => 'web']);
+
+        $admin = User::factory()->create(['school_id' => $this->invoice->school_id]);
+        $admin->assignRole('superadmin');
+        $this->app['auth']->forgetGuards();
+
+        $this->withToken($admin->createToken('t')->plainTextToken)
+            ->putJson("/api/invoices/{$this->invoice->id}", ['total_amount_cents' => 30000000])
+            ->assertOk();
     }
 
     public function test_an_itemised_invoice_is_refused_rather_than_guessed_at(): void

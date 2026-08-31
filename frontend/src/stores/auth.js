@@ -19,6 +19,12 @@ export const useAuthStore = defineStore('auth', () => {
   const permissions           = computed(() => user.value?.permissions ?? [])
   const isSuperAdmin          = computed(() => role.value === 'superadmin')
   const hasPermission         = (perm) => isSuperAdmin.value || permissions.value.includes(perm)
+
+  // A restriction is the inverse of a grant: holding it takes something away.
+  // hasPermission() must NOT be used for these - it returns true for every
+  // permission a superadmin could hold, which would read-only the one account
+  // that should never be blocked. This checks the granted list literally.
+  const isRestricted          = (perm) => permissions.value.includes(perm)
   const hasMultiSchool        = computed(() => isSuperAdmin.value || hasPermission('multi_school'))
   const accessibleSchoolIds   = computed(() => user.value?.accessible_school_ids ?? null)
   const isAccountant       = computed(() => role.value === 'accountant' || role.value === 'superadmin')
@@ -90,7 +96,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     token, user,
-    isAuthenticated, role, permissions, hasPermission,
+    isAuthenticated, role, permissions, hasPermission, isRestricted,
     hasMultiSchool, accessibleSchoolIds,
     isAccountant, isOwner, isParent, isSuperAdmin,
     isTeacher, isHeadTeacher, isHeadmaster, isAcademicTeacher,

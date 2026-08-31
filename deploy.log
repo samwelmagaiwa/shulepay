@@ -3598,3 +3598,40 @@ Changes are audited as invoice.updated with before and after.
 [0;36m[2026-08-31 16:22:47][0m   ShulePay — Release
 [0;36m[2026-08-31 16:22:47][0m ══════════════════════════════════════════
 [0;36m[2026-08-31 16:22:47][0m Checking working tree...
+[0;36m[2026-08-31 16:22:48][0m Files staged for commit:
+[0;36m[2026-08-31 16:22:48][0m Committing: "feat(payments): correct or reverse a mis-recorded payment
+
+Payments were create-only, so a mis-keyed amount, wrong method or wrong date
+could not be fixed anywhere in the app - the only way out was deleting the
+student. The Payments tab now has Edit on every row and Reverse for a superadmin.
+
+Editing changes the amount, method, reference and date, then re-derives the
+invoice status because the balance has moved: an invoice keyed in as fully paid
+that was really part-paid reopens as Partial on its own. The receipt needs no
+attention - it stores no amount and renders from the payment, so it reprints
+correctly.
+
+Reversal soft-deletes rather than erases. A receipt for the payment is in
+someone's hands, and the row is the only evidence of what was reversed and by
+whom; paidCents() sums live payments only, so the invoice reopens by itself.
+
+Reversal is superadmin-only. It reduces recorded collections, and an accountant
+quietly undoing their own receipted entry is the wrong default - the same line
+already drawn for approved expenses. The confirmation says what it costs and
+notes the parent may already hold the receipt.
+
+The invoice it belongs to is deliberately not editable: moving a payment between
+invoices is a transfer, not a correction.
+
+4 new tests: amount correction reopens the invoice, method/reference/date save,
+an accountant is refused 403, a superadmin succeeds and is named in the audit
+trail. Full suite 66 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-31 16:22:48][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-31 16:22:52][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-31 16:42:00][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 16:42:00][0m   ShulePay — Release
+[0;36m[2026-08-31 16:42:00][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 16:42:00][0m Checking working tree...

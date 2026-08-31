@@ -217,6 +217,8 @@
                   <CTableDataCell><StatusBadge :status="inv.status" /></CTableDataCell>
                   <CTableDataCell class="text-nowrap">
                     <CButton size="sm" color="warning" variant="outline" class="me-1"
+                             :disabled="invoiceEditRestricted"
+                             :title="invoiceEditRestricted ? t('permissions.editRestricted') : ''"
                              @click="openEditInvoice(inv)" style="min-height:36px;">
                       ✏️ {{ t('common.edit') }}
                     </CButton>
@@ -287,6 +289,8 @@
                         <CIcon icon="cilPrint" />
                       </CButton>
                       <CButton size="sm" color="warning" variant="outline" class="ms-1"
+                               :disabled="paymentEditRestricted"
+                               :title="paymentEditRestricted ? t('permissions.editRestricted') : ''"
                                @click="openEditPayment(p)" style="min-height:36px;">✏️</CButton>
                       <!-- Reversal reduces recorded collections and there is a
                            receipt in someone's hands, so it is superadmin-only. -->
@@ -954,6 +958,13 @@ function installmentRowStyle(item) {
   if (isOverdue(item.due_date))  return 'background:rgba(220,53,69,.05);'
   return ''
 }
+
+// Restrictions, not grants: holding the permission removes the button. Read
+// through isRestricted rather than hasPermission, which is true for every
+// permission a superadmin could hold and would lock out the one account that
+// must never be blocked.
+const invoiceEditRestricted = computed(() => auth.isRestricted('invoices.edit_restricted'))
+const paymentEditRestricted = computed(() => auth.isRestricted('payments.edit_restricted'))
 
 // ── Payment correction ─────────────────────────────────────────────────────
 const editPayment = ref(null)

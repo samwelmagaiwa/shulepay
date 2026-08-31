@@ -229,6 +229,10 @@ export default {
     },
   },
 
+  permissions: {
+    editRestricted: 'Editing is restricted for your role.',
+  },
+
   duplicates: {
     groupsCard:     'Duplicated students',
     recordsCard:    'Records affected',

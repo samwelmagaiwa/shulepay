@@ -224,6 +224,10 @@ export default {
     },
   },
 
+  permissions: {
+    editRestricted: 'Kuhariri kumezuiliwa kwa wadhifa wako.',
+  },
+
   duplicates: {
     groupsCard:     'Wanafunzi waliorudiwa',
     recordsCard:    'Kumbukumbu zilizoathirika',

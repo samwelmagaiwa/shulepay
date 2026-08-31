@@ -226,6 +226,22 @@ class InvoiceController extends Controller
      */
     public function update(Request $request, Invoice $invoice): InvoiceResource
     {
+        // The disabled button is a courtesy; this is the actual restriction.
+        //
+        // getAllPermissions()->contains() rather than hasPermissionTo(): the
+        // latter THROWS when the permission row does not exist, which would turn
+        // every invoice edit into a 500 on any environment where the matrix has
+        // not been synced yet. It also picks up permissions inherited from the
+        // role, which is where this one is actually assigned.
+        //
+        // Superadmin is exempt explicitly: it holds every permission implicitly,
+        // so treating that as "restricted" would lock out the only account that
+        // must never be.
+        if (! auth()->user()?->isSuperAdmin()
+            && auth()->user()?->getAllPermissions()->contains('name', 'invoices.edit_restricted')) {
+            abort(403, 'Editing invoices is restricted for your role.');
+        }
+
         $data = $request->validate([
             'total_amount_cents' => ['required', 'integer', 'min:0'],
             'discount_cents' => ['sometimes', 'integer', 'min:0'],
