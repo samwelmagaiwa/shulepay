@@ -578,7 +578,17 @@
       "Bash(git commit -m 'fix\\(students\\): scope Duplicated Students to the active school *)",
       "Bash(curl -s https://magrethschools.sc.tz/api/students/duplicates -H 'Authorization: Bearer 114|kfA6vhhEMQO2DsF8QoJbhBHimVoCMKzN6IwGeKFw34569e38' -H 'X-School-Id: 1' -H 'Accept: application/json')",
       "Bash(python3 -c \"import json,sys;d=json.load\\(sys.stdin\\);print\\('group_count:',d['group_count'],'student_count:',d['student_count']\\)\")",
-      "Bash(git commit -m 'feat\\(reports\\): group the Debtors table by collection date *)"
+      "Bash(git commit -m 'feat\\(reports\\): group the Debtors table by collection date *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" -X POST https://magrethschools.sc.tz/api/auth/login -H \"Content-Type: application/json\" -H \"Accept: application/json\" -d '{\"email\":\"nope@nope.com\",\"password\":\"wrong\"}')",
+      "Bash(curl -s -X POST https://magrethschools.sc.tz/api/auth/login -H \"Content-Type: application/json\" -H \"Accept: application/json\" -d '{\"email\":\"nope@nope.com\",\"password\":\"wrong\"}')",
+      "Bash(curl -sI https://magrethschools.sc.tz/api/auth/login -X POST -H \"Content-Type: application/json\" -H \"Accept: application/json\" -d '{}')",
+      "Bash(ssh root@169.58.188.122 'docker exec shulepay_backend php artisan tinker --execute=\"echo config\\(\\\\\"app.debug\\\\\"\\) ? \\\\\"DEBUG=TRUE \\(BAD\\)\\\\\" : \\\\\"DEBUG=FALSE \\(GOOD\\)\\\\\";\"')",
+      "Bash(openssl s_client -connect magrethschools.sc.tz:443 -servername magrethschools.sc.tz)",
+      "Bash(openssl x509 *)",
+      "Bash(curl -sI https://magrethschools.sc.tz/favicon.svg)",
+      "Bash(vendor/bin/pint --test tests/Feature/SchoolScopingTest.php)",
+      "Bash(git commit -m 'security\\(critical\\): fix cross-school IDOR on Student and Guardian *)",
+      "Bash(git commit -m 'security: harden CSP script-src and mark session cookie Secure *)"
     ]
   }
 }

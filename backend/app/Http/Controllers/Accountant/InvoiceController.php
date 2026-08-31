@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accountant;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\InvoiceResource;
 use App\Models\AcademicYear;
+use App\Models\AuditLog;
 use App\Models\Enrollment;
 use App\Models\Invoice;
 use App\Models\Student;
@@ -16,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class InvoiceController extends Controller
 {
@@ -213,6 +215,70 @@ class InvoiceController extends Controller
     public function show(Invoice $invoice): InvoiceResource
     {
         return new InvoiceResource($invoice->load(['student.currentEnrollment', 'term', 'lines', 'payments.receipt']));
+    }
+
+    /**
+     * Correct an invoice's amount.
+     *
+     * Three things have to move together or the invoice contradicts itself:
+     * the total, the single fee line the receipt prints, and the status, which
+     * is derived from what is still owed rather than stored independently.
+     */
+    public function update(Request $request, Invoice $invoice): InvoiceResource
+    {
+        $data = $request->validate([
+            'total_amount_cents' => ['required', 'integer', 'min:0'],
+            'discount_cents' => ['sometimes', 'integer', 'min:0'],
+            'arrears_cents' => ['sometimes', 'integer', 'min:0'],
+        ]);
+
+        $invoice->loadMissing(['lines', 'payments']);
+        $paid = $invoice->paidCents();
+
+        // Lowering a total below what has already been received is not a
+        // correction, it is an overpayment — and quietly flipping the invoice to
+        // Paid would bury it. Refunds have their own flow; say so instead.
+        $newTotal = (int) $data['total_amount_cents']
+            + (int) ($data['arrears_cents'] ?? $invoice->arrears_cents->cents())
+            - (int) ($data['discount_cents'] ?? $invoice->discount_cents->cents());
+
+        if ($newTotal < $paid) {
+            return throw ValidationException::withMessages([
+                'total_amount_cents' => sprintf(
+                    'This invoice already has %s paid against it. Lowering the total below that would be an overpayment — record a refund instead.',
+                    'TZS '.number_format($paid / 100)
+                ),
+            ]);
+        }
+
+        // A single fee line can be kept in step automatically. A broken-down
+        // invoice cannot: which component changed is a judgement, and silently
+        // rewriting one would misstate what the parent was charged for.
+        if ($invoice->lines->count() > 1) {
+            return throw ValidationException::withMessages([
+                'total_amount_cents' => 'This invoice has an itemised breakdown and cannot be edited here.',
+            ]);
+        }
+
+        $before = $invoice->only(['total_amount_cents', 'discount_cents', 'arrears_cents', 'status']);
+
+        DB::transaction(function () use ($invoice, $data) {
+            $invoice->update($data);
+
+            if ($line = $invoice->lines->first()) {
+                $line->update(['amount_cents' => $data['total_amount_cents']]);
+            }
+
+            // Status is derived, never set by hand: an invoice edited down to
+            // what was already paid becomes Paid, one edited up becomes Partial.
+            $invoice->syncStatus();
+        });
+
+        AuditLog::record('invoice.updated', $invoice, $before, $data);
+
+        return new InvoiceResource(
+            $invoice->fresh(['student.currentEnrollment', 'term', 'lines', 'payments.receipt'])
+        );
     }
 
     public function generatePreview(Request $request): JsonResponse

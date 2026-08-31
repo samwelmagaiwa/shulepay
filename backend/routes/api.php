@@ -194,7 +194,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // MUST stay below the orphaned routes: apiResource registers
         // invoices/{invoice}, which would otherwise capture "orphaned" as an id.
-        Route::apiResource('invoices', InvoiceController::class)->only(['index', 'show']);
+        Route::apiResource('invoices', InvoiceController::class)->only(['index', 'show', 'update']);
 
         // Payments
         Route::apiResource('payments', PaymentController::class)->only(['index', 'store']);

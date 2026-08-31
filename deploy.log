@@ -3532,3 +3532,32 @@ shillings, so this changes nothing and just makes the assumption visible."
 [0;36m[2026-08-31 12:55:11][0m   ShulePay — Release
 [0;36m[2026-08-31 12:55:11][0m ══════════════════════════════════════════
 [0;36m[2026-08-31 12:55:12][0m Checking working tree...
+[0;36m[2026-08-31 12:55:12][0m Files staged for commit:
+[0;36m[2026-08-31 12:55:12][0m Committing: "feat(expenses): let a superadmin delete an approved expense
+
+Approved spending is a financial record and stays immutable for everyone else -
+an accountant still cannot remove one after sign-off. But an expense approved by
+mistake previously had no route out of the books at all, which is why the
+restriction needed an exception rather than removal.
+
+The rule now reads: pending, or superadmin. Enforced in the controller and
+mirrored exactly in the row menu and the mobile card, so the button is never
+offered to someone the API will refuse.
+
+The confirmation names what is happening when the record is approved - that it
+is being removed from the accounts, recorded against the deleter's name, and
+cannot be undone - rather than reusing the wording for discarding a pending
+draft. AuditLog::record already captures the full row and the acting user; a
+test pins that the entry is written.
+
+2 new tests: an accountant is refused 422 and the expense survives; a superadmin
+succeeds and the audit entry names them. Full suite 52 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-31 12:55:12][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-31 12:55:16][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-31 16:13:47][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 16:13:47][0m   ShulePay — Release
+[0;36m[2026-08-31 16:13:47][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 16:13:47][0m Checking working tree...

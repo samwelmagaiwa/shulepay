@@ -215,7 +215,11 @@
                   <CTableDataCell>{{ formatMoney(inv.paid_cents) }}</CTableDataCell>
                   <CTableDataCell class="text-danger fw-semibold">{{ formatMoney(inv.balance_due_cents) }}</CTableDataCell>
                   <CTableDataCell><StatusBadge :status="inv.status" /></CTableDataCell>
-                  <CTableDataCell>
+                  <CTableDataCell class="text-nowrap">
+                    <CButton size="sm" color="warning" variant="outline" class="me-1"
+                             @click="openEditInvoice(inv)" style="min-height:36px;">
+                      ✏️ {{ t('common.edit') }}
+                    </CButton>
                     <CButton v-if="inv.status !== 'paid'" size="sm" color="primary"
                              @click="openPayment(inv)" style="min-height:36px;">{{ t('payments.pay') }}</CButton>
                   </CTableDataCell>
@@ -655,6 +659,37 @@
         </CButton>
       </CModalFooter>
     </CModal>
+    <!-- Invoice amount correction. Deliberately amount-only: the term, student
+         and number identify the invoice and must not drift. -->
+    <CModal :visible="!!editInvoice" size="sm" alignment="center" backdrop="static"
+            @close="editInvoice = null">
+      <CModalHeader><CModalTitle>{{ t('invoices.editTitle') }}</CModalTitle></CModalHeader>
+      <CModalBody>
+        <div class="small text-muted mb-2">
+          {{ editInvoice?.invoice_number }} · {{ editInvoice?.term?.name }}
+        </div>
+
+        <label class="form-label fw-semibold small mb-1">
+          {{ t('invoices.totalAmount') }} <span class="text-danger">*</span>
+        </label>
+        <CFormInput v-model="editAmountDisplay" type="text" inputmode="numeric"
+                    autocomplete="off" placeholder="e.g. 200,000" @keyup.enter="saveInvoice" />
+
+        <div v-if="editInvoice && editInvoice.paid_cents > 0" class="form-text small">
+          {{ t('invoices.alreadyPaidHint', { paid: formatMoney(editInvoice.paid_cents) }) }}
+        </div>
+
+        <CAlert v-if="editError" color="danger" class="py-2 mt-2 mb-0 small">{{ editError }}</CAlert>
+      </CModalBody>
+      <CModalFooter class="gap-2">
+        <CButton color="secondary" variant="outline" :disabled="editSaving" @click="editInvoice = null">
+          {{ t('common.cancel') }}
+        </CButton>
+        <CButton color="primary" :disabled="editSaving" @click="saveInvoice">
+          <CSpinner v-if="editSaving" size="sm" class="me-1" />{{ t('common.save') }}
+        </CButton>
+      </CModalFooter>
+    </CModal>
   </CContainer>
 </template>
 
@@ -663,6 +698,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useStudentsStore } from '@/stores/students'
+import api from '@/services/api'
 import { usePaymentsStore } from '@/stores/payments'
 import { useInstallmentsStore } from '@/stores/installments'
 import StatusBadge from '@/components/StatusBadge.vue'
@@ -857,6 +893,52 @@ function installmentRowStyle(item) {
   if (item.status === 'partial') return 'background:rgba(255,193,7,.08);'
   if (isOverdue(item.due_date))  return 'background:rgba(220,53,69,.05);'
   return ''
+}
+
+// ── Invoice amount correction ──────────────────────────────────────────────
+const editInvoice = ref(null)
+const editAmount = ref('')
+const editSaving = ref(false)
+const editError = ref('')
+
+// Grouped while typing, same as the expense amount field: 200000 and 20000 are
+// hard to tell apart at a glance, 200,000 and 20,000 are not.
+const editAmountDisplay = computed({
+  get: () => (editAmount.value === '' ? '' : Number(editAmount.value).toLocaleString('en-US')),
+  set: (raw) => {
+    const digits = String(raw ?? '').replace(/[^0-9]/g, '')
+    editAmount.value = digits === '' ? '' : Number(digits)
+  },
+})
+
+function openEditInvoice(inv) {
+  editInvoice.value = inv
+  editAmount.value = Math.round((inv.total_amount_cents || 0) / 100)
+  editError.value = ''
+}
+
+async function saveInvoice() {
+  if (!editAmount.value && editAmount.value !== 0) {
+    editError.value = t('invoices.amountRequired')
+    return
+  }
+  editSaving.value = true
+  editError.value = ''
+  try {
+    await api.put(`/invoices/${editInvoice.value.id}`, {
+      total_amount_cents: Math.round(editAmount.value * 100),
+    })
+    editInvoice.value = null
+    // Reload the student so the row, its status badge and the summary totals
+    // above all reflect the new figure rather than only the cell that changed.
+    await store.fetchStudent(route.params.id)
+  } catch (e) {
+    editError.value = e?.response?.data?.errors?.total_amount_cents?.[0]
+      || e?.response?.data?.message
+      || t('common.saveFailed')
+  } finally {
+    editSaving.value = false
+  }
 }
 
 function openPayment(inv) {
