@@ -940,6 +940,9 @@ export default {
     allStatuses: 'All Statuses',
     searchStudent: 'Search student...',
     printByStatus: 'Print {status} Invoices',
+    printNextBatch: 'Print next batch ({current} of {total})',
+    bulkPrintingBatch: 'Preparing batch {current} of {total} ({count} invoices)… this may take a few seconds.',
+    bulkPrintBatchDone: 'Batch {current} of {total} sent to print. Click the print button again to continue with the rest.',
     statuses: { paid: 'Paid', partial: 'Partial', unpaid: 'Unpaid' },
     statusFull: {
       unpaid:  'Unpaid',

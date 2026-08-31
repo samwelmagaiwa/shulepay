@@ -930,6 +930,9 @@ export default {
     allStatuses: 'Hali Zote',
     searchStudent: 'Tafuta mwanafunzi...',
     printByStatus: 'Chapisha Ankara za {status}',
+    printNextBatch: 'Chapisha kundi linalofuata ({current} ya {total})',
+    bulkPrintingBatch: 'Inaandaa kundi la {current} kati ya {total} (ankara {count})… hii inaweza kuchukua sekunde chache.',
+    bulkPrintBatchDone: 'Kundi la {current} kati ya {total} limetumwa kuchapishwa. Bonyeza kitufe cha kuchapisha tena kuendelea na yaliyobaki.',
     statuses: { paid: 'Imelipwa', partial: 'Kiasi', unpaid: 'Haijalipwa' },
     statusFull: {
       unpaid:  'Hawajalipia',

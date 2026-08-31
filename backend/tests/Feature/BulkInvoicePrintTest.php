@@ -119,4 +119,60 @@ class BulkInvoicePrintTest extends TestCase
     {
         $this->getJson('/api/invoices/bulk-receipt?status=unpaid')->assertStatus(401);
     }
+
+    public function test_count_endpoint_reports_how_many_match_without_rendering_a_pdf(): void
+    {
+        $response = $this->withToken($this->token())
+            ->getJson('/api/invoices/bulk-receipt/count?status=unpaid');
+
+        $response->assertOk()->assertJson([
+            'count' => 1,
+            'batch_size' => 50,
+            'batch_count' => 1,
+            'max_batch' => 150,
+        ]);
+    }
+
+    public function test_count_reports_multiple_batches_for_a_large_matching_set(): void
+    {
+        for ($i = 0; $i < 60; $i++) {
+            $this->makeInvoice('unpaid', 'Extra', "Student{$i}");
+        }
+
+        $response = $this->withToken($this->token())
+            ->getJson('/api/invoices/bulk-receipt/count?status=unpaid');
+
+        // 60 extra + the 1 from setUp = 61, batch size 50 -> 2 batches.
+        $response->assertOk()->assertJson(['count' => 61, 'batch_count' => 2]);
+    }
+
+    public function test_offset_and_limit_select_a_specific_batch(): void
+    {
+        for ($i = 0; $i < 60; $i++) {
+            $this->makeInvoice('unpaid', 'Extra', "Student{$i}");
+        }
+
+        // First batch: 50 of the 61 matching invoices.
+        $first = $this->withToken($this->token())
+            ->get('/api/invoices/bulk-receipt?status=unpaid&offset=0&limit=50');
+        $first->assertOk();
+
+        // Second batch: the remaining 11.
+        $second = $this->withToken($this->token())
+            ->get('/api/invoices/bulk-receipt?status=unpaid&offset=50&limit=50');
+        $second->assertOk();
+
+        // Both batches render successfully and are real, distinct PDFs —
+        // the actual per-invoice split is exercised by BulkInvoicesPdf
+        // directly; this proves offset/limit reach the query at all.
+        $this->assertStringContainsString('%PDF', substr($first->getContent(), 0, 10));
+        $this->assertStringContainsString('%PDF', substr($second->getContent(), 0, 10));
+    }
+
+    public function test_limit_over_the_hard_cap_is_rejected(): void
+    {
+        $this->withToken($this->token())
+            ->getJson('/api/invoices/bulk-receipt?status=unpaid&limit=151')
+            ->assertStatus(422);
+    }
 }

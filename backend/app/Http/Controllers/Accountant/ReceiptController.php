@@ -10,6 +10,8 @@ use App\Models\Student;
 use App\Services\Pdf\BulkInvoicesPdf;
 use App\Services\Pdf\ReceiptPdf;
 use App\Services\Pdf\StudentStatementPdf;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -86,18 +88,30 @@ class ReceiptController extends Controller
      * no separate ownership check needed here, unlike the single-record
      * lookups above.
      */
-    public function bulkByStatus(Request $request): Response
-    {
-        $request->validate([
-            'status' => 'required|in:unpaid,partial,paid',
-            'school_id' => 'nullable|integer|exists:schools,id',
-            'school_class_id' => 'nullable|integer|exists:school_classes,id',
-            'term_number' => 'nullable|integer|min:1|max:4',
-        ]);
+    /**
+     * Every batch this large risked a slow surprise (or an outright 504,
+     * since nginx's default 60s proxy read timeout has no override in this
+     * app's nginx.conf) — measured live, 257 invoices took ~39s to render
+     * even with BulkInvoicesPdf's memory-limit fix. Rather than just
+     * rejecting anything over this, the frontend uses it to print in
+     * sequential batches (see BATCH_SIZE below), so "print everything
+     * matching the filter" still works for 400+ invoices — just as several
+     * print jobs one after another instead of one that might time out.
+     */
+    private const MAX_BATCH = 150;
 
-        $query = Invoice::with([
-            'student.currentEnrollment.schoolClass', 'student.guardians', 'term', 'academicYear',
-        ])->where('status', $request->status);
+    /**
+     * How many invoices the frontend requests per batch when auto-splitting
+     * a large filtered set. Deliberately smaller than MAX_BATCH itself —
+     * MAX_BATCH is the hard ceiling this endpoint enforces; BATCH_SIZE is
+     * the size the frontend aims for so each batch renders quickly instead
+     * of always maxing out the ceiling.
+     */
+    private const BATCH_SIZE = 50;
+
+    private function scopedInvoiceQuery(Request $request): Builder
+    {
+        $query = Invoice::where('status', $request->status);
 
         if ($request->filled('school_id') && (int) $request->school_id !== 0) {
             $query->where('school_id', $request->school_id);
@@ -112,19 +126,63 @@ class ReceiptController extends Controller
             $query->whereHas('term', fn ($q) => $q->where('number', (int) $request->term_number));
         }
 
-        $invoices = $query->orderBy('school_id')->orderBy('student_id')->get();
+        return $query;
+    }
+
+    /**
+     * A fast count-only check the frontend calls before printing (and again
+     * whenever a filter changes) — so "how many will this print?" and "does
+     * this need to be split into batches?" are answered instantly, without
+     * paying for a full PDF render just to find out.
+     */
+    public function bulkByStatusCount(Request $request): JsonResponse
+    {
+        $request->validate([
+            'status' => 'required|in:unpaid,partial,paid',
+            'school_id' => 'nullable|integer|exists:schools,id',
+            'school_class_id' => 'nullable|integer|exists:school_classes,id',
+            'term_number' => 'nullable|integer|min:1|max:4',
+        ]);
+
+        $count = $this->scopedInvoiceQuery($request)->count();
+
+        return response()->json([
+            'count' => $count,
+            'batch_size' => self::BATCH_SIZE,
+            'batch_count' => (int) ceil($count / self::BATCH_SIZE),
+            'max_batch' => self::MAX_BATCH,
+        ]);
+    }
+
+    public function bulkByStatus(Request $request): Response
+    {
+        $request->validate([
+            'status' => 'required|in:unpaid,partial,paid',
+            'school_id' => 'nullable|integer|exists:schools,id',
+            'school_class_id' => 'nullable|integer|exists:school_classes,id',
+            'term_number' => 'nullable|integer|min:1|max:4',
+            // The frontend paginates a large filtered set into sequential
+            // batches of BATCH_SIZE each, printed one after another — these
+            // two select which slice of the matching set this particular
+            // request renders.
+            'offset' => 'nullable|integer|min:0',
+            'limit' => 'nullable|integer|min:1|max:'.self::MAX_BATCH,
+        ]);
+
+        $query = $this->scopedInvoiceQuery($request)->with([
+            'student.currentEnrollment.schoolClass', 'student.guardians', 'term', 'academicYear',
+        ])->orderBy('school_id')->orderBy('student_id');
+
+        $offset = $request->integer('offset', 0);
+        $limit = $request->integer('limit', self::MAX_BATCH);
+        $invoices = $query->skip($offset)->take($limit)->get();
 
         abort_if($invoices->isEmpty(), 404, 'Hakuna ankara zinazolingana na kigezo hiki.');
 
-        // Measured live: 257 invoices took ~39s to render even with the
-        // memory-limit fix in BulkInvoicesPdf — nginx's default 60s proxy
-        // read timeout has no override in this app's nginx.conf, so a batch
-        // near 300 risks a 504 rather than a clean response. 150 keeps the
-        // worst case comfortably under that with room for slower days.
         abort_if(
-            $invoices->count() > 150,
+            $invoices->count() > self::MAX_BATCH,
             422,
-            'Ankara ni nyingi mno kuchapisha kwa mara moja (kikomo ni 150) — punguza kigezo la kuchuja.'
+            'Ankara ni nyingi mno kuchapisha kwa mara moja (kikomo ni '.self::MAX_BATCH.') — punguza kigezo la kuchuja.'
         );
 
         $content = $this->bulkPdf->generate($invoices, $request->status);

@@ -70,6 +70,21 @@
       {{ receiptError }}
     </CAlert>
 
+    <!-- Bulk-print progress — inline and non-blocking (no modal, page stays
+         fully usable) so a multi-batch job never looks stuck or forces the
+         user to wait it out with nothing else to do. -->
+    <CAlert v-if="bulkPrinting" color="dark" class="mt-2 py-2 d-flex align-items-center gap-2">
+      <CSpinner size="sm" />
+      {{ t('invoices.bulkPrintingBatch', { current: bulkBatchIndex + 1, total: bulkCount?.batch_count || 1, count: bulkCurrentBatchSize }) }}
+    </CAlert>
+    <CAlert
+      v-else-if="bulkBatchIndex > 0 && bulkBatchIndex < (bulkCount?.batch_count || 0)"
+      color="success" dismissible class="mt-2 py-2"
+      @close="resetBulkPrintProgress"
+    >
+      {{ t('invoices.bulkPrintBatchDone', { current: bulkBatchIndex, total: bulkCount.batch_count }) }}
+    </CAlert>
+
     <!-- Filters + Table unified card -->
     <CCard style="margin-top:-2px; border-top-left-radius:0; border-top-right-radius:0;">
       <!-- Filters bar — no longer sticky on its own. Stacking two independent sticky
@@ -103,15 +118,27 @@
           </CFormSelect>
           <CFormInput v-model="filters.search" :placeholder="t('invoices.searchStudent')" @input="debouncedFetch" size="sm" style="min-width:140px; flex:2;" />
           <!-- Only meaningful once the Status filter narrows to one debt status —
-               "print everything, paid included" isn't a real bulk-print use case. -->
+               "print everything, paid included" isn't a real bulk-print use case.
+               Count is fetched live (debounced, on every relevant filter change)
+               so the button always shows exactly how many invoices — and how
+               many print batches — the click is about to produce, before
+               committing to it. -->
           <CButton
             v-if="filters.status === 'unpaid' || filters.status === 'partial'"
             color="dark" variant="outline" size="sm"
-            :disabled="bulkPrinting" @click="printBulkByStatus"
+            :disabled="bulkPrinting || bulkCountLoading || !bulkCount?.count"
+            @click="printBulkByStatus"
             style="white-space:nowrap; flex-shrink:0;"
           >
-            <CSpinner v-if="bulkPrinting" size="sm" class="me-1" />
-            <span v-else>🖨️ </span>{{ t('invoices.printByStatus', { status: t('invoices.statusFull.' + filters.status) }) }}
+            <CSpinner v-if="bulkPrinting || bulkCountLoading" size="sm" class="me-1" />
+            <span v-else>🖨️ </span>
+            <template v-if="bulkBatchIndex > 0 && bulkBatchIndex < (bulkCount?.batch_count || 0)">
+              {{ t('invoices.printNextBatch', { current: bulkBatchIndex + 1, total: bulkCount.batch_count }) }}
+            </template>
+            <template v-else>
+              {{ t('invoices.printByStatus', { status: t('invoices.statusFull.' + filters.status) }) }}
+              <span v-if="bulkCount?.count">({{ bulkCount.count }})</span>
+            </template>
           </CButton>
           <CButton color="warning" size="sm" @click="showSmsModal = true" style="white-space:nowrap; flex-shrink:0;">
             <CIcon icon="cilSend" class="me-1" /> {{ t('invoices.sendSms') }}
@@ -522,22 +549,80 @@ async function printStatement(studentId) {
   }
 }
 
-// Prints every invoice currently matching the Status filter (plus whatever
-// school/class/term filters are also active) as one job — one page per
-// invoice, generated server-side (backend/app/Services/Pdf/BulkInvoicesPdf.php)
-// rather than looping printStatement per row here, so the accountant gets one
-// print dialog instead of one per student.
+// ── Bulk print: count-first, then batched ────────────────────────────────
+// Printing every invoice matching a status filter in one PDF worked but was
+// slow to load for a school with hundreds of debtors, and gave no sense of
+// how much was about to print or whether it fit the server's per-request
+// cap. Instead: a fast count check tells the button exactly how many
+// invoices (and how many print batches, at 50/batch) a click will produce;
+// clicking prints one batch at a time — small enough to load quickly — and
+// leaves the page fully interactive between batches (no modal, nothing
+// blocks navigation) so "print everything" for a large filtered set is a
+// few clicks instead of one slow, uncertain wait.
 const bulkPrinting = ref(false)
+const bulkCountLoading = ref(false)
+const bulkCount = ref(null) // { count, batch_size, batch_count, max_batch }
+const bulkBatchIndex = ref(0) // batches already printed this session
+const bulkCurrentBatchSize = ref(0)
+let bulkCountTimer = null
+
+function bulkParams() {
+  const params = { status: filters.value.status }
+  if (filters.value.school_id)   params.school_id = filters.value.school_id
+  if (filters.value.class_id)    params.school_class_id = filters.value.class_id
+  if (filters.value.term_number) params.term_number = filters.value.term_number
+  return params
+}
+
+function resetBulkPrintProgress() {
+  bulkBatchIndex.value = 0
+}
+
+async function fetchBulkCount() {
+  resetBulkPrintProgress()
+  if (filters.value.status !== 'unpaid' && filters.value.status !== 'partial') {
+    bulkCount.value = null
+    return
+  }
+  bulkCountLoading.value = true
+  try {
+    const { data } = await api.get('/invoices/bulk-receipt/count', { params: bulkParams() })
+    bulkCount.value = data
+  } catch {
+    bulkCount.value = null
+  } finally {
+    bulkCountLoading.value = false
+  }
+}
+
+function debouncedBulkCount() {
+  clearTimeout(bulkCountTimer)
+  bulkCountTimer = setTimeout(fetchBulkCount, 300)
+}
+
+// school_id/class_id/term_number already trigger fetchData(1) on their own
+// @update:modelValue — piggyback the count refresh on the same triggers plus
+// a watcher, so it stays correct however the filter changed.
+watch(() => [filters.value.status, filters.value.school_id, filters.value.class_id, filters.value.term_number], debouncedBulkCount)
+
 async function printBulkByStatus() {
-  if (bulkPrinting.value) return
+  if (bulkPrinting.value || !bulkCount.value?.count) return
   bulkPrinting.value = true
   receiptError.value = ''
   try {
-    const params = { status: filters.value.status }
-    if (filters.value.school_id)   params.school_id = filters.value.school_id
-    if (filters.value.class_id)    params.school_class_id = filters.value.class_id
-    if (filters.value.term_number) params.term_number = filters.value.term_number
-    await printBulkInvoices(params)
+    const batchSize = bulkCount.value.batch_size
+    const offset = bulkBatchIndex.value * batchSize
+    const remaining = bulkCount.value.count - offset
+    bulkCurrentBatchSize.value = Math.min(batchSize, remaining)
+
+    await printBulkInvoices({ ...bulkParams(), offset, limit: batchSize })
+
+    bulkBatchIndex.value += 1
+    if (bulkBatchIndex.value >= bulkCount.value.batch_count) {
+      // Whole filtered set is done — re-check in case something changed
+      // (e.g. a payment recorded elsewhere) while batches were printing.
+      await fetchBulkCount()
+    }
   } catch (e) {
     receiptError.value = e?.response?.data?.message || t('payments.receiptPrintFailed')
   } finally {
@@ -584,7 +669,10 @@ onMounted(async () => {
   }
 })
 
-onBeforeUnmount(cleanupReceiptFrame)
+onBeforeUnmount(() => {
+  cleanupReceiptFrame()
+  clearTimeout(bulkCountTimer)
+})
 </script>
 
 <style scoped>

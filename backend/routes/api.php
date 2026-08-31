@@ -192,9 +192,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('invoices/orphaned', [InvoiceController::class, 'orphaned']);
         Route::delete('invoices/orphaned', [InvoiceController::class, 'purgeOrphaned']);
         // Every invoice matching a status filter (Partial/Unpaid), printed as one
-        // document. Heavier than a single receipt (up to 300 invoices per request),
+        // document, one batch (<=150) per request. Heavier than a single receipt,
         // so a tighter throttle than the single-document downloads above.
         Route::get('invoices/bulk-receipt', [ReceiptController::class, 'bulkByStatus'])->middleware('throttle:10,1');
+        // Fast count-only check the frontend calls before printing (and on every
+        // filter change) — cheap enough to allow more often than the render itself.
+        Route::get('invoices/bulk-receipt/count', [ReceiptController::class, 'bulkByStatusCount'])->middleware('throttle:60,1');
 
         // MUST stay below the routes above: apiResource registers
         // invoices/{invoice}, which would otherwise capture "orphaned"/"bulk-receipt" as an id.
