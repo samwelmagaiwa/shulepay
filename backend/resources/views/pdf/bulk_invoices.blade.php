@@ -15,7 +15,12 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #111; }
   .page { padding: 26px 38px; }
-  .page:not(:last-child) { page-break-after: always; }
+  /* DomPDF's CSS3 selector support is incomplete: :not(:last-child) here
+     silently matched nothing, so no page ever actually broke onto its own
+     page despite every invoice rendering correctly — they just ran together
+     as one continuous flow. The break is applied per-row from the loop
+     below instead, which DomPDF has no trouble with. */
+  .page-break { page-break-after: always; }
   .hr { border-top: 1px dashed #555; margin: 8px 0; }
   .hr-solid { border-top: 1.5px dashed #111; margin: 8px 0; }
 
@@ -39,7 +44,7 @@
 <body>
 
 @forelse($rows as $row)
-  <div class="page">
+  <div class="page {{ $loop->last ? '' : 'page-break' }}">
     @include('pdf.partials.letterhead', [
       'lh' => $row->lh,
       'docTitle' => 'Taarifa ya Ankara',

@@ -88,6 +88,33 @@ class BulkInvoicePrintTest extends TestCase
         $this->assertStringContainsString('%PDF', substr($response->getContent(), 0, 10));
     }
 
+    /**
+     * DomPDF's CSS3 selector support is incomplete — a page-break rule keyed
+     * on :not(:last-child) once silently matched nothing, so every invoice
+     * rendered correctly but ran together as one continuous page instead of
+     * each getting its own. Counting real PDF page objects (not just "the
+     * bytes contain %PDF") is the only way this regresses loudly instead of
+     * silently again.
+     */
+    public function test_each_invoice_renders_on_its_own_page(): void
+    {
+        $this->makeInvoice('unpaid', 'Second', 'Debtor');
+        $this->makeInvoice('unpaid', 'Third', 'Debtor');
+
+        $response = $this->withToken($this->token())
+            ->get('/api/invoices/bulk-receipt?status=unpaid');
+
+        $response->assertOk();
+
+        // /Type /Page marks an actual page object in the PDF's object tree
+        // (unlike /Type /Pages, the parent node) — DomPDF does not compress
+        // this part of the file, so it is reliably present as plain text.
+        $pageCount = preg_match_all('/\/Type\s*\/Page(?!s)\b/', $response->getContent());
+
+        // setUp() already created one 'unpaid' invoice, plus the two made here.
+        $this->assertSame(3, $pageCount, 'expected one PDF page per invoice, not invoices merged onto shared pages');
+    }
+
     public function test_bulk_print_is_not_shadowed_by_the_invoice_show_route(): void
     {
         // invoices/{invoice} (apiResource show) would otherwise capture
