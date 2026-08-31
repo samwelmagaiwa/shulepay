@@ -110,9 +110,16 @@ watch(() => props.visible, (open) => {
         </CCol>
         <CCol xs="12" md="3">
           <label class="form-label small fw-semibold mb-1">{{ t('expenseCategories.type') }}</label>
+          <!-- The option carries its meaning: these are accounting buckets whose
+               names do not explain themselves to whoever is filing an expense. -->
           <CFormSelect v-model="form.type" size="sm">
-            <option v-for="ty in TYPES" :key="ty" :value="ty">{{ t('expenseCategories.types.' + ty) }}</option>
+            <option v-for="ty in TYPES" :key="ty" :value="ty">
+              {{ t('expenseCategories.types.' + ty) }} — {{ t('expenseCategories.typeHints.' + ty) }}
+            </option>
           </CFormSelect>
+          <div class="form-text" style="font-size:.72rem; line-height:1.3;">
+            {{ t('expenseCategories.typeHints.' + form.type) }}
+          </div>
         </CCol>
         <CCol xs="12" md="3">
           <label class="form-label small fw-semibold mb-1">{{ t('expenseCategories.description') }}</label>

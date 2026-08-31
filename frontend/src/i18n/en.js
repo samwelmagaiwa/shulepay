@@ -219,6 +219,14 @@ export default {
       staff:       'Staff',
       other:       'Other',
     },
+    // Shown beside each option, and under the field once chosen. The short
+    // names are accounting terms that mean little to whoever files the expense.
+    typeHints: {
+      operational: 'day-to-day running costs',
+      capital:     'assets that last',
+      staff:       'salaries, allowances',
+      other:       'anything that fits none',
+    },
   },
 
   duplicates: {

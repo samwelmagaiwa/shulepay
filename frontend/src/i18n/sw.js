@@ -216,6 +216,12 @@ export default {
       staff:       'Wafanyakazi',
       other:       'Nyingine',
     },
+    typeHints: {
+      operational: 'gharama za kila siku',
+      capital:     'mali zinazodumu',
+      staff:       'mishahara na posho',
+      other:       'kingine chochote',
+    },
   },
 
   duplicates: {

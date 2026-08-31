@@ -3385,3 +3385,30 @@ category, and a clean save once one exists. Test rows removed."
 [0;36m[2026-08-31 12:11:35][0m   ShulePay — Release
 [0;36m[2026-08-31 12:11:35][0m ══════════════════════════════════════════
 [0;36m[2026-08-31 12:11:35][0m Checking working tree...
+[0;36m[2026-08-31 12:11:35][0m Files staged for commit:
+[0;36m[2026-08-31 12:11:35][0m Committing: "fix(expenses): refuse deleting a category in use with a readable error, not a 500
+
+Answering 'can a category be deleted?': an unused one always can. One already
+used by an expense could not - expenses.category_id is a plain constrained()
+foreign key, so MySQL RESTRICTs the delete and the resulting QueryException
+reached the browser as a bare HTTP 500 'Server Error'. Verified against
+production before fixing.
+
+destroy() now counts the expenses first and returns 422 with a message naming
+how many are in the way, so the person clicking has something to act on.
+
+Second bug in the same method: AuditLog::record ran BEFORE the delete, so a
+delete the database went on to refuse still wrote an audit entry claiming the
+category had been deleted. It now records only once the delete is certain to
+proceed - pinned by a test.
+
+3 new tests covering both paths and the audit behaviour. Full suite 50 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-31 12:11:35][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-31 12:11:40][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-31 12:18:47][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 12:18:47][0m   ShulePay — Release
+[0;36m[2026-08-31 12:18:47][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 12:18:47][0m Checking working tree...
