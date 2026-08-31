@@ -67,8 +67,8 @@
                 <div class="fw-semibold">{{ e.description }}</div>
                 <div v-if="e.notes" class="text-muted small">{{ e.notes }}</div>
               </CTableDataCell>
-              <CTableDataCell class="d-none d-lg-table-cell small">{{ e.vendor_name || '—' }}</CTableDataCell>
-              <CTableDataCell><CBadge color="info" shape="rounded-pill">{{ e.category?.name || '—' }}</CBadge></CTableDataCell>
+              <CTableDataCell class="d-none d-lg-table-cell small">{{ e.vendor || '—' }}</CTableDataCell>
+              <CTableDataCell><CBadge color="info" shape="rounded-pill">{{ e.category_name || '—' }}</CBadge></CTableDataCell>
               <CTableDataCell class="fw-bold">{{ formatTZS(e.amount_cents) }}</CTableDataCell>
               <CTableDataCell><CBadge :color="statusColor(e.status)" shape="rounded-pill">{{ statusLabel(e.status) }}</CBadge></CTableDataCell>
               <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
@@ -157,7 +157,7 @@
           </CCol>
           <CCol xs="12" sm="6">
             <div class="text-muted small fw-semibold mb-1">{{ t('expenses.category') }}</div>
-            <CBadge color="info" shape="rounded-pill">{{ viewTarget.category?.name || '—' }}</CBadge>
+            <CBadge color="info" shape="rounded-pill">{{ viewTarget.category_name || '—' }}</CBadge>
           </CCol>
           <CCol xs="12" sm="6">
             <div class="text-muted small fw-semibold mb-1">{{ t('common.amount') }}</div>
@@ -173,7 +173,7 @@
           </CCol>
           <CCol xs="12" sm="6">
             <div class="text-muted small fw-semibold mb-1">{{ t('expenses.vendorName') }}</div>
-            <div>{{ viewTarget.vendor_name || '—' }}</div>
+            <div>{{ viewTarget.vendor || '—' }}</div>
           </CCol>
           <CCol v-if="viewTarget.notes" xs="12">
             <div class="text-muted small fw-semibold mb-1">{{ t('expenses.additionalNotes') }}</div>
@@ -334,7 +334,7 @@ async function submitExpense() {
       description: addForm.value.description,
       category_id: addForm.value.category_id,
       amount_cents: Math.round(addForm.value.amount * 100),
-      vendor_name: addForm.value.vendor_name || null,
+      vendor: addForm.value.vendor_name || null,
       expense_date: addForm.value.expense_date,
       notes: addForm.value.notes || null,
     })

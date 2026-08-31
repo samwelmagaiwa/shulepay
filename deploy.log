@@ -3412,3 +3412,29 @@ proceed - pinned by a test.
 [0;36m[2026-08-31 12:18:47][0m   ShulePay — Release
 [0;36m[2026-08-31 12:18:47][0m ══════════════════════════════════════════
 [0;36m[2026-08-31 12:18:47][0m Checking working tree...
+[0;36m[2026-08-31 12:18:47][0m Files staged for commit:
+[0;36m[2026-08-31 12:18:47][0m Committing: "style(expenses): spell out what each category type means
+
+Operational, Capital, Staff and Other are accounting buckets whose names do not
+explain themselves to whoever is filing an expense, and picking the wrong one is
+silent - nothing later corrects it.
+
+Each option now carries its meaning inline, and the chosen one is restated under
+the field:
+
+  Operational - day-to-day running costs
+  Capital     - assets that last
+  Staff       - salaries, allowances
+  Other       - anything that fits none
+
+The table badge keeps the short name so the column stays scannable. Both locales
+updated; the stored values are unchanged."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-31 12:18:47][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-31 12:18:51][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-31 12:27:36][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 12:27:36][0m   ShulePay — Release
+[0;36m[2026-08-31 12:27:36][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 12:27:36][0m Checking working tree...
