@@ -1,134 +1,93 @@
 {{--
-  Bulk invoice printout — every invoice matching a status filter (Partial /
-  Unpaid), one per page. Mirrors receipt.blade.php's styling; DomPDF has no
-  flexbox, so every two-column row is a <table>.
+  Bulk statement printout — every student who has at least one invoice
+  matching the status filter (Partial / Unpaid) gets the SAME consolidated
+  statement design as the single "Print Receipt" action (see
+  pdf/student_statement.blade.php / pdf/partials/student_statement_body.blade.php)
+  — their full payment history across every term, not just the matching
+  invoice — one section per student in this one document.
 --}}
-@php
-    $money = fn ($cents) => 'TZS '.number_format(((int) $cents) / 100, 0, '.', ',');
-    $statusLabel = ['unpaid' => 'HAJALIPA', 'partial' => 'AMELIPA KIASI', 'paid' => 'AMELIPA'][$statusFilter] ?? strtoupper($statusFilter);
-@endphp
 <!DOCTYPE html>
 <html lang="sw">
 <head>
 <meta charset="utf-8">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #111; }
-  .page { padding: 26px 38px; }
+  body { font-family: DejaVu Sans, sans-serif; font-size: 13px; color: #111; }
+  /* The single-statement view puts this padding on <body> — fine for one
+     page, but body-level padding only ever applies to the FIRST page in a
+     paginated PDF, so every student after page 1 would print flush against
+     the top edge. Applied per-section instead, it repeats on every page. */
+  .section { padding: 60px 32px 24px; }
   /* DomPDF's CSS3 selector support is incomplete: :not(:last-child) here
-     silently matched nothing, so no page ever actually broke onto its own
-     page despite every invoice rendering correctly — they just ran together
-     as one continuous flow. The break is applied per-row from the loop
-     below instead, which DomPDF has no trouble with. */
+     silently matched nothing on an earlier version of this file, so no page
+     ever actually broke onto its own page — confirmed live, every section
+     rendered correctly but ran together as one continuous flow. The break
+     is applied per-row from the loop below instead, which DomPDF has no
+     trouble with. */
   .page-break { page-break-after: always; }
-  .hr { border-top: 1px dashed #555; margin: 8px 0; }
+
+  .center { text-align: center; }
+  .right  { text-align: right; }
+  .bold   { font-weight: bold; }
+  .hr     { border-top: 1px dashed #555; margin: 9px 0; }
   .hr-solid { border-top: 1.5px dashed #111; margin: 8px 0; }
+  .logo-img { max-width: 90px; max-height: 60px; margin-bottom: 3px; }
+  .app-name { font-size: 19px; font-weight: bold; color: #007f3e; letter-spacing: .5px; }
+  .sub    { font-size: 12px; color: #555; }
+  .doc-title { font-size: 13px; letter-spacing: 3px; color: #333; }
 
   table.kv { width: 100%; border-collapse: collapse; }
-  table.kv td { padding: 3px 0; vertical-align: top; font-size: 12px; }
+  table.kv td { padding: 4px 0; vertical-align: top; font-size: 13px; }
   table.kv td.k { color: #555; }
   table.kv td.v { text-align: right; font-weight: bold; }
 
-  .balance-paid { color: #007f3e; font-weight: bold; }
-  .balance-due  { color: #c0292b; font-weight: bold; }
+  table.items { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  table.items th { font-size: 10.5px; letter-spacing: .4px; text-transform: uppercase; color: #555;
+                   border-bottom: 1.5px solid #999; padding: 5px 3px; text-align: left; }
+  table.items th.amt, table.items td.amt { text-align: right; }
+  table.items td { font-size: 12px; padding: 5px 3px; border-bottom: 1.5px dashed #888; vertical-align: top; }
 
-  .status-badge { display: inline-block; padding: 3px 14px; border-radius: 4px;
-                  font-size: 11px; font-weight: bold; letter-spacing: 1.5px; }
-  .status-unpaid  { background: #f8d7da; color: #842029; }
-  .status-partial { background: #fff3cd; color: #856404; }
-  .status-paid    { background: #d1e7dd; color: #0f5132; }
+  .status-paid    { color: #007f3e; font-weight: bold; }
+  .status-partial { color: #b45309; font-weight: bold; }
+  .status-unpaid  { color: #c0292b; font-weight: bold; }
+  .row-meta { display: block; font-size: 9.5px; color: #777; margin-top: 1px; }
+  table.items.dense .row-meta { display: inline; margin-left: 4px; }
 
-  .footer { font-size: 10px; color: #777; text-align: center; margin-top: 16px; }
+  table.items.dense th { font-size: 9px; padding: 3px 3px; }
+  table.items.dense td { font-size: 10.5px; padding: 2.5px 3px; }
+  table.items.dense .status-paid,
+  table.items.dense .status-partial,
+  table.items.dense .status-unpaid { display: inline; font-size: 10px; }
+
+  .amount-box { border: 2px solid #007f3e; border-radius: 4px; padding: 12px; margin: 16px 0 10px; }
+  .amount-lbl { font-size: 11px; letter-spacing: 1.5px; color: #555; text-align: center; }
+  .amount { font-size: 25px; font-weight: bold; text-align: center; margin-top: 2px; }
+  .balance-paid { color: #007f3e; }
+  .balance-due  { color: #c0292b; }
+
+  .footer { font-size: 11px; color: #777; text-align: center; margin-top: 16px; line-height: 1.5; }
 </style>
 </head>
 <body>
 
-@forelse($rows as $row)
-  <div class="page {{ $loop->last ? '' : 'page-break' }}">
-    @include('pdf.partials.letterhead', [
-      'lh' => $row->lh,
-      'docTitle' => 'Taarifa ya Ankara',
-      'compact' => true,
+@forelse($sections as $section)
+  <div class="section {{ $loop->last ? '' : 'page-break' }}">
+    @include('pdf.partials.student_statement_body', [
+      'lh' => $section->lh,
+      'statementNumber' => $section->statementNumber,
+      'student' => $section->student,
+      'enrollment' => $section->enrollment,
+      'invoices' => $section->invoices,
+      'totalInvoiced' => $section->totalInvoiced,
+      'totalPaid' => $section->totalPaid,
+      'totalBalance' => $section->totalBalance,
+      'appName' => $section->appName,
+      'appTagline' => $section->appTagline,
     ])
-
-    <div style="text-align:center; margin-top:8px;">
-      <span class="status-badge status-{{ $row->status }}">{{ $statusLabel }}</span>
-    </div>
-
-    <div class="hr"></div>
-
-    <table class="kv">
-      <tr>
-        <td class="k">Mwanafunzi</td>
-        <td class="v">{{ $row->student?->fullName() ?: '—' }}</td>
-      </tr>
-      <tr>
-        <td class="k">Namba ya Usajili</td>
-        <td class="v">{{ $row->enrollment?->admission_number ?: '—' }}</td>
-      </tr>
-      @if($row->enrollment?->schoolClass)
-      <tr>
-        <td class="k">Darasa</td>
-        <td class="v">{{ $row->enrollment->schoolClass->name }}</td>
-      </tr>
-      @endif
-      @if($row->guardian)
-      <tr>
-        <td class="k">Mzazi / Mlezi</td>
-        <td class="v">{{ $row->guardian->fullName() }}</td>
-      </tr>
-      @endif
-    </table>
-
-    <div class="hr"></div>
-
-    <table class="kv">
-      <tr>
-        <td class="k">Ankara</td>
-        <td class="v">{{ $row->invoice_number }}</td>
-      </tr>
-      <tr>
-        <td class="k">Muhula</td>
-        <td class="v">{{ $row->term ?: '—' }}</td>
-      </tr>
-      @if($row->academic_year)
-      <tr>
-        <td class="k">Mwaka wa Masomo</td>
-        <td class="v">{{ $row->academic_year }}</td>
-      </tr>
-      @endif
-    </table>
-
-    <div class="hr-solid"></div>
-
-    <table class="kv">
-      <tr>
-        <td class="k">Jumla ya Ankara</td>
-        <td class="v">{{ $money($row->gross_cents) }}</td>
-      </tr>
-      <tr>
-        <td class="k">Alicholipa</td>
-        <td class="v balance-paid">{{ $money($row->paid_cents) }}</td>
-      </tr>
-    </table>
-    <div class="hr-solid"></div>
-    <table class="kv">
-      <tr>
-        <td class="k" style="font-weight:bold;">SALIO</td>
-        <td class="v {{ $row->balance_cents > 0 ? 'balance-due' : 'balance-paid' }}">
-          {{ $money($row->balance_cents) }}
-        </td>
-      </tr>
-    </table>
-
-    <div class="hr"></div>
-    <div class="footer">
-      {{ $row->lh['name'] }} &copy; {{ date('Y') }} — Imetolewa {{ $generatedAt->format('d/m/Y H:i') }}
-    </div>
   </div>
 @empty
-  <div class="page">
-    <p style="text-align:center; color:#777; margin-top:60px;">Hakuna ankara zinazolingana na kigezo hiki.</p>
+  <div class="section">
+    <p style="text-align:center; color:#777; margin-top:60px;">Hakuna wanafunzi wanaolingana na kigezo hiki.</p>
   </div>
 @endforelse
 

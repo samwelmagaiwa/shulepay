@@ -16,7 +16,9 @@ use Tests\TestCase;
 /**
  * The Invoices page's bulk-print-by-status action.
  * What matters:
- *  - it returns exactly the invoices matching the requested status, no others
+ *  - it returns one full consolidated statement section per DISTINCT
+ *    STUDENT who has at least one invoice matching the requested status —
+ *    not one page per matching invoice (see StudentStatementPdf::buildSection)
  *  - the response is a real PDF, not an error page
  *  - it isn't shadowed by the invoices/{invoice} apiResource route (the same
  *    landmine invoices/orphaned already needed a fix for)
@@ -90,13 +92,13 @@ class BulkInvoicePrintTest extends TestCase
 
     /**
      * DomPDF's CSS3 selector support is incomplete — a page-break rule keyed
-     * on :not(:last-child) once silently matched nothing, so every invoice
+     * on :not(:last-child) once silently matched nothing, so every section
      * rendered correctly but ran together as one continuous page instead of
      * each getting its own. Counting real PDF page objects (not just "the
      * bytes contain %PDF") is the only way this regresses loudly instead of
      * silently again.
      */
-    public function test_each_invoice_renders_on_its_own_page(): void
+    public function test_each_student_renders_on_its_own_page(): void
     {
         $this->makeInvoice('unpaid', 'Second', 'Debtor');
         $this->makeInvoice('unpaid', 'Third', 'Debtor');
@@ -111,8 +113,10 @@ class BulkInvoicePrintTest extends TestCase
         // this part of the file, so it is reliably present as plain text.
         $pageCount = preg_match_all('/\/Type\s*\/Page(?!s)\b/', $response->getContent());
 
-        // setUp() already created one 'unpaid' invoice, plus the two made here.
-        $this->assertSame(3, $pageCount, 'expected one PDF page per invoice, not invoices merged onto shared pages');
+        // setUp() already created one 'unpaid' invoice (one student), plus
+        // the two distinct students made here — each is its own single-page
+        // statement, since no student here has enough invoices to spill over.
+        $this->assertSame(3, $pageCount, 'expected one PDF page per matching student, not sections merged onto shared pages');
     }
 
     public function test_bulk_print_is_not_shadowed_by_the_invoice_show_route(): void

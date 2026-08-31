@@ -130,6 +130,18 @@ class ReceiptController extends Controller
     }
 
     /**
+     * Distinct students who have at least one invoice matching the filter —
+     * a bulk print job produces one FULL statement section per student, not
+     * one page per matching invoice, so batching/counting operates on
+     * students, not invoice rows.
+     */
+    private function scopedStudentQuery(Request $request): Builder
+    {
+        return Student::whereIn('id', $this->scopedInvoiceQuery($request)->select('student_id'))
+            ->orderBy('id');
+    }
+
+    /**
      * A fast count-only check the frontend calls before printing (and again
      * whenever a filter changes) — so "how many will this print?" and "does
      * this need to be split into batches?" are answered instantly, without
@@ -144,7 +156,7 @@ class ReceiptController extends Controller
             'term_number' => 'nullable|integer|min:1|max:4',
         ]);
 
-        $count = $this->scopedInvoiceQuery($request)->count();
+        $count = $this->scopedStudentQuery($request)->count();
 
         return response()->json([
             'count' => $count,
@@ -169,23 +181,21 @@ class ReceiptController extends Controller
             'limit' => 'nullable|integer|min:1|max:'.self::MAX_BATCH,
         ]);
 
-        $query = $this->scopedInvoiceQuery($request)->with([
-            'student.currentEnrollment.schoolClass', 'student.guardians', 'term', 'academicYear',
-        ])->orderBy('school_id')->orderBy('student_id');
+        $query = $this->scopedStudentQuery($request);
 
         $offset = $request->integer('offset', 0);
         $limit = $request->integer('limit', self::MAX_BATCH);
-        $invoices = $query->skip($offset)->take($limit)->get();
+        $students = $query->skip($offset)->take($limit)->get();
 
-        abort_if($invoices->isEmpty(), 404, 'Hakuna ankara zinazolingana na kigezo hiki.');
+        abort_if($students->isEmpty(), 404, 'Hakuna wanafunzi wanaolingana na kigezo hiki.');
 
         abort_if(
-            $invoices->count() > self::MAX_BATCH,
+            $students->count() > self::MAX_BATCH,
             422,
-            'Ankara ni nyingi mno kuchapisha kwa mara moja (kikomo ni '.self::MAX_BATCH.') — punguza kigezo la kuchuja.'
+            'Wanafunzi ni wengi mno kuchapisha kwa mara moja (kikomo ni '.self::MAX_BATCH.') — punguza kigezo la kuchuja.'
         );
 
-        $content = $this->bulkPdf->generate($invoices, $request->status);
+        $content = $this->bulkPdf->generate($students, $request->status);
         $filename = 'Ankara-'.$request->status.'-'.now()->format('Ymd').'.pdf';
 
         $disposition = $request->boolean('download') ? 'attachment' : 'inline';

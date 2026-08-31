@@ -17,6 +17,35 @@ class StudentStatementPdf
 {
     public function generate(Student $student): string
     {
+        $section = $this->buildSection($student);
+
+        return Pdf::loadView('pdf.student_statement', [
+            'student' => $section->student,
+            'enrollment' => $section->enrollment,
+            'statementNumber' => $section->statementNumber,
+            'invoices' => $section->invoices,
+            'totalInvoiced' => $section->totalInvoiced,
+            'totalPaid' => $section->totalPaid,
+            'totalBalance' => $section->totalBalance,
+            'appName' => $section->appName,
+            'appTagline' => $section->appTagline,
+            'logoBase64' => $section->lh['logo'],
+            'lh' => $section->lh,
+            // A4 portrait — wider than the A5 this was originally designed at:
+            // A5 left the statement looking cramped next to the viewer it is
+            // previewed in. Receipts and reports are A4 too, so every printed
+            // document now shares one paper size.
+        ])->setPaper('a4')->output();
+    }
+
+    /**
+     * Everything one student's statement section needs to render — shared
+     * with BulkInvoicesPdf, which calls this per student so a bulk print
+     * job produces the identical design as this single-student PDF, not a
+     * separate simplified layout.
+     */
+    public function buildSection(Student $student): object
+    {
         $student->loadMissing([
             'currentEnrollment.schoolClass',
             'currentEnrollment.school',
@@ -63,13 +92,8 @@ class StudentStatementPdf
 
         $enrollment = $student->currentEnrollment;
         $school = $enrollment?->school;
-        $settings = $school?->settings ?? [];
-        $branding = $settings['branding'] ?? [];
 
         $lh = SchoolLetterhead::for($school);
-        $appName = $lh['name'];
-        $appTagline = $lh['tagline'];
-        $logoBase64 = $lh['logo'];
 
         // A statement covers many invoices/receipts at once, so it has no single
         // receipt number of its own — this reference lets one printout still be
@@ -79,7 +103,7 @@ class StudentStatementPdf
         $admissionRef = str_replace('/', '-', $enrollment?->admission_number ?: (string) $student->id);
         $statementNumber = 'STM-'.$admissionRef.'-'.now()->format('Ymd');
 
-        return Pdf::loadView('pdf.student_statement', [
+        return (object) [
             'student' => $student,
             'enrollment' => $enrollment,
             'statementNumber' => $statementNumber,
@@ -87,14 +111,9 @@ class StudentStatementPdf
             'totalInvoiced' => $totalInvoiced,
             'totalPaid' => $totalPaid,
             'totalBalance' => $totalBalance,
-            'appName' => $appName,
-            'appTagline' => $appTagline,
-            'logoBase64' => $logoBase64,
+            'appName' => $lh['name'],
+            'appTagline' => $lh['tagline'],
             'lh' => $lh,
-            // A4 portrait — wider than the A5 this was originally designed at:
-            // A5 left the statement looking cramped next to the viewer it is
-            // previewed in. Receipts and reports are A4 too, so every printed
-            // document now shares one paper size.
-        ])->setPaper('a4')->output();
+        ];
     }
 }
