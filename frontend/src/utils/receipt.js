@@ -24,10 +24,34 @@ function releaseFrame() {
   }
 }
 
+/**
+ * responseType: 'blob' means an error response's JSON body (validation
+ * messages, "too many invoices" 422s, etc.) arrives as a Blob too — axios
+ * only auto-parses JSON on the success path. Decode it back onto the error
+ * so callers reading e.response.data.message get the real backend message
+ * instead of undefined, which fell through to a generic "could not open
+ * the receipt" no matter what actually went wrong.
+ */
+async function decodeBlobErrorBody(e) {
+  if (e.response?.data instanceof Blob && e.response.data.type?.includes('json')) {
+    try {
+      e.response.data = JSON.parse(await e.response.data.text())
+    } catch {
+      // Not actually JSON — leave the Blob as-is, caller falls back to its default message.
+    }
+  }
+  throw e
+}
+
 async function fetchPdfBlob(receiptId) {
-  const { data } = await api.get(`/receipts/${receiptId}/download`, {
-    responseType: 'blob',
-  })
+  let data
+  try {
+    ;({ data } = await api.get(`/receipts/${receiptId}/download`, {
+      responseType: 'blob',
+    }))
+  } catch (e) {
+    await decodeBlobErrorBody(e)
+  }
   // Some error responses still arrive as a blob; make sure this really is a PDF.
   if (data.type && !data.type.includes('pdf')) {
     throw new Error('Server did not return a PDF')
@@ -70,9 +94,14 @@ export async function printStudentStatement(studentId) {
   if (!studentId) return
   releaseFrame()
 
-  const { data } = await api.get(`/students/${studentId}/statement-receipt`, {
-    responseType: 'blob',
-  })
+  let data
+  try {
+    ;({ data } = await api.get(`/students/${studentId}/statement-receipt`, {
+      responseType: 'blob',
+    }))
+  } catch (e) {
+    await decodeBlobErrorBody(e)
+  }
   if (data.type && !data.type.includes('pdf')) {
     throw new Error('Server did not return a PDF')
   }
@@ -103,10 +132,15 @@ export async function printStudentStatement(studentId) {
 export async function printBulkInvoices(params) {
   releaseFrame()
 
-  const { data } = await api.get('/invoices/bulk-receipt', {
-    params,
-    responseType: 'blob',
-  })
+  let data
+  try {
+    ;({ data } = await api.get('/invoices/bulk-receipt', {
+      params,
+      responseType: 'blob',
+    }))
+  } catch (e) {
+    await decodeBlobErrorBody(e)
+  }
   if (data.type && !data.type.includes('pdf')) {
     throw new Error('Server did not return a PDF')
   }
