@@ -3354,3 +3354,34 @@ Data is untouched: every academic year keeps its own four terms."
 [0;36m[2026-08-31 11:58:36][0m   ShulePay — Release
 [0;36m[2026-08-31 11:58:36][0m ══════════════════════════════════════════
 [0;36m[2026-08-31 11:58:36][0m Checking working tree...
+[0;36m[2026-08-31 11:58:36][0m Files staged for commit:
+[0;36m[2026-08-31 11:58:36][0m Committing: "feat(expenses): add the missing screen for creating expense categories
+
+Category is required on every expense, but nothing in the app ever created one.
+The backend has had full CRUD on expense-categories since the feature shipped
+and only the GET was wired up, so the dropdown was permanently empty and no
+expense could be saved at all - saving without one returns 422. The only place
+categories were ever created was LocalDemoSeeder, which never runs on
+production, which is why the live table held zero rows.
+
+Expenses > Categories now lists them with add, edit and delete, wired to the
+endpoints that already existed. Type is constrained to the four values the
+backend validates (operational, capital, staff, other) so a category cannot be
+created that the API will reject.
+
+Deleting a category that an expense already uses fails at the database; the
+error is surfaced plainly rather than leaving the row looking as though the
+click did nothing. Renaming refreshes the expense list behind the modal so a
+stale label is not left on screen.
+
+Verified end to end against production beforehand: empty list, 422 without a
+category, and a clean save once one exists. Test rows removed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-31 11:58:36][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-31 11:58:41][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-31 12:11:35][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 12:11:35][0m   ShulePay — Release
+[0;36m[2026-08-31 12:11:35][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 12:11:35][0m Checking working tree...
