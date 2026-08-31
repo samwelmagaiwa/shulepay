@@ -1105,6 +1105,7 @@ export default {
     viewTitle:   'Expense Details',
     monthlyTotal:'Monthly Total (Approved)',
     confirmDelete: 'Delete Expense',
+    confirmDeleteApproved: 'This expense has already been approved. Deleting it removes it from the accounts. This is recorded against your name and cannot be undone.',
     confirmDeleteMsg: 'Are you sure you want to delete this expense?',
     statuses: {
       pending:  'Pending',

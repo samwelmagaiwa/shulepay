@@ -84,8 +84,15 @@ class ExpenseController extends Controller
 
     public function destroy(Expense $expense): JsonResponse
     {
-        if ($expense->status !== 'pending') {
-            return response()->json(['message' => 'Only pending expenses can be deleted.'], 422);
+        // Approved spending is a financial record, so it is normally immutable —
+        // an accountant cannot remove one after it has been signed off. A
+        // superadmin can, because a genuine mistake that got approved otherwise
+        // has no route out of the books at all. The audit entry below records
+        // who did it either way.
+        if ($expense->status !== 'pending' && ! auth()->user()?->isSuperAdmin()) {
+            return response()->json([
+                'message' => 'Only pending expenses can be deleted. An approved expense can only be removed by a superadmin.',
+            ], 422);
         }
 
         AuditLog::record('expense.deleted', $expense, $expense->toArray(), []);

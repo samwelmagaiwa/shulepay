@@ -80,6 +80,54 @@ class ExpenseCategoryDeletionTest extends TestCase
         $this->assertDatabaseHas('expense_categories', ['id' => $category->id]);
     }
 
+    public function test_an_accountant_cannot_delete_an_approved_expense(): void
+    {
+        $expense = $this->approvedExpense();
+
+        $this->withToken($this->token())
+            ->deleteJson("/api/expenses/{$expense->id}")
+            ->assertStatus(422);
+
+        $this->assertDatabaseHas('expenses', ['id' => $expense->id]);
+    }
+
+    /**
+     * A superadmin can, because an expense approved by mistake otherwise has no
+     * route out of the books at all.
+     */
+    public function test_a_superadmin_can_delete_an_approved_expense(): void
+    {
+        $expense = $this->approvedExpense();
+
+        $admin = User::factory()->create(['school_id' => $this->school->id]);
+        $admin->assignRole('superadmin');
+        $this->app['auth']->forgetGuards();
+
+        $this->withToken($admin->createToken('t')->plainTextToken)
+            ->deleteJson("/api/expenses/{$expense->id}")
+            ->assertOk();
+
+        $this->assertDatabaseMissing('expenses', ['id' => $expense->id]);
+        // Removing a financial record must leave a trace of who did it.
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'expense.deleted', 'user_id' => $admin->id,
+        ]);
+    }
+
+    private function approvedExpense(): Expense
+    {
+        $category = ExpenseCategory::create([
+            'school_id' => $this->school->id, 'name' => 'Umeme', 'type' => 'operational',
+        ]);
+
+        return Expense::create([
+            'school_id' => $this->school->id, 'category_id' => $category->id,
+            'amount_cents' => 500000000, 'description' => 'Manunuzi ya umeme',
+            'expense_date' => '2026-08-31', 'recorded_by' => $this->accountant->id,
+            'status' => 'approved',
+        ]);
+    }
+
     /** A refused delete must not leave an audit entry claiming it happened. */
     public function test_a_refused_delete_is_not_audited_as_deleted(): void
     {

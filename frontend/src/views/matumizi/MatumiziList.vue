@@ -79,7 +79,7 @@
                   <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(e); activeRow = null">👁️ {{ t('common.view') }}</CButton>
                   <CButton v-if="e.status === 'pending' && auth.isOwner" size="sm" color="success" variant="ghost" class="text-start" @click="approve(e); activeRow = null">✅ {{ t('common.approve') }}</CButton>
                   <CButton v-if="e.status === 'pending'" size="sm" color="warning" variant="ghost" class="text-start" @click="openEditModal(e); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
-                  <CButton v-if="e.status === 'pending'" size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(e); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
+                  <CButton v-if="e.status === 'pending' || auth.isSuperAdmin" size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(e); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
                 </div>
               </CTableDataCell>
             </CTableRow>
@@ -113,7 +113,7 @@
                 <CButton v-if="e.status === 'pending' && auth.isOwner" size="sm" color="success" variant="ghost" @click="approve(e)">
                   <CIcon icon="cilCheck" />
                 </CButton>
-                <CButton v-if="e.status === 'pending'" size="sm" color="danger" variant="ghost" @click="confirmDelete(e)">
+                <CButton v-if="e.status === 'pending' || auth.isSuperAdmin" size="sm" color="danger" variant="ghost" @click="confirmDelete(e)">
                   <CIcon icon="cilTrash" />
                 </CButton>
               </div>
@@ -243,7 +243,14 @@
     <!-- Delete Confirm -->
     <CModal :visible="showDeleteModal" @close="showDeleteModal=false" size="sm" class="modal-fullscreen-sm-down">
       <CModalHeader><CModalTitle>{{ t('expenses.confirmDelete') }}</CModalTitle></CModalHeader>
-      <CModalBody>{{ t('expenses.confirmDeleteMsg') }}</CModalBody>
+      <CModalBody>
+        {{ t('expenses.confirmDeleteMsg') }}
+        <!-- Deleting an approved expense removes it from the books; that is a
+             different act from discarding a pending draft, so it is named. -->
+        <CAlert v-if="deleteTarget?.status === 'approved'" color="warning" class="py-2 mt-2 mb-0 small">
+          {{ t('expenses.confirmDeleteApproved') }}
+        </CAlert>
+      </CModalBody>
       <CModalFooter>
         <CButton color="secondary" variant="outline" @click="showDeleteModal=false">{{ t('common.no') }}</CButton>
         <CButton color="danger" :disabled="saving" @click="doDelete" style="min-height:44px;">

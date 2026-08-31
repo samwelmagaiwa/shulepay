@@ -1094,6 +1094,7 @@ export default {
     viewTitle:   'Maelezo ya Matumizi',
     monthlyTotal:'Jumla ya Mwezi Huu (Zilizoidhinishwa)',
     confirmDelete: 'Futa Gharama',
+    confirmDeleteApproved: 'Matumizi haya tayari yameidhinishwa. Kuyafuta kunayaondoa kwenye hesabu. Hatua hii inarekodiwa kwa jina lako na haiwezi kutenduliwa.',
     confirmDeleteMsg: 'Una uhakika wa kufuta gharama hii?',
     statuses: {
       pending:  'Inasubiri',

@@ -3503,3 +3503,32 @@ after, so corrections are traceable."
 [0;36m[2026-08-31 12:44:17][0m   ShulePay — Release
 [0;36m[2026-08-31 12:44:17][0m ══════════════════════════════════════════
 [0;36m[2026-08-31 12:44:17][0m Checking working tree...
+[0;36m[2026-08-31 12:44:18][0m Files staged for commit:
+[0;36m[2026-08-31 12:44:18][0m Committing: "feat(expenses): group the Amount field as you type
+
+The amount was a bare number input, so a six-figure entry read as 500000 with
+nothing to separate the digits - easy to key in an extra zero and not notice.
+
+It now shows 500,000 while typing. The field is type=text with inputmode=numeric
+rather than type=number: a number input cannot render grouping separators at
+all, and its spinner arrows are useless for a figure typed in full, while
+inputmode keeps the numeric keypad on mobile.
+
+addForm.amount stays a plain number - only the display is grouped - so
+validation and the amount_cents conversion are untouched. Separators are
+stripped on input rather than rejected, so a pasted '500,000' is accepted as
+readily as a typed one.
+
+Edit mode rounds cents to whole shillings explicitly. The input takes digits
+only, so a fractional shilling would have been displayed and then silently
+truncated on the next keystroke; every amount here is a whole number of
+shillings, so this changes nothing and just makes the assumption visible."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-31 12:44:18][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-31 12:44:22][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-08-31 12:55:11][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 12:55:11][0m   ShulePay — Release
+[0;36m[2026-08-31 12:55:11][0m ══════════════════════════════════════════
+[0;36m[2026-08-31 12:55:12][0m Checking working tree...
