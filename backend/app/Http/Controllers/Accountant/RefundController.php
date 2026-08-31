@@ -100,8 +100,13 @@ class RefundController extends Controller
 
     public function destroy(Refund $refund): JsonResponse
     {
+        // Strict school_id === comparison wrongly blocked a legitimate
+        // multi-school accountant or superadmin whose primary school_id
+        // differs from the refund's school — canAccessSchool() also honors
+        // user_school_access grants and superadmin status.
+        $schoolId = $refund->invoice?->school_id;
         abort_unless(
-            $refund->invoice?->school_id === auth()->user()->school_id,
+            $schoolId !== null && auth()->user()->canAccessSchool((int) $schoolId),
             403, 'Forbidden.'
         );
 

@@ -110,11 +110,15 @@ class GuardianController extends Controller
 
     public function show(Guardian $guardian): JsonResponse
     {
+        $this->authorizeGuardianAccess($guardian);
+
         return response()->json($guardian->load(['user', 'students.currentEnrollment.schoolClass']));
     }
 
     public function update(Request $request, Guardian $guardian): JsonResponse
     {
+        $this->authorizeGuardianAccess($guardian);
+
         $data = $request->validate([
             'name' => 'sometimes|string|max:120',
             'phone' => 'sometimes|string|max:20',
@@ -162,11 +166,41 @@ class GuardianController extends Controller
 
     public function destroy(Guardian $guardian): JsonResponse
     {
+        $this->authorizeGuardianAccess($guardian);
+
         $guardian->students()->detach();
         $guardian->user?->delete();
         $guardian->delete();
 
         return response()->json(null, 204);
+    }
+
+    /**
+     * Guardian carries no school_id of its own, so route-model binding alone
+     * let any authenticated finance/teaching-staff user view, edit, or delete
+     * another school's guardian (phone, email, and the ability to detach
+     * their children) purely by guessing/incrementing the numeric ID — there
+     * was no ownership check anywhere on this controller. Access is granted
+     * if the user can reach at least one school any of this guardian's
+     * children has ever been enrolled at.
+     */
+    private function authorizeGuardianAccess(Guardian $guardian): void
+    {
+        $user = auth()->user();
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+
+        $schoolIds = $guardian->students()
+            ->join('enrollments', 'enrollments.student_id', '=', 'students.id')
+            ->pluck('enrollments.school_id')
+            ->unique();
+
+        abort_unless(
+            $schoolIds->contains(fn ($id) => $user->canAccessSchool((int) $id)),
+            403,
+            'You do not have access to this guardian.'
+        );
     }
 
     private function activeSchoolId(Request $request): ?int

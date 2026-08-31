@@ -157,6 +157,8 @@ class StudentController extends Controller
 
     public function show(Student $student): StudentResource
     {
+        $this->authorizeStudentAccess($student);
+
         $student->load([
             'currentEnrollment.schoolClass',
             'currentEnrollment.school',
@@ -172,6 +174,8 @@ class StudentController extends Controller
 
     public function update(UpdateStudentRequest $request, Student $student): StudentResource
     {
+        $this->authorizeStudentAccess($student);
+
         $before = $student->toArray();
         $validated = $request->validated();
 
@@ -216,6 +220,8 @@ class StudentController extends Controller
 
     public function updateFull(UpdateStudentFullRequest $request, Student $student): StudentResource
     {
+        $this->authorizeStudentAccess($student);
+
         $student = $this->updateService->update(
             $student,
             $request->validated(),
@@ -342,6 +348,8 @@ class StudentController extends Controller
 
     public function destroy(Student $student): JsonResponse
     {
+        $this->authorizeStudentAccess($student);
+
         DB::transaction(function () use ($student) {
             AuditLog::record('student_deleted', $student, $student->toArray(), []);
 
@@ -379,6 +387,8 @@ class StudentController extends Controller
      */
     public function deletionPreview(Student $student): JsonResponse
     {
+        $this->authorizeStudentAccess($student);
+
         $invoices = $student->invoices()
             ->withoutGlobalScope('school')
             ->with(['term:id,name', 'payments'])
@@ -411,5 +421,29 @@ class StudentController extends Controller
             'payment_count' => $paymentCount,
             'total_paid_cents' => $paidCents,
         ]);
+    }
+
+    /**
+     * Student carries no school_id of its own (identity-only — a student can
+     * have enrollments at more than one school over time), so route-model
+     * binding alone lets ANY authenticated finance/teaching-staff user view,
+     * edit, or delete another school's student purely by guessing/incrementing
+     * the numeric ID — there was no ownership check anywhere on this
+     * controller. Access is granted if the user can reach at least one school
+     * this student has ever been enrolled at.
+     */
+    private function authorizeStudentAccess(Student $student): void
+    {
+        $user = auth()->user();
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+
+        $schoolIds = $student->enrollments()->pluck('school_id')->unique();
+        abort_unless(
+            $schoolIds->contains(fn ($id) => $user->canAccessSchool((int) $id)),
+            403,
+            'You do not have access to this student.'
+        );
     }
 }

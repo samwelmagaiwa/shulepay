@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AcademicYear;
 use App\Models\Enrollment;
+use App\Models\Guardian;
 use App\Models\Invoice;
 use App\Models\School;
 use App\Models\SchoolClass;
@@ -144,5 +145,85 @@ class SchoolScopingTest extends TestCase
         $this->assertEquals(2, $student->fresh()->enrollments()->count());
         // Current enrollment is Sekondari
         $this->assertEquals('SEK-99', $student->fresh()->currentEnrollment->admission_number);
+    }
+
+    /**
+     * IDOR: Student carries no school_id of its own, so route-model binding
+     * alone previously let any authenticated accountant view/edit/delete
+     * another school's student purely by guessing the numeric ID.
+     */
+    public function test_accountant_cannot_view_another_schools_student(): void
+    {
+        $sekondariStudent = Student::where('last_name', 'Sekondari')->first();
+        $token = $this->accountantA->createToken('t')->plainTextToken;
+
+        $this->withToken($token)
+            ->getJson("/api/students/{$sekondariStudent->id}")
+            ->assertForbidden();
+    }
+
+    public function test_accountant_cannot_update_another_schools_student(): void
+    {
+        $sekondariStudent = Student::where('last_name', 'Sekondari')->first();
+        $token = $this->accountantA->createToken('t')->plainTextToken;
+
+        $this->withToken($token)
+            ->putJson("/api/students/{$sekondariStudent->id}", ['first_name' => 'Hacked'])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('students', ['id' => $sekondariStudent->id, 'first_name' => 'Ali']);
+    }
+
+    public function test_accountant_cannot_delete_another_schools_student(): void
+    {
+        $sekondariStudent = Student::where('last_name', 'Sekondari')->first();
+        $token = $this->accountantA->createToken('t')->plainTextToken;
+
+        $this->withToken($token)
+            ->deleteJson("/api/students/{$sekondariStudent->id}")
+            ->assertForbidden();
+
+        $this->assertNull($sekondariStudent->fresh()->deleted_at);
+    }
+
+    public function test_accountant_can_still_view_their_own_schools_student(): void
+    {
+        $msingiStudent = Student::where('last_name', 'Msingi')->first();
+        $token = $this->accountantA->createToken('t')->plainTextToken;
+
+        $this->withToken($token)
+            ->getJson("/api/students/{$msingiStudent->id}")
+            ->assertOk();
+    }
+
+    public function test_superadmin_can_view_any_schools_student(): void
+    {
+        $sekondariStudent = Student::where('last_name', 'Sekondari')->first();
+        $token = $this->owner->createToken('t')->plainTextToken;
+
+        $this->withToken($token)
+            ->getJson("/api/students/{$sekondariStudent->id}")
+            ->assertOk();
+    }
+
+    /**
+     * Same IDOR class on Guardian: no school_id of its own, no ownership
+     * check on show/update/destroy.
+     */
+    public function test_accountant_cannot_view_another_schools_guardian(): void
+    {
+        $sekondariStudent = Student::where('last_name', 'Sekondari')->first();
+        $guardianUser = User::factory()->create(['school_id' => $this->sekondari->id]);
+        $guardianUser->assignRole('parent');
+        $guardian = Guardian::create([
+            'user_id' => $guardianUser->id, 'first_name' => 'Baba', 'last_name' => 'Sekondari', 'phone' => '0700000000',
+        ]);
+        $guardian->students()->attach($sekondariStudent->id, ['relation' => 'father']);
+
+        $token = $this->accountantA->createToken('t')->plainTextToken;
+
+        $this->withToken($token)
+            ->getJson("/api/guardians/{$guardian->id}")
+            ->assertForbidden();
     }
 }
