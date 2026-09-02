@@ -3705,3 +3705,39 @@ exempt, non-throwing permission lookup. Full suite 68 passed."
 [0;36m[2026-08-31 17:21:09][0m   ShulePay — Release
 [0;36m[2026-08-31 17:21:09][0m ══════════════════════════════════════════
 [0;36m[2026-08-31 17:21:09][0m Checking working tree...
+[0;36m[2026-08-31 17:21:09][0m Files staged for commit:
+[0;36m[2026-08-31 17:21:09][0m Committing: "fix(auth): superadmin was locked out of the academic routes; centralise the bypass
+
+Two real gaps, both from the bypass being written by hand rather than centrally.
+
+1. UserRole::teachingStaff() omits SuperAdmin, and four route groups guard on it
+   - the academic and attendance endpoints. A superadmin was refused outright
+   there. guard() now appends SuperAdmin to every middleware string it builds,
+   so the gap cannot recur when the next list is written. The lists themselves
+   are left honest about which roles they name, so anything else reading
+   teachingStaff() still gets teachers; only the route guard widens.
+
+2. There was no Gate::before anywhere. The bypass was repeated in 13 controllers,
+   which meant every new authorization check had to remember superadmin and
+   silently excluded it when it did not. AppServiceProvider now registers the
+   hook Laravel documents for exactly this, and Spatie recommends for a
+   super-admin role.
+
+   It returns null, not false, for everyone else - false would deny the check
+   outright and prevent any real gate from running. A test pins that, since the
+   mistake is invisible until a gate that should pass starts failing.
+
+5 tests: every guard admits superadmin without duplicating it, a superadmin
+passes an ability nothing defines, a non-superadmin is not granted by the hook,
+and a superadmin holds a permission it was never given directly.
+
+Full suite 73 passed."
+[0;32m✔ Committed[0m
+[0;36m[2026-08-31 17:21:10][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-08-31 17:21:14][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-09-02 15:14:16][0m ══════════════════════════════════════════
+[0;36m[2026-09-02 15:14:16][0m   ShulePay — Release
+[0;36m[2026-09-02 15:14:16][0m ══════════════════════════════════════════
+[0;36m[2026-09-02 15:14:16][0m Checking working tree...

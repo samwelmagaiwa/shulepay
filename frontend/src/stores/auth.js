@@ -21,10 +21,18 @@ export const useAuthStore = defineStore('auth', () => {
   const hasPermission         = (perm) => isSuperAdmin.value || permissions.value.includes(perm)
 
   // A restriction is the inverse of a grant: holding it takes something away.
-  // hasPermission() must NOT be used for these - it returns true for every
-  // permission a superadmin could hold, which would read-only the one account
-  // that should never be blocked. This checks the granted list literally.
-  const isRestricted          = (perm) => permissions.value.includes(perm)
+  //
+  // Two ways to get this wrong, both hit:
+  //  - hasPermission() returns true for anything a superadmin could hold, so it
+  //    would report every restriction as active.
+  //  - the literal list is no safer, because effectivePermissions() returns ALL
+  //    permissions for a superadmin, restrictions included. That is what greyed
+  //    out the superadmin's own edit buttons.
+  //
+  // So superadmin is exempted explicitly here, matching the controllers, which
+  // already skip the restriction check for that role. Written generically so any
+  // future *_restricted permission is covered without revisiting this.
+  const isRestricted          = (perm) => !isSuperAdmin.value && permissions.value.includes(perm)
   const hasMultiSchool        = computed(() => isSuperAdmin.value || hasPermission('multi_school'))
   const accessibleSchoolIds   = computed(() => user.value?.accessible_school_ids ?? null)
   const isAccountant       = computed(() => role.value === 'accountant' || role.value === 'superadmin')
