@@ -3741,3 +3741,37 @@ Full suite 73 passed."
 [0;36m[2026-09-02 15:14:16][0m   ShulePay — Release
 [0;36m[2026-09-02 15:14:16][0m ══════════════════════════════════════════
 [0;36m[2026-09-02 15:14:16][0m Checking working tree...
+[0;36m[2026-09-02 15:14:17][0m Files staged for commit:
+[0;36m[2026-09-02 15:14:17][0m Committing: "fix(permissions): superadmin's own edit buttons were greyed out
+
+A superadmin saw the invoice and payment Edit buttons disabled - the exact
+account that must never be restricted.
+
+Cause: effectivePermissions() returns EVERY permission for a superadmin, so the
+literal permission list contains invoices.edit_restricted and
+payments.edit_restricted. isRestricted() read that list and correctly concluded
+the restriction was held.
+
+I had already avoided hasPermission() for this reason and reached for the raw
+list instead - but the raw list is no safer for a superadmin, because it is
+fully populated by design. Both routes to the answer were wrong for the same
+underlying reason, and I only guarded one.
+
+isRestricted() now exempts superadmin explicitly, matching the controllers,
+which already skip the restriction check for that role. Written against the role
+rather than the permission name, so any future *_restricted permission is
+covered without revisiting this.
+
+Frontend only: the API would have allowed the edit all along, so nothing was
+actually blocked - only the button was. Verified against the real payload shape:
+a superadmin holding all permissions is unrestricted, an accountant holding one
+restriction is restricted for that module and not the other."
+[0;32m✔ Committed[0m
+[0;36m[2026-09-02 15:14:19][0m Pushing to origin/master...
+[0;32m✔ Pushed to origin/master[0m
+[0;32m✔ Release done! CI/CD pipeline will now trigger on GitHub. 🚀[0m
+[0;36m[2026-09-02 15:14:25][0m Watch it at: https://github.com/samwelmagaiwa/shulepay/actions
+[0;36m[2026-09-02 15:47:22][0m ══════════════════════════════════════════
+[0;36m[2026-09-02 15:47:22][0m   ShulePay — Release
+[0;36m[2026-09-02 15:47:22][0m ══════════════════════════════════════════
+[0;36m[2026-09-02 15:47:22][0m Checking working tree...

@@ -55,9 +55,28 @@ require_env() {
 }
 
 require_docker() {
-  command -v docker &>/dev/null        || error "Docker is not installed."
-  docker compose version &>/dev/null   || error "Docker Compose plugin not installed."
-  docker info &>/dev/null              || error "Docker daemon is not running."
+  command -v docker &>/dev/null || error "Docker is not installed."
+
+  # Every docker call here is wrapped in `timeout`. A wedged daemon does not
+  # refuse these — it accepts them and never answers, so `docker info` blocks
+  # forever. That is what silently consumed the CI step's entire 10-minute
+  # budget: three banner lines, then nothing, then "Run Command Timeout" with
+  # no indication of where it stopped. Failing in seconds with a named cause is
+  # worth more than waiting.
+  log "Checking Docker Compose plugin..."
+  timeout 20 docker compose version &>/dev/null     || error "Docker Compose plugin missing or unresponsive (timed out after 20s)."
+
+  log "Checking Docker daemon..."
+  if ! timeout 30 docker info &>/dev/null; then
+    # Diagnostics printed before exiting, since whoever reads this log may not
+    # be able to get onto the box quickly. A full disk is the usual cause of a
+    # hung daemon, so it is reported whether or not it turns out to be at fault.
+    warn "Docker daemon did not respond within 30s."
+    warn "Disk usage:"; df -h / 2>&1 | tail -2 | tee -a "$LOG_FILE" || true
+    warn "Docker service state:"
+    (systemctl is-active docker 2>&1 || true) | tee -a "$LOG_FILE"
+    error "Docker daemon is unresponsive. On the server: sudo systemctl restart docker"
+  fi
 }
 
 health_check() {
@@ -91,14 +110,16 @@ cmd_deploy() {
 
   # 2. Pull latest images (images are public — no Docker Hub login needed on server)
   log "Pulling latest images from Docker Hub..."
-  docker compose -f "$COMPOSE_FILE" pull \
-    || error "Failed to pull images from Docker Hub"
+  # 5 minutes: long enough for a cold pull of both images, short enough to
+  # leave room in the CI step's 10-minute budget for the rest of the deploy.
+  timeout 300 docker compose -f "$COMPOSE_FILE" pull \
+    || error "Failed to pull images from Docker Hub (or timed out after 5m)."
   success "Images pulled successfully"
 
   # 3. Recreate only app containers (backend + frontend); leave DB untouched unless its image changed
   log "Starting containers..."
-  docker compose -f "$COMPOSE_FILE" up -d --remove-orphans \
-    || error "Failed to start containers"
+  timeout 180 docker compose -f "$COMPOSE_FILE" up -d --remove-orphans \
+    || error "Failed to start containers (or timed out after 3m). Run: ./deploy.sh logs"
   success "Containers started"
 
   # 4. Wait for DB health (skip if using external DB — no shulepay_db container)
