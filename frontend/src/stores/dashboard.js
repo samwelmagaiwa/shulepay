@@ -89,46 +89,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
     }
   })
 
-  // ── Pie chart data ────────────────────────────────────────────────────────
-  // Only age_groups remains. The gender and visit_type entries were filled from
-  // unrelated data - payment methods and invoice statuses under student labels -
-  // and are removed now that those charts read gender_breakdown and
-  // revenue_vs_expenses straight from the payload.
-  const pieStats = computed(() => {
-    const s = stats.value
-    if (!s) return null
-
-    // Map class_breakdown → age_groups
-    const cb = s.class_breakdown || {}
-    // Helper: sum all keys whose normalized name matches any of the patterns
-    const sumKeys = (...patterns) => {
-      let total = 0
-      for (const [k, v] of Object.entries(cb)) {
-        const norm = k.toLowerCase().replace(/[\s_-]/g, '')
-        if (patterns.some(p => norm === p.toLowerCase().replace(/[\s_-]/g, ''))) {
-          total += v || 0
-        }
-      }
-      return total
-    }
-    const ageGroups = {
-      // sumKeys strips spaces/underscores/hyphens before comparing, so the
-      // renamed "PP ONE" / "STANDARD ONE" arrive as ppone / standardone. Both
-      // the old and new spellings are listed so a school on either naming still
-      // populates this chart.
-      neonate:    sumKeys('chekechea', 'ppone', 'pptwo', 'pp1', 'pp2', 'nursery', 'kindergarten'),
-      infant:     sumKeys('standardone', 'standardtwo', 'standardthree',
-                          'std1', 'std2', 'std3', 'darasa1', 'darasa2', 'darasa3'),
-      child:      sumKeys('standardfour', 'standardfive', 'standardsix', 'standardseven',
-                          'std4', 'std5', 'std6', 'std7', 'darasa4', 'darasa5', 'darasa6', 'darasa7'),
-      adolescent: sumKeys('form1', 'form2', 'kidato1', 'kidato2'),
-      adult:      sumKeys('form3', 'form4', 'kidato3', 'kidato4'),
-      elderly:    sumKeys('form5', 'form6', 'kidato5', 'kidato6'),
-    }
-
-    return { age_groups: ageGroups }
-  })
-
   // ── Service trend data ────────────────────────────────────────────────────
   // ServiceTrendChart.vue expects Chart.js multi-dataset bar+line structure
   const serviceTrendData = computed(() => {
@@ -382,7 +342,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     offlineTimerCountdown, futureDateWarning, isSyncing,
     // Computed data
     realStats, previousStats, compLabel,
-    pieStats, serviceTrendData, realClinics, referralStats,
+    serviceTrendData, realClinics, referralStats,
     // Legacy stubs
     metrics, clinics,
     // Actions

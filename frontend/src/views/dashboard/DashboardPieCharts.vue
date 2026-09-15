@@ -260,54 +260,42 @@ const revenueChartOptions = computed(() => ({
   },
 }))
 
+// Students per class, straight from class_distribution: the school's real
+// classes, by name, in its own order.
+//
+// This used to bucket classes into six fixed "age groups" by matching class
+// names against spellings it knew (form1, kidato1, darasa1…). Secondary classes
+// are named FORM ONE…FORM FOUR, which matched none of them, so a secondary
+// school full of students showed "Hakuna Data". Nothing is guessed now.
+const classDistribution = computed(() => dashboard.stats?.class_distribution || [])
+
+const CLASS_COLOURS = [
+  ['rgba(50, 31, 219, 0.6)', '#321fdb'],
+  ['rgba(51, 153, 255, 0.6)', '#3399ff'],
+  ['rgba(46, 184, 92, 0.6)', '#2eb85c'],
+  ['rgba(249, 177, 21, 0.6)', '#f9b115'],
+  ['rgba(229, 83, 83, 0.6)', '#e55353'],
+  ['rgba(99, 111, 131, 0.6)', '#636f83'],
+  ['rgba(111, 66, 193, 0.6)', '#6f42c1'],
+  ['rgba(32, 201, 151, 0.6)', '#20c997'],
+  ['rgba(253, 126, 20, 0.6)', '#fd7e14'],
+]
+
 const ageGroupChartData = computed(() => {
-  const stats = dashboard.pieStats?.age_groups || {
-    neonate: 0,
-    infant: 0,
-    child: 0,
-    adolescent: 0,
-    adult: 0,
-    elderly: 0,
+  const rows = classDistribution.value.filter((r) => r.students > 0)
+  if (!rows.length) {
+    return { labels: ['No Data'], datasets: [{ backgroundColor: ['#eaeaeb'], data: [0] }] }
   }
-
-  const hasData = Object.values(stats).some((v) => v > 0)
-
-  if (!hasData) {
-    return {
-      labels: ['No Data'],
-      datasets: [{ backgroundColor: ['#eaeaeb'], data: [0] }],
-    }
-  }
-
+  // Colours cycle, so a school with more classes than the palette still draws.
+  const colour = (i) => CLASS_COLOURS[i % CLASS_COLOURS.length]
   return {
-    labels: [
-      'Chekechea: Umri 3-5',
-      'Darasa 1-3: Umri 6-8',
-      'Darasa 4-7: Umri 9-12',
-      'Kidato 1-2: Umri 13-14',
-      'Kidato 3-4: Umri 15-16',
-      'Kidato 5-6: Umri 17-18',
-    ],
+    labels: rows.map((r) => r.class_name),
     datasets: [
       {
-        backgroundColor: [
-          'rgba(50, 31, 219, 0.6)',
-          'rgba(51, 153, 255, 0.6)',
-          'rgba(46, 184, 92, 0.6)',
-          'rgba(249, 177, 21, 0.6)',
-          'rgba(229, 83, 83, 0.6)',
-          'rgba(99, 111, 131, 0.6)',
-        ],
-        borderColor: ['#321fdb', '#3399ff', '#2eb85c', '#f9b115', '#e55353', '#636f83'],
+        backgroundColor: rows.map((_, i) => colour(i)[0]),
+        borderColor: rows.map((_, i) => colour(i)[1]),
         borderWidth: 1,
-        data: [
-          stats.neonate,
-          stats.infant,
-          stats.child,
-          stats.adolescent,
-          stats.adult,
-          stats.elderly,
-        ],
+        data: rows.map((r) => r.students),
       },
     ],
   }
@@ -337,20 +325,10 @@ const polarPlugins = [
         const sinA = Math.sin(angle)
 
         // ── 1. Prepare label strings ──────────────────────────────────────────
-        const originalLabel = chart.data.labels[index] || ''
-        const cleanLabel = originalLabel.includes(': ')
-          ? originalLabel.split(': ')[1]
-          : originalLabel
-        const ageStats = dashboard.pieStats?.age_groups || {}
-        const ageValues = [
-          ageStats.neonate || 0,
-          ageStats.infant || 0,
-          ageStats.child || 0,
-          ageStats.adolescent || 0,
-          ageStats.adult || 0,
-          ageStats.elderly || 0,
-        ]
-        const val = ageValues[index] ?? 0
+        // Label and value come from the chart's own data, so they always match
+        // the slice being drawn whatever classes the school has.
+        const cleanLabel = chart.data.labels[index] || ''
+        const val = chart.data.datasets[0].data[index] ?? 0
         const valueText = `(${val.toLocaleString()})`
 
         // ── 2. Set font early so we can measure text width for clamping ───────

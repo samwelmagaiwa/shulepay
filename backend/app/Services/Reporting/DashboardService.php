@@ -323,6 +323,8 @@ class DashboardService
             'method_breakdown' => $methodBreakdown,
             'school_breakdown' => $schoolBreakdown,
             'class_breakdown' => $classBreakdown,
+            // Real classes in school order, for the Students by Class chart.
+            'class_distribution' => app(StudentClassDistribution::class)->for($schoolId),
             'class_fee_breakdown_cents' => $classFeeBreakdown,
             'class_debt_breakdown' => $classDebtBreakdown,
             'top_debtors' => $topDebtors,
