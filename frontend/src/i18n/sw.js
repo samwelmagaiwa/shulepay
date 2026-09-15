@@ -247,6 +247,22 @@ export default {
     loadFailed:     'Imeshindwa kupakia orodha.',
   },
 
+  unassignedFees: {
+    title:        'Ada zisizounganishwa na darasa',
+    help:         'Malipo haya ni ya ankara za mwaka wa masomo ambao mwanafunzi hana usajili, hivyo hayawezi kuwekwa kwenye darasa. Linganisha mwaka wa ankara na miaka aliyosajiliwa: mara nyingi usajili haupo au uko mwaka mwingine.',
+    none:         'Malipo yote yameunganishwa na darasa.',
+    count:        'Wanafunzi {count}',
+    total:        'Jumla',
+    student:      'Mwanafunzi',
+    billedFor:    'Ankara ya mwaka',
+    enrolledIn:   'Amesajiliwa',
+    amount:       'Kiasi',
+    noEnrollment: 'Hana usajili katika shule hii',
+    deleted:      'amefutwa',
+    clickToView:  'Bofya kuona wanafunzi',
+    loadFailed:   'Imeshindwa kupakia orodha.',
+  },
+
   dashboardLock: {
     lockAmounts:        'Ficha kiasi',
     locked:             'Kiasi kimefichwa',

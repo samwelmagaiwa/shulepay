@@ -252,6 +252,22 @@ export default {
     loadFailed:     'Could not load the list.',
   },
 
+  unassignedFees: {
+    title:        'Fees not linked to a class',
+    help:         'These payments are on invoices billed for an academic year in which the student has no enrollment, so they cannot be placed in a class. Compare the year billed with the years enrolled: usually the enrollment is missing or in the wrong year.',
+    none:         'Every payment is linked to a class.',
+    count:        '{count} student(s)',
+    total:        'Total',
+    student:      'Student',
+    billedFor:    'Billed for',
+    enrolledIn:   'Enrolled in',
+    amount:       'Amount',
+    noEnrollment: 'No enrollment in this school',
+    deleted:      'deleted',
+    clickToView:  'Click to see the students',
+    loadFailed:   'Could not load the list.',
+  },
+
   dashboardLock: {
     lockAmounts:        'Hide amounts',
     locked:             'Amounts hidden',

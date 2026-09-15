@@ -3,6 +3,7 @@ import { defineAsyncComponent, computed, ref, onMounted, watch, onUnmounted } fr
 import { useI18n } from 'vue-i18n'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useSchoolStore } from '@/stores/school'
+import UnassignedFeesModal from '@/components/UnassignedFeesModal.vue'
 import { getAutoScrollState } from '@/composables/useAutoScroll'
 import LoadingBanner from '@/components/LoadingBanner.vue'
 import { MASK } from '@/utils/maskedValue'
@@ -22,6 +23,7 @@ import {
 const { t } = useI18n()
 const dashboard = useDashboardStore()
 const schoolStore = useSchoolStore()
+const showUnassigned = ref(false)
 const autoScroll = getAutoScrollState()
 
 import { ChartLine, ChartBar } from '../charts/index.js'
@@ -557,7 +559,13 @@ const formatDate = (dateStr) => {
               :key="index"
               class="col"
             >
-              <div class="p-3 border rounded h-100 d-flex flex-column align-items-center justify-content-between text-center bg-white shadow-sm hover-lift">
+              <!-- The unassigned box opens the list of students behind it; the
+                   class boxes are informational only. -->
+              <div class="p-3 border rounded h-100 d-flex flex-column align-items-center justify-content-between text-center bg-white shadow-sm hover-lift"
+                   :role="item.unassigned ? 'button' : undefined"
+                   :style="item.unassigned ? 'cursor:pointer;' : ''"
+                   :title="item.unassigned ? t('unassignedFees.clickToView') : ''"
+                   @click="item.unassigned && !dashboard.isLocked && (showUnassigned = true)">
                 <span
                   class="text-uppercase fw-bold mb-1"
                   :style="{ color: item.color, fontSize: '0.8rem', letterSpacing: '0.5px' }"
@@ -598,6 +606,8 @@ const formatDate = (dateStr) => {
           </div>
         </div>
       </div>
+
+      <UnassignedFeesModal v-model:visible="showUnassigned" />
 
       <!-- Patient Category Analytics - Two Cards Side by Side -->
       <CRow class="mb-4">

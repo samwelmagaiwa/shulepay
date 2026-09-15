@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AcademicYear;
+use App\Models\DashboardLock;
 use App\Models\Enrollment;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -13,6 +14,8 @@ use App\Models\Term;
 use App\Models\User;
 use App\Services\Reporting\ClassFeeCollection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**
@@ -132,6 +135,49 @@ class ClassFeeCollectionTest extends TestCase
 
         $this->assertSame(7000000, $r['unassigned_cents']);
         $this->assertSame(12000000, $r['total_cents']);
+    }
+
+    /** The list must explain exactly the dashboard figure, student by student. */
+    public function test_unassigned_list_matches_the_unassigned_figure(): void
+    {
+        $a = $this->student();
+        $this->enrol($a, $this->formOne, $this->y2026);
+        $this->pay($a, $this->y2026, 5000000);   // linked
+        $this->pay($a, $this->y2025, 7000000);   // no 2025 enrollment
+
+        $b = $this->student();
+        $this->enrol($b, $this->formTwo, $this->y2026);
+        $this->pay($b, $this->y2025, 3000000);   // no 2025 enrollment
+
+        $service = app(ClassFeeCollection::class);
+        $list = $service->unassigned($this->school->id);
+
+        $this->assertSame($service->for($this->school->id)['unassigned_cents'], $list['total_cents']);
+        $this->assertSame(10000000, $list['total_cents']);
+        $this->assertCount(2, $list['students']);
+
+        // Largest first, with the years billed and the years actually enrolled,
+        // which is what tells the reader how to fix it.
+        $first = $list['students'][0];
+        $this->assertSame($a->id, $first['student_id']);
+        $this->assertSame(['2025'], $first['billed_years']);
+        $this->assertSame('2026', $first['enrollments'][0]['year']);
+        $this->assertSame(7000000, $first['payments'][0]['amount_cents']);
+    }
+
+    public function test_the_endpoint_is_withheld_while_the_dashboard_is_locked(): void
+    {
+        Role::firstOrCreate(['name' => 'accountant', 'guard_name' => 'web']);
+        $this->user->assignRole('accountant');
+        DashboardLock::create([
+            'user_id' => $this->user->id,
+            'code_hash' => Hash::make('1234'),
+            'locked_at' => now(),
+        ]);
+
+        $this->withToken($this->user->createToken('t')->plainTextToken)
+            ->getJson('/api/dashboard/unassigned-fees')
+            ->assertStatus(423);
     }
 
     public function test_an_empty_school_returns_no_classes_and_zero(): void

@@ -145,6 +145,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Dashboard
         Route::get('dashboard/stats', [DashboardController::class, 'stats']);
+        // Read-only list behind the "Not linked to a class" fee figure.
+        Route::get('dashboard/unassigned-fees', [DashboardController::class, 'unassignedFees']);
 
         // Per-user dashboard privacy lock. Every action resolves the acting
         // user's own lock, so one user can never reach another's.
