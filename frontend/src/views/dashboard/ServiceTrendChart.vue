@@ -260,6 +260,126 @@ const metricDetails = computed(() => [
   { id: 'followup', label: t('dashboard.cardTodayCollect'), color: '#6610f2' },
 ])
 
+// ── Top-card figures, plotted on the bar chart ─────────────────────────────
+// Read from realStats - the exact object the cards above render - so a bar and
+// its card can never disagree. Colours reuse this card's existing palette.
+//
+// Counts and shillings share one chart but not one scale: 400 students next to
+// TZS 185,532,500 would be an invisible sliver. Counts use the left axis,
+// amounts the right, and each bar is labelled in its own unit.
+const cardMetrics = computed(() => {
+  const rs = dashboard.realStats || {}
+  const locked = dashboard.isLocked
+  // Money is withheld under the privacy lock; null draws no bar rather than a
+  // zero bar that would read as "nothing owed" or "nothing collected".
+  const money = (v) => (locked ? null : Number(v) || 0)
+  return [
+    { id: 'students', label: t('dashboard.cardTotalStudents'), color: '#3b82f6', kind: 'count', value: Number(rs.total_patients) || 0 },
+    { id: 'debt', label: t('dashboard.cardDebt'), color: '#dc3545', kind: 'money', value: money(rs.emergency_visits) },
+    { id: 'sponsored', label: t('dashboard.cardSponsoredFree'), color: '#06b6d4', kind: 'count', value: Number(rs.new_visits) || 0 },
+    { id: 'today', label: t('dashboard.cardTodayCollect'), color: '#6610f2', kind: 'money', value: money(rs.followups) },
+    // The paid-invoice count is withheld with the money, so it hides too.
+    { id: 'paid_count', label: t('dashboard.cardPaidInvoices'), color: '#16a34a', kind: 'count', value: locked ? null : Number(rs.paid_partial_count) || 0 },
+    { id: 'paid_amount', label: t('dashboard.seriesPaidAmount'), color: '#ec4899', kind: 'money', value: money(rs.paid_partial_amount) },
+  ]
+})
+
+const compactNumber = (v) => {
+  const n = Number(v) || 0
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
+  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K'
+  return n.toLocaleString()
+}
+
+const cardChartData = computed(() => {
+  const m = cardMetrics.value
+  // Two datasets, one per axis. Each holds its own metrics and null elsewhere,
+  // so every category gets exactly one bar on the right scale.
+  const pick = (kind) => m.map((x) => (x.kind === kind ? x.value : null))
+  return {
+    labels: m.map((x) => x.label),
+    datasets: [
+      {
+        label: t('dashboard.axisCount'),
+        data: pick('count'),
+        backgroundColor: m.map((x) => x.color),
+        borderRadius: 4,
+        yAxisID: 'y',
+        grouped: false,
+        maxBarThickness: 70,
+      },
+      {
+        label: t('dashboard.axisAmount'),
+        data: pick('money'),
+        backgroundColor: m.map((x) => x.color),
+        borderRadius: 4,
+        yAxisID: 'yMoney',
+        grouped: false,
+        maxBarThickness: 70,
+      },
+    ],
+  }
+})
+
+const cardChartOptions = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  layout: { padding: { top: 28 } },
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      filter: (item) => item.raw !== null,
+      callbacks: {
+        label: (c) => {
+          const metric = cardMetrics.value[c.dataIndex]
+          return metric.kind === 'money'
+            ? `TZS ${Number(c.raw).toLocaleString()}`
+            : Number(c.raw).toLocaleString()
+        },
+      },
+    },
+  },
+  scales: {
+    x: { grid: { display: false }, ticks: { font: { size: 12, weight: 'bold' }, color: '#334155' } },
+    y: {
+      position: 'left',
+      beginAtZero: true,
+      title: { display: true, text: t('dashboard.axisCount'), font: { weight: 'bold' } },
+      ticks: { callback: (v) => compactNumber(v) },
+    },
+    yMoney: {
+      position: 'right',
+      beginAtZero: true,
+      grid: { drawOnChartArea: false },
+      title: { display: true, text: t('dashboard.axisAmount'), font: { weight: 'bold' } },
+      ticks: { callback: (v) => compactNumber(v) },
+    },
+  },
+}))
+
+// Value above each bar, in its own unit.
+const cardValueLabels = {
+  id: 'cardValueLabels',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart
+    ctx.save()
+    chart.data.datasets.forEach((ds, di) => {
+      chart.getDatasetMeta(di).data.forEach((bar, i) => {
+        const v = ds.data[i]
+        if (v === null || v === undefined) return
+        const metric = cardMetrics.value[i]
+        const text = metric.kind === 'money' ? compactNumber(v) : Number(v).toLocaleString()
+        ctx.font = "bold 16px 'Outfit', sans-serif"
+        ctx.fillStyle = metric.color
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'bottom'
+        ctx.fillText(text, bar.x, bar.y - 6)
+      })
+    })
+    ctx.restore()
+  },
+}
+
 const keyReferralMap = {
   '000037': 'SELF REFERRAL',
 }
@@ -578,7 +698,7 @@ const chartOptions = computed(() => {
               class="custom-legend d-flex flex-wrap align-items-center gap-3 mb-1 p-2 bg-white rounded-4 shadow-sm border"
             >
               <div
-                v-for="metric in metricDetails"
+                v-for="metric in cardMetrics"
                 :key="metric.id"
                 class="legend-item d-flex align-items-center gap-2"
               >
@@ -590,24 +710,9 @@ const chartOptions = computed(() => {
                   metric.label
                 }}</span>
               </div>
-
-              <div class="ms-auto">
-                <button
-                  type="button"
-                  class="breakdown-pill-btn d-flex align-items-center"
-                  :class="{ active: breakdownEnabled }"
-                  @click="breakdownEnabled = !breakdownEnabled"
-                  :title="breakdownEnabled ? 'Punguza mtazamo' : 'Panua hadi uchambuzi wa kila mwezi'"
-                >
-                  <span class="pill-left">
-                    <CIcon :icon="cilBarChart" size="sm" class="me-1" />
-                    {{ breakdownEnabled ? 'Panua' : 'Punguza' }}
-                  </span>
-                  <span class="pill-right" :class="{ on: breakdownEnabled }">
-                    {{ breakdownEnabled ? 'ON' : 'OFF' }}
-                  </span>
-                </button>
-              </div>
+              <!-- The Punguza/Panua toggle switched a date-based trend into a
+                   monthly breakdown. These are point-in-time card totals with no
+                   time axis to break down, so the control is gone. -->
             </div>
           </div>
 
@@ -615,62 +720,21 @@ const chartOptions = computed(() => {
             <div class="spinner-border spinner-border-sm text-primary" style="width: 0.8rem; height: 0.8rem;"></div>
           </div>
 
+          <!-- Same container and height as before; only the data changed. -->
           <div
-            v-if="dashboard.isTrendsLoading && (!chartData.labels || chartData.labels.length === 0)"
+            v-if="!dashboard.isInitialized"
             class="empty-state d-flex flex-column align-items-center justify-content-center py-5"
-            :style="{ height: breakdownEnabled ? '560px' : '460px' }"
+            style="height: 500px"
           >
             <div class="spinner-border text-primary opacity-25" role="status"></div>
-            <p class="mt-3 text-muted small text-uppercase fw-bold letter-spacing-1">
-              Loading Trends...
-            </p>
           </div>
-
-          <div
-            v-else-if="(!chartData.labels || chartData.labels.length === 0) && !dashboard.isTrendsLoading"
-            class="empty-state d-flex flex-column align-items-center justify-content-center py-5 text-center px-4"
-            :style="{ height: breakdownEnabled ? '560px' : '460px' }"
-          >
-            <p class="text-muted fw-bold mb-1 small">Hakuna data ya mwelekeo.</p>
-          </div>
-
-          <div
-            v-else
-            class="chart-container p-3 pt-3"
-            :style="{ height: breakdownEnabled ? '600px' : '500px' }"
-          >
-            <div
-              class="chart-scroll-wrapper"
-              :class="{ 'has-scroll': needsScroll, 'breakdown-mode': breakdownEnabled }"
-              ref="chartScrollRef"
-            >
-              <div
-                class="chart-inner"
-                :style="{
-                  width: needsScroll ? chartWidth + 'px' : '100%',
-                  height: '100%',
-                }"
-              >
-                <CChartBar
-                  :key="`${breakdownEnabled ? 'breakdown' : 'default'}-${dashboard.remoteApiAvailable}`"
-                  :data="chartData"
-                  :options="{
-                    ...chartOptions,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      ...chartOptions.plugins,
-                      legend: { display: false },
-                    },
-                  }"
-                  :plugins="[barLabelsPlugin]"
-                  style="height: 100%; width: 100%"
-                />
-              </div>
-            </div>
-              <div v-if="needsScroll" class="scroll-hint text-muted small mt-2 text-center">
-                <CIcon :icon="cilChart" size="sm" class="me-1" />
-                Scroll horizontally to see full range
-              </div>
+          <div v-else class="chart-container p-3 pt-3" style="height: 500px">
+            <CChartBar
+              :data="cardChartData"
+              :options="cardChartOptions"
+              :plugins="[cardValueLabels]"
+              style="height: 100%; width: 100%"
+            />
           </div>
         </CCol>
 
