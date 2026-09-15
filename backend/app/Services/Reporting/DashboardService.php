@@ -325,6 +325,8 @@ class DashboardService
             'class_breakdown' => $classBreakdown,
             // Real classes in school order, for the Students by Class chart.
             'class_distribution' => app(StudentClassDistribution::class)->for($schoolId),
+            // Per-class collections and headcounts for the fee ribbon and charts.
+            'class_fee_collection' => app(ClassFeeCollection::class)->for($schoolId),
             'class_fee_breakdown_cents' => $classFeeBreakdown,
             'class_debt_breakdown' => $classDebtBreakdown,
             'top_debtors' => $topDebtors,

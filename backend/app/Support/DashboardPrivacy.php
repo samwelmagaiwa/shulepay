@@ -38,6 +38,7 @@ class DashboardPrivacy
         'paid_partial_invoices',
         'paid_partial_amount_cents',
         'class_fee_breakdown_cents',
+        'class_fee_collection',
         // Ranks classes by outstanding debt — money, so it hides with the rest.
         'class_debt_breakdown',
         'paid_amount_cents',

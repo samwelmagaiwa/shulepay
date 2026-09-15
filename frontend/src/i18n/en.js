@@ -354,6 +354,9 @@ export default {
     // Chart series labels
     seriesOverallTrend:  'Overall Trend',
     seriesStudentCount:  'Number of Students',
+    seriesFeesCollected: 'Fees Collected (TZS)',
+    yAxisCollected:      'Fees Collected (TZS)',
+    noFeesCollected:     'No fees collected yet for this school.',
     seriesTrend:         'Trend Line',
     seriesPaid:          'Paid',
     // Chart headings
