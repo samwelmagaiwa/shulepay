@@ -167,25 +167,24 @@ const fetchPendingPatients = () => {}
       <!-- Total OPD -->
       <CCol class="metric-col">
         <div
-          class="stat-card premium-shadow shadow-indigo"
+          class="stat-card stat-card--stacked premium-shadow shadow-indigo"
           style="border-left: 4px solid #6366f1; border-top: 1px solid #6366f1"
         >
-          <div class="stat-card-header mb-1">
-            <div class="stat-icon-wrapper" style="background-color: rgba(99, 102, 241, 0.15)">
-              <CIcon :icon="cilPeople" class="stat-icon" style="color: #6366f1" />
-            </div>
-            <div class="stat-main-info">
-              <h3 class="stat-value" style="color: #6366f1">{{ getValue('total_patients') }}</h3>
+          <div class="stat-card-header">
+            <div class="stacked-title-row">
+              <div class="stat-icon-wrapper" style="background-color: rgba(99, 102, 241, 0.15)">
+                <CIcon :icon="cilPeople" class="stat-icon" style="color: #6366f1" />
+              </div>
               <span class="stat-label">{{ t('dashboard.cardTotalStudents') }}</span>
             </div>
-          </div>
-          <div
-            v-if="dashboard.compLabel"
-            class="stat-card-footer mt-auto pt-1"
-          >
-            <div class="stat-comparison">
-              <span class="prev-value text-muted">{{ getPrevValue('total_patients') }}</span>
-              <span class="prev-label ms-1">{{ dashboard.compLabel }}</span>
+            <div class="stat-main-info">
+              <h3 class="stat-value stacked-amount" style="color: #6366f1">{{ getValue('total_patients') }}</h3>
+              <!-- Sponsored students are a subset of all students, so they sit
+                   on the same card, separated by divider lines. -->
+              <div class="card-expenses">
+                <span class="card-expenses-label">{{ t('dashboard.cardSponsoredFree') }}</span>
+                <span class="card-expenses-value" style="color: #0ea5e9">{{ getValue('new_visits') }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -258,28 +257,23 @@ const fetchPendingPatients = () => {}
         </div>
       </CCol>
 
-      <!-- New Visits -->
+      <!-- Expenses this month (sponsored moved onto the All Students card) -->
       <CCol class="metric-col">
         <div
-          class="stat-card premium-shadow shadow-sky"
+          class="stat-card stat-card--stacked premium-shadow shadow-sky"
           style="border-left: 4px solid #0ea5e9; border-top: 1px solid #0ea5e9"
         >
-          <div class="stat-card-header mb-1">
-            <div class="stat-icon-wrapper" style="background-color: rgba(14, 165, 233, 0.15)">
-              <CIcon :icon="cilClock" class="stat-icon" style="color: #0ea5e9" />
+          <div class="stat-card-header">
+            <div class="stacked-title-row">
+              <div class="stat-icon-wrapper" style="background-color: rgba(14, 165, 233, 0.15)">
+                <CIcon :icon="cilChartLine" class="stat-icon" style="color: #0ea5e9" />
+              </div>
+              <span class="stat-label">{{ t('dashboard.expensesThisMonth') }}</span>
             </div>
             <div class="stat-main-info">
-              <h3 class="stat-value" style="color: #0ea5e9">{{ getValue('new_visits') }}</h3>
-              <span class="stat-label">{{ t('dashboard.cardSponsoredFree') }}</span>
-            </div>
-          </div>
-          <div
-            v-if="dashboard.compLabel"
-            class="stat-card-footer mt-auto pt-1"
-          >
-            <div class="stat-comparison">
-              <span class="prev-value text-muted">{{ getPrevValue('new_visits') }}</span>
-              <span class="prev-label ms-1">{{ dashboard.compLabel }}</span>
+              <h3 class="stat-value stacked-amount" style="color: #0ea5e9" :title="expensesDisplay">
+                {{ expensesDisplay }}
+              </h3>
             </div>
           </div>
         </div>
@@ -337,12 +331,6 @@ const fetchPendingPatients = () => {}
                 <template v-if="isLocked">{{ MASK }}</template>
                 <template v-else>{{ getValue('paid_partial_count') }} | TZS {{ getValue('paid_partial_amount') }}</template>
               </h3>
-              <!-- Money out, directly under money in. Divider lines above and
-                   below separate it from the paid-invoice figure. -->
-              <div class="card-expenses">
-                <span class="card-expenses-label">{{ t('dashboard.expensesThisMonth') }}</span>
-                <span class="card-expenses-value">{{ expensesDisplay }}</span>
-              </div>
             </div>
           </div>
         </div>
