@@ -348,6 +348,7 @@ export default {
     debt:         'Madeni',
     // Chart series labels
     seriesOverallTrend:  'Mwelekeo wa Jumla',
+    unassignedFees:      'Haijaunganishwa na darasa',
     seriesFeesCollected: 'Ada Iliyokusanywa (TZS)',
     yAxisCollected:      'Ada Iliyokusanywa (TZS)',
     noFeesCollected:     'Hakuna ada iliyokusanywa bado kwa shule hii.',

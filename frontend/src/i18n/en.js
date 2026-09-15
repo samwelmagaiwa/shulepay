@@ -354,6 +354,7 @@ export default {
     // Chart series labels
     seriesOverallTrend:  'Overall Trend',
     seriesStudentCount:  'Number of Students',
+    unassignedFees:      'Not linked to a class',
     seriesFeesCollected: 'Fees Collected (TZS)',
     yAxisCollected:      'Fees Collected (TZS)',
     noFeesCollected:     'No fees collected yet for this school.',

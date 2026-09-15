@@ -2,6 +2,7 @@
 import { defineAsyncComponent, computed, ref, onMounted, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDashboardStore } from '@/stores/dashboard'
+import { useSchoolStore } from '@/stores/school'
 import { getAutoScrollState } from '@/composables/useAutoScroll'
 import LoadingBanner from '@/components/LoadingBanner.vue'
 import { MASK } from '@/utils/maskedValue'
@@ -20,6 +21,7 @@ import {
 
 const { t } = useI18n()
 const dashboard = useDashboardStore()
+const schoolStore = useSchoolStore()
 const autoScroll = getAutoScrollState()
 
 import { ChartLine, ChartBar } from '../charts/index.js'
@@ -171,8 +173,23 @@ const patientCategories = computed(() => {
   // matched to a class, so it equals the school's total collected exactly.
   const total = Math.round((classFeeCollection.value?.total_cents || 0) / 100)
 
+  // Payments that could not be linked to a class are part of the Total. Without
+  // a box of their own the classes visibly fall short of it, which reads as an
+  // error. Shown only when there is something to show.
+  const unassigned = Math.round((classFeeCollection.value?.unassigned_cents || 0) / 100)
+  const extra = unassigned > 0
+    ? [{
+        title: t('dashboard.unassignedFees'),
+        value: locked ? MASK : 'TZS ' + unassigned.toLocaleString(),
+        color: '#6c757d',
+        numericValue: locked ? 0 : unassigned,
+        unassigned: true,
+      }]
+    : []
+
   return [
     ...cats,
+    ...extra,
     { title: 'Total', value: locked ? MASK : 'TZS ' + total.toLocaleString(), color: 'grey' },
   ]
 })
@@ -191,12 +208,12 @@ const compactTzs = (v) => {
 // the card says so rather than showing an empty axis that reads as a fault.
 const feeChartState = computed(() => {
   if (dashboard.isLocked) return 'locked'
-  const any = patientCategories.value.some((c) => c.title !== 'Total' && c.numericValue > 0)
+  const any = patientCategories.value.some((c) => c.title !== 'Total' && !c.unassigned && c.numericValue > 0)
   return any ? 'ready' : 'empty'
 })
 
 const categoryChartData = computed(() => {
-  const categories = patientCategories.value.filter((c) => c.title !== 'Total')
+  const categories = patientCategories.value.filter((c) => c.title !== 'Total' && !c.unassigned)
   const values = categories.map((c) => c.numericValue || 0)
   const colors = categories.map((c) => c.color)
 
@@ -327,7 +344,7 @@ const categoryBarLabelsPlugin = {
 
 // Patient Category Pie Chart Data
 const categoryPieChartData = computed(() => {
-  const categories = patientCategories.value.filter((c) => c.title !== 'Total')
+  const categories = patientCategories.value.filter((c) => c.title !== 'Total' && !c.unassigned)
   const values = categories.map((c) => {
     if (hiddenPieCategories.value.includes(c.title)) return 0
     return c.numericValue || 0
@@ -407,7 +424,11 @@ const categoryPieLabelsPlugin = {
       const angleSpan = ((element.endAngle - element.startAngle) * 180) / Math.PI
       const sliceColor = chart.data.datasets[0].backgroundColor[index]
 
-      if (angleSpan >= 15) {
+      // Inside a slice only when it is wide enough to hold the text. At 15 degrees
+      // a full figure like "11,439,000" in 22px was wider than the slice itself,
+      // so neighbouring slices' labels printed over each other. Narrower slices
+      // take the leader-line path below instead.
+      if (angleSpan >= 32) {
         const midRadius = element.outerRadius * 0.6 + element.innerRadius * 0.1
         const x = Math.cos(midAngle) * midRadius + element.x
         const y = Math.sin(midAngle) * midRadius + element.y
@@ -416,8 +437,9 @@ const categoryPieLabelsPlugin = {
         ctx.textBaseline = 'middle'
         ctx.shadowColor = 'rgba(0,0,0,0.9)'
         ctx.shadowBlur = 5
-        ctx.font = "bold 22px 'Outfit', sans-serif"
-        ctx.fillText(value.toLocaleString(), x, y - 10)
+        ctx.font = "bold 20px 'Outfit', sans-serif"
+        // Compact (11.4M) so the label fits; the exact amount is in the tooltip.
+        ctx.fillText(compactTzs(value), x, y - 10)
         ctx.font = "normal 14px 'Outfit', sans-serif"
         ctx.fillText(percentage, x, y + 14)
       } else {
@@ -444,7 +466,7 @@ const categoryPieLabelsPlugin = {
         ctx.textBaseline = 'middle'
         ctx.font = "bold 13px 'Outfit', sans-serif"
         const labelX = x3 + (isRight ? 3 : -3)
-        ctx.fillText(`${value.toLocaleString()} (${percentage})`, labelX, y3)
+        ctx.fillText(`${compactTzs(value)} (${percentage})`, labelX, y3)
       }
     })
     ctx.restore()
@@ -522,7 +544,11 @@ const formatDate = (dateStr) => {
               {{ t('dashboard.classSummaryTitle') }}
             </h4>
           </div>
-          <span class="badge bg-light text-dark border fw-normal">{{ t('dashboard.primarySecondary') }}</span>
+          <!-- Names the school actually shown. It read "Primary and Secondary" even
+               when a single school was selected. -->
+          <span class="badge bg-light text-dark border fw-normal">
+            {{ schoolStore.activeSchool?.name || t('dashboard.primarySecondary') }}
+          </span>
         </div>
         <div class="card-body p-3">
           <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-xl-7 g-3">
@@ -608,7 +634,7 @@ const formatDate = (dateStr) => {
               </h5>
               <div class="d-flex flex-wrap justify-content-start mt-2 gap-2">
                 <span
-                  v-for="(item, index) in patientCategories.filter((c) => c.title !== 'Total')"
+                  v-for="(item, index) in patientCategories.filter((c) => c.title !== 'Total' && !c.unassigned)"
                   :key="index"
                   class="category-pill clickable-pill"
                   :class="{ 'pill-hidden': isCategoryHidden(item.title) }"
