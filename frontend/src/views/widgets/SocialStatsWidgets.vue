@@ -328,22 +328,12 @@ const fetchPendingPatients = () => {}
                 <template v-else>{{ getValue('paid_partial_count') }} | TZS {{ getValue('paid_partial_amount') }}</template>
               </h3>
               <span class="stat-label">{{ t('dashboard.cardPaidInvoices') }}</span>
-            </div>
-          </div>
-          <div
-            v-if="dashboard.compLabel"
-            class="stat-card-footer mt-auto pt-1"
-          >
-            <!-- Same footer box, new content: approved expenses this month, so
-                 money in and money out sit on one card. -->
-            <div class="stat-comparison stat-footer-divider footer-metric footer-metric--amber">
-              <span class="footer-metric-icon" aria-hidden="true">
-                <CIcon :icon="cilChartLine" />
-              </span>
-              <span class="footer-metric-text">
-                <span class="footer-metric-value">{{ expensesDisplay }}</span>
-                <span class="footer-metric-label">{{ t('dashboard.expensesThisMonth') }}</span>
-              </span>
+              <!-- Money out, directly under money in. Divider lines above and
+                   below separate it from the paid-invoice figure. -->
+              <div class="card-expenses">
+                <span class="card-expenses-label">{{ t('dashboard.expensesThisMonth') }}</span>
+                <span class="card-expenses-value">{{ expensesDisplay }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -485,6 +475,29 @@ const fetchPendingPatients = () => {}
 
 /* Secondary figure in a card footer: tinted chip with an icon badge, laid out
    in a row so it takes the same height as the old two-line comparison. */
+.card-expenses {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.4rem;
+  padding: 0.35rem 0;
+  border-top: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
+  line-height: 1.2;
+}
+.card-expenses-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.card-expenses-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #d97706;
+  white-space: nowrap;
+}
+
 .footer-metric {
   flex-direction: row !important;
   align-items: center;
