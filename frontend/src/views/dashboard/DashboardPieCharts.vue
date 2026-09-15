@@ -173,20 +173,84 @@ const genderChartData = computed(() => {
   }
 })
 
-const visitTypeChartData = computed(() => {
-  const stats = dashboard.pieStats?.visit_type || { new: 0, followup: 0 }
+// Revenue vs Expenses. Both figures come from one backend summary measured over
+// the same period (the current academic year), so the two slices are directly
+// comparable - unlike total_collected_cents and total_expenses_cents, which
+// cover a year and a month respectively.
+const revenueExpenses = computed(() => dashboard.stats?.revenue_vs_expenses || null)
+
+const revenueExpenseChartData = computed(() => {
+  const s = revenueExpenses.value
   return {
-    labels: ['Wapya', 'Wanaorudia'],
+    labels: [t('dashboard.revenueLabel'), t('dashboard.expensesLabel')],
     datasets: [
       {
-        backgroundColor: ['rgba(46, 184, 92, 0.7)', 'rgba(249, 177, 21, 0.7)'],
-        borderColor: ['#2eb85c', '#f9b115'],
+        backgroundColor: ['rgba(46, 184, 92, 0.7)', 'rgba(229, 83, 83, 0.7)'],
+        borderColor: ['#2eb85c', '#e55353'],
         borderWidth: 1,
-        data: [stats.new, stats.followup],
+        // Shillings, not cents: the labels and tooltips print these directly.
+        data: [
+          Math.round((s?.revenue_cents || 0) / 100),
+          Math.round((s?.expenses_cents || 0) / 100),
+        ],
       },
     ],
   }
 })
+
+const hasRevenueExpenseData = computed(() => {
+  const s = revenueExpenses.value
+  return !!s && ((s.revenue_cents || 0) > 0 || (s.expenses_cents || 0) > 0)
+})
+
+// Full shilling figures (81,297,300) overflow a donut slice at this font size,
+// so this chart labels in compact form (81.3M) while tooltips keep the exact sum.
+const compactTzs = (v) => {
+  if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
+  if (v >= 1_000) return (v / 1_000).toFixed(1).replace(/\.0$/, '') + 'K'
+  return String(v)
+}
+
+const revenueLabelsPlugin = {
+  id: 'revenueLabels',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart
+    const data = chart.data.datasets[0].data
+    const total = data.reduce((a, b) => a + b, 0)
+    if (!total) return
+    ctx.save()
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillStyle = '#fff'
+    chart.getDatasetMeta(0).data.forEach((el, i) => {
+      const value = data[i]
+      if (!value) return
+      const mid = el.startAngle + (el.endAngle - el.startAngle) / 2
+      const r = el.outerRadius * 0.65 + el.innerRadius * 0.35
+      const x = Math.cos(mid) * r + el.x
+      const y = Math.sin(mid) * r + el.y
+      ctx.shadowColor = 'rgba(0,0,0,0.5)'
+      ctx.shadowBlur = 4
+      ctx.font = "bold 20px 'Outfit', sans-serif"
+      ctx.fillText(compactTzs(value), x, y - 10)
+      ctx.font = "normal 15px 'Outfit', sans-serif"
+      ctx.fillText(((value / total) * 100).toFixed(1) + '%', x, y + 12)
+    })
+    ctx.restore()
+  },
+}
+
+const revenueChartOptions = computed(() => ({
+  ...chartOptions,
+  plugins: {
+    ...(chartOptions.plugins || {}),
+    tooltip: {
+      callbacks: {
+        label: (c) => `${c.label}: TZS ${Number(c.raw || 0).toLocaleString()}`,
+      },
+    },
+  },
+}))
 
 const ageGroupChartData = computed(() => {
   const stats = dashboard.pieStats?.age_groups || {
@@ -426,23 +490,46 @@ const polarPlugins = [
       <div class="card h-100 border-0 shadow-sm">
         <div class="card-header bg-transparent border-0 font-weight-bold pb-0 pt-3">
           <h6 class="mb-2 fw-bold text-center text-primary" style="font-size: 20px">
-            {{ t('dashboard.newVsReturningTitle') }}
+            {{ t('dashboard.revenueVsExpensesTitle') }}
           </h6>
-        </div>
-        <div class="card-body p-2" style="min-height: 450px; height: 450px">
-          <div
-            v-if="!dashboard.pieStats || !dashboard.pieStats.visit_type"
-            class="d-flex align-items-center justify-content-center h-100 text-center text-muted"
-          >
-            <p class="mb-0">Hakuna Data</p>
+          <div v-if="revenueExpenses?.period" class="text-center text-muted small">
+            {{ revenueExpenses.period.label }}
           </div>
-          <CChartPie
-            v-else
-            :data="visitTypeChartData"
-            :options="chartOptions"
-            :plugins="[genericPieLabelsPlugin]"
-            style="height: 100%"
-          />
+        </div>
+        <div class="card-body p-2 d-flex flex-column" style="min-height: 450px; height: 450px">
+          <!-- Locked dashboards receive no figures at all, so say so rather than
+               drawing an empty ring that reads as "no income". -->
+          <div
+            v-if="dashboard.isLocked"
+            class="d-flex align-items-center justify-content-center flex-grow-1 text-muted"
+          >
+            <p class="mb-0">🔒 {{ t('dashboardLock.locked') }}</p>
+          </div>
+          <div
+            v-else-if="!hasRevenueExpenseData"
+            class="d-flex align-items-center justify-content-center flex-grow-1 text-muted"
+          >
+            <p class="mb-0">{{ t('dashboard.noRevenueExpenseData') }}</p>
+          </div>
+          <template v-else>
+            <div class="flex-grow-1" style="min-height: 0">
+              <CChartPie
+                :data="revenueExpenseChartData"
+                :options="revenueChartOptions"
+                :plugins="[revenueLabelsPlugin]"
+                style="height: 100%"
+              />
+            </div>
+            <!-- Net is the figure the chart implies but cannot show: the gap
+                 between the slices, in shillings and with its sign. -->
+            <div class="text-center pt-2">
+              <div class="text-muted small">{{ t('dashboard.netLabel') }}</div>
+              <div class="fw-bold fs-5"
+                   :class="revenueExpenses.net_cents >= 0 ? 'text-success' : 'text-danger'">
+                TZS {{ Math.round(revenueExpenses.net_cents / 100).toLocaleString() }}
+              </div>
+            </div>
+          </template>
         </div>
       </div>
     </div>

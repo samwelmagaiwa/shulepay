@@ -42,6 +42,7 @@ class DashboardPrivacy
         'class_debt_breakdown',
         'paid_amount_cents',
         'total_expenses_cents',
+        'revenue_vs_expenses',
         'collection_rate',
         'method_breakdown',
         // Both name a student next to an amount they paid or owe.

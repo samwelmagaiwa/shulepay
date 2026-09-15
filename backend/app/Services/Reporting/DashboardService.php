@@ -301,6 +301,9 @@ class DashboardService
             'total_collected_cents' => (int) $totalCollectedCents,
             'total_outstanding_cents' => (int) $totalOutstanding,
             'total_expenses_cents' => (int) $totalExpensesCents,
+            // Same-period comparison for the Revenue vs Expenses chart. Kept
+            // separate from the two figures above, which cover different windows.
+            'revenue_vs_expenses' => app(RevenueExpenseSummary::class)->for($schoolId, $today),
             'recent_payments' => $recentPayments,
             'payment_trend' => $paymentTrend,
             'collection_rate' => $collectionRate,
