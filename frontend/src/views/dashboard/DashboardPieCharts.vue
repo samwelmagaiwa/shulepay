@@ -152,22 +152,30 @@ const polarChartOptions = {
   animation: chartOptions.animation,
 }
 
+// Student gender. Reads gender_breakdown, a headcount taken over the same
+// population as the All Students card, so the slices add up to that figure.
+//
+// It previously read pieStats.gender, which the store filled from
+// method_breakdown: 'Kiume' was the number of cash payments, 'Kike' M-Pesa,
+// 'Nyingine' bank and 'Haijabainishwa' cheque. There was never an 'other' gender
+// to show, so that slice is gone rather than renamed.
+const genderBreakdown = computed(() => dashboard.stats?.gender_breakdown || null)
+
 const genderChartData = computed(() => {
-  const stats = dashboard.pieStats?.gender || { male: 0, female: 0, no_gender: 0, unknown: 0 }
+  const g = genderBreakdown.value || { male: 0, female: 0, unspecified: 0 }
   return {
-    labels: ['Kiume', 'Kike', 'Nyingine', 'Haijabainishwa'],
+    labels: [t('dashboard.genderMale'), t('dashboard.genderFemale'), t('dashboard.genderUnspecified')],
     datasets: [
       {
-        label: 'Patients',
+        label: t('dashboard.genderDistTitle'),
         backgroundColor: [
           'rgba(51, 153, 255, 0.7)',
           'rgba(229, 83, 83, 0.7)',
-          'rgba(249, 177, 21, 0.7)',
           'rgba(157, 165, 177, 0.7)',
         ],
-        borderColor: ['#3399ff', '#e55353', '#f9b115', '#9da5b1'],
+        borderColor: ['#3399ff', '#e55353', '#9da5b1'],
         borderWidth: 1,
-        data: [stats.male, stats.female, stats.no_gender, stats.unknown],
+        data: [g.male || 0, g.female || 0, g.unspecified || 0],
       },
     ],
   }
@@ -459,7 +467,7 @@ const polarPlugins = [
       </div>
     </div>
 
-    <!-- Patient Gender Distribution (Donut - col-3) -->
+    <!-- Student Gender Distribution -->
     <div class="col-lg-3 col-md-6">
       <div class="card h-100 border-0 shadow-sm">
         <div class="card-header bg-transparent border-0 font-weight-bold pb-0 pt-3">
@@ -469,18 +477,25 @@ const polarPlugins = [
         </div>
         <div class="card-body p-2" style="min-height: 450px; height: 450px">
           <div
-            v-if="!dashboard.pieStats || !dashboard.pieStats.gender"
+            v-if="!genderBreakdown || !genderBreakdown.total"
             class="d-flex align-items-center justify-content-center h-100 text-center text-muted"
           >
-            <p class="mb-0">Hakuna Data</p>
+            <p class="mb-0">{{ t('dashboard.noStudentsYet') }}</p>
           </div>
-          <CChartPie
-            v-else
-            :data="genderChartData"
-            :options="pieChartOptions"
-            :plugins="[genericPieLabelsPlugin]"
-            style="height: 100%"
-          />
+          <template v-else>
+            <div style="height: calc(100% - 32px)">
+              <CChartPie
+                :data="genderChartData"
+                :options="pieChartOptions"
+                :plugins="[genericPieLabelsPlugin]"
+                style="height: 100%"
+              />
+            </div>
+            <!-- The total is stated so it can be checked against All Students at a glance. -->
+            <div class="text-center text-muted small pt-1">
+              {{ t('dashboard.genderTotal', { count: genderBreakdown.total.toLocaleString() }) }}
+            </div>
+          </template>
         </div>
       </div>
     </div>

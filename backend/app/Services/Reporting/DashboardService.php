@@ -298,6 +298,10 @@ class DashboardService
         return [
             'total_students' => $studentCount,
             'sponsored_free_count' => $sponsoredFreeCount,
+            // Headcount by gender over the same population as total_students, so
+            // the chart's slices sum to the All Students card. Not money: it is
+            // deliberately absent from the privacy lock's redaction list.
+            'gender_breakdown' => app(StudentGenderBreakdown::class)->for($schoolId),
             'total_collected_cents' => (int) $totalCollectedCents,
             'total_outstanding_cents' => (int) $totalOutstanding,
             'total_expenses_cents' => (int) $totalExpensesCents,

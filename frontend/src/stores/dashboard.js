@@ -90,16 +90,13 @@ export const useDashboardStore = defineStore('dashboard', () => {
   })
 
   // ── Pie chart data ────────────────────────────────────────────────────────
-  // DashboardPieCharts.vue expects { gender, visit_type, age_groups }
+  // Only age_groups remains. The gender and visit_type entries were filled from
+  // unrelated data - payment methods and invoice statuses under student labels -
+  // and are removed now that those charts read gender_breakdown and
+  // revenue_vs_expenses straight from the payload.
   const pieStats = computed(() => {
     const s = stats.value
     if (!s) return null
-
-    // Map method_breakdown → gender-style chart (cash/mpesa/bank/cheque)
-    const methods = {}
-    ;(s.method_breakdown || []).forEach(m => {
-      methods[m.method] = m.count
-    })
 
     // Map class_breakdown → age_groups
     const cb = s.class_breakdown || {}
@@ -129,19 +126,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       elderly:    sumKeys('form5', 'form6', 'kidato5', 'kidato6'),
     }
 
-    return {
-      gender: {
-        male:      methods['cash']   || 0,
-        female:    methods['mpesa']  || 0,
-        no_gender: methods['bank']   || 0,
-        unknown:   methods['cheque'] || 0,
-      },
-      visit_type: {
-        new:      s.paid_invoices   || 0,
-        followup: (s.unpaid_invoices || 0) + (s.partial_invoices || 0),
-      },
-      age_groups: ageGroups,
-    }
+    return { age_groups: ageGroups }
   })
 
   // ── Service trend data ────────────────────────────────────────────────────
