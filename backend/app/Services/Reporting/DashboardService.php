@@ -75,7 +75,7 @@ class DashboardService
         $totalOutstanding = (clone $invoiceQ)
             ->whereIn('status', ['unpaid', 'partial'])
             ->leftJoin(
-                DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} GROUP BY invoice_id) as p"),
+                DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} WHERE deleted_at IS NULL GROUP BY invoice_id) as p"),
                 'p.invoice_id', '=', "{$invoiceTable}.id"
             )
             ->selectRaw("SUM({$invoiceTable}.total_amount_cents - COALESCE(p.paid_sum, 0)) as outstanding")
@@ -195,7 +195,7 @@ class DashboardService
             ->when($schoolId, fn ($q) => $q->where("{$invoiceTable}.school_id", $schoolId))
             ->whereIn("{$invoiceTable}.status", ['unpaid', 'partial'])
             ->leftJoin(
-                DB::raw("(SELECT invoice_id, SUM(amount_cents) AS paid_sum FROM {$paymentTable} GROUP BY invoice_id) AS pd"),
+                DB::raw("(SELECT invoice_id, SUM(amount_cents) AS paid_sum FROM {$paymentTable} WHERE deleted_at IS NULL GROUP BY invoice_id) AS pd"),
                 'pd.invoice_id', '=', "{$invoiceTable}.id"
             )
             ->join('enrollments', function ($join) use ($invoiceTable) {
@@ -223,7 +223,7 @@ class DashboardService
         $topDebtors = (clone $invoiceQ)
             ->whereIn('status', ['unpaid', 'partial'])
             ->leftJoin(
-                DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} GROUP BY invoice_id) as pd"),
+                DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} WHERE deleted_at IS NULL GROUP BY invoice_id) as pd"),
                 'pd.invoice_id', '=', "{$invoiceTable}.id"
             )
             ->selectRaw("{$invoiceTable}.*, ({$invoiceTable}.total_amount_cents - COALESCE(pd.paid_sum, 0)) as balance")

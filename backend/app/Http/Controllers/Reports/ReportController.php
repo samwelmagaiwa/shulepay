@@ -93,7 +93,7 @@ class ReportController extends Controller
         $totalOutstanding = (clone $invoiceBase)
             ->whereIn('status', ['unpaid', 'partial'])
             ->leftJoin(
-                DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} GROUP BY invoice_id) as p"),
+                DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} WHERE deleted_at IS NULL GROUP BY invoice_id) as p"),
                 'p.invoice_id', '=', "{$invoiceTable}.id"
             )
             ->selectRaw("SUM({$invoiceTable}.total_amount_cents - COALESCE(p.paid_sum, 0)) as outstanding")
@@ -963,7 +963,7 @@ class ReportController extends Controller
             ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
             ->whereIn('status', ['unpaid', 'partial'])
             ->leftJoin(
-                DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} GROUP BY invoice_id) as p"),
+                DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} WHERE deleted_at IS NULL GROUP BY invoice_id) as p"),
                 'p.invoice_id', '=', "{$invoiceTable}.id"
             )
             ->select("{$invoiceTable}.*", DB::raw("({$invoiceTable}.total_amount_cents - COALESCE(p.paid_sum, 0)) as balance_cents"))

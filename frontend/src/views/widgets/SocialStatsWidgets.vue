@@ -240,68 +240,45 @@ const fetchPendingPatients = () => {}
         </div>
       </CCol>
 
-      <!-- Total Emergency -->
+      <!-- Outstanding Debt -->
       <CCol class="metric-col">
         <div
-          class="stat-card premium-shadow shadow-rose"
-          style="
-            border-left: 4px solid #f43f5e;
-            border-top: 1px solid #f43f5e;
-            position: relative;
-            overflow: hidden;
-          "
+          class="stat-card stat-card--stacked premium-shadow shadow-rose"
+          style="border-left: 4px solid #f43f5e; border-top: 1px solid #f43f5e"
         >
-          <div class="stat-card-header mb-1" style="position: relative; z-index: 2">
-            <div
-              class="stat-icon-wrapper"
-              style="background-color: rgba(244, 63, 94, 0.15)"
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                class="stat-icon"
-              >
-                <rect x="10" y="2" width="4" height="20" rx="1" fill="#f43f5e" />
-                <rect x="2" y="10" width="20" height="4" rx="1" fill="#f43f5e" />
-              </svg>
-            </div>
-            <div class="stat-main-info">
-              <div class="d-flex align-items-center mb-0">
-                <h3 class="stat-value mb-0" style="color: #f43f5e">
-                  {{ moneyPrefix('emergency_visits') }}{{ getValue('emergency_visits') }}
-                </h3>
+          <div class="stat-card-header">
+            <!-- Top row: icon top-left, title, print button top-right. -->
+            <div class="stacked-title-row">
+              <div class="stat-icon-wrapper" style="background-color: rgba(244, 63, 94, 0.15)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                     xmlns="http://www.w3.org/2000/svg" class="stat-icon">
+                  <rect x="10" y="2" width="4" height="20" rx="1" fill="#f43f5e" />
+                  <rect x="2" y="10" width="20" height="4" rx="1" fill="#f43f5e" />
+                </svg>
               </div>
               <span class="stat-label">{{ t('dashboard.cardDebt') }}</span>
+              <button
+                type="button"
+                class="stat-print-btn"
+                :title="t('dashboard.printOutstandingDebts', 'Print outstanding debts to Excel')"
+                :disabled="isExportingDebts || isLocked"
+                @click.stop="exportOutstandingDebts"
+              >
+                <span v-if="isExportingDebts" class="spinner-border spinner-border-sm" style="width:0.9rem;height:0.9rem;border-width:2px;"></span>
+                <CIcon v-else :icon="cilPrint" size="sm" style="color:#f43f5e" />
+              </button>
             </div>
-            <button
-              type="button"
-              class="stat-print-btn"
-              :title="t('dashboard.printOutstandingDebts', 'Print outstanding debts to Excel')"
-              :disabled="isExportingDebts || isLocked"
-              @click.stop="exportOutstandingDebts"
-            >
-              <span v-if="isExportingDebts" class="spinner-border spinner-border-sm" style="width:0.9rem;height:0.9rem;border-width:2px;"></span>
-              <CIcon v-else :icon="cilPrint" size="sm" style="color:#f43f5e" />
-            </button>
-          </div>
-          <div
-            v-if="dashboard.compLabel"
-            class="stat-card-footer mt-auto pt-1"
-            style="position: relative; z-index: 2"
-          >
-            <!-- Same footer box, new content: how many invoices make up the debt
-                 above. Unpaid + partly paid, since both still owe money. -->
-            <div class="stat-comparison stat-footer-divider footer-metric footer-metric--rose">
-              <span class="footer-metric-icon" aria-hidden="true">
-                <CIcon :icon="cilFile" />
-              </span>
-              <span class="footer-metric-text">
-                <span class="footer-metric-value">{{ owingInvoiceCount.toLocaleString() }}</span>
-                <span class="footer-metric-label">{{ t('dashboard.invoicesOwing') }}</span>
-              </span>
+            <div class="stat-main-info">
+              <h3
+                class="stat-value stacked-amount stacked-amount--solo"
+                style="color: #f43f5e"
+                :title="`${moneyPrefix('emergency_visits')}${getValue('emergency_visits')}`"
+              >{{ moneyPrefix('emergency_visits') }}{{ getValue('emergency_visits') }}</h3>
+              <!-- Invoices behind the debt: unpaid plus partly paid. -->
+              <div class="card-expenses">
+                <span class="card-expenses-label">{{ t('dashboard.invoicesOwing') }}</span>
+                <span class="card-expenses-value" style="color: #f43f5e">{{ owingInvoiceCount.toLocaleString() }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -527,6 +504,16 @@ const fetchPendingPatients = () => {}
 /* Amount alone on its line: sized to fit "TZS 999,999,999" in the card. */
 .stat-card--stacked .paid-count + .stacked-amount {
   font-size: clamp(0.9rem, 9.5cqi, 1.5rem);
+}
+
+/* A money figure alone on its line: sized so "TZS 999,999,999" fits the card
+   and scales with the card's width; cut with an ellipsis only past that. */
+.stat-card--stacked .stacked-amount--solo {
+  font-size: clamp(0.9rem, 9.5cqi, 1.5rem);
+}
+.stat-card--stacked .stacked-title-row .stat-print-btn {
+  margin-left: auto;
+  align-self: center;
 }
 
 .card-expenses {
