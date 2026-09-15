@@ -63,6 +63,17 @@ const owingInvoiceCount = computed(() => {
   return (Number(st.unpaid_invoices) || 0) + (Number(st.partial_invoices) || 0)
 })
 
+// Invoice counts by status. The paid-card total is paid + partial and the debt
+// card total is unpaid + partial, so each split adds up to its card's figure.
+const invoiceCounts = computed(() => {
+  const st = dashboard.stats || {}
+  return {
+    paid: Number(st.paid_invoices) || 0,
+    partial: Number(st.partial_invoices) || 0,
+    unpaid: Number(st.unpaid_invoices) || 0,
+  }
+})
+
 // Total approved expenses for the current academic year - the same figure the
 // Revenue vs Expenses chart uses, so the two never disagree. Money, so it is
 // masked while the dashboard is locked.
@@ -277,7 +288,14 @@ const fetchPendingPatients = () => {}
               <!-- Invoices behind the debt: unpaid plus partly paid. -->
               <div class="card-expenses">
                 <span class="card-expenses-label">{{ t('dashboard.invoicesOwing') }}</span>
-                <span class="card-expenses-value" style="color: #f43f5e">{{ owingInvoiceCount.toLocaleString() }}</span>
+                <span class="inv-total-row">
+                  <span class="card-expenses-value" style="color: #f43f5e">{{ owingInvoiceCount.toLocaleString() }}</span>
+                  <!-- The total above, split by status. -->
+                  <span class="inv-split">
+                    <span class="inv-chip inv-chip--unpaid">{{ t('dashboard.invUnpaid') }} <b>{{ invoiceCounts.unpaid.toLocaleString() }}</b></span>
+                    <span class="inv-chip inv-chip--partial">{{ t('dashboard.invPartial') }} <b>{{ invoiceCounts.partial.toLocaleString() }}</b></span>
+                  </span>
+                </span>
               </div>
             </div>
           </div>
@@ -305,8 +323,15 @@ const fetchPendingPatients = () => {}
                 <h3 class="stat-value stacked-amount" style="color: #10b981">{{ MASK }}</h3>
               </template>
               <template v-else>
-                <span class="paid-count">
-                  {{ getValue('paid_partial_count') }} {{ t('dashboard.invoicesWord') }}
+                <span class="inv-total-row">
+                  <span class="paid-count">
+                    {{ getValue('paid_partial_count') }} {{ t('dashboard.invoicesWord') }}
+                  </span>
+                  <!-- The count above, split by status. -->
+                  <span class="inv-split">
+                    <span class="inv-chip inv-chip--full">{{ t('dashboard.invFull') }} <b>{{ invoiceCounts.paid.toLocaleString() }}</b></span>
+                    <span class="inv-chip inv-chip--partial">{{ t('dashboard.invPartial') }} <b>{{ invoiceCounts.partial.toLocaleString() }}</b></span>
+                  </span>
                 </span>
                 <h3
                   class="stat-value stacked-amount"
@@ -515,6 +540,33 @@ const fetchPendingPatients = () => {}
   margin-left: auto;
   align-self: center;
 }
+
+/* Total with its status split on the same line; the chips wrap under the
+   total only when the card is too narrow, never widening it. */
+.inv-total-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.45rem;
+  min-width: 0;
+}
+.inv-split {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.inv-chip {
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.inv-chip b { font-weight: 800; }
+.inv-chip--unpaid  { background: rgba(244, 63, 94, 0.12);  color: #be123c; }
+.inv-chip--partial { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+.inv-chip--full    { background: rgba(16, 185, 129, 0.14); color: #047857; }
 
 .card-expenses {
   margin-top: auto;
