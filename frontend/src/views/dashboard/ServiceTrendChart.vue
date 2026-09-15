@@ -276,7 +276,8 @@ const cardMetrics = computed(() => {
   return [
     { id: 'students', label: t('dashboard.cardTotalStudents'), color: '#3b82f6', kind: 'count', value: Number(rs.total_patients) || 0 },
     { id: 'debt', label: t('dashboard.cardDebt'), color: '#dc3545', kind: 'money', value: money(rs.emergency_visits) },
-    { id: 'sponsored', label: t('dashboard.cardSponsoredFree'), color: '#06b6d4', kind: 'count', value: Number(rs.new_visits) || 0 },
+    // Same figure as the Total Expenses card: approved expenses this academic year.
+    { id: 'expenses', label: t('dashboard.totalExpenses'), color: '#06b6d4', kind: 'money', value: money(Math.round((Number(dashboard.stats?.revenue_vs_expenses?.expenses_cents) || 0) / 100)) },
     { id: 'today', label: t('dashboard.cardTodayCollect'), color: '#6610f2', kind: 'money', value: money(rs.followups) },
     // The paid-invoice count is withheld with the money, so it hides too.
     { id: 'paid_count', label: t('dashboard.cardPaidInvoices'), color: '#16a34a', kind: 'count', value: locked ? null : Number(rs.paid_partial_count) || 0 },
