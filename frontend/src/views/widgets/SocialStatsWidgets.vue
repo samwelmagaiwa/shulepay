@@ -315,17 +315,20 @@ const fetchPendingPatients = () => {}
       <!-- Total Consulted -->
       <CCol class="metric-col">
         <div
-          class="stat-card premium-shadow shadow-emerald"
+          class="stat-card stat-card--stacked premium-shadow shadow-emerald"
           style="border-left: 4px solid #10b981; border-top: 1px solid #10b981"
         >
-          <div class="stat-card-header mb-1">
+          <div class="stat-card-header">
             <div class="stat-icon-wrapper" style="background-color: rgba(16, 185, 129, 0.15)">
               <CIcon :icon="cilFile" class="stat-icon" style="color: #10b981" />
             </div>
             <div class="stat-main-info">
               <h3 class="stat-value" style="color: #10b981">
                 <template v-if="isLocked">{{ MASK }}</template>
-                <template v-else>{{ getValue('paid_partial_count') }} | TZS {{ getValue('paid_partial_amount') }}</template>
+                <template v-else>
+                  <span class="nowrap-chunk">{{ getValue('paid_partial_count') }} |</span>
+                  <span class="nowrap-chunk">TZS {{ getValue('paid_partial_amount') }}</span>
+                </template>
               </h3>
               <span class="stat-label">{{ t('dashboard.cardPaidInvoices') }}</span>
               <!-- Money out, directly under money in. Divider lines above and
@@ -475,6 +478,47 @@ const fetchPendingPatients = () => {}
 
 /* Secondary figure in a card footer: tinted chip with an icon badge, laid out
    in a row so it takes the same height as the old two-line comparison. */
+/* Stacked card: icon pinned top-left, figures use the full card width below
+   it, and the expenses block sits at the bottom so the whole card is used.
+   Sizes follow the card's own width (container units), and numbers only wrap
+   between whole chunks, so larger amounts grow the card instead of breaking
+   mid-number. */
+.stat-card--stacked {
+  container-type: inline-size;
+}
+.stat-card--stacked .stat-card-header {
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: stretch !important;
+  gap: 0.45rem !important;
+}
+.stat-card--stacked .stat-icon-wrapper {
+  align-self: flex-start;
+}
+.stat-card--stacked .stat-main-info {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  overflow: visible;
+}
+.stat-card--stacked .stat-value {
+  font-size: clamp(1rem, 11cqi, 1.6rem);
+  word-break: normal;
+  overflow-wrap: normal;
+}
+.stat-card--stacked .nowrap-chunk {
+  white-space: nowrap;
+}
+.stat-card--stacked .card-expenses {
+  margin-top: auto;
+}
+.stat-card--stacked .stat-label {
+  margin: 0.15rem 0 0.5rem;
+}
+.stat-card--stacked .card-expenses-value {
+  font-size: clamp(0.95rem, 9cqi, 1.3rem);
+  white-space: normal;
+}
+
 .card-expenses {
   display: flex;
   flex-direction: column;
