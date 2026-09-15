@@ -329,6 +329,8 @@ export default {
     cardSponsoredFree:  'Fully Sponsored (Free)',
     cardTodayCollect:   "Today's Collections",
     cardPaidInvoices:   'Paid Invoices',
+    invoicesOwing:      'Unpaid invoices',
+    expensesThisMonth:  'Expenses this month',
     seriesPaidAmount:   'Paid Amount (TZS)',
     axisCount:          'Count',
     axisAmount:         'Amount (TZS)',

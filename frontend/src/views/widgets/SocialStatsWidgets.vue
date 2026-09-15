@@ -56,6 +56,21 @@ const moneyPrefix = (key) => (isLocked.value && LOCKED_KEYS.has(key) ? '' : 'TZS
 
 const showLockModal = ref(false)
 
+// Invoices still owing - unpaid plus partly paid - behind the Outstanding Debt
+// figure. A count, not money, so it stays visible under the privacy lock.
+const owingInvoiceCount = computed(() => {
+  const st = dashboard.stats || {}
+  return (Number(st.unpaid_invoices) || 0) + (Number(st.partial_invoices) || 0)
+})
+
+// Approved expenses for the current month (the backend's total_expenses_cents
+// window). Money, so it is masked while the dashboard is locked.
+const expensesDisplay = computed(() => {
+  if (dashboard.isLocked) return MASK
+  const tzs = Math.round((Number(dashboard.stats?.total_expenses_cents) || 0) / 100)
+  return 'TZS ' + tzs.toLocaleString()
+})
+
 // ── Students with discount card (formerly "Absent Today") ─────────────────
 const showDiscountList  = ref(false)
 const discountedByClass = ref([])
@@ -228,9 +243,11 @@ const fetchPendingPatients = () => {}
             class="stat-card-footer mt-auto pt-1"
             style="position: relative; z-index: 2"
           >
-            <div class="stat-comparison">
-              <span class="prev-value text-muted">{{ getPrevValue('emergency_visits') }}</span>
-              <span class="prev-label ms-1">{{ dashboard.compLabel }}</span>
+            <!-- Same footer box, new content: how many invoices make up the debt
+                 above. Unpaid + partly paid, since both still owe money. -->
+            <div class="stat-comparison stat-footer-divider">
+              <span class="prev-value text-muted">{{ owingInvoiceCount.toLocaleString() }}</span>
+              <span class="prev-label ms-1">{{ t('dashboard.invoicesOwing') }}</span>
             </div>
           </div>
         </div>
@@ -312,9 +329,11 @@ const fetchPendingPatients = () => {}
             v-if="dashboard.compLabel"
             class="stat-card-footer mt-auto pt-1"
           >
-            <div class="stat-comparison">
-              <span class="prev-value text-muted">{{ getPrevValue('consulted') }}</span>
-              <span class="prev-label ms-1">{{ dashboard.compLabel }}</span>
+            <!-- Same footer box, new content: approved expenses this month, so
+                 money in and money out sit on one card. -->
+            <div class="stat-comparison stat-footer-divider">
+              <span class="prev-value text-muted">{{ expensesDisplay }}</span>
+              <span class="prev-label ms-1">{{ t('dashboard.expensesThisMonth') }}</span>
             </div>
           </div>
         </div>
@@ -448,6 +467,10 @@ const fetchPendingPatients = () => {}
   display: flex;
   flex-direction: column;
   line-height: 1.2;
+}
+
+.stat-card-footer:has(.stat-footer-divider) {
+  border-top-color: #cbd5e1;
 }
 
 .prev-value {

@@ -323,6 +323,8 @@ export default {
     cardNewStudents:    'Wanafunzi Wapya',
     cardSponsoredFree:  'Wamefadhiliwa Kikamilifu (Bila Malipo)',
     cardTodayCollect:   'Makusanyo ya Leo',
+    invoicesOwing:      'Ankara zenye deni',
+    expensesThisMonth:  'Matumizi ya mwezi huu',
     seriesPaidAmount:   'Kiasi Kilicholipwa (TZS)',
     axisCount:          'Idadi',
     axisAmount:         'Kiasi (TZS)',
