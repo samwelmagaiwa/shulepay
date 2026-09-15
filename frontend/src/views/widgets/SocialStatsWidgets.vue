@@ -245,9 +245,14 @@ const fetchPendingPatients = () => {}
           >
             <!-- Same footer box, new content: how many invoices make up the debt
                  above. Unpaid + partly paid, since both still owe money. -->
-            <div class="stat-comparison stat-footer-divider">
-              <span class="prev-value text-muted">{{ owingInvoiceCount.toLocaleString() }}</span>
-              <span class="prev-label ms-1">{{ t('dashboard.invoicesOwing') }}</span>
+            <div class="stat-comparison stat-footer-divider footer-metric footer-metric--rose">
+              <span class="footer-metric-icon" aria-hidden="true">
+                <CIcon :icon="cilFile" />
+              </span>
+              <span class="footer-metric-text">
+                <span class="footer-metric-value">{{ owingInvoiceCount.toLocaleString() }}</span>
+                <span class="footer-metric-label">{{ t('dashboard.invoicesOwing') }}</span>
+              </span>
             </div>
           </div>
         </div>
@@ -331,9 +336,14 @@ const fetchPendingPatients = () => {}
           >
             <!-- Same footer box, new content: approved expenses this month, so
                  money in and money out sit on one card. -->
-            <div class="stat-comparison stat-footer-divider">
-              <span class="prev-value text-muted">{{ expensesDisplay }}</span>
-              <span class="prev-label ms-1">{{ t('dashboard.expensesThisMonth') }}</span>
+            <div class="stat-comparison stat-footer-divider footer-metric footer-metric--amber">
+              <span class="footer-metric-icon" aria-hidden="true">
+                <CIcon :icon="cilChartLine" />
+              </span>
+              <span class="footer-metric-text">
+                <span class="footer-metric-value">{{ expensesDisplay }}</span>
+                <span class="footer-metric-label">{{ t('dashboard.expensesThisMonth') }}</span>
+              </span>
             </div>
           </div>
         </div>
@@ -471,6 +481,53 @@ const fetchPendingPatients = () => {}
 
 .stat-card-footer:has(.stat-footer-divider) {
   border-top-color: #cbd5e1;
+}
+
+/* Secondary figure in a card footer: tinted chip with an icon badge, laid out
+   in a row so it takes the same height as the old two-line comparison. */
+.footer-metric {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.6rem;
+  border-left: 3px solid var(--fm-color);
+  background: var(--fm-tint);
+}
+.footer-metric--rose  { --fm-color: #f43f5e; --fm-tint: rgba(244, 63, 94, 0.08); }
+.footer-metric--amber { --fm-color: #d97706; --fm-tint: rgba(245, 158, 11, 0.10); }
+.footer-metric-icon {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--fm-color);
+}
+.footer-metric-icon svg { width: 14px; height: 14px; }
+.footer-metric-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+.footer-metric-value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--fm-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.footer-metric-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #64748b;
 }
 
 .prev-value {
