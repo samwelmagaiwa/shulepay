@@ -331,6 +331,8 @@ export default {
     cardPaidInvoices:   'Paid Invoices',
     invoicesOwing:      'Unpaid invoices',
     expensesThisMonth:  'Expenses this month',
+    totalExpenses:      'Total Expenses',
+    invoicesWord:       'invoices',
     seriesPaidAmount:   'Paid Amount (TZS)',
     axisCount:          'Count',
     axisAmount:         'Amount (TZS)',

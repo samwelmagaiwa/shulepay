@@ -63,11 +63,12 @@ const owingInvoiceCount = computed(() => {
   return (Number(st.unpaid_invoices) || 0) + (Number(st.partial_invoices) || 0)
 })
 
-// Approved expenses for the current month (the backend's total_expenses_cents
-// window). Money, so it is masked while the dashboard is locked.
+// Total approved expenses for the current academic year - the same figure the
+// Revenue vs Expenses chart uses, so the two never disagree. Money, so it is
+// masked while the dashboard is locked.
 const expensesDisplay = computed(() => {
   if (dashboard.isLocked) return MASK
-  const tzs = Math.round((Number(dashboard.stats?.total_expenses_cents) || 0) / 100)
+  const tzs = Math.round((Number(dashboard.stats?.revenue_vs_expenses?.expenses_cents) || 0) / 100)
   return 'TZS ' + tzs.toLocaleString()
 })
 
@@ -190,6 +191,55 @@ const fetchPendingPatients = () => {}
         </div>
       </CCol>
 
+      <!-- Expenses this month (sponsored moved onto the All Students card) -->
+      <CCol class="metric-col">
+        <div
+          class="stat-card stat-card--stacked premium-shadow shadow-sky"
+          style="border-left: 4px solid #0ea5e9; border-top: 1px solid #0ea5e9"
+        >
+          <div class="stat-card-header">
+            <div class="stacked-title-row">
+              <div class="stat-icon-wrapper" style="background-color: rgba(14, 165, 233, 0.15)">
+                <CIcon :icon="cilChartLine" class="stat-icon" style="color: #0ea5e9" />
+              </div>
+              <span class="stat-label">{{ t('dashboard.totalExpenses') }}</span>
+            </div>
+            <div class="stat-main-info">
+              <h3 class="stat-value stacked-amount" style="color: #0ea5e9" :title="expensesDisplay">
+                {{ expensesDisplay }}
+              </h3>
+            </div>
+          </div>
+        </div>
+      </CCol>
+
+      <!-- Followups -->
+      <CCol class="metric-col">
+        <div
+          class="stat-card premium-shadow shadow-violet"
+          style="border-left: 4px solid #a855f7; border-top: 1px solid #a855f7"
+        >
+          <div class="stat-card-header mb-1">
+            <div class="stat-icon-wrapper" style="background-color: rgba(168, 85, 247, 0.15)">
+              <CIcon :icon="cilUser" class="stat-icon" style="color: #a855f7" />
+            </div>
+            <div class="stat-main-info">
+              <h3 class="stat-value" style="color: #a855f7">{{ getValue('followups') }}</h3>
+              <span class="stat-label">{{ t('dashboard.cardTodayCollect') }}</span>
+            </div>
+          </div>
+          <div
+            v-if="dashboard.compLabel"
+            class="stat-card-footer mt-auto pt-1"
+          >
+            <div class="stat-comparison">
+              <span class="prev-value text-muted">{{ getPrevValue('followups') }}</span>
+              <span class="prev-label ms-1">{{ dashboard.compLabel }}</span>
+            </div>
+          </div>
+        </div>
+      </CCol>
+
       <!-- Total Emergency -->
       <CCol class="metric-col">
         <div
@@ -257,55 +307,6 @@ const fetchPendingPatients = () => {}
         </div>
       </CCol>
 
-      <!-- Expenses this month (sponsored moved onto the All Students card) -->
-      <CCol class="metric-col">
-        <div
-          class="stat-card stat-card--stacked premium-shadow shadow-sky"
-          style="border-left: 4px solid #0ea5e9; border-top: 1px solid #0ea5e9"
-        >
-          <div class="stat-card-header">
-            <div class="stacked-title-row">
-              <div class="stat-icon-wrapper" style="background-color: rgba(14, 165, 233, 0.15)">
-                <CIcon :icon="cilChartLine" class="stat-icon" style="color: #0ea5e9" />
-              </div>
-              <span class="stat-label">{{ t('dashboard.expensesThisMonth') }}</span>
-            </div>
-            <div class="stat-main-info">
-              <h3 class="stat-value stacked-amount" style="color: #0ea5e9" :title="expensesDisplay">
-                {{ expensesDisplay }}
-              </h3>
-            </div>
-          </div>
-        </div>
-      </CCol>
-
-      <!-- Followups -->
-      <CCol class="metric-col">
-        <div
-          class="stat-card premium-shadow shadow-violet"
-          style="border-left: 4px solid #a855f7; border-top: 1px solid #a855f7"
-        >
-          <div class="stat-card-header mb-1">
-            <div class="stat-icon-wrapper" style="background-color: rgba(168, 85, 247, 0.15)">
-              <CIcon :icon="cilUser" class="stat-icon" style="color: #a855f7" />
-            </div>
-            <div class="stat-main-info">
-              <h3 class="stat-value" style="color: #a855f7">{{ getValue('followups') }}</h3>
-              <span class="stat-label">{{ t('dashboard.cardTodayCollect') }}</span>
-            </div>
-          </div>
-          <div
-            v-if="dashboard.compLabel"
-            class="stat-card-footer mt-auto pt-1"
-          >
-            <div class="stat-comparison">
-              <span class="prev-value text-muted">{{ getPrevValue('followups') }}</span>
-              <span class="prev-label ms-1">{{ dashboard.compLabel }}</span>
-            </div>
-          </div>
-        </div>
-      </CCol>
-
       <!-- Total Consulted -->
       <CCol class="metric-col">
         <div
@@ -321,16 +322,21 @@ const fetchPendingPatients = () => {}
               <span class="stat-label">{{ t('dashboard.cardPaidInvoices') }}</span>
             </div>
             <div class="stat-main-info">
-              <!-- One line; a figure wider than the card is cut with an ellipsis
-                   (full value in the tooltip) rather than growing the card. -->
-              <h3
-                class="stat-value stacked-amount"
-                style="color: #10b981"
-                :title="isLocked ? '' : `${getValue('paid_partial_count')} | TZS ${getValue('paid_partial_amount')}`"
-              >
-                <template v-if="isLocked">{{ MASK }}</template>
-                <template v-else>{{ getValue('paid_partial_count') }} | TZS {{ getValue('paid_partial_amount') }}</template>
-              </h3>
+              <!-- Count and amount on separate lines, so each gets the full card
+                   width and neither is cut off. -->
+              <template v-if="isLocked">
+                <h3 class="stat-value stacked-amount" style="color: #10b981">{{ MASK }}</h3>
+              </template>
+              <template v-else>
+                <span class="paid-count">
+                  {{ getValue('paid_partial_count') }} {{ t('dashboard.invoicesWord') }}
+                </span>
+                <h3
+                  class="stat-value stacked-amount"
+                  style="color: #10b981"
+                  :title="`TZS ${getValue('paid_partial_amount')}`"
+                >TZS {{ getValue('paid_partial_amount') }}</h3>
+              </template>
             </div>
           </div>
         </div>
@@ -512,7 +518,18 @@ const fetchPendingPatients = () => {}
   word-break: normal;
   overflow-wrap: normal;
 }
-.stat-card--stacked .card-expenses {
+.stat-card--stacked .paid-count {
+  font-size: clamp(0.95rem, 8cqi, 1.2rem);
+  font-weight: 800;
+  color: #047857;
+  line-height: 1.2;
+}
+/* Amount alone on its line: sized to fit "TZS 999,999,999" in the card. */
+.stat-card--stacked .paid-count + .stacked-amount {
+  font-size: clamp(0.9rem, 9.5cqi, 1.5rem);
+}
+
+.card-expenses {
   margin-top: auto;
 }
 .stat-card--stacked .stat-label {

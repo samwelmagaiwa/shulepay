@@ -325,6 +325,8 @@ export default {
     cardTodayCollect:   'Makusanyo ya Leo',
     invoicesOwing:      'Ankara zenye deni',
     expensesThisMonth:  'Matumizi ya mwezi huu',
+    totalExpenses:      'Jumla ya Matumizi',
+    invoicesWord:       'ankara',
     seriesPaidAmount:   'Kiasi Kilicholipwa (TZS)',
     axisCount:          'Idadi',
     axisAmount:         'Kiasi (TZS)',
