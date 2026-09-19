@@ -49,6 +49,9 @@
       </CCardBody>
     </CCard>
 
+    <!-- Paging row and grid toolbar stay pinned under the app header while the
+         page scrolls; the grid's column headers pin directly beneath them. -->
+    <div ref="stickyBar" class="list-sticky" :style="{ top: headerH + 'px' }">
     <!-- Count + per-page + Add button + Pagination — all on one row -->
     <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
       <div class="d-flex align-items-center gap-2">
@@ -86,8 +89,9 @@
       <button type="button" class="grid-btn grid-btn--danger" :disabled="!selectedRow" @click="confirmDelete(selectedRow)">🗑️ {{ t('common.delete') }}</button>
       <span class="grid-hint">{{ t('students.gridHint') }}</span>
     </div>
+    </div>
 
-    <div class="worklist" tabindex="0" @keydown="onGridKey">
+    <div class="worklist" tabindex="0" :style="{ '--grid-head-top': headerH + barH + 'px' }" @keydown="onGridKey">
       <div v-if="studentsStore.loading" class="worklist-loading"><CSpinner size="sm" color="primary" /></div>
       <table class="worklist-table">
         <colgroup>
@@ -455,6 +459,25 @@ function onGridKey(e) {
 
 function onDocClick() { activeRow.value = null; ctx.value = null }
 
+// Heights for the pinned areas, measured live: the app header can wrap to two
+// rows, and the paging row wraps on narrow screens.
+const stickyBar = ref(null)
+const headerH = ref(0)
+const barH = ref(0)
+let resizeObs = null
+function measure() {
+  headerH.value = document.querySelector('.header')?.offsetHeight || 0
+  barH.value = stickyBar.value?.offsetHeight || 0
+}
+onMounted(() => {
+  measure()
+  resizeObs = new ResizeObserver(measure)
+  const hdr = document.querySelector('.header')
+  if (hdr) resizeObs.observe(hdr)
+  if (stickyBar.value) resizeObs.observe(stickyBar.value)
+})
+onUnmounted(() => resizeObs?.disconnect())
+
 onMounted(async () => {
   document.addEventListener('click', onDocClick)
   // Initialize school_id filter from store
@@ -473,6 +496,14 @@ onUnmounted(() => {
 <style scoped>
 :deep(.table-responsive) { overflow: visible; }
 :deep(.card) { overflow: visible; }
+
+/* ── Pinned paging row + toolbar ─────────────────────────────────────── */
+.list-sticky {
+  position: sticky;
+  z-index: 1030;
+  padding-top: 6px;
+  background: var(--cui-body-bg, #f3f4f7);
+}
 
 /* ── Desktop worklist grid ───────────────────────────────────────────── */
 .grid-toolbar {
@@ -506,6 +537,10 @@ onUnmounted(() => {
   overflow-x: auto;
   outline: none;
   font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+@media (min-width: 1100px) {
+  .worklist { overflow: visible; }
+  .worklist-table th { top: var(--grid-head-top, 0px); }
 }
 .worklist-loading { position: absolute; top: 30px; right: 10px; z-index: 3; }
 .worklist-table {
@@ -549,14 +584,17 @@ onUnmounted(() => {
   border-right: 1px solid #ececec;
   border-bottom: 1px solid #f0f0f0;
 }
-.worklist-table tbody tr:not(.filler):not(.empty-note):not(.selected):hover td { background: #e5f3ff; }
-.worklist-table tr.selected td {
+/* Alternating row colours so neighbouring rows are easy to tell apart. */
+.worklist-table tbody tr:nth-child(odd) td { background: #ffffff; }
+.worklist-table tbody tr:nth-child(even) td { background: #eef4fb; }
+.worklist-table tbody tr:not(.filler):not(.empty-note):not(.selected):hover td { background: #d8eafc; }
+.worklist-table tbody tr.selected td {
   background: #0078d7;
   color: #fff;
   border-right-color: #1a88e0;
 }
 .debt-cell { color: #c42b1c; }
-.worklist-table tr.selected td.debt-cell { color: #fff; }
+.worklist-table tbody tr.selected td.debt-cell { color: #fff; }
 .empty-note td { color: #6d6d6d; text-align: center; }
 
 .grid-context {
