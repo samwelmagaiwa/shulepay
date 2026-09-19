@@ -101,6 +101,17 @@ class SchoolScopingTest extends TestCase
         $this->assertContains('INV-SEK-001', $numbers);
     }
 
+    /** The list carries each student's real balance, not a missing field read as paid. */
+    public function test_student_index_includes_outstanding_balance(): void
+    {
+        $token = $this->accountantA->createToken('t')->plainTextToken;
+
+        $row = collect($this->withToken($token)->getJson('/api/students')->assertOk()->json('data'))
+            ->firstWhere('last_name', 'Msingi');
+
+        $this->assertSame(50000, $row['outstanding_balance_cents']);
+    }
+
     /** (c) Students index for accountantA only returns Msingi students */
     public function test_student_index_scoped_to_accountants_school(): void
     {

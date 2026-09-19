@@ -123,7 +123,10 @@
             <td>{{ s.sponsorship_type ? sponsorshipLabel(s.sponsorship_type) : '' }}</td>
             <td>{{ fmtDate(s.admitted_at) }}</td>
             <td :class="{ 'debt-cell': s.outstanding_balance_cents > 0 }">
-              {{ s.outstanding_balance_cents > 0 ? formatMoney(s.outstanding_balance_cents) : t('students.paidUp') }}
+              <!-- Blank when the balance is unknown; never assume "paid up". -->
+              <template v-if="s.outstanding_balance_cents == null"></template>
+              <template v-else-if="s.outstanding_balance_cents > 0">{{ formatMoney(s.outstanding_balance_cents) }}</template>
+              <template v-else>{{ t('students.paidUp') }}</template>
             </td>
             <td>{{ statusLabel(s.status) }}</td>
           </tr>

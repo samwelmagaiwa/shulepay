@@ -72,6 +72,13 @@ class StudentController extends Controller
             'currentEnrollment.schoolClass',
             'currentEnrollment.school',
             'guardians',
+            // Needed for outstanding_balance_cents: without it the resource
+            // omits the field and the list showed every student as paid up.
+            // Limited to the selected school so another school's invoices are
+            // never counted as this school's debt.
+            'invoices' => fn ($q) => $q->withoutGlobalScope('school')
+                ->when($schoolId, fn ($iq) => $iq->where('invoices.school_id', $schoolId))
+                ->with('payments'),
         ]);
 
         if ($request->filled('search')) {
