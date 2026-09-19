@@ -64,11 +64,11 @@
   padding: 0 7px;
   text-align: left;
   white-space: nowrap;
-  font-weight: 600;
-  color: #0f2f57;
-  background: linear-gradient(#e3eefb, #cfe0f5);
-  border-right: 1px solid #b9cfe9;
-  border-bottom: 1px solid #9fbbe0;
+  font-weight: 700;
+  color: #0f1f33;
+  background: #dce8f5;
+  border-right: 1px solid #c3d5ea;
+  border-bottom: 3px solid #a9c4e4;
   cursor: pointer;
   user-select: none;
 }
@@ -99,8 +99,8 @@
   color: #fff;
   border-right-color: #1a88e0;
 }
-.debt-cell { color: #c42b1c; }
-.paid-cell { color: #15803d; font-weight: 600; }
+.debt-cell { color: #c62828; font-weight: 700; }
+.paid-cell { color: #1b7a3a; font-weight: 500; }
 .worklist-table tbody tr.selected td.paid-cell { color: #fff; }
 .worklist-table tbody tr.selected td.debt-cell { color: #fff; }
 .empty-note td { color: #6d6d6d; text-align: center; }
@@ -127,3 +127,23 @@
 .grid-context button:hover { background: #0078d7; color: #fff; }
 .grid-context button.danger { color: #c42b1c; }
 .grid-context button.danger:hover { background: #c42b1c; color: #fff; }
+
+/* Status as a coloured pill, as in the reference design. */
+.status-pill {
+  display: inline-block;
+  padding: 1px 9px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  color: #fff;
+  background: #6b7280;
+}
+.status-pill--active { background: #22a043; }
+.status-pill--sponsored,
+.status-pill--half_sponsored { background: #3d9bf5; }
+.status-pill--orphaned { background: #8b5cf6; }
+.status-pill--transferred { background: #f59e0b; }
+.status-pill--graduated { background: #0d9488; }
+.status-pill--dropped { background: #dc2626; }
+.worklist-table tbody tr.selected td .status-pill { box-shadow: 0 0 0 1px #fff; }

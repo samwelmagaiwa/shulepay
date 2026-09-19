@@ -40,7 +40,7 @@
           <tr>
             <th v-for="c in columns" :key="c.key" @click="toggleSort(c.key)">
               <span class="th-label">{{ c.label }}</span>
-              <span v-if="sortKey === c.key" class="sort-arrow">{{ sortDir === 'asc' ? '△' : '▽' }}</span>
+              <span class="sort-arrow">{{ sortKey === c.key ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
             </th>
           </tr>
         </thead>

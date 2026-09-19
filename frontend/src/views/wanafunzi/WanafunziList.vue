@@ -101,7 +101,7 @@
           <tr>
             <th v-for="c in columns" :key="c.key" @click="toggleSort(c.key)">
               <span class="th-label">{{ c.label }}</span>
-              <span v-if="sortKey === c.key" class="sort-arrow">{{ sortDir === 'asc' ? '△' : '▽' }}</span>
+              <span class="sort-arrow">{{ sortKey === c.key ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
             </th>
           </tr>
         </thead>
@@ -128,7 +128,7 @@
               <template v-else-if="s.outstanding_balance_cents > 0">{{ formatMoney(s.outstanding_balance_cents) }}</template>
               <template v-else>{{ t('students.paidUp') }}</template>
             </td>
-            <td>{{ statusLabel(s.status) }}</td>
+            <td><span v-if="s.status" class="status-pill" :class="'status-pill--' + s.status">{{ statusLabel(s.status) }}</span></td>
           </tr>
           <tr v-if="!studentsStore.loading && !sortedStudents.length" class="empty-note">
             <td :colspan="columns.length">{{ t('students.noStudents') }}</td>
