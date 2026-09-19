@@ -894,6 +894,7 @@ export default {
     classDetectedHint: 'Darasa limetambuliwa: {tier} — hapa ni sehemu sahihi. Chagua aina ya huduma hapo chini kuweka ada.',
   },
   guardians: {
+    childCount:  'Idadi ya watoto',
     title:       'Walezi',
     add:         'Ongeza Mlezi',
     phone:       'Simu',

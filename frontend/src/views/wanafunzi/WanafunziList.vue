@@ -234,6 +234,8 @@ import { useSchoolStore }   from '@/stores/school'
 import StatusBadge         from '@/components/StatusBadge.vue'
 import MwanafunziDrawer    from '@/components/MwanafunziDrawer.vue'
 import AddStudentModal     from '@/components/AddStudentModal.vue'
+import { useStickyOffsets } from '@/composables/useStickyOffsets'
+import '@/styles/worklist-grid.css'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -459,24 +461,8 @@ function onGridKey(e) {
 
 function onDocClick() { activeRow.value = null; ctx.value = null }
 
-// Heights for the pinned areas, measured live: the app header can wrap to two
-// rows, and the paging row wraps on narrow screens.
-const stickyBar = ref(null)
-const headerH = ref(0)
-const barH = ref(0)
-let resizeObs = null
-function measure() {
-  headerH.value = document.querySelector('.header')?.offsetHeight || 0
-  barH.value = stickyBar.value?.offsetHeight || 0
-}
-onMounted(() => {
-  measure()
-  resizeObs = new ResizeObserver(measure)
-  const hdr = document.querySelector('.header')
-  if (hdr) resizeObs.observe(hdr)
-  if (stickyBar.value) resizeObs.observe(stickyBar.value)
-})
-onUnmounted(() => resizeObs?.disconnect())
+// Heights for the pinned bar and column headers.
+const { stickyBar, headerH, barH } = useStickyOffsets()
 
 onMounted(async () => {
   document.addEventListener('click', onDocClick)
@@ -497,126 +483,4 @@ onUnmounted(() => {
 :deep(.table-responsive) { overflow: visible; }
 :deep(.card) { overflow: visible; }
 
-/* ── Pinned paging row + toolbar ─────────────────────────────────────── */
-.list-sticky {
-  position: sticky;
-  z-index: 1030;
-  padding-top: 6px;
-  background: var(--cui-body-bg, #f3f4f7);
-}
-
-/* ── Desktop worklist grid ───────────────────────────────────────────── */
-.grid-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 4px;
-  background: #f0f0f0;
-  border: 1px solid #d4d4d4;
-  border-bottom: none;
-  font-family: 'Segoe UI', Tahoma, sans-serif;
-}
-.grid-btn {
-  font-size: 12px;
-  padding: 2px 10px;
-  background: #fdfdfd;
-  border: 1px solid #adadad;
-  border-radius: 2px;
-  color: #1f1f1f;
-}
-.grid-btn:hover:not(:disabled) { background: #e5f1fb; border-color: #0078d7; }
-.grid-btn:disabled { opacity: 0.5; }
-.grid-btn--danger:hover:not(:disabled) { background: #fde7e9; border-color: #c42b1c; }
-.grid-hint { margin-left: auto; font-size: 11px; color: #6d6d6d; }
-
-.worklist {
-  position: relative;
-  background: #fff;
-  border: 1px solid #d4d4d4;
-  overflow-x: auto;
-  outline: none;
-  font-family: 'Segoe UI', Tahoma, sans-serif;
-}
-@media (min-width: 1100px) {
-  .worklist { overflow: visible; }
-  .worklist-table th { top: var(--grid-head-top, 0px); }
-}
-.worklist-loading { position: absolute; top: 30px; right: 10px; z-index: 3; }
-.worklist-table {
-  width: 100%;
-  min-width: 1000px;
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-size: 13px;
-  color: #1f1f1f;
-}
-.worklist-table th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  height: 26px;
-  padding: 0 7px;
-  font-weight: 400;
-  text-align: left;
-  white-space: nowrap;
-  background: linear-gradient(#ffffff, #f3f3f3);
-  border-right: 1px solid #e0e0e0;
-  border-bottom: 1px solid #d5d5d5;
-  cursor: pointer;
-  user-select: none;
-}
-.worklist-table th:hover { background: #d9ebf9; }
-.th-label {
-  display: inline-block;
-  max-width: calc(100% - 16px);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  vertical-align: middle;
-}
-.sort-arrow { float: right; font-size: 11px; color: #a0a0a0; line-height: 26px; }
-.worklist-table td {
-  height: 24px;
-  padding: 0 7px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  border-right: 1px solid #ececec;
-  border-bottom: 1px solid #f0f0f0;
-}
-/* Alternating row colours so neighbouring rows are easy to tell apart. */
-.worklist-table tbody tr:nth-child(odd) td { background: #ffffff; }
-.worklist-table tbody tr:nth-child(even) td { background: #eef4fb; }
-.worklist-table tbody tr:not(.filler):not(.empty-note):not(.selected):hover td { background: #d8eafc; }
-.worklist-table tbody tr.selected td {
-  background: #0078d7;
-  color: #fff;
-  border-right-color: #1a88e0;
-}
-.debt-cell { color: #c42b1c; }
-.worklist-table tbody tr.selected td.debt-cell { color: #fff; }
-.empty-note td { color: #6d6d6d; text-align: center; }
-
-.grid-context {
-  position: fixed;
-  z-index: 1080;
-  min-width: 180px;
-  padding: 3px 0;
-  background: #f9f9f9;
-  border: 1px solid #cfcfcf;
-  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.18);
-  font-family: 'Segoe UI', Tahoma, sans-serif;
-}
-.grid-context button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  font-size: 13px;
-  padding: 4px 18px;
-  background: none;
-  border: 0;
-}
-.grid-context button:hover { background: #0078d7; color: #fff; }
-.grid-context button.danger { color: #c42b1c; }
-.grid-context button.danger:hover { background: #c42b1c; color: #fff; }
 </style>

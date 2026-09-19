@@ -1,91 +1,81 @@
 <template>
   <CContainer fluid>
-    <!-- Table -->
-    <CCard style="position:relative; overflow:visible;">
-      <!-- Toolbar overlay: top-right above Actions column -->
-      <div style="position:absolute; top:6px; right:8px; z-index:10; display:flex; align-items:center; gap:6px;">
-        <CFormInput v-model="search" :placeholder="t('common.search') + '...'" @input="debouncedLoad" size="sm" style="min-width:160px; max-width:240px;" />
-        <CButton color="secondary" variant="outline" size="sm" @click="search = ''; page = 1; loadData()">{{ t('common.reset') }}</CButton>
-        <CButton color="primary" size="sm" @click="openAdd" style="white-space:nowrap;"><CIcon icon="cilPlus" class="me-1" />{{ t('guardians.add') }}</CButton>
-      </div>
-      <CCardBody class="p-0" style="overflow:visible;">
-        <div v-if="store.loading" class="text-center py-5"><CSpinner color="primary" /></div>
-        <div v-else-if="!store.guardians.length" class="text-muted py-5 px-3">
-          <div class="text-center mt-4">{{ t('guardians.noGuardians') }}</div>
+    <!-- Paging row and grid toolbar stay pinned under the app header while the
+         page scrolls; the grid's column headers pin directly beneath them. -->
+    <div ref="stickyBar" class="list-sticky" :style="{ top: headerH + 'px' }">
+      <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <small class="text-medium-emphasis text-nowrap">
+            {{ t('common.showing', { from: meta.total === 0 ? 0 : (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
+          </small>
+          <CFormInput v-model="search" :placeholder="t('common.search') + '...'" @input="debouncedLoad" size="sm" style="min-width:160px; max-width:240px;" />
+          <CButton color="secondary" variant="outline" size="sm" @click="search = ''; page = 1; loadData()">{{ t('common.reset') }}</CButton>
         </div>
-        <CTable v-else hover class="mb-0" style="table-layout:auto; width:100%;">
-          <CTableHead class="table-light">
-            <CTableRow>
-              <CTableHeaderCell style="white-space:nowrap;">{{ t('common.name') }}</CTableHeaderCell>
-              <CTableHeaderCell style="white-space:nowrap;">{{ t('guardians.phone') }}</CTableHeaderCell>
-              <CTableHeaderCell style="white-space:nowrap;">{{ t('guardians.relation') }}</CTableHeaderCell>
-              <CTableHeaderCell style="white-space:nowrap;">{{ t('guardians.children') }}</CTableHeaderCell>
-              <CTableHeaderCell class="text-center" style="width:56px; white-space:nowrap; padding-top:38px;">{{ t('common.actions') }}</CTableHeaderCell>
-            </CTableRow>
-          </CTableHead>
-          <CTableBody>
-            <CTableRow v-for="g in store.guardians" :key="g.id">
-              <CTableDataCell class="fw-semibold" style="white-space:nowrap;">{{ g.full_name || g.user?.name || '—' }}</CTableDataCell>
-              <CTableDataCell style="white-space:nowrap;">{{ g.phone || g.user?.phone || '—' }}</CTableDataCell>
-              <CTableDataCell style="white-space:nowrap;">{{ g.relation || '—' }}</CTableDataCell>
-              <!-- Children: single badge inline; multiple → collapsible dropdown -->
-              <CTableDataCell style="position:relative; white-space:nowrap;">
-                <template v-if="!g.students?.length">—</template>
-                <template v-else-if="g.students.length === 1">
-                  <CBadge color="info" shape="rounded-pill">{{ g.students[0].full_name }}</CBadge>
-                </template>
-                <template v-else>
-                  <CButton size="sm" color="info" variant="outline"
-                           style="font-size:.75rem; padding:2px 8px;"
-                           @click.stop="toggleChildMenu(g, $event)">
-                    {{ g.students.length }} watoto ▾
-                  </CButton>
-                  <Teleport to="body">
-                    <div v-if="activeChildRow === g.id"
-                         :style="{ position: 'fixed', ...vPos(childMenuPos), left: childMenuPos.left + 'px', background: '#fff', border: '1px solid #dee2e6', borderRadius: '6px', boxShadow: '0 2px 8px rgba(0,0,0,.12)', padding: '6px 8px', zIndex: 2000, minWidth: '180px', maxHeight: '260px', overflowY: 'auto' }"
-                         @click.stop>
-                      <div v-for="s in g.students" :key="s.id"
-                           style="padding:3px 0; font-size:.85rem; border-bottom:1px solid #f0f0f0;">
-                        <CBadge color="info" shape="rounded-pill" class="me-1">{{ s.full_name }}</CBadge>
-                      </div>
-                    </div>
-                  </Teleport>
-                </template>
-              </CTableDataCell>
-              <CTableDataCell style="position:relative; min-width:56px; text-align:center; white-space:nowrap;">
-                <CButton size="sm" color="secondary" variant="ghost" @click.stop="toggleActionMenu(g, $event)">👁️</CButton>
-                <Teleport to="body">
-                  <div v-if="activeRow === g.id"
-                       :style="{ position: 'fixed', ...vPos(actionMenuPos), right: actionMenuPos.right + 'px', background: '#fff', border: '1px solid #dee2e6', borderRadius: '6px', boxShadow: '0 4px 16px rgba(0,0,0,.14)', padding: '4px', display: 'flex', flexDirection: 'column', gap: '2px', zIndex: 2000, minWidth: '160px' }"
-                       @click.stop>
-                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(g); activeRow = null">👁️ {{ t('common.view') }}</CButton>
-                    <CButton size="sm" color="secondary" variant="ghost" class="text-start" @click="openEdit(g); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
-                    <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="remove(g); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
-                  </div>
-                </Teleport>
-              </CTableDataCell>
-            </CTableRow>
-          </CTableBody>
-        </CTable>
-      </CCardBody>
-    </CCard>
+        <div class="d-flex align-items-center gap-2">
+          <CButton color="primary" size="sm" @click="openAdd" style="white-space:nowrap;"><CIcon icon="cilPlus" class="me-1" />{{ t('guardians.add') }}</CButton>
+          <CPagination v-if="meta.last_page > 1" aria-label="Ukurasa" size="sm" class="mb-0">
+            <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; loadData()">{{ t('common.prev') }}</CPaginationItem>
+            <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; loadData()">{{ p }}</CPaginationItem>
+            <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; loadData()">{{ t('common.next') }}</CPaginationItem>
+          </CPagination>
+        </div>
+      </div>
 
-    <!-- Pagination -->
-    <div v-if="meta.last_page > 1" class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2"
-         style="position:relative; z-index:1;">
-      <small class="text-medium-emphasis">
-        {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
-      </small>
-      <CPagination aria-label="Ukurasa" size="sm">
-        <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; loadData()">{{ t('common.prev') }}</CPaginationItem>
-        <CPaginationItem
-          v-for="p in visiblePages"
-          :key="p"
-          :active="p === meta.current_page"
-          @click="page = p; loadData()"
-        >{{ p }}</CPaginationItem>
-        <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; loadData()">{{ t('common.next') }}</CPaginationItem>
-      </CPagination>
+      <div class="grid-toolbar">
+        <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openView(selectedRow)">👁️ {{ t('common.view') }}</button>
+        <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openEdit(selectedRow)">✏️ {{ t('common.edit') }}</button>
+        <button type="button" class="grid-btn grid-btn--danger" :disabled="!selectedRow" @click="remove(selectedRow)">🗑️ {{ t('common.delete') }}</button>
+        <span class="grid-hint">{{ t('students.gridHint') }}</span>
+      </div>
+    </div>
+
+    <!-- Desktop worklist grid (same design as the students list). -->
+    <div class="worklist" tabindex="0" :style="{ '--grid-head-top': headerH + barH + 'px' }" @keydown="onGridKey">
+      <div v-if="store.loading" class="worklist-loading"><CSpinner size="sm" color="primary" /></div>
+      <table class="worklist-table">
+        <colgroup>
+          <col v-for="c in columns" :key="c.key" :style="{ width: c.width }" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th v-for="c in columns" :key="c.key" @click="toggleSort(c.key)">
+              <span class="th-label">{{ c.label }}</span>
+              <span v-if="sortKey === c.key" class="sort-arrow">{{ sortDir === 'asc' ? '△' : '▽' }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="g in sortedGuardians"
+            :key="g.id"
+            :class="{ selected: selectedRow?.id === g.id }"
+            @click="selectedRow = g"
+            @dblclick="openView(g)"
+            @contextmenu.prevent="openContext($event, g)"
+          >
+            <td>{{ guardianName(g) }}</td>
+            <td>{{ g.phone || g.user?.phone || '' }}</td>
+            <td>{{ g.email || g.user?.email || '' }}</td>
+            <td>{{ relationLabel(g.relation) }}</td>
+            <td :title="childNames(g)">{{ childNames(g) }}</td>
+            <td>{{ g.students?.length || 0 }}</td>
+          </tr>
+          <tr v-if="!store.loading && !sortedGuardians.length" class="empty-note">
+            <td :colspan="columns.length">{{ t('guardians.noGuardians') }}</td>
+          </tr>
+          <!-- Blank ruled rows so the pane reads as a full grid. -->
+          <tr v-for="n in fillerRows" :key="'f' + n" class="filler">
+            <td v-for="c in columns" :key="c.key">&nbsp;</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Right-click menu for a row -->
+    <div v-if="ctx" class="grid-context" :style="{ top: ctx.y + 'px', left: ctx.x + 'px' }" @click.stop>
+      <button type="button" @click="openView(ctx.g); ctx = null">👁️ {{ t('common.view') }}</button>
+      <button type="button" @click="openEdit(ctx.g); ctx = null">✏️ {{ t('common.edit') }}</button>
+      <button type="button" class="danger" @click="remove(ctx.g); ctx = null">🗑️ {{ t('common.delete') }}</button>
     </div>
 
     <!-- View Guardian Modal -->
@@ -203,61 +193,84 @@ import { CPagination, CPaginationItem } from '@coreui/vue'
 import { useI18n } from 'vue-i18n'
 import { useGuardiansStore } from '@/stores/guardians'
 import { useStudentsStore }  from '@/stores/students'
+import { useStickyOffsets } from '@/composables/useStickyOffsets'
+import '@/styles/worklist-grid.css'
 
 const { t } = useI18n()
 const store        = useGuardiansStore()
 const studentsStore = useStudentsStore()
 
-const search         = ref('')
-const activeRow      = ref(null)
-const activeChildRow = ref(null)
-// Positioned in the viewport (not relative to the table cell) and rendered
-// via Teleport to <body> — an ancestor further up the layout establishes its
-// own stacking context, which silently capped these dropdowns' z-index and
-// let the pagination bar paint over them for rows near the bottom of the page.
-const actionMenuPos = ref({ top: 0, bottom: null, right: 0 })
-const childMenuPos  = ref({ top: 0, bottom: null, left: 0 })
+const search = ref('')
 
-// Estimated menu heights — the action menu is always 3 fixed rows; the
-// children menu grows with the guardian's child count, capped by its own
-// max-height. Rough figures are enough to decide which side has room.
-const ACTION_MENU_HEIGHT = 130
-const CHILD_MENU_HEIGHT_CAP = 260
+// ── Worklist grid ─────────────────────────────────────────────────────────
+const selectedRow = ref(null)
+const ctx = ref(null)
+const sortKey = ref('name')
+const sortDir = ref('asc')
 
-// Only one of top/bottom is ever set on a menu position — the other stays
-// null so it's left out of the style object rather than rendering as the
-// literal string "nullpx".
-function vPos(pos) {
-  return pos.bottom !== null ? { bottom: pos.bottom + 'px' } : { top: pos.top + 'px' }
+const guardianName = (g) => g.full_name || g.user?.name || ''
+const childNames = (g) => (g.students || []).map((s) => s.full_name).join(', ')
+const relationLabel = (r) => ({
+  baba: t('guardians.father'),
+  mama: t('guardians.mother'),
+  mlezi: t('guardians.guardian'),
+  ndugu: t('guardians.relative'),
+}[r] || r || '')
+
+const columns = computed(() => [
+  { key: 'name', label: t('common.name'), width: '22%' },
+  { key: 'phone', label: t('guardians.phone'), width: '13%' },
+  { key: 'email', label: t('common.email'), width: '18%' },
+  { key: 'relation', label: t('guardians.relation'), width: '10%' },
+  { key: 'children', label: t('guardians.children'), width: '29%' },
+  { key: 'count', label: t('guardians.childCount'), width: '8%' },
+])
+
+const sortValue = (g, key) => ({
+  name: guardianName(g),
+  phone: g.phone || g.user?.phone || '',
+  email: g.email || g.user?.email || '',
+  relation: relationLabel(g.relation),
+  children: childNames(g),
+  count: g.students?.length || 0,
+}[key])
+
+// Sorts the rows on the current page; paging and search stay server-side.
+const sortedGuardians = computed(() => {
+  const dir = sortDir.value === 'asc' ? 1 : -1
+  return [...(store.guardians || [])].sort((x, y) => {
+    const a = sortValue(x, sortKey.value)
+    const b = sortValue(y, sortKey.value)
+    if (typeof a === 'number' && typeof b === 'number') return (a - b) * dir
+    return String(a).localeCompare(String(b), undefined, { numeric: true }) * dir
+  })
+})
+
+function toggleSort(key) {
+  if (sortKey.value === key) sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  else { sortKey.value = key; sortDir.value = 'asc' }
 }
 
-function toggleActionMenu(g, event) {
-  if (activeRow.value === g.id) {
-    activeRow.value = null
-    return
-  }
-  const rect = event.currentTarget.getBoundingClientRect()
-  const spaceBelow = window.innerHeight - rect.bottom
-  const openUpward = spaceBelow < ACTION_MENU_HEIGHT && rect.top > spaceBelow
-  actionMenuPos.value = openUpward
-    ? { top: null, bottom: window.innerHeight - rect.top, right: window.innerWidth - rect.right }
-    : { top: rect.bottom, bottom: null, right: window.innerWidth - rect.right }
-  activeRow.value = g.id
+// Enough blank rows to fill the pane, like a desktop list view.
+const fillerRows = computed(() => Math.max(0, 25 - (sortedGuardians.value.length || 1)))
+
+function openContext(e, g) {
+  selectedRow.value = g
+  ctx.value = { x: e.clientX, y: e.clientY, g }
 }
 
-function toggleChildMenu(g, event) {
-  if (activeChildRow.value === g.id) {
-    activeChildRow.value = null
-    return
-  }
-  const rect = event.currentTarget.getBoundingClientRect()
-  const spaceBelow = window.innerHeight - rect.bottom
-  const openUpward = spaceBelow < Math.min(CHILD_MENU_HEIGHT_CAP, g.students.length * 30 + 16) && rect.top > spaceBelow
-  childMenuPos.value = openUpward
-    ? { top: null, bottom: window.innerHeight - rect.top, left: rect.left }
-    : { top: rect.bottom, bottom: null, left: rect.left }
-  activeChildRow.value = g.id
+function onGridKey(e) {
+  const list = sortedGuardians.value
+  if (!list.length) return
+  const i = list.findIndex((g) => g.id === selectedRow.value?.id)
+  if (e.key === 'ArrowDown') { e.preventDefault(); selectedRow.value = list[Math.min(list.length - 1, i + 1)] }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); selectedRow.value = list[Math.max(0, i - 1)] }
+  else if (e.key === 'Enter' && selectedRow.value) openView(selectedRow.value)
 }
+
+// Heights for the pinned bar and column headers.
+const { stickyBar, headerH, barH } = useStickyOffsets()
+
 const showViewModal   = ref(false)
 const viewTarget      = ref(null)
 const showDeleteModal = ref(false)
@@ -358,12 +371,11 @@ async function doDelete() {
   }
 }
 
-function onDocClick() { activeRow.value = null; activeChildRow.value = null }
+function onDocClick() { ctx.value = null }
 
-// The dropdowns are position:fixed, computed once at open time — scrolling
-// the page afterward would leave them floating away from the button that
-// opened them, so close on scroll rather than track position live.
-function onScroll() { activeRow.value = null; activeChildRow.value = null }
+// The right-click menu is position:fixed at the click point, so close it on
+// scroll rather than leave it floating away from its row.
+function onScroll() { ctx.value = null }
 
 // The Children checklist (Edit/Add modal) must offer every student in the
 // school, not just one page — /students is paginated (max 100/page), so a

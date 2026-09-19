@@ -910,6 +910,7 @@ export default {
     relation:    'Relation',
     children:    'Children',
     noGuardians: 'No guardians registered.',
+    childCount:  'No. of children',
     viewTitle:   'Guardian Details',
     guardian:    'Guardian',
     guardianN:   'Guardian {n}',
