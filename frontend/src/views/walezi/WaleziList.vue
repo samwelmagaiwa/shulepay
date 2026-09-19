@@ -3,8 +3,8 @@
     <!-- Paging row and grid toolbar stay pinned under the app header while the
          page scrolls; the grid's column headers pin directly beneath them. -->
     <div ref="stickyBar" class="list-sticky" :style="{ top: headerH + 'px' }">
-      <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-        <div class="d-flex align-items-center gap-2">
+      <div class="list-paging">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
           <small class="text-medium-emphasis text-nowrap">
             {{ t('common.showing', { from: meta.total === 0 ? 0 : (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
           </small>
@@ -12,8 +12,8 @@
           <CButton color="secondary" variant="outline" size="sm" @click="search = ''; page = 1; loadData()">{{ t('common.reset') }}</CButton>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <CButton color="primary" size="sm" @click="openAdd" style="white-space:nowrap;"><CIcon icon="cilPlus" class="me-1" />{{ t('guardians.add') }}</CButton>
-          <CPagination v-if="meta.last_page > 1" aria-label="Ukurasa" size="sm" class="mb-0">
+          <CButton color="primary" class="lf-add" @click="openAdd" style="white-space:nowrap;"><CIcon icon="cilPlus" class="me-1" />{{ t('guardians.add') }}</CButton>
+          <CPagination v-if="meta.last_page > 1" aria-label="Ukurasa" class="mb-0 lf-pages">
             <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; loadData()">{{ t('common.prev') }}</CPaginationItem>
             <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; loadData()">{{ p }}</CPaginationItem>
             <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; loadData()">{{ t('common.next') }}</CPaginationItem>
@@ -22,9 +22,9 @@
       </div>
 
       <div class="grid-toolbar">
-        <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openView(selectedRow)">👁️ {{ t('common.view') }}</button>
-        <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openEdit(selectedRow)">✏️ {{ t('common.edit') }}</button>
-        <button type="button" class="grid-btn grid-btn--danger" :disabled="!selectedRow" @click="remove(selectedRow)">🗑️ {{ t('common.delete') }}</button>
+        <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openView(selectedRow)">• {{ t('common.view') }}</button>
+        <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openEdit(selectedRow)">✎ {{ t('common.edit') }}</button>
+        <button type="button" class="grid-btn grid-btn--danger" :disabled="!selectedRow" @click="remove(selectedRow)">▣ {{ t('common.delete') }}</button>
         <span class="grid-hint">{{ t('students.gridHint') }}</span>
       </div>
     </div>
@@ -40,7 +40,7 @@
           <tr>
             <th v-for="c in columns" :key="c.key" @click="toggleSort(c.key)">
               <span class="th-label">{{ c.label }}</span>
-              <span class="sort-arrow">{{ sortKey === c.key ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
+              <span class="sort-arrow">{{ sortKey === c.key ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
             </th>
           </tr>
         </thead>

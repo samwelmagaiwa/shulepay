@@ -6,9 +6,85 @@
 .list-sticky {
   position: sticky;
   z-index: 1030;
-  padding-top: 6px;
-  background: var(--cui-body-bg, #f3f4f7);
+  background: #f4f6fa;
+  border: 1px solid #dfe3ea;
+  border-bottom: none;
 }
+
+/* Paging row: count, per page, Filter toggle | Add button, page buttons. */
+.list-paging {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+}
+.lf-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 31px;
+  padding: 0 12px;
+  font-size: 14px;
+  color: #3c4452;
+  background: #fff;
+  border: 1px solid #c9ced6;
+  border-radius: 4px;
+}
+.lf-toggle:hover { border-color: #1d5bd8; }
+.lf-toggle.on { color: #1d5bd8; background: #e7efff; border-color: #1d5bd8; }
+.lf-count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  color: #fff;
+  background: #1d5bd8;
+  border-radius: 9px;
+}
+.lf-add {
+  height: 38px;
+  padding: 0 18px;
+  font-weight: 600;
+  background: #1d5bd8 !important;
+  border-color: #1d5bd8 !important;
+}
+/* Page buttons as separate outlined boxes. */
+.lf-pages { gap: 4px; }
+.lf-pages .page-item .page-link {
+  min-width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: #1f2937;
+  background: #fff;
+  border: 1px solid #c9ced6;
+  border-radius: 4px !important;
+}
+.lf-pages .page-item.active .page-link {
+  color: #1d5bd8;
+  background: #fff;
+  border: 2px solid #1d5bd8;
+}
+.lf-pages .page-item.disabled .page-link { color: #a3a9b3; background: #f3f4f6; }
+
+/* Filter row, opened by the Filter toggle. */
+.list-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #eef2f8;
+  border-top: 1px solid #dfe3ea;
+}
+.lf-field { flex: 0 1 230px; min-width: 150px; }
+.lf-field :is(input, select) { height: 38px; }
 
 /* ── Desktop worklist grid ───────────────────────────────────────────── */
 .grid-toolbar {
@@ -17,23 +93,23 @@
   align-items: center;
   gap: 4px;
   padding: 3px 4px;
-  background: #f0f0f0;
-  border: 1px solid #d4d4d4;
-  border-bottom: none;
+  background: #f4f6fa;
+  border-top: 1px solid #dfe3ea;
   font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 .grid-btn {
-  font-size: 12px;
-  padding: 2px 10px;
-  background: #fdfdfd;
-  border: 1px solid #adadad;
-  border-radius: 2px;
-  color: #1f1f1f;
+  height: 34px;
+  padding: 0 14px;
+  font-size: 14px;
+  color: #1f2937;
+  background: #fff;
+  border: 1px solid #c9ced6;
+  border-radius: 3px;
 }
 .grid-btn:hover:not(:disabled) { background: #e5f1fb; border-color: #0078d7; }
 .grid-btn:disabled { opacity: 0.5; }
 .grid-btn--danger:hover:not(:disabled) { background: #fde7e9; border-color: #c42b1c; }
-.grid-hint { margin-left: auto; font-size: 11px; color: #6d6d6d; }
+.grid-hint { margin-left: auto; font-size: 13px; font-style: italic; color: #6b7280; }
 
 .worklist {
   position: relative;
@@ -60,19 +136,22 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  height: 26px;
   padding: 0 7px;
   text-align: left;
   white-space: nowrap;
+  height: 34px;
   font-weight: 700;
-  color: #0f1f33;
-  background: #dce8f5;
-  border-right: 1px solid #c3d5ea;
-  border-bottom: 3px solid #a9c4e4;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #1d5bd8;
+  border-right: 1px solid #5d8ae4;
+  border-bottom: none;
   cursor: pointer;
   user-select: none;
 }
-.worklist-table th:hover { background: #bcd5f2; }
+.worklist-table th:hover { background: #174ab3; }
 .th-label {
   display: inline-block;
   max-width: calc(100% - 16px);
@@ -80,7 +159,7 @@
   text-overflow: ellipsis;
   vertical-align: middle;
 }
-.sort-arrow { float: right; font-size: 11px; color: #3d6ea8; line-height: 26px; }
+.sort-arrow { margin-left: 4px; font-size: 12px; color: #dbe6fb; vertical-align: middle; }
 .worklist-table td {
   height: 24px;
   padding: 0 7px;

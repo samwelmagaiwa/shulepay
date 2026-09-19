@@ -1,60 +1,11 @@
 <template>
   <CContainer fluid>
-    <!-- Filters -->
-    <CCard class="mb-2">
-      <CCardBody class="py-2">
-        <CRow class="g-2">
-          <CCol sm="4" md="2">
-            <CFormInput v-model="filters.search" :placeholder="t('students.searchPlaceholder')" @input="debouncedFetch" />
-          </CCol>
-          <CCol sm="3" md="2">
-            <CFormSelect v-model="filters.school_id" @update:modelValue="page = 1; fetchData()">
-              <option value="">{{ t('common.allSchools') }}</option>
-              <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol sm="3" md="2">
-            <CFormSelect v-model="filters.status" @update:modelValue="page = 1; fetchData()">
-              <option value="">{{ t('common.allStatuses') }}</option>
-              <option value="active">{{ t('students.statuses.active') }}</option>
-              <option value="sponsored">{{ t('students.statuses.sponsored') }}</option>
-              <option value="half_sponsored">{{ t('students.statuses.half_sponsored') }}</option>
-              <option value="orphaned">{{ t('students.statuses.orphaned') }}</option>
-              <option value="transferred">{{ t('students.statuses.transferred') }}</option>
-              <option value="graduated">{{ t('students.statuses.graduated') }}</option>
-              <option value="dropped">{{ t('students.statuses.dropped') }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol sm="3" md="2">
-            <CFormSelect v-model="filters.sponsorship_type" @update:modelValue="page = 1; fetchData()">
-              <option value="">🎗️ {{ t('students.allSponsorshipTypes') }}</option>
-              <option value="none">{{ t('students.notSponsored') }}</option>
-              <option value="half">{{ t('students.halfSponsored') }}</option>
-              <option value="full_paid">{{ t('students.fullySponsoredPaid') }}</option>
-              <option value="full">{{ t('students.fullySponsoredFree') }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol sm="3" md="2">
-            <CFormSelect v-model="filters.has_debt" @update:modelValue="page = 1; fetchData()">
-              <option value="">💰 {{ t('students.allPaymentStatus') }}</option>
-              <option value="1">🔴 {{ t('students.hasDebt') }}</option>
-              <option value="partial">🟡 {{ t('students.partialPaid') }}</option>
-              <option value="0">✅ {{ t('students.noDebt') }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol sm="2" md="2">
-            <CButton color="secondary" variant="outline" @click="resetFilters" class="w-100">{{ t('common.reset') }}</CButton>
-          </CCol>
-        </CRow>
-      </CCardBody>
-    </CCard>
-
     <!-- Paging row and grid toolbar stay pinned under the app header while the
          page scrolls; the grid's column headers pin directly beneath them. -->
     <div ref="stickyBar" class="list-sticky" :style="{ top: headerH + 'px' }">
     <!-- Count + per-page + Add button + Pagination — all on one row -->
-    <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-      <div class="d-flex align-items-center gap-2">
+    <div class="list-paging">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
         <small class="text-medium-emphasis text-nowrap">
           {{ t('common.showing', { from: meta.total === 0 ? 0 : (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
         </small>
@@ -65,12 +16,15 @@
           <option value="100">100</option>
         </CFormSelect>
         <small class="text-medium-emphasis text-nowrap">{{ t('common.perPage') }}</small>
+        <button type="button" class="lf-toggle" :class="{ on: showFilters }" @click="showFilters = !showFilters">
+          ☰ {{ t('common.filter') }}<span v-if="activeFilterCount" class="lf-count">{{ activeFilterCount }}</span>
+        </button>
       </div>
       <div class="d-flex align-items-center gap-2">
-        <CButton color="primary" size="sm" @click="showAddModal = true">
+        <CButton color="primary" class="lf-add" @click="showAddModal = true">
           <CIcon icon="cilPlus" class="me-1" /> {{ t('students.add') }}
         </CButton>
-        <CPagination v-if="meta.last_page > 1" aria-label="Page" size="sm" class="mb-0">
+        <CPagination v-if="meta.last_page > 1" aria-label="Page" class="mb-0 lf-pages">
           <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; fetchData()">{{ t('common.prev') }}</CPaginationItem>
           <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; fetchData()">{{ p }}</CPaginationItem>
           <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; fetchData()">{{ t('common.next') }}</CPaginationItem>
@@ -82,11 +36,54 @@
          column lines, compact rows, full-row blue selection, and blank ruled
          rows filling the rest of the pane. Click selects; double-click or
          Enter opens; right-click or the toolbar acts on the selected row. -->
+      <!-- Filters: hidden until the Filter button is pressed (opens by
+           itself while any filter is set, so an active filter is never hidden). -->
+      <div v-if="showFilters" class="list-filters">
+          <div class="lf-field">
+            <CFormInput size="sm" v-model="filters.search" :placeholder="t('students.searchPlaceholder')" @input="debouncedFetch" />
+          </div>
+          <div class="lf-field">
+            <CFormSelect size="sm" v-model="filters.school_id" @update:modelValue="page = 1; fetchData()">
+                <option value="">{{ t('common.allSchools') }}</option>
+                <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
+              </CFormSelect>
+          </div>
+          <div class="lf-field">
+            <CFormSelect size="sm" v-model="filters.status" @update:modelValue="page = 1; fetchData()">
+                <option value="">{{ t('common.allStatuses') }}</option>
+                <option value="active">{{ t('students.statuses.active') }}</option>
+                <option value="sponsored">{{ t('students.statuses.sponsored') }}</option>
+                <option value="half_sponsored">{{ t('students.statuses.half_sponsored') }}</option>
+                <option value="orphaned">{{ t('students.statuses.orphaned') }}</option>
+                <option value="transferred">{{ t('students.statuses.transferred') }}</option>
+                <option value="graduated">{{ t('students.statuses.graduated') }}</option>
+                <option value="dropped">{{ t('students.statuses.dropped') }}</option>
+              </CFormSelect>
+          </div>
+          <div class="lf-field">
+            <CFormSelect size="sm" v-model="filters.sponsorship_type" @update:modelValue="page = 1; fetchData()">
+                <option value="">🎗️ {{ t('students.allSponsorshipTypes') }}</option>
+                <option value="none">{{ t('students.notSponsored') }}</option>
+                <option value="half">{{ t('students.halfSponsored') }}</option>
+                <option value="full_paid">{{ t('students.fullySponsoredPaid') }}</option>
+                <option value="full">{{ t('students.fullySponsoredFree') }}</option>
+              </CFormSelect>
+          </div>
+          <div class="lf-field">
+            <CFormSelect size="sm" v-model="filters.has_debt" @update:modelValue="page = 1; fetchData()">
+                <option value="">💰 {{ t('students.allPaymentStatus') }}</option>
+                <option value="1">🔴 {{ t('students.hasDebt') }}</option>
+                <option value="partial">🟡 {{ t('students.partialPaid') }}</option>
+                <option value="0">✅ {{ t('students.noDebt') }}</option>
+              </CFormSelect>
+          </div>
+          <CButton color="secondary" variant="outline" size="sm" @click="resetFilters" style="height:38px;">{{ t('common.reset') }}</CButton>
+      </div>
     <div class="grid-toolbar">
-      <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openDetail(selectedRow)">👁️ {{ t('common.view') }}</button>
-      <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openEdit(selectedRow)">✏️ {{ t('common.edit') }}</button>
-      <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openPromise(selectedRow)">🤝 {{ t('students.summary.recordPromise') }}</button>
-      <button type="button" class="grid-btn grid-btn--danger" :disabled="!selectedRow" @click="confirmDelete(selectedRow)">🗑️ {{ t('common.delete') }}</button>
+      <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openDetail(selectedRow)">• {{ t('common.view') }}</button>
+      <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openEdit(selectedRow)">✎ {{ t('common.edit') }}</button>
+      <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openPromise(selectedRow)">• {{ t('students.summary.recordPromise') }}</button>
+      <button type="button" class="grid-btn grid-btn--danger" :disabled="!selectedRow" @click="confirmDelete(selectedRow)">▣ {{ t('common.delete') }}</button>
       <span class="grid-hint">{{ t('students.gridHint') }}</span>
     </div>
     </div>
@@ -101,7 +98,7 @@
           <tr>
             <th v-for="c in columns" :key="c.key" @click="toggleSort(c.key)">
               <span class="th-label">{{ c.label }}</span>
-              <span class="sort-arrow">{{ sortKey === c.key ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
+              <span class="sort-arrow">{{ sortKey === c.key ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
             </th>
           </tr>
         </thead>
@@ -246,6 +243,7 @@ const studentsStore = useStudentsStore()
 const schoolsStore  = useSchoolsStore()
 const schoolStore   = useSchoolStore()
 
+const showFilters    = ref(false)
 const filters        = ref({ search: '', school_id: '', status: '', sponsorship_type: '', has_debt: '' })
 const selectedStudent  = ref(null)
 const showAddModal     = ref(false)
@@ -270,6 +268,14 @@ const visiblePages = computed(() => {
 })
 
 const schools = computed(() => schoolsStore.schools)
+
+// Filters the user set themselves. The school follows the header switcher, so
+// it is not counted as a user filter.
+const activeFilterCount = computed(() => {
+  const f = filters.value
+  return [f.search, f.status, f.sponsorship_type, f.has_debt].filter((v) => v !== '' && v != null).length
+})
+watch(activeFilterCount, (n) => { if (n) showFilters.value = true }, { immediate: true })
 
 // Sync with nav school switcher
 watch(() => schoolStore.activeSchoolId, (id) => {
