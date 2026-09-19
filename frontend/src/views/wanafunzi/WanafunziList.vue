@@ -388,16 +388,16 @@ const sortKey = ref('full_name')
 const sortDir = ref('asc')
 
 const columns = computed(() => [
-  { key: 'full_name', label: t('students.fullName'), width: '19%' },
-  { key: 'admission_number', label: t('students.admission'), width: '11%' },
-  { key: 'date_of_birth', label: t('students.dob'), width: '10%' },
+  { key: 'full_name', label: t('students.fullName'), width: '16%' },
+  { key: 'admission_number', label: t('students.admission'), width: '12%' },
+  { key: 'date_of_birth', label: t('students.dob'), width: '9%' },
   { key: 'class', label: t('common.class'), width: '10%' },
   { key: 'school', label: t('common.school'), width: '12%' },
   { key: 'gender', label: t('students.gender'), width: '6%' },
   { key: 'sponsorship_type', label: t('students.sponsorshipCol'), width: '9%' },
-  { key: 'admitted_at', label: t('students.admittedOn'), width: '10%' },
-  { key: 'debt', label: t('students.debt'), width: '8%' },
-  { key: 'status', label: t('common.status'), width: '5%' },
+  { key: 'admitted_at', label: t('students.admittedOn'), width: '9%' },
+  { key: 'debt', label: t('students.debt'), width: '9%' },
+  { key: 'status', label: t('common.status'), width: '8%' },
 ])
 
 const sortValue = (s, key) => {
