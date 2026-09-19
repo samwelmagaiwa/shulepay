@@ -75,67 +75,72 @@
       </div>
     </div>
 
-    <!-- Table -->
-    <CCard>
-      <CCardBody class="p-0">
-        <div v-if="studentsStore.loading" class="text-center py-5">
-          <CSpinner color="primary" />
-        </div>
-        <CTable v-else responsive hover class="mb-0">
-          <CTableHead class="table-light">
-            <CTableRow>
-              <CTableHeaderCell>{{ t('students.admission') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('students.fullName') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('common.class') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('students.gender') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('common.status') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('students.debt') }}</CTableHeaderCell>
-              <CTableHeaderCell class="text-center" style="width:56px;">{{ t('common.actions') }}</CTableHeaderCell>
-            </CTableRow>
-          </CTableHead>
-          <CTableBody>
-            <CTableRow
-              v-for="s in studentsStore.students"
-              :key="s.id"
-              style="cursor:pointer"
-              @click="openDetail(s)"
-            >
-              <CTableDataCell class="fw-medium">{{ s.admission_number }}</CTableDataCell>
-              <CTableDataCell>{{ s.full_name }}</CTableDataCell>
-              <CTableDataCell>{{ s.school_class?.name || '—' }}</CTableDataCell>
-              <CTableDataCell>{{ s.gender === 'male' || s.gender === 'me' ? t('students.male') : s.gender === 'female' || s.gender === 'ke' ? t('students.female') : '—' }}</CTableDataCell>
-              <CTableDataCell><StatusBadge :status="s.status" /></CTableDataCell>
-              <CTableDataCell>
-                <span v-if="!s.outstanding_balance_cents || s.outstanding_balance_cents <= 0"
-                      class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill fw-semibold"
-                      style="background:rgba(25,135,84,0.1); color:#198754; font-size:.75rem;">
-                  ✓ Amelipa
-                </span>
-                <span v-else class="fw-semibold text-danger">
-                  {{ formatMoney(s.outstanding_balance_cents) }}
-                </span>
-              </CTableDataCell>
-              <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
-                <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === s.id ? null : s.id">👁️</CButton>
-                <div v-if="activeRow === s.id"
-                     style="position:absolute; bottom:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
-                     @click.stop>
-                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openDetail(s); activeRow = null">👁️ {{ t('common.view') }}</CButton>
-                  <CButton size="sm" color="primary" variant="ghost" class="text-start" @click="openEdit(s); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
-                  <CButton size="sm" color="warning" variant="ghost" class="text-start" @click="router.push({ name: 'MwanafunziDetail', params: { id: s.id }, query: { tab: 'ahadi' } }); activeRow = null">🤝 {{ t('students.summary.recordPromise') }}</CButton>
-                  <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(s); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
-                </div>
-              </CTableDataCell>
-            </CTableRow>
-            <CTableRow v-if="!studentsStore.loading && studentsStore.students.length === 0">
-              <CTableDataCell colspan="7" class="text-center text-muted py-4">
-                {{ t('students.noStudents') }}
-              </CTableDataCell>
-            </CTableRow>
-          </CTableBody>
-        </CTable>
-      </CCardBody>
-    </CCard>
+    <!-- Desktop-style worklist grid: grey headers with sort arrows, vertical
+         column lines, compact rows, full-row blue selection, and blank ruled
+         rows filling the rest of the pane. Click selects; double-click or
+         Enter opens; right-click or the toolbar acts on the selected row. -->
+    <div class="grid-toolbar">
+      <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openDetail(selectedRow)">👁️ {{ t('common.view') }}</button>
+      <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openEdit(selectedRow)">✏️ {{ t('common.edit') }}</button>
+      <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openPromise(selectedRow)">🤝 {{ t('students.summary.recordPromise') }}</button>
+      <button type="button" class="grid-btn grid-btn--danger" :disabled="!selectedRow" @click="confirmDelete(selectedRow)">🗑️ {{ t('common.delete') }}</button>
+      <span class="grid-hint">{{ t('students.gridHint') }}</span>
+    </div>
+
+    <div class="worklist" tabindex="0" @keydown="onGridKey">
+      <div v-if="studentsStore.loading" class="worklist-loading"><CSpinner size="sm" color="primary" /></div>
+      <table class="worklist-table">
+        <colgroup>
+          <col v-for="c in columns" :key="c.key" :style="{ width: c.width }" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th v-for="c in columns" :key="c.key" @click="toggleSort(c.key)">
+              <span class="th-label">{{ c.label }}</span>
+              <span v-if="sortKey === c.key" class="sort-arrow">{{ sortDir === 'asc' ? '△' : '▽' }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="s in sortedStudents"
+            :key="s.id"
+            :class="{ selected: selectedRow?.id === s.id }"
+            @click="selectedRow = s"
+            @dblclick="openDetail(s)"
+            @contextmenu.prevent="openContext($event, s)"
+          >
+            <td>{{ s.full_name }}</td>
+            <td>{{ s.admission_number || '' }}</td>
+            <td>{{ fmtDate(s.date_of_birth) }}</td>
+            <td>{{ s.school_class?.name || '' }}</td>
+            <td>{{ s.school?.name || '' }}</td>
+            <td>{{ genderLabel(s.gender) }}</td>
+            <td>{{ s.sponsorship_type ? sponsorshipLabel(s.sponsorship_type) : '' }}</td>
+            <td>{{ fmtDate(s.admitted_at) }}</td>
+            <td :class="{ 'debt-cell': s.outstanding_balance_cents > 0 }">
+              {{ s.outstanding_balance_cents > 0 ? formatMoney(s.outstanding_balance_cents) : t('students.paidUp') }}
+            </td>
+            <td>{{ statusLabel(s.status) }}</td>
+          </tr>
+          <tr v-if="!studentsStore.loading && !sortedStudents.length" class="empty-note">
+            <td :colspan="columns.length">{{ t('students.noStudents') }}</td>
+          </tr>
+          <!-- Blank ruled rows so the pane reads as a full grid. -->
+          <tr v-for="n in fillerRows" :key="'f' + n" class="filler">
+            <td v-for="c in columns" :key="c.key">&nbsp;</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Right-click menu for a row -->
+    <div v-if="ctx" class="grid-context" :style="{ top: ctx.y + 'px', left: ctx.x + 'px' }" @click.stop>
+      <button type="button" @click="openDetail(ctx.s); ctx = null">👁️ {{ t('common.view') }}</button>
+      <button type="button" @click="openEdit(ctx.s); ctx = null">✏️ {{ t('common.edit') }}</button>
+      <button type="button" @click="openPromise(ctx.s); ctx = null">🤝 {{ t('students.summary.recordPromise') }}</button>
+      <button type="button" class="danger" @click="confirmDelete(ctx.s); ctx = null">🗑️ {{ t('common.delete') }}</button>
+    </div>
 
 
     <!-- Student Detail Drawer -->
@@ -367,7 +372,88 @@ function onStudentSaved() {
   fetchData()
 }
 
-function onDocClick() { activeRow.value = null }
+// ── Worklist grid ─────────────────────────────────────────────────────────
+const selectedRow = ref(null)
+const ctx = ref(null)
+const sortKey = ref('full_name')
+const sortDir = ref('asc')
+
+const columns = computed(() => [
+  { key: 'full_name', label: t('students.fullName'), width: '19%' },
+  { key: 'admission_number', label: t('students.admission'), width: '11%' },
+  { key: 'date_of_birth', label: t('students.dob'), width: '10%' },
+  { key: 'class', label: t('common.class'), width: '10%' },
+  { key: 'school', label: t('common.school'), width: '12%' },
+  { key: 'gender', label: t('students.gender'), width: '6%' },
+  { key: 'sponsorship_type', label: t('students.sponsorshipCol'), width: '9%' },
+  { key: 'admitted_at', label: t('students.admittedOn'), width: '10%' },
+  { key: 'debt', label: t('students.debt'), width: '8%' },
+  { key: 'status', label: t('common.status'), width: '5%' },
+])
+
+const sortValue = (s, key) => {
+  if (key === 'class') return s.school_class?.name || ''
+  if (key === 'school') return s.school?.name || ''
+  if (key === 'debt') return Number(s.outstanding_balance_cents) || 0
+  return s[key] ?? ''
+}
+
+// Sorts the rows on the current page; paging and filters stay server-side.
+const sortedStudents = computed(() => {
+  const dir = sortDir.value === 'asc' ? 1 : -1
+  return [...(studentsStore.students || [])].sort((x, y) => {
+    const a = sortValue(x, sortKey.value)
+    const b = sortValue(y, sortKey.value)
+    if (typeof a === 'number' && typeof b === 'number') return (a - b) * dir
+    return String(a).localeCompare(String(b), undefined, { numeric: true }) * dir
+  })
+})
+
+function toggleSort(key) {
+  if (sortKey.value === key) sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  else { sortKey.value = key; sortDir.value = 'asc' }
+}
+
+// Enough blank rows to fill the pane, like a desktop list view.
+const fillerRows = computed(() => {
+  const used = sortedStudents.value.length || 1
+  return Math.max(0, 25 - used)
+})
+
+const fmtDate = (d) => {
+  if (!d) return ''
+  const dt = new Date(d)
+  if (isNaN(dt)) return d
+  return `${dt.getDate()}-${dt.toLocaleString('en-GB', { month: 'long' })}-${dt.getFullYear()}`
+}
+const genderLabel = (g) => (g === 'male' || g === 'me' ? t('students.male') : g === 'female' || g === 'ke' ? t('students.female') : '')
+const sponsorshipLabel = (v) => ({
+  none: t('students.notSponsored'),
+  half: t('students.halfSponsored'),
+  full_paid: t('students.fullySponsoredPaid'),
+  full: t('students.fullySponsoredFree'),
+}[v] || v)
+const statusLabel = (v) => (v ? t('students.statuses.' + v) : '')
+
+function openPromise(s) {
+  router.push({ name: 'MwanafunziDetail', params: { id: s.id }, query: { tab: 'ahadi' } })
+}
+
+function openContext(e, s) {
+  selectedRow.value = s
+  ctx.value = { x: e.clientX, y: e.clientY, s }
+}
+
+function onGridKey(e) {
+  const list = sortedStudents.value
+  if (!list.length) return
+  const i = list.findIndex((s) => s.id === selectedRow.value?.id)
+  if (e.key === 'ArrowDown') { e.preventDefault(); selectedRow.value = list[Math.min(list.length - 1, i + 1)] }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); selectedRow.value = list[Math.max(0, i - 1)] }
+  else if (e.key === 'Enter' && selectedRow.value) openDetail(selectedRow.value)
+}
+
+function onDocClick() { activeRow.value = null; ctx.value = null }
 
 onMounted(async () => {
   document.addEventListener('click', onDocClick)
@@ -387,4 +473,112 @@ onUnmounted(() => {
 <style scoped>
 :deep(.table-responsive) { overflow: visible; }
 :deep(.card) { overflow: visible; }
+
+/* ── Desktop worklist grid ───────────────────────────────────────────── */
+.grid-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px;
+  background: #f0f0f0;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+.grid-btn {
+  font-size: 12px;
+  padding: 2px 10px;
+  background: #fdfdfd;
+  border: 1px solid #adadad;
+  border-radius: 2px;
+  color: #1f1f1f;
+}
+.grid-btn:hover:not(:disabled) { background: #e5f1fb; border-color: #0078d7; }
+.grid-btn:disabled { opacity: 0.5; }
+.grid-btn--danger:hover:not(:disabled) { background: #fde7e9; border-color: #c42b1c; }
+.grid-hint { margin-left: auto; font-size: 11px; color: #6d6d6d; }
+
+.worklist {
+  position: relative;
+  background: #fff;
+  border: 1px solid #d4d4d4;
+  overflow-x: auto;
+  outline: none;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+.worklist-loading { position: absolute; top: 30px; right: 10px; z-index: 3; }
+.worklist-table {
+  width: 100%;
+  min-width: 1000px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 13px;
+  color: #1f1f1f;
+}
+.worklist-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 26px;
+  padding: 0 7px;
+  font-weight: 400;
+  text-align: left;
+  white-space: nowrap;
+  background: linear-gradient(#ffffff, #f3f3f3);
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #d5d5d5;
+  cursor: pointer;
+  user-select: none;
+}
+.worklist-table th:hover { background: #d9ebf9; }
+.th-label {
+  display: inline-block;
+  max-width: calc(100% - 16px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.sort-arrow { float: right; font-size: 11px; color: #a0a0a0; line-height: 26px; }
+.worklist-table td {
+  height: 24px;
+  padding: 0 7px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-right: 1px solid #ececec;
+  border-bottom: 1px solid #f0f0f0;
+}
+.worklist-table tbody tr:not(.filler):not(.empty-note):not(.selected):hover td { background: #e5f3ff; }
+.worklist-table tr.selected td {
+  background: #0078d7;
+  color: #fff;
+  border-right-color: #1a88e0;
+}
+.debt-cell { color: #c42b1c; }
+.worklist-table tr.selected td.debt-cell { color: #fff; }
+.empty-note td { color: #6d6d6d; text-align: center; }
+
+.grid-context {
+  position: fixed;
+  z-index: 1080;
+  min-width: 180px;
+  padding: 3px 0;
+  background: #f9f9f9;
+  border: 1px solid #cfcfcf;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.18);
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+.grid-context button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+  padding: 4px 18px;
+  background: none;
+  border: 0;
+}
+.grid-context button:hover { background: #0078d7; color: #fff; }
+.grid-context button.danger { color: #c42b1c; }
+.grid-context button.danger:hover { background: #c42b1c; color: #fff; }
 </style>
