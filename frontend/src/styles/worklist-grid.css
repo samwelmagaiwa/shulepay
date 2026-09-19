@@ -62,16 +62,17 @@
   z-index: 2;
   height: 26px;
   padding: 0 7px;
-  font-weight: 400;
   text-align: left;
   white-space: nowrap;
-  background: linear-gradient(#ffffff, #f3f3f3);
-  border-right: 1px solid #e0e0e0;
-  border-bottom: 1px solid #d5d5d5;
+  font-weight: 600;
+  color: #0f2f57;
+  background: linear-gradient(#e3eefb, #cfe0f5);
+  border-right: 1px solid #b9cfe9;
+  border-bottom: 1px solid #9fbbe0;
   cursor: pointer;
   user-select: none;
 }
-.worklist-table th:hover { background: #d9ebf9; }
+.worklist-table th:hover { background: #bcd5f2; }
 .th-label {
   display: inline-block;
   max-width: calc(100% - 16px);
@@ -79,7 +80,7 @@
   text-overflow: ellipsis;
   vertical-align: middle;
 }
-.sort-arrow { float: right; font-size: 11px; color: #a0a0a0; line-height: 26px; }
+.sort-arrow { float: right; font-size: 11px; color: #3d6ea8; line-height: 26px; }
 .worklist-table td {
   height: 24px;
   padding: 0 7px;
@@ -99,6 +100,8 @@
   border-right-color: #1a88e0;
 }
 .debt-cell { color: #c42b1c; }
+.paid-cell { color: #15803d; font-weight: 600; }
+.worklist-table tbody tr.selected td.paid-cell { color: #fff; }
 .worklist-table tbody tr.selected td.debt-cell { color: #fff; }
 .empty-note td { color: #6d6d6d; text-align: center; }
 
