@@ -947,6 +947,7 @@ export default {
     noDiscounts: 'No discounts.',
   },
   invoices: {
+    gridHint:    'Click a row to select · double-click to open · right-click for actions',
     title:    'Invoices',
     generate: 'Generate Invoices',
     number:   'Invoice No.',

@@ -34,6 +34,8 @@
 }
 .lf-toggle:hover { border-color: #1d5bd8; }
 .lf-toggle.on { color: #1d5bd8; background: #e7efff; border-color: #1d5bd8; }
+/* A dot marks filters in use when the count is not shown. */
+.lf-count { position: relative; }
 .lf-count {
   min-width: 18px;
   height: 18px;
@@ -245,3 +247,43 @@
   border-radius: 9px;
 }
 .worklist-table tr.selected .more-chip { color: #fff; background: rgba(255, 255, 255, 0.25); border-color: #fff; }
+
+/* ── Invoices grid: status-tinted rows, roomier than the student list ───── */
+.worklist--invoices .worklist-table td {
+  height: 38px;
+  font-size: 14px;
+  border-bottom: 1px solid #e8eaee;
+}
+.worklist--invoices .worklist-table tbody tr:nth-child(odd) td,
+.worklist--invoices .worklist-table tbody tr:nth-child(even) td { background: #fff; }
+.worklist--invoices .worklist-table tbody tr.row-unpaid td { background: #fdeeee; }
+.worklist--invoices .worklist-table tbody tr.row-partial td { background: #fdfbe7; }
+.worklist--invoices .worklist-table tbody tr.row-paid td { background: #eaf7ee; }
+.worklist--invoices .worklist-table tbody tr:not(.filler):not(.empty-note):not(.selected):hover td {
+  filter: brightness(0.97);
+}
+.worklist--invoices .worklist-table tbody tr.selected td { background: #0078d7; filter: none; }
+
+.inv-number {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 13px;
+  color: #1d5bd8;
+}
+.inv-student { font-weight: 600; }
+.paid-amount { color: #1b7a3a; }
+.worklist-table tbody tr.selected td.inv-number,
+.worklist-table tbody tr.selected td.paid-amount { color: #fff; }
+
+.row-kebab {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  line-height: 1;
+  color: #4b5563;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+}
+.row-kebab:hover { background: rgba(0, 0, 0, 0.07); }
+.worklist-table tbody tr.selected .row-kebab { color: #fff; }
+.grid-context button:disabled { color: #a3a9b3; }

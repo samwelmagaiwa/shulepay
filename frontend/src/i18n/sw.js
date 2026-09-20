@@ -937,6 +937,7 @@ export default {
     noDiscounts: 'Hakuna punguzo.',
   },
   invoices: {
+    gridHint:    'Bofya safu kuchagua · bofya mara mbili kufungua · bofya kulia kwa vitendo',
     title:    'Ankara',
     generate: 'Tengeneza Ankara',
     number:   'Namba ya Ankara',

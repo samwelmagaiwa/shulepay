@@ -173,7 +173,7 @@
         <CButton color="secondary" variant="outline" size="sm" @click="showOrphanModal = true" style="white-space:nowrap;">
           {{ t('orphanInvoices.openButton') }}
         </CButton>
-        <span class="grid-hint">{{ t('students.gridHint') }}</span>
+        <span class="grid-hint">{{ t('invoices.gridHint') }}</span>
       </div>
     </div><!-- end pinned bar -->
 
@@ -228,7 +228,7 @@
 
     <!-- DESKTOP: worklist grid, same design as the students list. One row per
          student; their other invoices stay behind the "+N more" menu. -->
-    <div class="worklist d-none d-md-block" tabindex="0"
+    <div class="worklist worklist--invoices d-none d-md-block" tabindex="0"
          :style="{ '--grid-head-top': headerH + barH + 'px' }" @keydown="onGridKey">
       <div v-if="loading" class="worklist-loading"><CSpinner size="sm" color="primary" /></div>
       <table class="worklist-table">
@@ -237,9 +237,10 @@
         </colgroup>
         <thead>
           <tr>
-            <th v-for="c in columns" :key="c.key" @click="toggleSort(c.key)">
+            <th v-for="c in columns" :key="c.key" :style="c.noSort ? { cursor: 'default' } : null"
+                @click="!c.noSort && toggleSort(c.key)">
               <span class="th-label">{{ c.label }}</span>
-              <span class="sort-arrow">{{ sortKey === c.key ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              <span v-if="!c.noSort" class="sort-arrow">{{ sortKey === c.key ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
             </th>
           </tr>
         </thead>
@@ -247,19 +248,19 @@
           <tr
             v-for="group in sortedGroups"
             :key="group.primary.id"
-            :class="{ selected: selectedGroup?.primary.id === group.primary.id }"
+            :class="[rowStatusClass(group.primary), { selected: selectedGroup?.primary.id === group.primary.id }]"
             @click="selectedGroup = group"
             @dblclick="openDrawer(group.primary.student)"
             @contextmenu.prevent="openContext($event, group)"
           >
-            <td>{{ group.primary.invoice_number }}</td>
-            <td :title="group.primary.student?.full_name">
+            <td class="inv-number">{{ group.primary.invoice_number }}</td>
+            <td class="inv-student" :title="group.primary.student?.full_name">
               {{ group.primary.student?.full_name }}
               <!-- The student's other invoices; teleported so the menu is not
                    clipped by the grid. -->
               <CDropdown v-if="group.others.length" variant="btn-group" class="d-inline-block ms-1" teleport>
                 <CDropdownToggle class="more-chip" :custom-class-name="'more-chip'" @click.stop>
-                  +{{ group.others.length }}
+                  +{{ group.others.length }} {{ t('invoices.moreInvoices') }}
                 </CDropdownToggle>
                 <CDropdownMenu style="min-width:280px;">
                   <CDropdownHeader>{{ t('invoices.otherInvoicesFor', { name: group.primary.student?.full_name }) }}</CDropdownHeader>
@@ -290,7 +291,7 @@
             <td>{{ group.primary.student?.school_class?.name }}</td>
             <td>{{ group.primary.term?.name }}</td>
             <td>{{ formatMoney(group.primary.total_amount_cents) }}</td>
-            <td>{{ formatMoney(group.primary.paid_cents) }}</td>
+            <td class="paid-amount">{{ formatMoney(group.primary.paid_cents) }}</td>
             <td :class="group.primary.balance_due_cents > 0 ? 'debt-cell' : 'paid-cell'">
               {{ formatMoney(group.primary.balance_due_cents) }}
             </td>
@@ -298,6 +299,10 @@
               <span class="status-pill" :class="'status-pill--' + group.primary.status">
                 {{ t('invoices.statusFull.' + group.primary.status, group.primary.status) }}
               </span>
+            </td>
+            <td class="text-center">
+              <button type="button" class="row-kebab" :title="t('common.actions')"
+                      @click.stop="openContext($event, group)">⋮</button>
             </td>
           </tr>
           <tr v-if="!loading && !sortedGroups.length" class="empty-note">
@@ -448,7 +453,8 @@ const columns = computed(() => [
   { key: 'total', label: t('common.total'), width: '10%' },
   { key: 'paid', label: t('invoices.amountPaid'), width: '10%' },
   { key: 'debt', label: t('invoices.debt'), width: '10%' },
-  { key: 'status', label: t('common.status'), width: '10%' },
+  { key: 'status', label: t('common.status'), width: '9%' },
+  { key: 'actions', label: t('common.actions'), width: '6%', noSort: true },
 ])
 
 // Filters the user set themselves; the school follows the header switcher.
@@ -467,6 +473,7 @@ const sortValue = (g, key) => ({
   paid: g.primary.paid_cents || 0,
   debt: g.primary.balance_due_cents || 0,
   status: g.primary.status || '',
+  actions: '',
 }[key])
 
 // Sorts the rows on the current page; paging and filters stay server-side.
@@ -503,6 +510,11 @@ function onGridKey(e) {
 }
 
 function onGridDocClick() { ctx.value = null }
+
+// Row tint by payment status: unpaid pink, partial cream, paid mint.
+function rowStatusClass(inv) {
+  return 'row-' + (inv.status || 'unpaid')
+}
 
 function rowBgClass(inv) {
   if (inv.status === 'paid') return 'table-success'
