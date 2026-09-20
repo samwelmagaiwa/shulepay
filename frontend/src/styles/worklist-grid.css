@@ -226,3 +226,22 @@
 .status-pill--graduated { background: #0d9488; }
 .status-pill--dropped { background: #dc2626; }
 .worklist-table tbody tr.selected td .status-pill { box-shadow: 0 0 0 1px #fff; }
+
+/* Invoice status pills reuse the same palette as the student statuses. */
+.status-pill--paid { background: #22a043; }
+.status-pill--partial { background: #e8a23a; }
+.status-pill--unpaid { background: #dc3545; }
+
+/* "+N more invoices" chip inside a grid cell. */
+.more-chip.btn,
+.worklist-table .more-chip {
+  height: 18px;
+  padding: 0 6px;
+  font-size: 11px;
+  line-height: 16px;
+  color: #1d5bd8;
+  background: #eaf1ff;
+  border: 1px solid #b7cdf5;
+  border-radius: 9px;
+}
+.worklist-table tr.selected .more-chip { color: #fff; background: rgba(255, 255, 255, 0.25); border-color: #fff; }
