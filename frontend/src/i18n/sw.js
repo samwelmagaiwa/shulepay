@@ -937,6 +937,7 @@ export default {
     noDiscounts: 'Hakuna punguzo.',
   },
   invoices: {
+    amountsAcross: 'Jumla ya ankara {count} za mwanafunzi huyu',
     gridHint:    'Bofya safu kuchagua · bofya mara mbili kufungua · bofya kulia kwa vitendo',
     title:    'Ankara',
     generate: 'Tengeneza Ankara',

@@ -235,10 +235,11 @@
             </div>
             <div class="am-cell" :title="group.primary.student?.school_class?.name">{{ group.primary.student?.school_class?.name || '—' }}</div>
             <div class="am-cell" :title="group.primary.term?.name">{{ group.primary.term?.name || '—' }}</div>
-            <div class="am-cell">{{ formatMoney(group.primary.total_amount_cents) }}</div>
-            <div class="am-cell am-paid">{{ formatMoney(group.primary.paid_cents) }}</div>
-            <div class="am-cell" :class="group.primary.balance_due_cents > 0 ? 'am-debt' : 'am-zerodebt'">
-              {{ formatMoney(group.primary.balance_due_cents) }}
+            <!-- Money columns cover every invoice in the row (all terms). -->
+            <div class="am-cell" :title="amountsHint(group)">{{ formatMoney(group.totalCents) }}</div>
+            <div class="am-cell am-paid" :title="amountsHint(group)">{{ formatMoney(group.paidCents) }}</div>
+            <div class="am-cell" :class="group.debtCents > 0 ? 'am-debt' : 'am-zerodebt'" :title="amountsHint(group)">
+              {{ formatMoney(group.debtCents) }}
             </div>
             <div class="am-cell"><StatusBadge :status="group.primary.status" /></div>
             <div class="am-cell am-actions-cell">
@@ -430,6 +431,13 @@ const pageNumbers = computed(() => {
   return pages
 })
 
+// Says how many invoices the row's amounts cover, so a total that is larger
+// than the leading term's invoice is never a surprise.
+function amountsHint(group) {
+  const n = group.others.length + 1
+  return t('invoices.amountsAcross', { count: n })
+}
+
 function formatMoney(cents) {
   return 'TZS ' + Number((cents || 0) / 100).toLocaleString('sw-TZ', { minimumFractionDigits: 0 })
 }
@@ -454,7 +462,19 @@ const groupedInvoices = computed(() => {
       const r = (statusRank[a.status] ?? 3) - (statusRank[b.status] ?? 3)
       return r !== 0 ? r : (b.balance_due_cents || 0) - (a.balance_due_cents || 0)
     })
-    return { primary: sorted[0], others: sorted.slice(1), studentId: sorted[0].student.id }
+    // The row stands for the student, not one term, so its money columns total
+    // every invoice in the group. Showing only the leading invoice's balance
+    // understated a student who owes across several terms.
+    const sum = (key) => group.reduce((n, inv) => n + (inv[key] || 0), 0)
+
+    return {
+      primary: sorted[0],
+      others: sorted.slice(1),
+      studentId: sorted[0].student.id,
+      totalCents: sum('total_amount_cents'),
+      paidCents: sum('paid_cents'),
+      debtCents: sum('balance_due_cents'),
+    }
   })
 })
 
@@ -479,9 +499,9 @@ const sortValue = (g, key) => ({
   student: g.primary.student?.full_name || '',
   class: g.primary.student?.school_class?.name || '',
   term: g.primary.term?.name || '',
-  total: g.primary.total_amount_cents || 0,
-  paid: g.primary.paid_cents || 0,
-  debt: g.primary.balance_due_cents || 0,
+  total: g.totalCents || 0,
+  paid: g.paidCents || 0,
+  debt: g.debtCents || 0,
   status: g.primary.status || '',
 }[key])
 
