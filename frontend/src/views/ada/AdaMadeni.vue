@@ -234,7 +234,16 @@
               </CDropdown>
             </div>
             <div class="am-cell" :title="group.primary.student?.school_class?.name">{{ group.primary.student?.school_class?.name || '—' }}</div>
-            <div class="am-cell" :title="group.primary.term?.name">{{ group.primary.term?.name || '—' }}</div>
+            <!-- One chip per term still owing, red when nothing is paid and amber
+                 when part-paid; settled terms are left out. -->
+            <div class="am-cell am-terms-cell">
+              <template v-if="termChips(group).length">
+                <span v-for="chip in termChips(group)" :key="chip.id"
+                      class="am-term-chip" :class="'am-term-chip--' + chip.status"
+                      :title="chip.title">{{ chip.label }}</span>
+              </template>
+              <span v-else class="am-term-allpaid">✓ {{ t('invoices.allPaid') }}</span>
+            </div>
             <!-- Money columns cover every invoice in the row (all terms). -->
             <div class="am-cell" :title="amountsHint(group)">{{ formatMoney(group.totalCents) }}</div>
             <div class="am-cell am-paid" :title="amountsHint(group)">{{ formatMoney(group.paidCents) }}</div>
@@ -433,6 +442,21 @@ const pageNumbers = computed(() => {
 
 // Says how many invoices the row's amounts cover, so a total that is larger
 // than the leading term's invoice is never a surprise.
+// Terms still owing on this row. Ordered by term number so T1 reads before T4,
+// and labelled with the invoice's own details on hover.
+function termChips(group) {
+  const all = [group.primary, ...group.others]
+  return all
+    .filter((inv) => inv.status !== 'paid')
+    .sort((a, b) => (a.term?.number || 0) - (b.term?.number || 0))
+    .map((inv) => ({
+      id: inv.id,
+      label: inv.term?.number ? 'T' + inv.term.number : (inv.term?.name || '—'),
+      status: inv.status === 'partial' ? 'partial' : 'unpaid',
+      title: `${inv.term?.name || ''} · ${inv.invoice_number} · ${formatMoney(inv.balance_due_cents)}`,
+    }))
+}
+
 function amountsHint(group) {
   const n = group.others.length + 1
   return t('invoices.amountsAcross', { count: n })
@@ -498,7 +522,8 @@ const sortValue = (g, key) => ({
   invoice_number: g.primary.invoice_number || '',
   student: g.primary.student?.full_name || '',
   class: g.primary.student?.school_class?.name || '',
-  term: g.primary.term?.name || '',
+  // Sorts by how many terms are still owing, which is what the column shows.
+  term: g.others.length + 1 - (g.primary.status === 'paid' ? 1 : 0),
   total: g.totalCents || 0,
   paid: g.paidCents || 0,
   debt: g.debtCents || 0,
@@ -925,6 +950,22 @@ onBeforeUnmount(() => {
 .am-row--selected .am-zerodebt { color: #fff !important; }
 
 .am-student-cell { display: flex; align-items: center; gap: 4px; overflow: hidden; }
+
+/* Term chips */
+.am-terms-cell { display: flex; align-items: center; gap: 4px; overflow: hidden; }
+.am-term-chip {
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+.am-term-chip--unpaid  { background: #c62828; }
+.am-term-chip--partial { background: #d97706; }
+.am-term-allpaid { color: #1b7a3e; font-weight: 600; }
+.am-row--selected .am-term-allpaid { color: #fff; }
+.am-row--selected .am-term-chip { box-shadow: 0 0 0 1px rgba(255, 255, 255, .85); }
 .am-more-dd { flex-shrink: 0; }
 .am-more-btn { font-size: 11px !important; padding: 1px 5px !important; min-height: 22px !important; }
 

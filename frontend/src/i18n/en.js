@@ -947,6 +947,7 @@ export default {
     noDiscounts: 'No discounts.',
   },
   invoices: {
+    allPaid: 'All paid',
     amountsAcross: 'Total across {count} invoice(s) for this student',
     gridHint:    'Click a row to select · double-click to open · right-click for actions',
     title:    'Invoices',
