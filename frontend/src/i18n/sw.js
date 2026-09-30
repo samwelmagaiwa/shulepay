@@ -937,6 +937,7 @@ export default {
     noDiscounts: 'Hakuna punguzo.',
   },
   invoices: {
+    termShort: 'M{n}',
     allPaid: 'Imelipwa yote',
     amountsAcross: 'Jumla ya ankara {count} za mwanafunzi huyu',
     gridHint:    'Bofya safu kuchagua · bofya mara mbili kufungua · bofya kulia kwa vitendo',

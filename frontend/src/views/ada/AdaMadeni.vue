@@ -451,7 +451,8 @@ function termChips(group) {
     .sort((a, b) => (a.term?.number || 0) - (b.term?.number || 0))
     .map((inv) => ({
       id: inv.id,
-      label: inv.term?.number ? 'T' + inv.term.number : (inv.term?.name || '—'),
+      // T1..T4 in English, M1..M4 in Swahili (Muhula).
+      label: inv.term?.number ? t('invoices.termShort', { n: inv.term.number }) : (inv.term?.name || '—'),
       status: inv.status === 'partial' ? 'partial' : 'unpaid',
       title: `${inv.term?.name || ''} · ${inv.invoice_number} · ${formatMoney(inv.balance_due_cents)}`,
     }))
