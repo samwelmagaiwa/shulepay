@@ -825,10 +825,21 @@ onBeforeUnmount(() => {
   background: #fff;
   font-size: 13px;
   outline: none;
-  /* Narrow screens scroll the grid itself rather than the whole page. */
-  overflow-x: auto;
+  /* No scroll container here: `overflow-x: auto` makes this element its own
+     scrollport (the other axis computes to auto too), and the sticky header
+     then sticks inside THAT box — it parked itself partway down the list
+     instead of under the page's pinned bar. The header pins to the page. */
+  overflow: visible;
 }
 .am-grid { display: flex; flex-direction: column; min-width: 1000px; }
+
+/* Below the grid's own width the page scrolls sideways, so the grid becomes a
+   scroll box again — and the header stops being sticky, since inside a scroll
+   box that is exactly what misplaces it. */
+@media (max-width: 1060px) {
+  .am-grid-wrap { overflow-x: auto; }
+  .am-head { position: static !important; }
+}
 
 /* 9-column layout */
 .am-head, .am-row {
