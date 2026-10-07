@@ -193,6 +193,64 @@ class StudentTermBillingEndpointTest extends TestCase
         $this->assertSame(4, Invoice::withoutGlobalScope('school')->where('student_id', $this->student->id)->count());
     }
 
+    /**
+     * Exactly what the Edit wizard's "add a missing term" card sends: ids as the
+     * strings a <select> yields, no payment at all, so the parent can pay later.
+     */
+    public function test_add_a_missing_term_card_bills_it_for_later(): void
+    {
+        $payload = ['terms' => [[
+            'term_id' => (string) $this->terms[4]->id,
+            'academic_year_id' => (string) $this->year->id,
+            'fee_amount_cents' => 23000000,
+            'payments' => [],
+        ]]];
+
+        $response = $this->asAccountant()->withHeader('X-School-Id', (string) $this->school->id)
+            ->putJson("/api/students/{$this->student->id}/term-billing", $payload)
+            ->assertOk();
+
+        $this->assertSame(1, $response->json('invoices_created'));
+
+        $invoice = Invoice::withoutGlobalScope('school')
+            ->where('student_id', $this->student->id)
+            ->where('term_id', $this->terms[4]->id)
+            ->firstOrFail();
+
+        $this->assertSame(23000000, (int) $invoice->getRawOriginal('total_amount_cents'));
+        $this->assertSame(0, $invoice->paidCents());
+        $this->assertSame('unpaid', $invoice->status instanceof \BackedEnum ? $invoice->status->value : $invoice->status);
+        $this->assertSame(23000000, $invoice->balanceDueCents());
+        // The student now has all four terms, each invoiced once.
+        $this->assertSame(4, Invoice::withoutGlobalScope('school')->where('student_id', $this->student->id)->count());
+    }
+
+    /** The same card with a payment whose method was left on "Optional". */
+    public function test_add_a_missing_term_card_with_a_payment_and_no_method(): void
+    {
+        $payload = ['terms' => [[
+            'term_id' => (string) $this->terms[4]->id,
+            'academic_year_id' => (string) $this->year->id,
+            'fee_amount_cents' => 23000000,
+            'payments' => [[
+                'id' => null, 'amount_cents' => 9000000, 'paid_at' => '2026-10-01',
+                'method' => null, 'reference_number' => null, 'notes' => 'Receipt #123',
+            ]],
+        ]]];
+
+        $response = $this->asAccountant()->withHeader('X-School-Id', (string) $this->school->id)
+            ->putJson("/api/students/{$this->student->id}/term-billing", $payload)
+            ->assertOk();
+
+        $this->assertSame(1, $response->json('invoices_created'));
+        $this->assertSame(1, $response->json('payments_created'));
+
+        $term4 = collect($response->json('terms'))->firstWhere('term_number', 4);
+        $this->assertSame(23000000, $term4['fee_amount_cents']);
+        $this->assertSame(9000000, $term4['paid_cents']);
+        $this->assertSame('partial', $term4['status']);
+    }
+
     public function test_a_restricted_role_cannot_save(): void
     {
         Permission::findOrCreate('invoices.edit_restricted', 'web');
