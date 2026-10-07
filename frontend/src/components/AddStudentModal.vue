@@ -888,9 +888,10 @@
         <CAlert v-if="termBillingError" color="danger" class="py-2 small">{{ termBillingError }}</CAlert>
         <div v-if="termBillingLoading" class="text-center py-4"><CSpinner /></div>
         <div v-else-if="!termBilling.length" class="text-muted py-4 text-center">{{ t('students.termBillingEmpty') }}</div>
+        <div v-else-if="!billedTerms.length" class="text-muted small pb-2">{{ t('students.noTermsBilledYet') }}</div>
 
         <template v-else>
-          <CCard v-for="row in termBilling" :key="row.term_id" class="mb-2 border">
+          <CCard v-for="row in billedTerms" :key="row.term_id" class="mb-2 border">
             <CCardBody class="p-3">
               <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                 <div class="fw-semibold">
@@ -900,10 +901,7 @@
                   <div v-if="row.start_date || row.end_date" class="text-muted" style="font-size:.75rem;">
                     📅 {{ fmtTermDate(row.start_date) }} — {{ fmtTermDate(row.end_date) }}
                   </div>
-                  <CBadge v-else color="warning" class="ms-2">{{ t('students.termNotBilled') }}</CBadge>
-                  <div v-if="!row.invoice_id && (Number(row.fee_tzs) || 0) > 0" class="text-success small">
-                    {{ t('students.termWillBeCreated') }}
-                  </div>
+
                 </div>
                 <div class="small">
                   <span class="text-muted me-2">{{ t('invoices.debt') }}:</span>
@@ -926,13 +924,9 @@
                   <div class="form-control bg-light">{{ fmtTzs(billedPaid(row)) }}</div>
                 </CCol>
                 <CCol sm="4" class="text-sm-end">
-                  <!-- A term is added so the parent can pay later, so recording a
-                       payment is optional and only offered once a fee exists. -->
-                  <CButton v-if="(Number(row.fee_tzs) || 0) > 0" color="primary" variant="outline" size="sm"
-                           @click="addTermPayment(row)">
+                  <CButton color="primary" variant="outline" size="sm" @click="addTermPayment(row)">
                     + {{ t('students.addPayment') }}
                   </CButton>
-                  <div v-else class="text-muted" style="font-size:.72rem;">{{ t('students.termFeeFirst') }}</div>
                 </CCol>
               </CRow>
 
@@ -1545,6 +1539,10 @@ const termBilling = ref([])
 const termBillingLoading = ref(false)
 const termBillingError = ref('')
 
+// Terms the student already has an invoice for. Terms without one are handled
+// only by the "add a missing term" cards, so neither section repeats the other.
+const billedTerms = computed(() => termBilling.value.filter((row) => row.invoice_id))
+
 const toTzs = (cents) => Math.round((cents || 0) / 100)
 const toCents = (tzs) => Math.round((Number(tzs) || 0) * 100)
 const fmtTzs = (tzs) => 'TZS ' + (Number(tzs) || 0).toLocaleString()
@@ -1568,7 +1566,7 @@ async function loadTermBilling() {
     newTerms.value = []
     termBilling.value = (data.terms || []).map((row) => ({
       ...row,
-      fee_tzs: row.invoice_id ? toTzs(row.fee_amount_cents) : null,
+      fee_tzs: toTzs(row.fee_amount_cents),
       payments: (row.payments || []).map((p) => ({
         id: p.id,
         amount_tzs: toTzs(p.amount_cents),
@@ -1646,7 +1644,7 @@ function termBillingProblems() {
       problems.push(t('students.termPaidOverFee', { term: termNameFor(entry.term_id) }))
     }
   }
-  for (const row of termBilling.value) {
+  for (const row of billedTerms.value) {
     const fee = Number(row.fee_tzs) || 0
     const paid = billedPaid(row)
     const label = `${row.term_name} ${row.academic_year_name || ''}`.trim()
@@ -1675,7 +1673,7 @@ function termBillingPayload() {
       notes: p.notes || null,
     }))
 
-  const existing = termBilling.value
+  const existing = billedTerms.value
     .filter((row) => (Number(row.fee_tzs) || 0) > 0 || row.payments.length)
     .map((row) => ({
       term_id: row.term_id,
