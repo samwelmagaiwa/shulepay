@@ -839,10 +839,13 @@ onBeforeUnmount(() => {
   display: flex; align-items: center; gap: 6px; padding: 6px 4px 5px;
   flex-wrap: wrap; background: #eef2f7; border-bottom: 1px solid #c8d3e0;
 }
-.am-filters .am-filter-sel,
-.am-filters .am-filter-sel select { flex: 1 1 150px; min-width: 0; width: auto !important; font-size: 13px; }
-.am-filters .am-filter-inp,
-.am-filters .am-filter-inp input { flex: 1.2 1 170px; min-width: 0; width: auto !important; font-size: 13px; }
+/* :deep() is required here: CFormSelect/CFormInput render their own elements,
+   which never carry this component's scope attribute, so a plain scoped rule
+   matched nothing and each control fell back to the form-control's width:100%
+   — one filter per line instead of a row. */
+.am-filters :deep(.am-filter-sel) { flex: 1 1 150px; min-width: 0; width: auto !important; font-size: 13px; height: 38px; }
+.am-filters :deep(.am-filter-inp) { flex: 1.2 1 170px; min-width: 0; width: auto !important; font-size: 13px; height: 38px; }
+.am-filters :deep(.am-filter-reset) { flex: 0 0 auto; height: 38px; }
 .am-filter-reset { flex-shrink: 0; white-space: nowrap; font-size: 13px; }
 
 /* ── Toolbar ── */
