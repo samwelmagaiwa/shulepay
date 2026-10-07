@@ -870,8 +870,99 @@
         </CCard>
       </div>
 
+      <!-- ═══════════════ STEP 6 (EDIT): Terms & Payments ═══════════════
+           Shows the student's existing invoices and payments, pre-filled, so a
+           wrong fee can be corrected, an instalment recorded, or a term that was
+           never invoiced added. Values stay on screen until the save succeeds. -->
+      <div v-if="step === 6 && isEditMode">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div>
+            <div class="fw-semibold text-muted small text-uppercase" style="letter-spacing:.05em;">🧾 {{ t('students.stepTermsPayments') }}</div>
+            <div class="text-muted small">{{ t('students.termBillingHint') }}</div>
+          </div>
+          <CButton color="secondary" variant="outline" size="sm" :disabled="termBillingLoading" @click="loadTermBilling">
+            <CSpinner v-if="termBillingLoading" size="sm" class="me-1" />{{ t('common.reload') }}
+          </CButton>
+        </div>
+
+        <CAlert v-if="termBillingError" color="danger" class="py-2 small">{{ termBillingError }}</CAlert>
+        <div v-if="termBillingLoading" class="text-center py-4"><CSpinner /></div>
+        <div v-else-if="!termBilling.length" class="text-muted py-4 text-center">{{ t('students.termBillingEmpty') }}</div>
+
+        <template v-else>
+          <CCard v-for="row in termBilling" :key="row.term_id" class="mb-2 border">
+            <CCardBody class="p-3">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <div class="fw-semibold">
+                  {{ row.term_name }}
+                  <span class="text-muted small ms-1">{{ row.academic_year_name }}</span>
+                  <span v-if="row.invoice_number" class="text-muted small ms-2">{{ row.invoice_number }}</span>
+                  <CBadge v-else color="warning" class="ms-2">{{ t('students.termNotBilled') }}</CBadge>
+                </div>
+                <div class="small">
+                  <span class="text-muted me-2">{{ t('invoices.debt') }}:</span>
+                  <span class="fw-bold" :class="billedBalance(row) > 0 ? 'text-danger' : 'text-success'">
+                    {{ fmtTzs(billedBalance(row)) }}
+                  </span>
+                </div>
+              </div>
+
+              <CRow class="g-2 align-items-end">
+                <CCol sm="4">
+                  <label class="form-label small mb-1">{{ t('students.termFeeAmount') }}</label>
+                  <CFormInput type="number" min="0" step="1000" v-model.number="row.fee_tzs" :disabled="row.itemised" />
+                  <div v-if="row.itemised" class="text-muted" style="font-size:.72rem;">{{ t('students.termItemisedLocked') }}</div>
+                </CCol>
+                <CCol sm="4">
+                  <label class="form-label small mb-1">{{ t('invoices.amountPaid') }}</label>
+                  <div class="form-control bg-light">{{ fmtTzs(billedPaid(row)) }}</div>
+                </CCol>
+                <CCol sm="4" class="text-sm-end">
+                  <CButton color="primary" variant="outline" size="sm" @click="addTermPayment(row)">
+                    + {{ t('students.addPayment') }}
+                  </CButton>
+                </CCol>
+              </CRow>
+
+              <div v-if="row.payments.length" class="mt-3">
+                <div class="row g-2 small text-muted fw-semibold d-none d-md-flex">
+                  <div class="col-md-3">{{ t('payments.amount') }}</div>
+                  <div class="col-md-3">{{ t('payments.paidAt') }}</div>
+                  <div class="col-md-3">{{ t('payments.method') }}</div>
+                  <div class="col-md-3">{{ t('payments.reference') }}</div>
+                </div>
+                <div v-for="(pay, pi) in row.payments" :key="pay.id ?? ('new' + pi)" class="row g-2 mt-1 align-items-center">
+                  <div class="col-6 col-md-3">
+                    <CFormInput type="number" min="0" step="1000" v-model.number="pay.amount_tzs" size="sm" />
+                  </div>
+                  <div class="col-6 col-md-3">
+                    <CFormInput type="date" v-model="pay.paid_at" size="sm" />
+                  </div>
+                  <div class="col-6 col-md-3">
+                    <CFormSelect v-model="pay.method" size="sm">
+                      <option value="cash">{{ t('payments.methods.cash') }}</option>
+                      <option value="mpesa">M-Pesa</option>
+                      <option value="bank">{{ t('payments.methods.bank') }}</option>
+                      <option value="cheque">{{ t('payments.methods.cheque') }}</option>
+                    </CFormSelect>
+                  </div>
+                  <div class="col-6 col-md-3 d-flex gap-1">
+                    <CFormInput v-model="pay.reference_number" size="sm" :placeholder="t('payments.reference')" />
+                    <!-- Only unsaved rows can be dropped here; reversing a recorded
+                         payment stays on the student page, where it is audited. -->
+                    <CButton v-if="!pay.id" color="danger" variant="ghost" size="sm" @click="row.payments.splice(pi, 1)">✕</CButton>
+                  </div>
+                </div>
+              </div>
+            </CCardBody>
+          </CCard>
+
+          <CAlert color="info" class="py-2 small mb-0">{{ t('students.termBillingNote') }}</CAlert>
+        </template>
+      </div>
+
       <!-- ═══════════════ STEP 6: Migration History (existing students only) ═══════════════ -->
-      <div v-if="step === 6">
+      <div v-if="step === 6 && !isEditMode">
         <div class="d-flex align-items-center justify-content-between mb-3">
           <div>
             <div class="fw-semibold text-muted small text-uppercase" style="letter-spacing:.05em;">📚 {{ t('students.stepMigration') }}</div>
@@ -1337,8 +1428,79 @@ const steps = computed(() => {
   if (!isEditMode.value && form.value.is_existing_student && form.value.sponsorship_type !== 'full') {
     base.push(t('students.stepMigration'))
   }
+  // Editing gets the same number of steps as registration, but the last one
+  // corrects the invoices and payments the student already has instead of
+  // importing history again — see termBilling below.
+  if (isEditMode.value) {
+    base.push(t('students.stepTermsPayments'))
+  }
   return base
 })
+
+// ── Terms & payments (Edit mode's last step) ───────────────────────────────
+// Loaded from the server when the modal opens for editing, and left untouched
+// by the rest of the wizard, so the figures on screen are the student's real
+// invoices until the save goes through.
+const termBilling = ref([])
+const termBillingLoading = ref(false)
+const termBillingError = ref('')
+
+const toTzs = (cents) => Math.round((cents || 0) / 100)
+const toCents = (tzs) => Math.round((Number(tzs) || 0) * 100)
+const fmtTzs = (tzs) => 'TZS ' + (Number(tzs) || 0).toLocaleString()
+
+const billedPaid = (row) => row.payments.reduce((n, p) => n + (Number(p.amount_tzs) || 0), 0)
+const billedBalance = (row) => Math.max(0, (Number(row.fee_tzs) || 0) - billedPaid(row))
+
+async function loadTermBilling() {
+  if (!props.editStudentId) return
+  termBillingLoading.value = true
+  termBillingError.value = ''
+  try {
+    const { data } = await api.get(`/students/${props.editStudentId}/term-billing`)
+    termBilling.value = (data.terms || []).map((row) => ({
+      ...row,
+      fee_tzs: toTzs(row.fee_amount_cents),
+      payments: (row.payments || []).map((p) => ({
+        id: p.id,
+        amount_tzs: toTzs(p.amount_cents),
+        paid_at: p.paid_at,
+        method: p.method || 'cash',
+        reference_number: p.reference_number || '',
+      })),
+    }))
+  } catch (e) {
+    termBillingError.value = e?.response?.data?.message || t('common.loadFailed')
+    termBilling.value = []
+  } finally {
+    termBillingLoading.value = false
+  }
+}
+
+function addTermPayment(row) {
+  row.payments.push({ id: null, amount_tzs: 0, paid_at: new Date().toISOString().slice(0, 10), method: 'cash', reference_number: '' })
+}
+
+// Only terms that carry a fee or a payment are sent; untouched empty terms are
+// not requests to bill anything.
+function termBillingPayload() {
+  return termBilling.value
+    .filter((row) => (Number(row.fee_tzs) || 0) > 0 || row.payments.length)
+    .map((row) => ({
+      term_id: row.term_id,
+      academic_year_id: row.academic_year_id,
+      fee_amount_cents: toCents(row.fee_tzs),
+      payments: row.payments
+        .filter((p) => (Number(p.amount_tzs) || 0) > 0 && p.paid_at)
+        .map((p) => ({
+          id: p.id || null,
+          amount_cents: toCents(p.amount_tzs),
+          paid_at: p.paid_at,
+          method: p.method || 'cash',
+          reference_number: p.reference_number || null,
+        })),
+    }))
+}
 
 const defaultGuardian = () => ({
   full_name: '', relationship: '', phone: '', alt_phone: '',
@@ -2174,6 +2336,13 @@ async function submitEdit() {
 
     await api.post(`/students/${props.editStudentId}/full`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
 
+    // Billing goes second and in its own request: it updates existing invoices
+    // and payments, so it must not be retried by a failed student save.
+    const terms = termBillingPayload()
+    if (terms.length) {
+      await api.put(`/students/${props.editStudentId}/term-billing`, { terms })
+    }
+
     emit('saved')
     resetForm()
   } catch (e) {
@@ -2190,6 +2359,8 @@ async function submitEdit() {
         step.value = 3
       } else if (firstErr?.startsWith('guardians')) {
         step.value = 4
+      } else if (firstErr?.startsWith('terms')) {
+        step.value = steps.value.length
       } else {
         step.value = 5
       }
@@ -2230,6 +2401,7 @@ watch(() => props.visible, async (v) => {
     if (isEditMode.value && props.editStudentId) {
       await initializeModal()
       await loadStudentForEdit(props.editStudentId)
+      await loadTermBilling()
       return
     }
 

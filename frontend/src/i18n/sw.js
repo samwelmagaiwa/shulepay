@@ -48,6 +48,8 @@ export default {
     changePassword:   'Badilisha Neno la Siri',
   },
   common: {
+    reload:      'Pakia upya',
+    loadFailed:  'Imeshindwa kupakia. Jaribu tena.',
     save:        'Hifadhi',
     refresh:     'Onyesha upya',
     cancel:      'Funga',
@@ -456,6 +458,14 @@ export default {
     downloadStatement:     'Pakua Taarifa',
   },
   students: {
+    stepTermsPayments: 'Muhula na Malipo',
+    termBillingHint: 'Rekebisha ada ya muhula, weka malipo, au ongeza muhula ambao haujatengenezewa ankara.',
+    termBillingEmpty: 'Hakuna muhula uliopatikana kwa mwanafunzi huyu.',
+    termBillingNote: 'Ankara na malipo yaliyopo yanasasishwa, hayarudufiwi. Kutengua malipo, tumia ukurasa wa mwanafunzi.',
+    termNotBilled: 'Hakuna ankara',
+    termFeeAmount: 'Ada ya muhula (TZS)',
+    termItemisedLocked: 'Ankara ina vipengele — ihariri kwenye ankara yenyewe.',
+    addPayment: 'Ongeza malipo',
     title:        'Wanafunzi',
     add:          'Ongeza Mwanafunzi',
     register:     'Sajili Mwanafunzi',

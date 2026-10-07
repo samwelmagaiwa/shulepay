@@ -48,6 +48,8 @@ export default {
     changePassword:   'Change Password',
   },
   common: {
+    reload:      'Reload',
+    loadFailed:  'Could not load. Please try again.',
     save:        'Save',
     refresh:     'Refresh',
     cancel:      'Cancel',
@@ -462,6 +464,14 @@ export default {
     downloadStatement:     'Download Statement',
   },
   students: {
+    stepTermsPayments: 'Terms & Payments',
+    termBillingHint: "Correct a term's fee, record a payment, or add a term that was never invoiced.",
+    termBillingEmpty: 'No terms found for this student.',
+    termBillingNote: 'Existing invoices and payments are updated, never duplicated. To reverse a payment, use the student page.',
+    termNotBilled: 'Not billed yet',
+    termFeeAmount: 'Term fee (TZS)',
+    termItemisedLocked: 'Itemised invoice — edit it on the invoice itself.',
+    addPayment: 'Add payment',
     title:        'Students',
     add:          'Add Student',
     register:     'Register Student',

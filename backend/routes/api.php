@@ -22,6 +22,7 @@ use App\Http\Controllers\Accountant\RefundController;
 use App\Http\Controllers\Accountant\RolloverController;
 use App\Http\Controllers\Accountant\StudentController;
 use App\Http\Controllers\Accountant\StudentDraftController;
+use App\Http\Controllers\Accountant\StudentTermBillingController;
 use App\Http\Controllers\Accountant\SupplierController;
 use App\Http\Controllers\Accountant\SupplierPaymentController;
 use App\Http\Controllers\Api\AttendanceController;
@@ -165,6 +166,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('students/{student}/full', [StudentController::class, 'updateFull']);
         // What deleting this student would leave behind — read by the confirm dialog.
         Route::get('students/{student}/deletion-preview', [StudentController::class, 'deletionPreview']);
+        // Term-by-term billing behind the Edit Student wizard's last step: read
+        // the student's invoices and payments, then update them in one go.
+        Route::get('students/{student}/term-billing', [StudentTermBillingController::class, 'show']);
+        Route::put('students/{student}/term-billing', [StudentTermBillingController::class, 'update']);
         Route::apiResource('students', StudentController::class);
 
         // Student Drafts (auto-save during registration)
