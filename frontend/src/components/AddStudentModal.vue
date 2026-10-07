@@ -898,6 +898,9 @@
                   <span class="text-muted small ms-1">{{ row.academic_year_name }}</span>
                   <span v-if="row.invoice_number" class="text-muted small ms-2">{{ row.invoice_number }}</span>
                   <CBadge v-else color="warning" class="ms-2">{{ t('students.termNotBilled') }}</CBadge>
+                  <div v-if="!row.invoice_id && (Number(row.fee_tzs) || 0) > 0" class="text-success small">
+                    {{ t('students.termWillBeCreated') }}
+                  </div>
                 </div>
                 <div class="small">
                   <span class="text-muted me-2">{{ t('invoices.debt') }}:</span>
@@ -918,9 +921,13 @@
                   <div class="form-control bg-light">{{ fmtTzs(billedPaid(row)) }}</div>
                 </CCol>
                 <CCol sm="4" class="text-sm-end">
-                  <CButton color="primary" variant="outline" size="sm" @click="addTermPayment(row)">
+                  <!-- A term is added so the parent can pay later, so recording a
+                       payment is optional and only offered once a fee exists. -->
+                  <CButton v-if="(Number(row.fee_tzs) || 0) > 0" color="primary" variant="outline" size="sm"
+                           @click="addTermPayment(row)">
                     + {{ t('students.addPayment') }}
                   </CButton>
+                  <div v-else class="text-muted" style="font-size:.72rem;">{{ t('students.termFeeFirst') }}</div>
                 </CCol>
               </CRow>
 
@@ -1462,7 +1469,7 @@ async function loadTermBilling() {
     const { data } = await api.get(`/students/${props.editStudentId}/term-billing`)
     termBilling.value = (data.terms || []).map((row) => ({
       ...row,
-      fee_tzs: toTzs(row.fee_amount_cents),
+      fee_tzs: row.invoice_id ? toTzs(row.fee_amount_cents) : null,
       payments: (row.payments || []).map((p) => ({
         id: p.id,
         amount_tzs: toTzs(p.amount_cents),

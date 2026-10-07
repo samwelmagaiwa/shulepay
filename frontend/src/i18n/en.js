@@ -464,6 +464,8 @@ export default {
     downloadStatement:     'Download Statement',
   },
   students: {
+    termFeeFirst: 'Enter the fee first — the parent can pay later.',
+    termWillBeCreated: 'An invoice for this term will be created when you save.',
     termPaidOverFee: 'Payments for {term} are more than its fee.',
     termFeeMissing: 'Enter the fee for {term} before recording a payment.',
     termBillingFailed: 'Student details were saved, but the terms could not be: {reason}',

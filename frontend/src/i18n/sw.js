@@ -458,6 +458,8 @@ export default {
     downloadStatement:     'Pakua Taarifa',
   },
   students: {
+    termFeeFirst: 'Weka ada kwanza — mzazi anaweza kulipa baadaye.',
+    termWillBeCreated: 'Ankara ya muhula huu itatengenezwa ukihifadhi.',
     termPaidOverFee: 'Malipo ya {term} yanazidi ada yake.',
     termFeeMissing: 'Weka ada ya {term} kabla ya kurekodi malipo.',
     termBillingFailed: 'Taarifa za mwanafunzi zimehifadhiwa, lakini muhula haukuhifadhiwa: {reason}',
