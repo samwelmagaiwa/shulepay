@@ -202,7 +202,7 @@ async function doGenerate() {
     result.value  = data
     currentStep.value = 2
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Failed to generate invoices.'
+    error.value = e?.response?.data?.message || t('errors.generateInvoices')
     currentStep.value = 0
   } finally {
     generating.value = false

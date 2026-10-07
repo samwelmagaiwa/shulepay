@@ -476,7 +476,7 @@ const categoryPieLabelsPlugin = {
 }
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return 'Date is empty'
+  if (!dateStr) return t('errors.dateEmpty')
   if (typeof dateStr === 'string' && dateStr.includes('T')) {
     return dateStr.split('T')[0]
   }
@@ -495,7 +495,7 @@ const formatDate = (dateStr) => {
         :style="{ transform: `translateX(-${activeOutageSlide * 100}%)` }"
       >
         <div v-for="slide in outageSlides" :key="slide" class="outage-slide">
-          <img :src="slide" alt="Hospital view" class="outage-slide-image" />
+          <img :src="slide" alt="" class="outage-slide-image" />
         </div>
       </div>
     </div>
@@ -588,7 +588,7 @@ const formatDate = (dateStr) => {
             <div class="col">
               <div class="p-3 border border-primary rounded h-100 d-flex flex-column align-items-center justify-content-between text-center bg-primary-subtle shadow-sm">
                 <span class="text-uppercase fw-bold text-dark mb-1" style="font-size: 0.85rem"
-                  >TOTAL</span
+                  >{{ t('common.total') }}</span
                 >
                 <h3 class="mb-1 fw-extrabold text-primary fs-4">
                   {{ patientCategories.find((c) => c.title === 'Total')?.value || '0' }}

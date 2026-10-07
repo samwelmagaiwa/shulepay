@@ -64,7 +64,7 @@
           {{ t('reports.startDate') }}: {{ colFilters.date_from }} &nbsp;|&nbsp; {{ t('reports.endDate') }}: {{ colFilters.date_to }}
         </div>
         <div class="text-muted small mt-1" v-if="activeTab === 'vs'">{{ t('common.year') }}: {{ vsYear }}</div>
-        <div class="text-muted small mt-1">{{ t('common.printedAt') }}: {{ new Date().toLocaleString() }}</div>
+        <div class="text-muted small mt-1">{{ t('common.printedAt') }}: {{ new Date().toLocaleString(dateLocale()) }}</div>
       </div>
 
       <!-- Tab: Makusanyo (Collections) -->
@@ -460,6 +460,7 @@
 </template>
 
 <script setup>
+import { dateLocale } from '@/utils/dates'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSchoolStore } from '@/stores/school'

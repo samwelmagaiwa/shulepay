@@ -415,7 +415,7 @@ function go(path) {
       <CHeaderNav class="ms-auto d-flex align-items-center gap-2">
 
         <!-- Notification Bell -->
-        <RouterLink to="/arifa" class="nav-link position-relative px-2" title="Arifa">
+        <RouterLink to="/arifa" class="nav-link position-relative px-2" :title="t('nav.notifications')">
           🔔
           <CBadge
             v-if="notifications.unreadCount > 0"

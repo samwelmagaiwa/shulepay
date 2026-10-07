@@ -217,10 +217,10 @@
                   <div class="d-flex flex-wrap gap-2">
                     <CBadge color="secondary" shape="rounded-pill" class="fw-bold">{{ selected.code }}</CBadge>
                     <CBadge :color="selected.level === 'primary' ? 'info' : 'warning'" shape="rounded-pill">
-                      {{ selected.level === 'primary' ? 'Msingi' : 'Sekondari' }}
+                      {{ selected.level === 'primary' ? t('schools.primary') : t('schools.secondary') }}
                     </CBadge>
                     <CBadge :color="selected.is_active ? 'success' : 'danger'" shape="rounded-pill">
-                      {{ selected.is_active ? 'Inafanya kazi' : 'Imezimwa' }}
+                      {{ selected.is_active ? t('schools.active') : t('schools.inactive') }}
                     </CBadge>
                   </div>
                   <div v-if="selected.motto" class="text-muted fst-italic small mt-1">"{{ selected.motto }}"</div>
@@ -425,7 +425,7 @@
           <CRow class="g-3">
             <CCol xs="12" md="8">
               <FieldLabel required>{{ t('schools.schoolName') }}</FieldLabel>
-              <CFormInput v-model="form.name" placeholder="e.g. St. Margaret Primary School" :invalid="!!errors.name" />
+              <CFormInput v-model="form.name" :placeholder="t('schools.namePlaceholder')" :invalid="!!errors.name" />
               <ErrMsg :errors="errors.name" />
             </CCol>
             <CCol xs="12" md="4">
@@ -445,7 +445,7 @@
             </CCol>
             <CCol xs="12" md="6">
               <FieldLabel>{{ t('schools.registrationNo') }}</FieldLabel>
-              <CFormInput v-model="form.registration_number" placeholder="e.g. PS/001/2005" />
+              <CFormInput v-model="form.registration_number" :placeholder="t('common.exampleValue', { value: 'PS/001/2005' })" />
             </CCol>
             <CCol xs="12" md="4">
               <FieldLabel>{{ t('schools.establishedYear') }}</FieldLabel>
@@ -464,11 +464,11 @@
             </CCol>
             <CCol xs="12">
               <FieldLabel>{{ t('schools.motto') }}</FieldLabel>
-              <CFormInput v-model="form.motto" placeholder="e.g. Elimu ni Ufunguo" maxlength="200" />
+              <CFormInput v-model="form.motto" :placeholder="t('schools.mottoPlaceholder')" maxlength="200" />
             </CCol>
             <CCol xs="12">
               <FieldLabel>{{ t('schools.ownerName') }}</FieldLabel>
-              <CFormInput v-model="form.owner_name" placeholder="Bw. Ahmed Salim" />
+              <CFormInput v-model="form.owner_name" :placeholder="t('schools.ownerPlaceholder')" />
             </CCol>
             <CCol xs="12">
               <FieldLabel>{{ t('schools.logo') }}</FieldLabel>
@@ -478,7 +478,7 @@
                 </div>
                 <div>
                   <CFormInput type="file" accept="image/jpeg,image/png,image/webp" @change="onLogoChange" :invalid="!!errors.logo" />
-                  <div class="form-text">JPEG / PNG / WebP, max 2 MB</div>
+                  <div class="form-text">{{ t('schools.logoHint') }}</div>
                   <ErrMsg :errors="errors.logo" />
                 </div>
               </div>
@@ -495,20 +495,20 @@
             </CCol>
             <CCol xs="12" md="6">
               <FieldLabel>{{ t('schools.email') }}</FieldLabel>
-              <CFormInput type="email" v-model="form.email" placeholder="shule@example.go.tz" :invalid="!!errors.email" />
+              <CFormInput type="email" v-model="form.email" placeholder="school@example.go.tz" :invalid="!!errors.email" />
               <ErrMsg :errors="errors.email" />
             </CCol>
             <CCol xs="12">
               <FieldLabel>{{ t('schools.website') }}</FieldLabel>
               <CInputGroup>
                 <CInputGroupText>https://</CInputGroupText>
-                <CFormInput v-model="form.website" placeholder="www.shule.ac.tz" :invalid="!!errors.website" />
+                <CFormInput v-model="form.website" placeholder="www.school.ac.tz" :invalid="!!errors.website" />
               </CInputGroup>
               <ErrMsg :errors="errors.website" />
             </CCol>
             <CCol xs="12">
               <FieldLabel>{{ t('schools.address') }}</FieldLabel>
-              <CFormInput v-model="form.address" placeholder="S.L.P 123, Dar es Salaam" />
+              <CFormInput v-model="form.address" :placeholder="t('schools.addressPlaceholder')" />
             </CCol>
             <CCol xs="12" md="4">
               <FieldLabel>{{ t('schools.region') }}</FieldLabel>
@@ -544,7 +544,7 @@
       <CModalBody class="p-3">
         <div class="mb-3">
           <FieldLabel required>{{ t('schools.className') }}</FieldLabel>
-          <CFormInput v-model="classForm.name" placeholder="e.g. STANDARD ONE" :invalid="!!classErrors.name" />
+          <CFormInput v-model="classForm.name" :placeholder="t('schools.classNamePlaceholder')" :invalid="!!classErrors.name" />
           <ErrMsg :errors="classErrors.name" />
         </div>
         <div class="mb-3">
@@ -569,7 +569,7 @@
       <CModalBody class="p-3">
         <div class="mb-3">
           <FieldLabel required>{{ t('common.year') }}</FieldLabel>
-          <CFormInput v-model="yearForm.name" placeholder="e.g. 2026" :invalid="!!yearErrors.name" />
+          <CFormInput v-model="yearForm.name" :placeholder="t('common.exampleValue', { value: '2026' })" :invalid="!!yearErrors.name" />
           <ErrMsg :errors="yearErrors.name" />
         </div>
         <div class="mb-3">
@@ -604,7 +604,7 @@
           </CCol>
           <CCol xs="12">
             <FieldLabel required>{{ t('common.email') }}</FieldLabel>
-            <CFormInput type="email" v-model="userForm.email" placeholder="mtumiaji@shule.tz" :invalid="!!userErrors.email" />
+            <CFormInput type="email" v-model="userForm.email" placeholder="name@school.tz" :invalid="!!userErrors.email" />
             <ErrMsg :errors="userErrors.email" />
           </CCol>
           <CCol xs="12" md="6">
@@ -889,7 +889,7 @@ async function submit() {
 // ── Toggle / Delete ───────────────────────────────────────────────────────────
 async function toggle(school) {
   try { await store.toggleStatus(school.id) } catch (e) {
-    alert(e?.response?.data?.message || 'Hitilafu')
+    alert(e?.response?.data?.message || t('errors.tryAgain'))
   }
 }
 
@@ -904,7 +904,7 @@ async function doDelete() {
     await store.deleteSchool(toDelete.value.id)
     showDeleteConfirm.value = false
   } catch (e) {
-    alert(e?.response?.data?.message || 'Hitilafu ya kufuta')
+    alert(e?.response?.data?.message || t('schools.deleteFailed'))
   } finally { saving.value = false }
 }
 
@@ -963,16 +963,16 @@ async function submitClass() {
     await loadClasses(selected.value.id)
   } catch (e) {
     if (e?.response?.status === 422) classErrors.value = e.response.data.errors || {}
-    classFormError.value = e?.response?.data?.message || 'Hitilafu'
+    classFormError.value = e?.response?.data?.message || t('errors.tryAgain')
   } finally { classSaving.value = false }
 }
 
 async function deleteClass(cls) {
-  if (!confirm(`Futa darasa "${cls.name}"?`)) return
+  if (!confirm(t('schools.confirmDeleteClass', { name: cls.name }))) return
   try {
     await api.delete(`/school-classes/${cls.id}`)
     await loadClasses(selected.value.id)
-  } catch (e) { alert(e?.response?.data?.message || 'Hitilafu ya kufuta') }
+  } catch (e) { alert(e?.response?.data?.message || t('schools.deleteFailed')) }
 }
 
 // ── Academic Years ────────────────────────────────────────────────────────────
@@ -1015,7 +1015,7 @@ async function submitYear() {
     await loadYears(selected.value.id)
   } catch (e) {
     if (e?.response?.status === 422) yearErrors.value = e.response.data.errors || {}
-    yearFormError.value = e?.response?.data?.message || 'Hitilafu'
+    yearFormError.value = e?.response?.data?.message || t('errors.tryAgain')
   } finally { yearSaving.value = false }
 }
 
@@ -1023,7 +1023,7 @@ async function setCurrentYear(yr) {
   try {
     await api.patch(`/academic-years/${yr.id}`, { is_current: true, school_id: selected.value.id })
     await loadYears(selected.value.id)
-  } catch (e) { alert(e?.response?.data?.message || 'Hitilafu') }
+  } catch (e) { alert(e?.response?.data?.message || t('errors.tryAgain')) }
 }
 
 // ── Users ─────────────────────────────────────────────────────────────────────
@@ -1058,7 +1058,7 @@ async function submitUser() {
   try {
     const payload = { ...userForm.value, school_id: selected.value.id }
     if (!editingUser.value && !payload.password) {
-      userErrors.value = { password: ['Neno la siri linahitajika'] }
+      userErrors.value = { password: [t('schools.passwordRequired')] }
       userSaving.value = false
       return
     }
@@ -1073,16 +1073,16 @@ async function submitUser() {
     await loadUsers(selected.value.id)
   } catch (e) {
     if (e?.response?.status === 422) userErrors.value = e.response.data.errors || {}
-    userFormError.value = e?.response?.data?.message || 'Hitilafu'
+    userFormError.value = e?.response?.data?.message || t('errors.tryAgain')
   } finally { userSaving.value = false }
 }
 
 async function confirmDeleteUser(u) {
-  if (!confirm(`Futa mtumiaji "${u.name}"?`)) return
+  if (!confirm(t('schools.confirmDeleteUser', { name: u.name }))) return
   try {
     await api.delete(`/users/${u.id}`)
     await loadUsers(selected.value.id)
-  } catch (e) { alert(e?.response?.data?.message || 'Hitilafu ya kufuta') }
+  } catch (e) { alert(e?.response?.data?.message || t('schools.deleteFailed')) }
 }
 
 // Auto-fill registration number for new schools only

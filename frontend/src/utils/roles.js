@@ -1,3 +1,5 @@
+import { i18n } from '@/i18n'
+
 /**
  * Central role registry — single source of truth for all role metadata.
  * Import getRoleLabel / getRoleIcon / ROLES anywhere that needs role display.
@@ -24,8 +26,10 @@ export function getRole(value) {
   return _byValue[value] ?? { value, label: value, swahili: value, icon: '👤', levels: [] }
 }
 
+/** Role name in the language currently selected (reactive when read in a template). */
 export function getRoleLabel(value) {
-  return getRole(value).label
+  const role = getRole(value)
+  return i18n.global.locale.value === 'sw' ? role.swahili : role.label
 }
 
 export function getRoleSwahili(value) {

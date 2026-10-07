@@ -381,7 +381,7 @@ const fetchPendingPatients = () => {}
             <div v-else class="patient-list">
               <!-- Total row -->
               <div class="patient-item absent-total-row">
-                <span class="mr-number fw-bold">Jumla</span>
+                <span class="mr-number fw-bold">{{ t('common.total') }}</span>
                 <span class="absent-count-badge absent-count-total">{{ totalDiscounted }}</span>
               </div>
               <!-- Per class rows -->

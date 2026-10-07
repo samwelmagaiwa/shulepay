@@ -1,4 +1,5 @@
 <script setup>
+import { dateLocale } from '@/utils/dates'
 import { computed, ref, watch, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { CChartBar } from '@coreui/vue-chartjs'
@@ -99,7 +100,7 @@ const formatTrendDayLabel = (date) => {
     return 'Yesterday'
   }
 
-  const weekday = date.toLocaleDateString('en-US', { weekday: 'short' })
+  const weekday = date.toLocaleDateString(dateLocale(), { weekday: 'short' })
   const day = String(date.getDate()).padStart(2, '0')
   return `${day} ${weekday}`
 }
@@ -204,7 +205,7 @@ const normalizedTrendData = computed(() => {
         let rawIndex = labelIndexMap.get(dateKey)
         
         if (rawIndex === undefined) {
-           const weekday = date.toLocaleDateString('en-US', { weekday: 'short' })
+           const weekday = date.toLocaleDateString(dateLocale(), { weekday: 'short' })
            rawIndex = labelIndexMap.get(`${d} ${weekday}`)
         }
         
@@ -662,7 +663,7 @@ const chartOptions = computed(() => {
           </div>
           <div v-if="dashboard.remoteApiAvailable === false && dashboard.isOfflineUIReported" class="d-flex align-items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200 rounded-pill shadow-sm">
             <div class="spinner-grow spinner-grow-sm text-amber-500" role="status" style="width: 8px; height: 8px;"></div>
-            <span class="fw-bold text-amber-700" style="font-size: 11px; letter-spacing: 0.5px">RECONNECTING... (CACHED)</span>
+            <span class="fw-bold text-amber-700" style="font-size: 11px; letter-spacing: 0.5px">{{ t('dashboard.reconnecting') }}</span>
           </div>
           <div
             class="premium-stat-pill d-flex align-items-center shadow-sm border-primary-subtle bg-white"
@@ -685,7 +686,7 @@ const chartOptions = computed(() => {
             class="facilities-badge shadow-sm"
             style="font-size: 11px; padding: 4px 12px"
           >
-            {{ referralData.length }} Shule
+            {{ t('dashboard.schoolsCount', { count: referralData.length }) }}
           </CBadge>
         </div>
       </div>
@@ -717,7 +718,7 @@ const chartOptions = computed(() => {
             </div>
           </div>
 
-          <div v-if="dashboard.isSyncing" class="sync-indicator-mini" title="Background syncing in progress...">
+          <div v-if="dashboard.isSyncing" class="sync-indicator-mini" :title="t('dashboard.syncing')">
             <div class="spinner-border spinner-border-sm text-primary" style="width: 0.8rem; height: 0.8rem;"></div>
           </div>
 
@@ -785,7 +786,7 @@ const chartOptions = computed(() => {
                       ]"
                     >
                       <td class="py-2 position-relative">
-                        <div v-if="index === 0" class="top-badge" style="top: -2px; left: 10px;">TOP #1</div>
+                        <div v-if="index === 0" class="top-badge" style="top: -2px; left: 10px;">{{ t('dashboard.topOne') }}</div>
                         <div class="d-flex align-items-center gap-2">
                           <span
                             v-if="hosp.name && hosp.name.trim()"
@@ -799,9 +800,9 @@ const chartOptions = computed(() => {
                             v-else
                             class="facility-code-name fw-semibold text-muted"
                             style="font-size: 12px"
-                            :title="'Facility ' + hosp.code"
+                            :title="t('common.school') + ' ' + hosp.code"
                           >
-                            Facility {{ hosp.code }}
+                            {{ t('common.school') }} {{ hosp.code }}
                           </span>
                         </div>
                       </td>
@@ -854,7 +855,7 @@ const chartOptions = computed(() => {
                 class="d-flex flex-column align-items-center justify-content-center py-5 opacity-50"
               >
                 <CIcon :icon="cilHospital" size="xl" class="mb-2" />
-                <p class="small">Hakuna data ya ankara iliyopatikana</p>
+                <p class="small">{{ t('dashboard.noInvoiceData') }}</p>
               </div>
             </div>
           </div>

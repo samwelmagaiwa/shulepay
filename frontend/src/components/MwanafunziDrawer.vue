@@ -18,22 +18,22 @@
       <div class="row g-2 mb-0 py-3 border-top border-bottom">
         <div class="col-4">
           <div class="rounded p-2 text-center" style="background:#f8f9fa;">
-            <div style="font-size:.62rem; color:#6c757d; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Jumla</div>
+            <div style="font-size:.62rem; color:#6c757d; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">{{ t('common.total') }}</div>
             <div style="font-weight:700; font-size:.85rem; letter-spacing:-.01em;">{{ formatMoney(totalInvoiced) }}</div>
           </div>
         </div>
         <div class="col-4">
           <div class="rounded p-2 text-center" style="background:rgba(25,135,84,.08);">
-            <div style="font-size:.62rem; color:#198754; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Imelipwa</div>
+            <div style="font-size:.62rem; color:#198754; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">{{ t('common.paid') }}</div>
             <div class="text-success" style="font-weight:700; font-size:.85rem; letter-spacing:-.01em;">{{ formatMoney(totalPaid) }}</div>
           </div>
         </div>
         <div class="col-4">
           <div class="rounded p-2 text-center"
                :style="totalOutstanding > 0 ? 'background:rgba(220,53,69,.08)' : 'background:rgba(25,135,84,.08)'">
-            <div :style="`font-size:.62rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:${totalOutstanding>0?'#dc3545':'#198754'}`">Deni</div>
+            <div :style="`font-size:.62rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:${totalOutstanding>0?'#dc3545':'#198754'}`">{{ t('common.balance') }}</div>
             <div :class="totalOutstanding > 0 ? 'text-danger' : 'text-success'" style="font-weight:700; font-size:.85rem; letter-spacing:-.01em;">
-              {{ totalOutstanding > 0 ? formatMoney(totalOutstanding) : '✓ Sifuri' }}
+              {{ totalOutstanding > 0 ? formatMoney(totalOutstanding) : t('studentDrawer.zero') }}
             </div>
           </div>
         </div>
@@ -59,16 +59,16 @@
         <InfoRow :label="t('students.admissionNo')" :value="info.admission_number || '—'" />
         <InfoRow :label="t('common.class')" :value="info.school_class?.name || '—'" />
         <InfoRow :label="t('students.gender')" :value="genderLabel" />
-        <InfoRow :label="t('common.status')" :value="info.status || '—'" />
+        <InfoRow :label="t('common.status')" :value="statusLabel(info.status)" />
         <InfoRow v-if="info.date_of_birth" :label="t('students.dob')" :value="info.date_of_birth" />
-        <InfoRow v-if="info.school?.name" label="Shule" :value="info.school.name" />
+        <InfoRow v-if="info.school?.name" :label="t('common.school')" :value="info.school.name" />
       </div>
 
       <!-- Ankara + the payments made against each -->
       <div :ref="el => sections.ankara = el" class="mt-4">
-        <div class="section-head">Ankara &amp; Malipo</div>
+        <div class="section-head">{{ t('studentDrawer.invoicesAndPayments') }}</div>
         <div v-if="detailLoading" class="text-center py-4"><CSpinner size="sm" /></div>
-        <div v-else-if="!invoices.length" class="text-center text-muted py-4 small">Hakuna ankara.</div>
+        <div v-else-if="!invoices.length" class="text-center text-muted py-4 small">{{ t('studentDrawer.noInvoices') }}</div>
         <div v-else>
           <div v-for="inv in invoices" :key="inv.id"
                class="mb-2 p-2 rounded border"
@@ -80,13 +80,13 @@
               </div>
               <span class="badge"
                     :class="inv.status === 'paid' ? 'bg-success' : inv.status === 'partial' ? 'bg-warning text-dark' : 'bg-danger'">
-                {{ inv.status === 'paid' ? 'Imelipwa' : inv.status === 'partial' ? 'Sehemu' : 'Haijalipiwa' }}
+                {{ t('statusBadge.' + (['paid', 'partial'].includes(inv.status) ? inv.status : 'unpaid')) }}
               </span>
             </div>
             <div class="d-flex justify-content-between mt-1 small">
-              <span>Jumla: <strong>{{ formatMoney(inv.total_amount_cents) }}</strong></span>
+              <span>{{ t('common.total') }}: <strong>{{ formatMoney(inv.total_amount_cents) }}</strong></span>
               <span :class="inv.balance_due_cents > 0 ? 'text-danger' : 'text-success'">
-                Deni: <strong>{{ inv.balance_due_cents > 0 ? formatMoney(inv.balance_due_cents) : '✓ 0' }}</strong>
+                {{ t('common.balance') }}: <strong>{{ inv.balance_due_cents > 0 ? formatMoney(inv.balance_due_cents) : '✓ 0' }}</strong>
               </span>
             </div>
             <!-- Payments recorded against this invoice -->
@@ -101,15 +101,15 @@
               </div>
             </div>
             <div v-else class="mt-2 pt-2 text-muted" style="border-top:1px dashed #dee2e6; font-size:.72rem;">
-              Hakuna malipo bado.
+              {{ t('studentDrawer.noPaymentsYet') }}
             </div>
 
             <!-- Installment mini-indicator if this invoice has a plan -->
             <div v-if="installmentsByInvoice[inv.id]" class="mt-2">
               <div class="d-flex justify-content-between align-items-center mb-1" style="font-size:.68rem; color:#6c757d;">
-                <span>Awamu: {{ installmentsByInvoice[inv.id].paid_count }}/{{ installmentsByInvoice[inv.id].total }}</span>
+                <span>{{ t('studentDrawer.installmentsProgress', { paid: installmentsByInvoice[inv.id].paid_count, total: installmentsByInvoice[inv.id].total }) }}</span>
                 <span style="color:#007f3e; cursor:pointer; text-decoration:underline;"
-                      @click="scrollTo('awamu')">Angalia Awamu →</span>
+                      @click="scrollTo('awamu')">{{ t('studentDrawer.viewInstallments') }}</span>
               </div>
               <div class="progress" style="height:4px;">
                 <div class="progress-bar bg-success" role="progressbar"
@@ -122,7 +122,7 @@
 
       <!-- Malipo yasiyo na ankara -->
       <div v-if="unlinkedPayments.length" :ref="el => sections.malipo = el" class="mt-4">
-        <div class="section-head">Malipo Mengine</div>
+        <div class="section-head">{{ t('studentDrawer.otherPayments') }}</div>
         <div v-if="detailLoading" class="text-center py-4"><CSpinner size="sm" /></div>
         <div>
           <div v-for="p in unlinkedPayments" :key="p.id"
@@ -132,7 +132,7 @@
               <div class="text-muted" style="font-size:.72rem;">
                 {{ formatDate(p.paid_at) }} · {{ methodLabel(p.method) }}
               </div>
-              <div v-if="p.reference_number" class="text-muted" style="font-size:.70rem;">Kumb: {{ p.reference_number }}</div>
+              <div v-if="p.reference_number" class="text-muted" style="font-size:.70rem;">{{ t('studentDrawer.refShort') }} {{ p.reference_number }}</div>
             </div>
             <div class="text-end">
               <div class="text-muted" style="font-size:.70rem;">{{ p.receipt?.receipt_number || p.invoice?.invoice_number }}</div>
@@ -143,11 +143,11 @@
 
       <!-- Awamu -->
       <div v-if="installments.length" :ref="el => sections.awamu = el" class="mt-4">
-        <div class="section-head">Awamu</div>
+        <div class="section-head">{{ t('studentDrawer.tabInstallments') }}</div>
         <div v-if="detailLoading" class="text-center py-4"><CSpinner size="sm" /></div>
         <div v-else-if="!installments.length" class="text-center text-muted py-4 small">
           <div style="font-size:1.5rem; margin-bottom:4px;">📋</div>
-          Hakuna mipango ya awamu.
+          {{ t('studentDrawer.noPlans') }}
         </div>
         <div v-else>
           <!-- Plan groups -->
@@ -158,18 +158,17 @@
               <div>
                 <div class="fw-semibold small" style="color:#007f3e;">{{ group.invoice_number }}</div>
                 <div class="text-muted" style="font-size:.7rem;">
-                  Awamu {{ group.paid_count }}/{{ group.total }} •
-                  {{ formatMoney(group.amount_each) }} kila moja
+                  {{ t('studentDrawer.planSummary', { paid: group.paid_count, total: group.total, amount: formatMoney(group.amount_each) }) }}
                 </div>
               </div>
               <span class="badge" :class="group.all_paid ? 'bg-success' : 'bg-warning text-dark'">
-                {{ group.all_paid ? '✓ Imekamilika' : 'Inaendelea' }}
+                {{ group.all_paid ? t('studentDrawer.planComplete') : t('studentDrawer.planOngoing') }}
               </span>
             </div>
             <!-- Progress bar -->
             <div style="border:1px solid #e0f2ec; border-top:none; border-bottom:none; padding:6px 8px;">
               <div class="d-flex justify-content-between mb-1" style="font-size:.68rem; color:#6c757d;">
-                <span>Maendeleo</span>
+                <span>{{ t('installments.progress') }}</span>
                 <span>{{ Math.round(group.paid_count / group.total * 100) }}%</span>
               </div>
               <div class="progress" style="height:6px;">
@@ -192,9 +191,9 @@
                     <span v-else style="font-size:.8rem;">⏳</span>
                     <div>
                       <div class="fw-semibold" style="font-size:.75rem;">
-                        Awamu #{{ item.installment_number }}
+                        {{ t('studentDrawer.installmentNo', { n: item.installment_number }) }}
                       </div>
-                      <div class="text-muted" style="font-size:.67rem;">Tarehe: {{ item.due_date }}</div>
+                      <div class="text-muted" style="font-size:.67rem;">{{ t('studentDrawer.dueOn', { date: item.due_date }) }}</div>
                     </div>
                   </div>
                 </div>
@@ -208,13 +207,13 @@
                       {{ formatMoney(item.paid_amount_cents) }} / {{ formatMoney(item.installment_amount_cents) }}
                     </div>
                     <div class="text-danger" style="font-size:.67rem;">
-                      Inakosekana: {{ formatMoney(item.installment_amount_cents - item.paid_amount_cents) }}
+                      {{ t('studentDrawer.missing', { amount: formatMoney(item.installment_amount_cents - item.paid_amount_cents) }) }}
                     </div>
                   </div>
                   <div v-else>
                     <div class="fw-semibold" style="font-size:.75rem;">{{ formatMoney(item.installment_amount_cents) }}</div>
                     <div :class="isOverdue(item.due_date) ? 'text-danger' : 'text-muted'" style="font-size:.67rem;">
-                      {{ isOverdue(item.due_date) ? '⚠ Imechelewa' : 'Inasubiri' }}
+                      {{ isOverdue(item.due_date) ? t('studentDrawer.overdue') : t('statusBadge.pending') }}
                     </div>
                   </div>
                 </div>
@@ -236,12 +235,13 @@
 </template>
 
 <script setup>
+import { dateLocale } from '@/utils/dates'
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
 import InfoRow from '@/components/InfoRow.vue'
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 const props = defineProps({ student: Object })
 defineEmits(['close'])
 
@@ -330,10 +330,10 @@ const installmentsByInvoice = computed(() => {
 })
 
 const tabs = computed(() => [
-  { key: 'maelezo', label: 'Maelezo' },
-  { key: 'ankara',  label: 'Ankara', badge: invoices.value.length || null },
-  { key: 'malipo',  label: 'Malipo',  badge: payments.value.length || null },
-  { key: 'awamu',   label: 'Awamu', badge: installmentGroups.value.length || null },
+  { key: 'maelezo', label: t('studentDrawer.tabDetails') },
+  { key: 'ankara',  label: t('nav.invoices'), badge: invoices.value.length || null },
+  { key: 'malipo',  label: t('nav.payments'),  badge: payments.value.length || null },
+  { key: 'awamu',   label: t('studentDrawer.tabInstallments'), badge: installmentGroups.value.length || null },
 ])
 
 function formatMoney(cents) {
@@ -342,11 +342,15 @@ function formatMoney(cents) {
 
 function formatDate(iso) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('sw-TZ')
+  return new Date(iso).toLocaleDateString(dateLocale())
 }
 
 function methodLabel(method) {
-  return { cash: 'Cash', mpesa: 'M-Pesa', bank: 'Benki', cheque: 'Hundi' }[method] || method || '—'
+  return te(`payments.methods.${method}`) ? t(`payments.methods.${method}`) : method || '—'
+}
+
+function statusLabel(status) {
+  return te(`statusBadge.${status}`) ? t(`statusBadge.${status}`) : status || '—'
 }
 
 function isOverdue(dueDateStr) {

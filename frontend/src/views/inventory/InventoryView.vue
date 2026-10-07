@@ -400,7 +400,7 @@ async function submitAsset() {
     await store.fetchSummary()
   } catch (e) {
     const errors = e?.response?.data?.errors
-    formError.value = errors ? Object.values(errors).flat().join(' ') : (e?.response?.data?.message || 'Imeshindwa. Jaribu tena.')
+    formError.value = errors ? Object.values(errors).flat().join(' ') : (e?.response?.data?.message || t('common.actionFailed'))
   } finally {
     saving.value = false
   }
@@ -417,7 +417,7 @@ async function doDispose() {
     showDisposeModal.value = false
     await loadAssets()
   } catch (e) {
-    disposeError.value = e?.response?.data?.message || 'Imeshindwa. Jaribu tena.'
+    disposeError.value = e?.response?.data?.message || t('common.actionFailed')
   } finally {
     disposing.value = false
   }
@@ -606,7 +606,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
                 <CTableDataCell>{{ i + 1 }}</CTableDataCell>
                 <CTableDataCell>
                   <span class="fw-semibold">{{ item.name }}</span>
-                  <span v-if="item.is_low_stock" class="ms-2 text-danger" title="Inakwisha">⚠️</span>
+                  <span v-if="item.is_low_stock" class="ms-2 text-danger" :title="t('inventory.lowStockTitle')">⚠️</span>
                 </CTableDataCell>
                 <CTableDataCell>{{ item.unit }}</CTableDataCell>
                 <CTableDataCell :class="item.is_low_stock ? 'text-danger fw-bold' : ''">{{ Number(item.quantity).toLocaleString() }}</CTableDataCell>
@@ -855,7 +855,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
               <!-- Reference -->
               <CCol :md="txnForm.type === 'out' ? 6 : 6">
                 <CFormLabel>{{ t('inventory.txnReference') }}</CFormLabel>
-                <CFormInput v-model="txnForm.reference" placeholder="LPO-001..." />
+                <CFormInput v-model="txnForm.reference" :placeholder="t('inventory.referencePlaceholder')" />
               </CCol>
               <!-- Notes -->
               <CCol xs="12" md="6">
@@ -976,7 +976,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
       </CModalHeader>
       <CModalBody v-if="detailAsset">
         <div v-if="detailAsset.photo_url" class="mb-3 text-center">
-          <img :src="detailAsset.photo_url" class="img-fluid rounded" style="max-height:200px;" alt="Picha ya mali" />
+          <img :src="detailAsset.photo_url" class="img-fluid rounded" style="max-height:200px;" :alt="t('inventory.assetPhotoAlt')" />
         </div>
 
         <h6 class="text-primary fw-bold border-bottom pb-1 mb-2">{{ t('assets.detail.identity') }}</h6>
@@ -1064,9 +1064,9 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
             <CCol xs="12" md="6">
               <label class="form-label fw-semibold">{{ t('assets.assetTag') }} *</label>
               <div class="input-group">
-                <CFormInput v-model="form.asset_tag" placeholder="mfano: MSG-AST-001" style="min-height:44px;" />
+                <CFormInput v-model="form.asset_tag" :placeholder="t('inventory.assetTagPlaceholder')" style="min-height:44px;" />
                 <CButton color="outline-secondary" @click="autoFillTag" :disabled="loadingTag" style="min-height:44px;">
-                  <CSpinner v-if="loadingTag" size="sm" /><span v-else>Auto</span>
+                  <CSpinner v-if="loadingTag" size="sm" /><span v-else>{{ t('inventory.autoTag') }}</span>
                 </CButton>
               </div>
             </CCol>

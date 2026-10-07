@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import api from '@/services/api'
+import { i18n } from '@/i18n'
 
 export const useInventoryStore = defineStore('inventory', () => {
   // ── Consumables ────────────────────────────────────────────────────────────
@@ -26,7 +27,7 @@ export const useInventoryStore = defineStore('inventory', () => {
       const { data } = await api.get('/inventory/items', { params: { ...params, type: 'consumable' } })
       items.value = data
     } catch (e) {
-      error.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia bidhaa'
+      error.value = e?.response?.data?.message || i18n.global.t('errors.loadItems')
     } finally {
       loading.value = false
     }
@@ -88,7 +89,7 @@ export const useInventoryStore = defineStore('inventory', () => {
       lastPage.value    = data.meta?.last_page ?? 1
       total.value       = data.meta?.total ?? (data.data?.length ?? 0)
     } catch (e) {
-      assetsError.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia mali'
+      assetsError.value = e?.response?.data?.message || i18n.global.t('errors.loadAssets')
     } finally {
       assetsLoading.value = false
     }

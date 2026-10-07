@@ -50,11 +50,11 @@
           <div class="d-grid gap-2">
             <CButton color="success" size="lg" @click="onResume()" class="fw-semibold">
               ↩️ {{ t('students.goWhereYouEnded') || 'Go Where You Ended' }}
-              <div class="small text-muted mt-1">Continue from step {{ hasDraft ? '...' : '1' }}</div>
+              <div class="small text-muted mt-1">{{ t('students.continueFromStep', { step: hasDraft ? '...' : '1' }) }}</div>
             </CButton>
             <CButton color="secondary" size="lg" @click="onStartFresh()" class="fw-semibold">
               🆕 {{ t('students.startFresh') || 'Start Fresh' }}
-              <div class="small text-muted mt-1">Begin new registration</div>
+              <div class="small text-muted mt-1">{{ t('students.beginNewRegistration') }}</div>
             </CButton>
           </div>
         </div>
@@ -72,11 +72,11 @@
             <div class="fw-bold" :style="form.is_existing_student ? 'color:#007f3e;font-size:1rem;' : 'font-size:.9rem;'">
               {{ form.is_existing_student ? '📚 ' + t('students.isExistingStudent') : '🆕 ' + t('students.isNewStudent') }}
             </div>
-            <CBadge v-if="form.is_existing_student" color="success" style="font-size:.7rem;">DEFAULT</CBadge>
+            <CBadge v-if="form.is_existing_student" color="success" style="font-size:.7rem;">{{ t('students.defaultBadge') }}</CBadge>
           </div>
           <div class="text-muted" style="font-size:.72rem;">
             {{ form.is_existing_student
-              ? 'Record previous terms\' fees and payments as written in the books. The system will automatically calculate the current balance.'
+              ? t('students.existingHint')
               : t('students.isNewStudentHint') }}
           </div>
         </div>
@@ -84,7 +84,7 @@
           <CFormSwitch v-model="form.is_existing_student" id="existingStudentToggle"
                        @update:modelValue="onExistingToggleWithWarning" />
           <div class="small" :style="form.is_existing_student ? 'color:#007f3e;font-weight:600;' : 'color:#999;'">
-            {{ form.is_existing_student ? '✓ ACTIVE' : 'Inactive' }}
+            {{ form.is_existing_student ? t('students.toggleOn') : t('students.toggleOff') }}
           </div>
         </div>
       </div>
@@ -116,7 +116,7 @@
       <!-- Step indicator — mobile -->
       <div class="d-md-none mb-3 text-center">
         <CBadge color="primary" class="px-3 py-2">
-          Hatua {{ step }}/{{ steps.length }}: {{ steps[step-1] }}
+          {{ t('students.stepOf', { step, total: steps.length }) }}: {{ steps[step-1] }}
         </CBadge>
       </div>
 
@@ -132,7 +132,7 @@
                 :src="photoPreview"
                 class="rounded-circle border shadow-sm"
                 style="width:120px;height:120px;object-fit:cover;"
-                alt="Picha"
+                :alt="t('students.photoAlt')"
               />
               <div v-else class="rounded-circle border d-flex align-items-center justify-content-center bg-light shadow-sm"
                    style="width:120px;height:120px;font-size:3rem;color:#adb5bd;">👤</div>
@@ -140,7 +140,7 @@
               <button v-if="photoPreview" type="button"
                       class="btn btn-sm btn-danger rounded-circle position-absolute p-0 d-flex align-items-center justify-content-center"
                       style="width:24px;height:24px;top:4px;right:4px;font-size:.7rem;"
-                      @click="removePhoto" title="Ondoa picha">✕</button>
+                      @click="removePhoto" :title="t('students.removePhoto')">✕</button>
             </div>
             <label class="btn btn-outline-primary btn-sm w-100" style="cursor:pointer;">
               📷 {{ t('students.uploadPhoto') }}
@@ -154,16 +154,16 @@
             <CRow class="g-3">
               <CCol xs="12" sm="4">
                 <label class="form-label fw-semibold">{{ t('students.firstName') }} <span class="text-danger">*</span></label>
-                <CFormInput v-model="form.first_name" :class="{'is-invalid': errors.first_name}" placeholder="Jina la kwanza" />
+                <CFormInput v-model="form.first_name" :class="{'is-invalid': errors.first_name}" :placeholder="t('students.firstNamePlaceholder')" />
                 <div class="invalid-feedback">{{ errors.first_name }}</div>
               </CCol>
               <CCol xs="12" sm="4">
                 <label class="form-label">{{ t('students.middleName') }}</label>
-                <CFormInput v-model="form.middle_name" placeholder="Jina la kati" />
+                <CFormInput v-model="form.middle_name" :placeholder="t('students.middleNamePlaceholder')" />
               </CCol>
               <CCol xs="12" sm="4">
                 <label class="form-label fw-semibold">{{ t('students.lastName') }} <span class="text-danger">*</span></label>
-                <CFormInput v-model="form.last_name" :class="{'is-invalid': errors.last_name}" placeholder="Jina la familia" />
+                <CFormInput v-model="form.last_name" :class="{'is-invalid': errors.last_name}" :placeholder="t('students.lastNamePlaceholder')" />
                 <div class="invalid-feedback">{{ errors.last_name }}</div>
               </CCol>
 
@@ -198,7 +198,7 @@
               </CCol>
               <CCol xs="6" sm="3">
                 <label class="form-label">{{ t('students.nationality') }}</label>
-                <CFormInput v-model="form.nationality" placeholder="Tanzanian" />
+                <CFormInput v-model="form.nationality" :placeholder="t('students.nationalityPlaceholder')" />
               </CCol>
             </CRow>
           </CCol>
@@ -211,7 +211,7 @@
         <CRow class="g-3">
           <CCol xs="12" sm="4">
             <label class="form-label">{{ t('students.birthCertNo') }}</label>
-            <CFormInput v-model="form.birth_certificate_no" placeholder="Nambari ya cheti cha kuzaliwa"
+            <CFormInput v-model="form.birth_certificate_no" :placeholder="t('students.birthCertPlaceholder')"
                         :class="{'is-invalid': errors.birth_certificate_no}" />
             <div class="invalid-feedback">{{ errors.birth_certificate_no }}</div>
           </CCol>
@@ -245,14 +245,14 @@
             <label class="form-label fw-semibold mb-1">{{ t('students.bloodGroup') }}</label>
             <CFormSelect v-model="form.blood_group">
               <option value="">— {{ t('students.unknown') }} —</option>
-              <option value="A+">A+ (A Positive)</option>
-              <option value="A-">A− (A Negative)</option>
-              <option value="B+">B+ (B Positive)</option>
-              <option value="B-">B− (B Negative)</option>
-              <option value="AB+">AB+ (AB Positive)</option>
-              <option value="AB-">AB− (AB Negative)</option>
-              <option value="O+">O+ (O Positive)</option>
-              <option value="O-">O− (O Negative)</option>
+              <option value="A+">A+ (A {{ t('students.bloodPositive') }})</option>
+              <option value="A-">A− (A {{ t('students.bloodNegative') }})</option>
+              <option value="B+">B+ (B {{ t('students.bloodPositive') }})</option>
+              <option value="B-">B− (B {{ t('students.bloodNegative') }})</option>
+              <option value="AB+">AB+ (AB {{ t('students.bloodPositive') }})</option>
+              <option value="AB-">AB− (AB {{ t('students.bloodNegative') }})</option>
+              <option value="O+">O+ (O {{ t('students.bloodPositive') }})</option>
+              <option value="O-">O− (O {{ t('students.bloodNegative') }})</option>
             </CFormSelect>
           </CCol>
           <CCol xs="12" sm="4">
@@ -330,7 +330,7 @@
               @input="form.place = ''; places = []"
             />
             <div v-if="form.ward && !loadingStreets && streets.length === 0" class="text-muted mt-1" style="font-size:.72rem;">
-              Hakuna data — andika mwenyewe
+              {{ t('students.noLocationData') }}
             </div>
           </CCol>
           <CCol xs="12" sm="4">
@@ -416,7 +416,7 @@
           <div class="d-flex justify-content-between align-items-center mb-2">
             <strong>
               {{ t('guardians.guardian') }} {{ gi+1 }}
-              <CBadge v-if="g.is_primary_contact" color="success" class="ms-2" style="font-size:.7rem;">Mkuu</CBadge>
+              <CBadge v-if="g.is_primary_contact" color="success" class="ms-2" style="font-size:.7rem;">{{ t('students.primaryBadge') }}</CBadge>
             </strong>
             <CButton v-if="gi > 0" size="sm" color="danger" variant="ghost" @click="removeGuardian(gi)">
               <CIcon icon="cilTrash" />
@@ -447,7 +447,7 @@
                           :class="{'is-invalid': errors[`guardians.${gi}.phone`]}"
                           @blur="checkGuardianExists(gi)" />
               <div class="invalid-feedback">{{ errors[`guardians.${gi}.phone`] }}</div>
-              <div v-if="g._exists" class="text-warning small mt-1">⚠ Nambari hii tayari ipo kwenye mfumo</div>
+              <div v-if="g._exists" class="text-warning small mt-1">{{ t('students.guardianPhoneExists') }}</div>
             </div>
             <!-- Alt Phone -->
             <div>
@@ -457,7 +457,7 @@
             <!-- Email -->
             <div>
               <label class="form-label mb-1">{{ t('common.email') }}</label>
-              <CFormInput v-model="g.email" type="email" placeholder="barua@mfano.com" />
+              <CFormInput v-model="g.email" type="email" placeholder="name@example.com" />
             </div>
             <!-- ID Type -->
             <div>
@@ -949,7 +949,7 @@
                   <div class="col-6 col-md-3">
                     <CFormSelect v-model="pay.method" size="sm">
                       <option value="cash">{{ t('payments.methods.cash') }}</option>
-                      <option value="mpesa">M-Pesa</option>
+                      <option value="mpesa">{{ t('payments.methods.mpesa') }}</option>
                       <option value="bank">{{ t('payments.methods.bank') }}</option>
                       <option value="cheque">{{ t('payments.methods.cheque') }}</option>
                     </CFormSelect>
@@ -1026,14 +1026,14 @@
                 <CFormSelect v-model="pmt.method">
                   <option value="">— {{ t('common.optional') }} —</option>
                   <option value="cash">{{ t('payments.methods.cash') }}</option>
-                  <option value="mpesa">M-Pesa</option>
+                  <option value="mpesa">{{ t('payments.methods.mpesa') }}</option>
                   <option value="bank">{{ t('payments.methods.bank') }}</option>
                   <option value="cheque">{{ t('payments.methods.cheque') }}</option>
                 </CFormSelect>
               </div>
               <div style="flex:1.5;min-width:120px;">
                 <label class="form-label mb-1 small">{{ t('students.migrationNote') }}</label>
-                <CFormInput v-model="pmt.notes" placeholder="e.g. Receipt #123" />
+                <CFormInput v-model="pmt.notes" :placeholder="t('students.receiptExample')" />
               </div>
               <div class="pb-1">
                 <CButton size="sm" color="danger" variant="ghost" @click="entry.payments.splice(pi, 1)">✕</CButton>
@@ -1140,18 +1140,18 @@
             <div style="flex:1;min-width:100px;">
               <label class="form-label mb-1 small">{{ t('students.paymentMethod') }}</label>
               <CFormSelect v-model="pmt.method">
-                <option value="cash">Taslimu (Cash)</option>
-                <option value="mpesa">M-Pesa</option>
-                <option value="bank">Benki (Bank)</option>
-                <option value="cheque">Hundi (Cheque)</option>
+                <option value="cash">{{ t('payments.methods.cash') }}</option>
+                <option value="mpesa">{{ t('payments.methods.mpesa') }}</option>
+                <option value="bank">{{ t('payments.methods.bank') }}</option>
+                <option value="cheque">{{ t('payments.methods.cheque') }}</option>
               </CFormSelect>
             </div>
             <div style="flex:1.5;min-width:120px;">
               <label class="form-label mb-1 small">{{ t('students.migrationNote') }}</label>
-              <CFormInput v-model="pmt.notes" placeholder="e.g. Receipt #123" />
+              <CFormInput v-model="pmt.notes" :placeholder="t('students.receiptExample')" />
             </div>
             <div class="pb-1">
-              <CButton size="sm" color="danger" variant="ghost" @click="removePayment(ei, pi)" title="Remove">✕</CButton>
+              <CButton size="sm" color="danger" variant="ghost" @click="removePayment(ei, pi)" :title="t('common.removeItem')">✕</CButton>
             </div>
           </div>
 
@@ -1234,15 +1234,15 @@
           <CCard class="border-0 p-3" style="background:#e3f2fd;">
             <CRow class="g-3">
               <CCol md="4" class="text-center">
-                <div class="small text-muted mb-1">💰 Charged</div>
+                <div class="small text-muted mb-1">{{ t('students.chargedLabel') }}</div>
                 <div class="fw-bold text-dark" style="font-size:1.1rem;">{{ formatMoney((form.lumpsum_total_charged || 0) * 100) }}</div>
               </CCol>
               <CCol md="4" class="text-center">
-                <div class="small text-muted mb-1">✅ Paid</div>
+                <div class="small text-muted mb-1">{{ t('students.paidLabel') }}</div>
                 <div class="fw-bold text-success" style="font-size:1.1rem;">{{ formatMoney((form.lumpsum_total_paid || 0) * 100) }}</div>
               </CCol>
               <CCol md="4" class="text-center">
-                <div class="small text-muted mb-1">⚠️ Outstanding</div>
+                <div class="small text-muted mb-1">{{ t('students.outstandingLabel') }}</div>
                 <div class="fw-bold" :class="lumpsumBalance() > 0 ? 'text-danger' : 'text-success'" style="font-size:1.1rem;">
                   {{ formatMoney(lumpsumBalance()) }}
                 </div>
@@ -1386,6 +1386,7 @@
 </template>
 
 <script setup>
+import { dateLocale } from '@/utils/dates'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSchoolsStore } from '@/stores/schools'
@@ -1551,7 +1552,7 @@ const fmtTzs = (tzs) => 'TZS ' + (Number(tzs) || 0).toLocaleString()
 const fmtTermDate = (d) => {
   if (!d) return '—'
   const dt = new Date(d)
-  return isNaN(dt) ? d : dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+  return isNaN(dt) ? d : dt.toLocaleDateString(dateLocale(), { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 const billedPaid = (row) => row.payments.reduce((n, p) => n + (Number(p.amount_tzs) || 0), 0)
@@ -1905,7 +1906,7 @@ function onPhotoChange(e) {
   const file = e.target.files[0]
   if (!file) return
   if (file.size > 2 * 1024 * 1024) {
-    alert('Picha ni kubwa sana. Maks 2MB.')
+    alert(t('students.photoTooLarge'))
     return
   }
   photoFile.value    = file
@@ -2002,16 +2003,7 @@ function setPrimary(idx)   { form.value.guardians.forEach((g, i) => { if (i !== 
 function onExistingToggleWithWarning(isExisting) {
   // If toggling TO new student (false), show confirmation
   if (!isExisting) {
-    const confirmed = confirm(
-      '⚠️ WARNING!\n\n' +
-      'You are switching to "New Student" mode.\n\n' +
-      'This will:\n' +
-      '✗ Remove all payment history entries\n' +
-      '✗ Enable "Generate First Invoice"\n' +
-      '✗ Return to Step 5\n\n' +
-      'Most students are existing (migrating from books).\n\n' +
-      'Continue?'
-    )
+    const confirmed = confirm(t('students.switchToNewWarning'))
     if (!confirmed) {
       // Revert the toggle
       form.value.is_existing_student = true

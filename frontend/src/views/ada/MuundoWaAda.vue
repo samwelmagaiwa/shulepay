@@ -51,7 +51,7 @@
               <CTableDataCell>
                 {{ s.term?.name || '—' }}
                 <CBadge v-if="s.fee_mode === 'full_tuition'" color="info" class="ms-1" style="font-size:0.7rem;">
-                  Awamu {{ s.installment_number }}/{{ s.installments_count }}
+                  {{ t('fees.installmentBadge', { n: s.installment_number, total: s.installments_count }) }}
                 </CBadge>
               </CTableDataCell>
               <CTableDataCell>
@@ -158,7 +158,7 @@
                   type="number"
                   min="0"
                   step="100"
-                  placeholder="Mfano: 1200000"
+                  :placeholder="t('fees.fullTuitionPlaceholder')"
                 />
                 <div class="form-text">{{ t('fees.fullTuitionAmountHint') }}</div>
               </CCol>

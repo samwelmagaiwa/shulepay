@@ -3,8 +3,9 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
+import { setLocale } from '@/i18n'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const auth         = useAuthStore()
 const email        = ref('')
 const password     = ref('')
@@ -43,7 +44,7 @@ async function handleLogin() {
   errorMessage.value = ''
 
   if (!email.value || !password.value) {
-    errorMessage.value = 'Tafadhali jaza barua pepe na neno la siri.'
+    errorMessage.value = t('errors.fillEmailPassword')
     return
   }
 
@@ -320,6 +321,12 @@ async function handleLogin() {
 
     <div class="login-card-wrapper">
       <div class="login-card">
+        <!-- The language is remembered from the last session, so it has to be changeable here too. -->
+        <div class="lang-switch" role="group" :aria-label="t('auth.language')">
+          <button type="button" :class="{ active: locale === 'en' }" @click="setLocale('en')">English</button>
+          <span aria-hidden="true">|</span>
+          <button type="button" :class="{ active: locale === 'sw' }" @click="setLocale('sw')">Kiswahili</button>
+        </div>
         <div class="login-header">
           <div class="logo-wrapper">
             <!-- Dynamic logo: school-specific image if available, fallback to SVG -->
@@ -450,6 +457,16 @@ async function handleLogin() {
   padding: 3rem 2.5rem;
   box-shadow: 0 25px 50px rgba(0,0,0,.5);
 }
+.lang-switch {
+  display: flex; justify-content: flex-end; align-items: center; gap: .5rem;
+  margin: -1.5rem -1rem 1rem 0; font-size: .8rem; color: rgba(255,255,255,.6);
+}
+.lang-switch button {
+  background: none; border: 0; padding: 2px 4px; color: rgba(255,255,255,.75);
+  cursor: pointer; font-weight: 500;
+}
+.lang-switch button:hover { color: #fff; }
+.lang-switch button.active { color: #fcd116; font-weight: 700; }
 .login-header { text-align: center; margin-bottom: 2rem; }
 .logo-wrapper {
   width: 90px; height: 90px;

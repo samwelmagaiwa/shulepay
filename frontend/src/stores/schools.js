@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/services/api'
+import { i18n } from '@/i18n'
 
 export const useSchoolsStore = defineStore('schools', () => {
   const schools        = ref([])
@@ -18,7 +19,7 @@ export const useSchoolsStore = defineStore('schools', () => {
         activeSchoolId.value = String(schools.value[0].id)
       }
     } catch (e) {
-      error.value = e?.response?.data?.message || 'Failed to load schools'
+      error.value = e?.response?.data?.message || i18n.global.t('errors.loadSchools')
     } finally {
       loading.value = false
     }

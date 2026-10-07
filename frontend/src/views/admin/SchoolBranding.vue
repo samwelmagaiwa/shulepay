@@ -71,7 +71,7 @@ async function fetchBranding(id) {
     lh.value.website = res.data.website || ''
     lh.value.motto = res.data.motto || ''
   } catch {
-    error.value = 'Failed to load branding.'
+    error.value = t('brandingAdmin.loadFailed')
   } finally {
     loadingBranding.value = false
   }
@@ -114,7 +114,7 @@ async function save() {
     schoolCode.value     = data.code  ?? schoolCode.value
     schoolCodeOrig.value = data.code  ?? schoolCodeOrig.value
     Object.keys(lh.value).forEach(k => { if (data[k] !== undefined) lh.value[k] = data[k] || '' })
-    success.value     = data.message || 'Branding saved!'
+    success.value     = data.message || t('brandingAdmin.saved')
     setTimeout(() => { success.value = '' }, 3000)
 
     // If the saved school is the active school, refresh the header/sidebar branding immediately.
@@ -133,7 +133,7 @@ async function save() {
     const first = Object.values(fieldErrors.value)[0]
     error.value = (Array.isArray(first) ? first[0] : first)
                || e.response?.data?.message
-               || 'Failed to save.'
+               || t('brandingAdmin.saveFailed')
   } finally {
     saving.value = false
   }
@@ -158,7 +158,7 @@ async function removeLogo() {
       branding.applyFromSchool({ app_name: null, app_tagline: null, logo_url: null })
     }
   } catch (e) {
-    error.value = e.response?.data?.message || 'Failed to remove logo.'
+    error.value = e.response?.data?.message || t('brandingAdmin.logoRemoveFailed')
   } finally {
     removing.value = false
   }
@@ -198,14 +198,14 @@ const codeChanged = computed(() =>
 
     <!-- Superadmin: school selector (inline, compact) -->
     <div v-if="auth.isSuperAdmin" class="d-flex align-items-center gap-3 mb-2 flex-wrap">
-      <span class="fw-semibold text-muted small text-uppercase" style="letter-spacing:.05em;">Configure for</span>
+      <span class="fw-semibold text-muted small text-uppercase" style="letter-spacing:.05em;">{{ t('brandingAdmin.configureFor') }}</span>
       <select
         v-model="selectedSchoolId"
         class="form-select form-select-sm"
         style="max-width:280px;"
         :disabled="loadingSchools"
       >
-        <option :value="null">🌐 System Default (all schools)</option>
+        <option :value="null">{{ t('brandingAdmin.systemDefaultOption') }}</option>
         <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
       </select>
     </div>
@@ -226,7 +226,7 @@ const codeChanged = computed(() =>
             >
               <div class="text-center text-muted">
                 <div class="spinner-border spinner-border-sm mb-1" role="status"></div>
-                <div class="small">Loading configuration…</div>
+                <div class="small">{{ t('brandingAdmin.loadingConfig') }}</div>
               </div>
             </div>
 
@@ -234,7 +234,7 @@ const codeChanged = computed(() =>
 
               <!-- App Name -->
               <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold mb-1">App Name <span class="text-danger">*</span></label>
+                <label class="form-label fw-semibold mb-1">{{ t('brandingAdmin.appName') }} <span class="text-danger">*</span></label>
                 <input
                   v-model="appName"
                   type="text"
@@ -243,12 +243,12 @@ const codeChanged = computed(() =>
                   maxlength="80"
                   :disabled="loadingBranding"
                 />
-                <div class="form-text">Shown in the header, footer and receipts.</div>
+                <div class="form-text">{{ t('brandingAdmin.appNameHint') }}</div>
               </div>
 
               <!-- Tagline -->
               <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold mb-1">Tagline / Developer Name</label>
+                <label class="form-label fw-semibold mb-1">{{ t('brandingAdmin.tagline') }}</label>
                 <input
                   v-model="appTagline"
                   type="text"
@@ -257,15 +257,13 @@ const codeChanged = computed(() =>
                   maxlength="80"
                   :disabled="loadingBranding"
                 />
-                <div class="form-text">Shown below the app name.</div>
+                <div class="form-text">{{ t('brandingAdmin.taglineHint') }}</div>
               </div>
 
               <!-- System Default has no school record to attach these to -->
               <div v-if="isSystemDefault" class="col-12">
                 <div class="alert alert-info py-2 px-3 mb-0" style="font-size:.82rem;">
-                  <strong>System Default</strong> sets the fallback name, tagline and logo for
-                  schools that have not been configured. Contact details, school code and the
-                  letterhead belong to an individual school — pick one above to edit those.
+                  <strong>{{ t('brandingAdmin.systemDefaultTitle') }}</strong> {{ t('brandingAdmin.systemDefaultBody') }}
                 </div>
               </div>
 
@@ -273,7 +271,7 @@ const codeChanged = computed(() =>
               <template v-if="!isSystemDefault">
               <!-- School phone -->
               <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold mb-1">School Phone</label>
+                <label class="form-label fw-semibold mb-1">{{ t('brandingAdmin.schoolPhone') }}</label>
                 <input
                   v-model="schoolPhone"
                   type="tel"
@@ -284,12 +282,12 @@ const codeChanged = computed(() =>
                   :disabled="loadingBranding"
                 />
                 <div v-if="fieldErrors.phone" class="invalid-feedback d-block">{{ fieldErrors.phone[0] }}</div>
-                <div v-else class="form-text">Shown on receipts and statements.</div>
+                <div v-else class="form-text">{{ t('brandingAdmin.shownOnDocs') }}</div>
               </div>
 
               <!-- School email -->
               <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold mb-1">School Email</label>
+                <label class="form-label fw-semibold mb-1">{{ t('brandingAdmin.schoolEmail') }}</label>
                 <input
                   v-model="schoolEmail"
                   type="email"
@@ -300,12 +298,12 @@ const codeChanged = computed(() =>
                   :disabled="loadingBranding"
                 />
                 <div v-if="fieldErrors.email" class="invalid-feedback d-block">{{ fieldErrors.email[0] }}</div>
-                <div v-else class="form-text">Shown on receipts and statements.</div>
+                <div v-else class="form-text">{{ t('brandingAdmin.shownOnDocs') }}</div>
               </div>
 
               <!-- School code — drives admission numbers, so it carries a warning -->
               <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold mb-1">School Code</label>
+                <label class="form-label fw-semibold mb-1">{{ t('brandingAdmin.schoolCode') }}</label>
                 <input
                   v-model="schoolCode"
                   type="text"
@@ -318,16 +316,16 @@ const codeChanged = computed(() =>
                 />
                 <div v-if="fieldErrors.code" class="invalid-feedback d-block">{{ fieldErrors.code[0] }}</div>
                 <div v-else class="form-text">
-                  Short form of the school name, letters and numbers only.
-                  Used in admission numbers:
+                  {{ t('brandingAdmin.schoolCodeHint') }}
                   <code>{{ admissionPrefix }}/{{ (schoolCode || 'CODE').toUpperCase() }}/0001/{{ currentYear }}</code>
                 </div>
 
                 <!-- Changing this only affects numbers issued from now on -->
                 <div v-if="codeChanged" class="alert alert-warning py-2 px-3 mt-2 mb-0" style="font-size:.8rem;">
-                  <strong>Heads up:</strong> students already registered keep their existing
-                  admission numbers (<code>{{ admissionPrefix }}/{{ schoolCodeOrig }}/…</code>).
-                  Only new registrations will use <code>{{ schoolCode.toUpperCase() }}</code>.
+                  <i18n-t keypath="brandingAdmin.codeChangedNote" tag="span">
+                    <template #old><code>{{ admissionPrefix }}/{{ schoolCodeOrig }}/…</code></template>
+                    <template #new><code>{{ schoolCode.toUpperCase() }}</code></template>
+                  </i18n-t>
                 </div>
               </div>
 
@@ -335,74 +333,73 @@ const codeChanged = computed(() =>
               <div class="col-12">
                 <hr class="my-2" />
                 <div class="fw-semibold text-uppercase text-muted small mb-1" style="letter-spacing:.06em;">
-                  📄 Letterhead — printed on receipts and statements
+                  {{ t('brandingAdmin.letterheadTitle') }}
                 </div>
                 <div class="form-text mb-2">
-                  Enter these exactly as they appear on your official letterhead.
-                  Leave any line blank to omit it.
+                  {{ t('brandingAdmin.letterheadHint') }}
                 </div>
               </div>
 
               <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold mb-1">Phone 2</label>
+                <label class="form-label fw-semibold mb-1">{{ t('brandingAdmin.phone2') }}</label>
                 <input v-model="lh.phone_2" type="tel" class="form-control"
                        placeholder="+255 762 916 066" maxlength="30" :disabled="loadingBranding" />
               </div>
               <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold mb-1">Phone 3</label>
+                <label class="form-label fw-semibold mb-1">{{ t('brandingAdmin.phone3') }}</label>
                 <input v-model="lh.phone_3" type="tel" class="form-control"
                        placeholder="+255 783 138 346" maxlength="30" :disabled="loadingBranding" />
               </div>
 
               <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold mb-1">Address Line 1</label>
+                <label class="form-label fw-semibold mb-1">{{ t('brandingAdmin.addressLine1') }}</label>
                 <input v-model="lh.address_line1" type="text" class="form-control"
                        placeholder="KT. 407 MOHARANGO" maxlength="80" :disabled="loadingBranding" />
               </div>
               <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold mb-1">Address Line 2</label>
+                <label class="form-label fw-semibold mb-1">{{ t('brandingAdmin.addressLine2') }}</label>
                 <input v-model="lh.address_line2" type="text" class="form-control"
                        placeholder="31433 REGICHERI" maxlength="80" :disabled="loadingBranding" />
               </div>
 
               <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold mb-1">P.O. Box</label>
+                <label class="form-label fw-semibold mb-1">{{ t('brandingAdmin.poBox') }}</label>
                 <input v-model="lh.po_box" type="text" class="form-control"
                        placeholder="P.O. Box 125" maxlength="60" :disabled="loadingBranding" />
               </div>
               <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold mb-1">City / Country</label>
+                <label class="form-label fw-semibold mb-1">{{ t('brandingAdmin.cityCountry') }}</label>
                 <input v-model="lh.city_country" type="text" class="form-control"
                        placeholder="TARIME DC TANZANIA" maxlength="80" :disabled="loadingBranding" />
               </div>
 
               <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold mb-1">Website</label>
+                <label class="form-label fw-semibold mb-1">{{ t('brandingAdmin.website') }}</label>
                 <input v-model="lh.website" type="text" class="form-control"
                        placeholder="www.magrethmary.ac.tz" maxlength="120" :disabled="loadingBranding" />
               </div>
               <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold mb-1">Motto</label>
+                <label class="form-label fw-semibold mb-1">{{ t('brandingAdmin.motto') }}</label>
                 <input v-model="lh.motto" type="text" class="form-control"
                        placeholder="Education for Excellence" maxlength="120" :disabled="loadingBranding" />
-                <div class="form-text">Replaces the tagline on printed documents.</div>
+                <div class="form-text">{{ t('brandingAdmin.mottoHint') }}</div>
               </div>
               </template>
 
               <!-- Logo -->
               <div class="col-12">
-                <label class="form-label fw-semibold mb-1">Logo</label>
+                <label class="form-label fw-semibold mb-1">{{ t('brandingAdmin.logo') }}</label>
 
                 <!-- Current saved logo -->
                 <div v-if="logoPreview && !logoLoadError" class="d-flex align-items-center gap-3 mb-2 p-2 rounded-2 border bg-light">
                   <img
                     :src="logoPreview"
-                    alt="Current logo"
+                    :alt="t('brandingAdmin.currentLogoAlt')"
                     style="width:64px;height:64px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid #dee2e6;"
                     @error="logoLoadError=true"
                   />
                   <div class="flex-grow-1">
-                    <div class="small fw-semibold text-success mb-1">✓ Logo uploaded</div>
+                    <div class="small fw-semibold text-success mb-1">{{ t('brandingAdmin.logoUploaded') }}</div>
                     <button
                       type="button"
                       class="btn btn-sm btn-outline-danger"
@@ -410,7 +407,7 @@ const codeChanged = computed(() =>
                       @click="removeLogo"
                     >
                       <span v-if="removing" class="spinner-border spinner-border-sm me-1"></span>
-                      {{ removing ? 'Removing…' : '🗑 Remove logo' }}
+                      {{ removing ? t('brandingAdmin.removing') : t('brandingAdmin.removeLogo') }}
                     </button>
                   </div>
                 </div>
@@ -418,7 +415,7 @@ const codeChanged = computed(() =>
                 <!-- No logo placeholder -->
                 <div v-if="!logoPreview || logoLoadError" class="d-flex align-items-center gap-2 mb-2 p-2 rounded-2 border bg-light text-muted small">
                   <div style="width:48px;height:48px;border:2px dashed #ced4da;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🖼</div>
-                  <span>No logo set — upload one below</span>
+                  <span>{{ t('brandingAdmin.noLogo') }}</span>
                 </div>
 
                 <!-- File picker (key resets input on school change) -->
@@ -430,7 +427,7 @@ const codeChanged = computed(() =>
                   :disabled="loadingBranding"
                   @change="onLogoChange"
                 />
-                <div class="form-text">PNG, JPG, SVG or WebP · max 2 MB · square min 200×200 px</div>
+                <div class="form-text">{{ t('brandingAdmin.logoHint') }}</div>
               </div>
 
             </div>
@@ -439,7 +436,7 @@ const codeChanged = computed(() =>
             <div class="mt-4 pt-3 border-top">
               <button class="btn btn-primary px-4" :disabled="saving || loadingBranding" @click="save">
                 <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
-                {{ saving ? 'Saving…' : 'Save Branding' }}
+                {{ saving ? t('brandingAdmin.saving') : t('brandingAdmin.save') }}
               </button>
             </div>
 
@@ -448,7 +445,7 @@ const codeChanged = computed(() =>
           <!-- RIGHT: Live Preview -->
           <div class="col-12 col-lg-4 p-4 d-flex flex-column" style="background:#f8f9fa;">
             <div class="d-flex align-items-center gap-2 mb-3">
-              <div class="small fw-bold text-muted text-uppercase" style="letter-spacing:.06em;">Live Preview</div>
+              <div class="small fw-bold text-muted text-uppercase" style="letter-spacing:.06em;">{{ t('brandingAdmin.livePreview') }}</div>
               <div v-if="loadingBranding" class="spinner-border spinner-border-sm text-muted" style="width:.8rem;height:.8rem;" role="status"></div>
             </div>
 
@@ -478,17 +475,17 @@ const codeChanged = computed(() =>
               <div class="fw-bold mb-1" style="color:#007f3e;font-size:0.85rem;">{{ previewName }}</div>
               <div style="color:#003082;font-size:0.6rem;letter-spacing:1px;text-transform:uppercase;">{{ previewTagline }}</div>
               <hr class="my-2" style="border-style:dashed;" />
-              <div class="text-muted">RECEIPT #0001</div>
-              <div class="d-flex justify-content-between mt-1"><span>Student:</span><span>J. Doe</span></div>
-              <div class="d-flex justify-content-between"><span>Amount:</span><span>TZS 50,000</span></div>
-              <div class="d-flex justify-content-between"><span>Method:</span><span>CASH</span></div>
+              <div class="text-muted">{{ t('brandingAdmin.previewReceipt') }}</div>
+              <div class="d-flex justify-content-between mt-1"><span>{{ t('brandingAdmin.previewStudent') }}</span><span>J. Doe</span></div>
+              <div class="d-flex justify-content-between"><span>{{ t('brandingAdmin.previewAmount') }}</span><span>TZS 50,000</span></div>
+              <div class="d-flex justify-content-between"><span>{{ t('brandingAdmin.previewMethod') }}</span><span>{{ t('brandingAdmin.previewCash') }}</span></div>
               <hr class="my-2" style="border-style:dashed;" />
-              <div class="text-muted" style="font-size:0.65rem;">Thank you!</div>
+              <div class="text-muted" style="font-size:0.65rem;">{{ t('brandingAdmin.previewThanks') }}</div>
             </div>
 
             <div class="mt-auto pt-3">
               <p class="text-muted small mb-0">
-                Changes appear in the header and on all printed receipts after saving.
+                {{ t('brandingAdmin.previewNote') }}
               </p>
             </div>
           </div>

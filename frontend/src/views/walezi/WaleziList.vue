@@ -13,7 +13,7 @@
         </div>
         <div class="d-flex align-items-center gap-2">
           <CButton color="primary" class="lf-add" @click="openAdd" style="white-space:nowrap;"><CIcon icon="cilPlus" class="me-1" />{{ t('guardians.add') }}</CButton>
-          <CPagination v-if="meta.last_page > 1" aria-label="Ukurasa" class="mb-0 lf-pages">
+          <CPagination v-if="meta.last_page > 1" :aria-label="t('common.pagination')" class="mb-0 lf-pages">
             <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; loadData()">{{ t('common.prev') }}</CPaginationItem>
             <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; loadData()">{{ p }}</CPaginationItem>
             <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; loadData()">{{ t('common.next') }}</CPaginationItem>

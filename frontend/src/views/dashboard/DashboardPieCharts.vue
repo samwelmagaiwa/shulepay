@@ -424,13 +424,13 @@ const polarPlugins = [
         </div>
         <div class="card-body p-0" style="min-height: 450px; height: 450px">
           <!-- Subtle top-right sync indicator for the card -->
-          <div v-if="dashboard.isSyncing" class="sync-indicator-mini" title="Background syncing in progress...">
+          <div v-if="dashboard.isSyncing" class="sync-indicator-mini" :title="t('dashboard.syncing')">
             <div class="spinner-border spinner-border-sm text-primary" style="width: 0.8rem; height: 0.8rem;"></div>
           </div>
 
           <div v-if="ageGroupChartData.labels[0] === 'No Data' && !dashboard.isLoading" 
                class="d-flex align-items-center justify-content-center h-100 text-center text-muted">
-            <p class="mb-0">Hakuna Data</p>
+            <p class="mb-0">{{ t('common.noData') }}</p>
           </div>
           <div v-else style="height: 100%; width: 100%">
             <CChart

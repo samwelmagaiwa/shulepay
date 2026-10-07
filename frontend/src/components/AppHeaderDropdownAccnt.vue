@@ -47,7 +47,7 @@ async function logout() {
       <CDropdownDivider />
 
       <CDropdownItem @click="logout" class="dropdown-item-custom text-danger" style="cursor:pointer">
-        <CIcon icon="cil-account-logout" class="me-2" /> Toka Mfumoni
+        <CIcon icon="cil-account-logout" class="me-2" /> {{ t('nav.signOut') }}
       </CDropdownItem>
     </CDropdownMenu>
   </CDropdown>

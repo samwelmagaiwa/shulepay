@@ -256,7 +256,7 @@ const chartOptions = computed(() => {
               lines.push(`  ${t('dashboard.seriesPaid')}: ${clinic.consulted || 0}`)
               lines.push(`  ${pLabel}: ${clinic.pending || 0}`)
               const sign = (clinic.trend || 0) > 0 ? '+' : ''
-              lines.push(`  Change: ${sign}${clinic.trend}% (${clinic.interpretation})`)
+              lines.push('  ' + t('dashboard.tooltipChange', { change: `${sign}${clinic.trend}`, interpretation: clinic.interpretation }))
             } else {
               lines.push(`  ${t('dashboard.cardUnpaid')}: ${clinic.previous_pending || 0}`)
             }
@@ -282,7 +282,7 @@ const chartOptions = computed(() => {
         max: yMax,
         title: {
           display: true,
-          text: 'Visits (Current Up / Previous Down)',
+          text: t('dashboard.chartYAxis'),
           color: '#1e293b',
           font: { size: 14, weight: '900', family: "'Outfit', sans-serif" },
         },
@@ -729,12 +729,12 @@ const exportPendingToExcel = async () => {
   if (exportState.value.loading) return
   const allClinics = sortedClinics.value
   if (!allClinics.length) {
-    showToast('No clinic data available to export.', 'error')
+    showToast(t('dashboard.exportNoData'), 'error')
     return
   }
 
   exportState.value.loading = true
-  showToast('Preparing export… fetching patient data', 'info')
+  showToast(t('dashboard.exportPreparing'), 'info')
 
   try {
     const { start_date, end_date } = dashboard.calculateDateRange()
@@ -1065,7 +1065,7 @@ const exportPendingToExcel = async () => {
     showToast(`✅ Exported: ${fileName}`, 'success')
   } catch (err) {
     console.error('[Export] Error:', err)
-    showToast('Export failed. Please try again.', 'error')
+    showToast(t('dashboard.exportFailed'), 'error')
   } finally {
     exportState.value.loading = false
   }
@@ -1092,9 +1092,9 @@ const exportPendingToExcel = async () => {
           </div>
           <div class="d-flex align-items-center gap-2 ps-2 border-start border-slate-200">
              <span class="fw-black" style="color: #16a34a; font-size: 16px">↑</span>
-             <small class="fw-bold" style="color: #16a34a; font-size: 10px; letter-spacing: 0.5px">YALIYOLIPWA</small>
+             <small class="fw-bold" style="color: #16a34a; font-size: 10px; letter-spacing: 0.5px">{{ t('dashboard.legendPaidShort') }}</small>
              <span class="fw-black ms-1" style="color: #ec4899; font-size: 16px">↓</span>
-             <small class="fw-bold" style="color: #ec4899; font-size: 10px; letter-spacing: 0.5px">BADO</small>
+             <small class="fw-bold" style="color: #ec4899; font-size: 10px; letter-spacing: 0.5px">{{ t('dashboard.legendPendingShort') }}</small>
           </div>
         </div>
         <div class="legend-divider"></div>
@@ -1117,9 +1117,9 @@ const exportPendingToExcel = async () => {
           </div>
           <div class="d-flex align-items-center gap-2 ps-2 border-start border-slate-200">
              <span class="fw-black" style="color: #16a34a; font-size: 16px">↑</span>
-             <small class="fw-bold" style="color: #16a34a; font-size: 10px; letter-spacing: 0.5px">YALIYOLIPWA</small>
+             <small class="fw-bold" style="color: #16a34a; font-size: 10px; letter-spacing: 0.5px">{{ t('dashboard.legendPaidShort') }}</small>
              <span class="fw-black ms-1" style="color: #dc2626; font-size: 16px">↓</span>
-             <small class="fw-bold" style="color: #dc2626; font-size: 10px; letter-spacing: 0.5px">HAWAJAL.</small>
+             <small class="fw-bold" style="color: #dc2626; font-size: 10px; letter-spacing: 0.5px">{{ t('dashboard.legendUnpaidShort') }}</small>
           </div>
         </div>
 
@@ -1132,7 +1132,7 @@ const exportPendingToExcel = async () => {
           @click="showAll = !showAll"
           :class="showAll ? 'btn-outline-primary' : 'btn-primary'"
         >
-          <span class="btn-text fw-bold">{{ showAll ? 'Top 10' : 'Full' }}</span>
+          <span class="btn-text fw-bold">{{ showAll ? t('dashboard.top10') : t('dashboard.fullView') }}</span>
         </button>
 
         <!-- ── Export Button ── -->
@@ -1143,7 +1143,7 @@ const exportPendingToExcel = async () => {
           :class="{ 'export-pending-btn--loading': exportState.loading }"
           @click="exportPendingToExcel"
           :disabled="exportState.loading || !sortedClinics.length"
-          :title="`Export ${pendingLabel} data to Excel`"
+          :title="t('dashboard.exportTitle', { label: pendingLabel })"
         >
           <span v-if="exportState.loading" class="export-spinner"></span>
           <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1151,8 +1151,8 @@ const exportPendingToExcel = async () => {
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          <span class="export-btn-label">{{ exportState.loading ? 'Exporting…' : 'Export' }}</span>
-          <span class="export-btn-sub" :class="isToday ? 'sub--yellow' : 'sub--red'">{{ isToday ? 'BADO' : 'HAWAJAL.' }}</span>
+          <span class="export-btn-label">{{ exportState.loading ? t('dashboard.exporting') : t('dashboard.exportBtn') }}</span>
+          <span class="export-btn-sub" :class="isToday ? 'sub--yellow' : 'sub--red'">{{ isToday ? t('dashboard.legendPendingShort') : t('dashboard.legendUnpaidShort') }}</span>
         </button>
       </div>
 

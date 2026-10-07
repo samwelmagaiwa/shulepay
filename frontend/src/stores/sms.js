@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import api from '@/services/api'
+import { i18n } from '@/i18n'
 
 export const useSmsStore = defineStore('sms', () => {
   const logs = ref([])
@@ -19,7 +20,7 @@ export const useSmsStore = defineStore('sms', () => {
       const { data } = await api.get('/sms/logs')
       logs.value = data.data || data
     } catch (e) {
-      error.value = e?.response?.data?.message || 'Hitilafu'
+      error.value = e?.response?.data?.message || i18n.global.t('errors.tryAgain')
     } finally {
       loading.value = false
     }

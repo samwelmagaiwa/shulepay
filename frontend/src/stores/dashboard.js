@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/services/api'
+import { i18n } from '@/i18n'
 
 export const useDashboardStore = defineStore('dashboard', () => {
   const stats   = ref(null)
@@ -44,11 +45,11 @@ export const useDashboardStore = defineStore('dashboard', () => {
   })
 
   const compLabel = computed(() => {
-    if (selectedPeriod.value === 'day') return 'Jana'
-    if (selectedPeriod.value === 'week') return 'Wiki Iliyopita'
-    if (selectedPeriod.value === 'month') return 'Mwezi Uliopita'
-    if (selectedPeriod.value === 'year') return 'Mwaka Uliopita'
-    return 'Kipindi Kilichopita'
+    if (selectedPeriod.value === 'day') return i18n.global.t('dashboard.compYesterday')
+    if (selectedPeriod.value === 'week') return i18n.global.t('dashboard.compLastWeek')
+    if (selectedPeriod.value === 'month') return i18n.global.t('dashboard.compLastMonth')
+    if (selectedPeriod.value === 'year') return i18n.global.t('dashboard.compLastYear')
+    return i18n.global.t('dashboard.compPrevious')
   })
 
   // ── Stats mapped to the shape SocialStatsWidgets expects ─────────────────
@@ -110,7 +111,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       datasets: [
         {
           type: 'line',
-          label: 'Mwelekeo wa Jumla',
+          label: i18n.global.t('dashboard.seriesTrend'),
           data: amounts,
           borderColor: '#1e293b',
           backgroundColor: '#1e293b',
@@ -120,37 +121,37 @@ export const useDashboardStore = defineStore('dashboard', () => {
         },
         {
           type: 'bar',
-          label: 'Wanafunzi Wote',
+          label: i18n.global.t('dashboard.seriesStudents'),
           data: amounts.map(() => 0), // student daily count not available
           backgroundColor: '#3b82f6',
         },
         {
           type: 'bar',
-          label: 'Madeni Yanayodai',
+          label: i18n.global.t('dashboard.seriesOutstanding'),
           data: amounts.map(() => 0),
           backgroundColor: '#dc3545',
         },
         {
           type: 'bar',
-          label: 'Yaliyolipwa',
+          label: i18n.global.t('dashboard.seriesPaid'),
           data: amounts,
           backgroundColor: '#16a34a',
         },
         {
           type: 'bar',
-          label: 'Bado Hawajalipa',
+          label: i18n.global.t('dashboard.seriesNotPaid'),
           data: amounts.map(() => 0),
           backgroundColor: '#ec4899',
         },
         {
           type: 'bar',
-          label: 'Wanafunzi Wapya',
+          label: i18n.global.t('dashboard.seriesNew'),
           data: amounts.map(() => 0),
           backgroundColor: '#06b6d4',
         },
         {
           type: 'bar',
-          label: 'Makusanyo ya Leo',
+          label: i18n.global.t('dashboard.seriesToday'),
           data: amounts,
           backgroundColor: '#6610f2',
         },
@@ -169,7 +170,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     return (s.school_breakdown || []).map(school => {
       const total = school.count || 0
       return {
-        clinic_name:        school.school || 'Unknown',
+        clinic_name:        school.school || i18n.global.t('dashboard.unknownLabel'),
         total_visits:       total,
         previous_visits:    school.previous_count || 0,
         consulted:          school.paid_count      || 0,
@@ -177,8 +178,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
         previous_consulted: school.prev_paid_count || 0,
         previous_pending:   school.prev_unpaid_count || 0,
         trend:              school.trend            || 0,
-        interpretation:     school.trend > 0 ? 'Imeongezeka' : school.trend < 0 ? 'Imepungua' : 'Sawa',
-        comparison_dates:   'vs Kipindi Kilichopita',
+        interpretation:     i18n.global.t(school.trend > 0 ? 'dashboard.trendUp' : school.trend < 0 ? 'dashboard.trendDown' : 'dashboard.trendFlat'),
+        comparison_dates:   i18n.global.t('dashboard.vsPrevious'),
       }
     })
   })
@@ -196,7 +197,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     if (!s) return []
 
     return (s.class_debt_breakdown || []).map(row => ({
-      name: row.class_name || 'Unknown',
+      name: row.class_name || i18n.global.t('dashboard.unknownLabel'),
       code: '',
       count: Math.round((row.debt_cents || 0) / 100),
       unpaidStudents: row.unpaid_students || 0,
@@ -282,7 +283,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       const { data } = await api.get('/dashboard/stats')
       stats.value = data
     } catch (e) {
-      error.value = e?.response?.data?.message || 'Failed to load dashboard'
+      error.value = e?.response?.data?.message || i18n.global.t('errors.loadDashboard')
     } finally {
       loading.value = false
     }

@@ -12,15 +12,15 @@
           <!-- School -->
           <CCol xs="12" sm="6" md="2">
             <label class="form-label fw-semibold small mb-1">
-              Shule <span class="text-danger">*</span>
+              {{ t('common.school') }} <span class="text-danger">*</span>
             </label>
             <CFormSelect v-model="form.school_id" :disabled="saving || loadingSchools" size="sm"
                          @update:modelValue="onSchoolChange">
-              <option value="">— Chagua Shule —</option>
+              <option value="">{{ t('installments.bulkChooseSchool') }}</option>
               <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
             </CFormSelect>
             <div v-if="loadingSchools" class="text-muted" style="font-size:.7rem; margin-top:2px;">
-              <CSpinner size="sm" /> Inapakia shule...
+              <CSpinner size="sm" /> {{ t('installments.bulkLoadingSchools') }}
             </div>
           </CCol>
 
@@ -31,12 +31,12 @@
             </label>
             <CFormSelect v-model="form.school_class_id" :disabled="saving || !form.school_id || loadingClasses"
                          size="sm" @update:modelValue="onClassOrTermChange">
-              <option value="">{{ loadingClasses ? 'Inapakia...' : t('installments.selectClass') }}</option>
+              <option value="">{{ loadingClasses ? t('common.loading') : t('installments.selectClass') }}</option>
               <option v-for="c in filteredClasses" :key="c.id" :value="c.id">{{ c.name }}</option>
             </CFormSelect>
             <div v-if="form.school_id && !loadingClasses && filteredClasses.length === 0"
                  class="text-warning" style="font-size:.7rem; margin-top:2px;">
-              Hakuna madarasa kwa shule hii
+              {{ t('installments.bulkNoClasses') }}
             </div>
           </CCol>
 
@@ -48,12 +48,12 @@
             </label>
             <CFormSelect v-model="form.term_id" :disabled="saving || !form.school_id || loadingTerms"
                          size="sm" @update:modelValue="onClassOrTermChange">
-              <option value="">{{ loadingTerms ? 'Inapakia...' : t('installments.selectTerm') }}</option>
+              <option value="">{{ loadingTerms ? t('common.loading') : t('installments.selectTerm') }}</option>
               <option v-for="term in filteredTerms" :key="term.id" :value="term.id">{{ term.name }}</option>
             </CFormSelect>
             <div v-if="form.school_id && !loadingTerms && filteredTerms.length === 0"
                  class="text-warning" style="font-size:.7rem; margin-top:2px;">
-              Hakuna mihula kwa shule hii
+              {{ t('installments.bulkNoTerms') }}
             </div>
           </CCol>
 
@@ -89,11 +89,11 @@
 
         <!-- Inline config hint -->
         <div v-if="!form.school_id" class="mt-2 small text-muted">
-          ⬆ Chagua shule kwanza ili kupata madarasa na mihula inayohusiana.
+          {{ t('installments.bulkHintSchool') }}
         </div>
         <div v-else-if="form.school_id && (!form.school_class_id || !form.term_id)"
              class="mt-2 small text-muted">
-          ⬆ Kisha chagua darasa na muhula ili kuona wanafunzi wanaostahili.
+          {{ t('installments.bulkHintClassTerm') }}
         </div>
       </div>
 
@@ -103,20 +103,20 @@
         <!-- Loading preview -->
         <div v-if="previewLoading" class="text-center py-4">
           <CSpinner color="primary" size="sm" class="me-2" />
-          <span class="text-muted small">Inapakia wanafunzi wanaostahili...</span>
+          <span class="text-muted small">{{ t('installments.bulkLoadingStudents') }}</span>
         </div>
 
         <!-- Prompt: no school selected -->
         <div v-else-if="!form.school_id" class="text-center py-5 text-muted">
           <div style="font-size:2.5rem;">🏫</div>
-          <div class="mt-2">Chagua shule ili kuendelea</div>
+          <div class="mt-2">{{ t('installments.bulkPromptSchool') }}</div>
         </div>
 
         <!-- Prompt: school selected but not class+term -->
         <div v-else-if="!form.school_class_id || !form.term_id"
              class="text-center py-5 text-muted">
           <div style="font-size:2.5rem;">📚</div>
-          <div class="mt-2">Chagua darasa na muhula ili kuona wanafunzi wanaostahili</div>
+          <div class="mt-2">{{ t('installments.bulkPromptClassTerm') }}</div>
         </div>
 
         <!-- No student records at all for this class+term -->
@@ -124,9 +124,9 @@
              class="rounded p-4 text-center"
              style="background:rgba(108,117,125,.06); border:1px dashed #adb5bd;">
           <div style="font-size:2rem;">📭</div>
-          <div class="fw-semibold mt-2">Hakuna rekodi za wanafunzi</div>
+          <div class="fw-semibold mt-2">{{ t('installments.bulkNoRecords') }}</div>
           <div class="small text-muted mt-1">
-            Hakuna ankara zilizoundwa kwa darasa hili katika muhula huu. Unda ankara kwanza.
+            {{ t('installments.bulkNoInvoices') }}
           </div>
         </div>
 
@@ -137,22 +137,22 @@
             <div class="rounded px-3 py-2 d-flex flex-column align-items-center"
                  style="background:rgba(0,127,62,.08); min-width:120px;">
               <div class="fw-bold fs-5" style="color:#007f3e;">{{ preview.length }}</div>
-              <div class="small text-muted">Wanafunzi</div>
+              <div class="small text-muted">{{ t('installments.bulkStudentsLabel') }}</div>
             </div>
             <div class="rounded px-3 py-2 d-flex flex-column align-items-center"
                  style="background:rgba(220,53,69,.08); min-width:120px;">
               <div class="fw-bold fs-5 text-danger">{{ formatMoney(totalBalance) }}</div>
-              <div class="small text-muted">Jumla Deni</div>
+              <div class="small text-muted">{{ t('installments.bulkTotalDebt') }}</div>
             </div>
             <div class="rounded px-3 py-2 d-flex flex-column align-items-center"
                  style="background:rgba(13,110,253,.08); min-width:120px;">
               <div class="fw-bold fs-5 text-primary">~{{ formatMoney(avgInstallmentAmount) }}</div>
-              <div class="small text-muted">Kila Kipande (wastani)</div>
+              <div class="small text-muted">{{ t('installments.bulkAvgEach') }}</div>
             </div>
             <div class="rounded px-3 py-2 d-flex flex-column align-items-center"
                  style="background:#f8f9fa; min-width:120px;">
               <div class="fw-bold fs-5">{{ form.total_installments }}×</div>
-              <div class="small text-muted">Awamu</div>
+              <div class="small text-muted">{{ t('studentDrawer.tabInstallments') }}</div>
             </div>
           </div>
 
@@ -160,7 +160,7 @@
           <div class="border rounded overflow-hidden">
             <div class="d-flex justify-content-between align-items-center px-3 py-2"
                  style="background:#f8fffe; border-bottom:1px solid #dee2e6;">
-              <span class="fw-semibold small" style="color:#007f3e;">Wanafunzi wanaostahili</span>
+              <span class="fw-semibold small" style="color:#007f3e;">{{ t('installments.bulkEligible') }}</span>
               <span class="badge bg-success">{{ preview.length }}</span>
             </div>
             <!-- Desktop table -->
@@ -169,14 +169,14 @@
                 <thead class="table-light">
                   <tr>
                     <th class="small">#</th>
-                    <th class="small">Mwanafunzi</th>
-                    <th class="small">Ankara</th>
-                    <th class="small text-end">Jumla Ada</th>
-                    <th class="small text-end">Deni Linalobaki</th>
+                    <th class="small">{{ t('common.student') }}</th>
+                    <th class="small">{{ t('common.invoice') }}</th>
+                    <th class="small text-end">{{ t('installments.bulkColTotalFee') }}</th>
+                    <th class="small text-end">{{ t('installments.bulkColBalance') }}</th>
                     <th class="small text-center" v-for="n in form.total_installments" :key="n">
-                      Awamu {{ n }}
+                      {{ t('installments.bulkInstallmentN', { n }) }}
                     </th>
-                    <th class="small text-end">Mwisho</th>
+                    <th class="small text-end">{{ t('installments.bulkColLast') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -210,8 +210,7 @@
                   <span class="badge bg-danger">{{ formatMoney(row.balance_due_cents) }}</span>
                 </div>
                 <div class="mt-1 small text-muted">
-                  {{ form.total_installments }} awamu × {{ formatMoney(row.installment_amount_cents) }}
-                  · Mwisho: {{ row.last_due_date }}
+                  {{ t('installments.bulkMobileSummary', { count: form.total_installments, amount: formatMoney(row.installment_amount_cents), date: row.last_due_date }) }}
                 </div>
               </div>
             </div>
@@ -219,12 +218,12 @@
 
           <!-- Due dates schedule -->
           <div v-if="preview.length > 0" class="mt-3 p-3 rounded" style="background:#f8fffe; border:1px solid #e0f2ec;">
-            <div class="fw-semibold small mb-2" style="color:#007f3e;">📅 Ratiba ya Malipo</div>
+            <div class="fw-semibold small mb-2" style="color:#007f3e;">{{ t('installments.bulkSchedule') }}</div>
             <div class="d-flex flex-wrap gap-2">
               <div v-for="(date, idx) in scheduleDates" :key="idx"
                    class="rounded px-2 py-1 small"
                    style="background:#fff; border:1px solid #dee2e6;">
-                <span class="fw-semibold">Awamu {{ idx + 1 }}</span>
+                <span class="fw-semibold">{{ t('installments.bulkInstallmentN', { n: idx + 1 }) }}</span>
                 <span class="text-muted ms-1">{{ date }}</span>
               </div>
             </div>
@@ -234,18 +233,18 @@
           <div v-if="readOnlyRows.length > 0" class="mt-3 border rounded overflow-hidden">
             <div class="d-flex justify-content-between align-items-center px-3 py-2"
                  style="background:#f8f9fa; border-bottom:1px solid #dee2e6;">
-              <span class="fw-semibold small text-muted">Wanafunzi (Ankara Zimeshalipwa / Hana Deni)</span>
+              <span class="fw-semibold small text-muted">{{ t('installments.bulkPaidStudents') }}</span>
               <span class="badge bg-secondary">{{ readOnlyRows.length }}</span>
             </div>
             <table class="table table-sm mb-0">
               <thead class="table-light">
                 <tr>
                   <th class="small">#</th>
-                  <th class="small">Mwanafunzi</th>
-                  <th class="small">Ankara</th>
-                  <th class="small text-end">Jumla Ada</th>
-                  <th class="small text-end">Deni Linalobaki</th>
-                  <th class="small">Hali</th>
+                  <th class="small">{{ t('common.student') }}</th>
+                  <th class="small">{{ t('common.invoice') }}</th>
+                  <th class="small text-end">{{ t('installments.bulkColTotalFee') }}</th>
+                  <th class="small text-end">{{ t('installments.bulkColBalance') }}</th>
+                  <th class="small">{{ t('common.status') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -259,7 +258,7 @@
                   <td class="small text-end">{{ formatMoney(row.total_amount_cents) }}</td>
                   <td class="small text-end">{{ formatMoney(row.balance_due_cents) }}</td>
                   <td class="small">
-                    <span class="badge bg-success-subtle text-success border border-success-subtle">Amelipa</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">{{ t('statusBadge.paid') }}</span>
                   </td>
                 </tr>
               </tbody>
@@ -271,8 +270,8 @@
                class="mt-3 rounded p-3 text-center"
                style="background:rgba(25,135,84,.06); border:1px dashed #198754;">
             <div style="font-size:1.5rem;">✅</div>
-            <div class="fw-semibold mt-1 text-success">Wanafunzi wote wameshalipa</div>
-            <div class="small text-muted">Hakuna ankara zenye deni kwa darasa hili katika muhula huu.</div>
+            <div class="fw-semibold mt-1 text-success">{{ t('installments.bulkAllPaid') }}</div>
+            <div class="small text-muted">{{ t('installments.bulkAllPaidSub') }}</div>
           </div>
         </div>
 
@@ -288,7 +287,7 @@
       <CButton color="success" :disabled="saving || !canSubmit" @click="submit"
                style="min-width:160px; background:#007f3e; border-color:#007f3e;">
         <CSpinner v-if="saving" size="sm" class="me-1" />
-        <span v-else>✓ Unda Awamu ({{ preview.length }} wanafunzi)</span>
+        <span v-else>{{ t('installments.bulkSubmit', { count: preview.length }) }}</span>
       </CButton>
     </CModalFooter>
   </CModal>
@@ -577,7 +576,7 @@ async function submit() {
     const msgs = e?.response?.data?.errors
       ? Object.values(e.response.data.errors).flat().join(' ')
       : null
-    error.value = msgs || e?.response?.data?.message || 'Hitilafu imetokea. Jaribu tena.'
+    error.value = msgs || e?.response?.data?.message || t('installments.bulkError')
   } finally {
     saving.value = false
   }
