@@ -63,6 +63,10 @@ class TermBillingSync
                 'term_id' => $term->id,
                 'term_name' => $term->name,
                 'term_number' => $term->number,
+                // The term's own dates, so the form shows the period being billed
+                // exactly as the registration wizard does.
+                'start_date' => optional($term->start_date)->toDateString(),
+                'end_date' => optional($term->end_date)->toDateString(),
                 'academic_year_id' => $term->academic_year_id,
                 'academic_year_name' => $term->academicYear?->name,
                 'invoice_id' => $invoice?->id,

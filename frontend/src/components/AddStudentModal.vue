@@ -897,6 +897,9 @@
                   {{ row.term_name }}
                   <span class="text-muted small ms-1">{{ row.academic_year_name }}</span>
                   <span v-if="row.invoice_number" class="text-muted small ms-2">{{ row.invoice_number }}</span>
+                  <div v-if="row.start_date || row.end_date" class="text-muted" style="font-size:.75rem;">
+                    📅 {{ fmtTermDate(row.start_date) }} — {{ fmtTermDate(row.end_date) }}
+                  </div>
                   <CBadge v-else color="warning" class="ms-2">{{ t('students.termNotBilled') }}</CBadge>
                   <div v-if="!row.invoice_id && (Number(row.fee_tzs) || 0) > 0" class="text-success small">
                     {{ t('students.termWillBeCreated') }}
@@ -913,7 +916,9 @@
               <CRow class="g-2 align-items-end">
                 <CCol sm="4">
                   <label class="form-label small mb-1">{{ t('students.termFeeAmount') }}</label>
-                  <CFormInput type="number" min="0" step="1000" v-model.number="row.fee_tzs" :disabled="row.itemised" />
+                  <CFormInput type="text" inputmode="numeric" :disabled="row.itemised"
+                              :value="formatAmount(row.fee_tzs)"
+                              @input="row.fee_tzs = parseAmount($event.target.value)" />
                   <div v-if="row.itemised" class="text-muted" style="font-size:.72rem;">{{ t('students.termItemisedLocked') }}</div>
                 </CCol>
                 <CCol sm="4">
@@ -940,10 +945,12 @@
                 </div>
                 <div v-for="(pay, pi) in row.payments" :key="pay.id ?? ('new' + pi)" class="row g-2 mt-1 align-items-center">
                   <div class="col-6 col-md-3">
-                    <CFormInput type="number" min="0" step="1000" v-model.number="pay.amount_tzs" size="sm" />
+                    <CFormInput type="text" inputmode="numeric" size="sm"
+                                :value="formatAmount(pay.amount_tzs)"
+                                @input="pay.amount_tzs = parseAmount($event.target.value)" />
                   </div>
                   <div class="col-6 col-md-3">
-                    <CFormInput type="date" v-model="pay.paid_at" size="sm" />
+                    <CFormInput type="date" v-model="pay.paid_at" :max="today" size="sm" />
                   </div>
                   <div class="col-6 col-md-3">
                     <CFormSelect v-model="pay.method" size="sm">
@@ -1457,6 +1464,13 @@ const termBillingError = ref('')
 const toTzs = (cents) => Math.round((cents || 0) / 100)
 const toCents = (tzs) => Math.round((Number(tzs) || 0) * 100)
 const fmtTzs = (tzs) => 'TZS ' + (Number(tzs) || 0).toLocaleString()
+
+// Term dates as "01 Oct 2026"; falls back to the raw value if it cannot be read.
+const fmtTermDate = (d) => {
+  if (!d) return '—'
+  const dt = new Date(d)
+  return isNaN(dt) ? d : dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+}
 
 const billedPaid = (row) => row.payments.reduce((n, p) => n + (Number(p.amount_tzs) || 0), 0)
 const billedBalance = (row) => Math.max(0, (Number(row.fee_tzs) || 0) - billedPaid(row))

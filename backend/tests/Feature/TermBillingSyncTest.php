@@ -220,6 +220,9 @@ class TermBillingSyncTest extends TestCase
         $this->assertCount(1, $byNumber[3]['payments']);
         // Term 4 was never invoiced — it is offered so the gap can be filled.
         $this->assertNull($byNumber[4]['invoice_id']);
+        // The period is shown on the form, so it must come through.
+        $this->assertSame('2026-01-01', $byNumber[4]['start_date']);
+        $this->assertSame('2026-03-31', $byNumber[4]['end_date']);
         $this->assertSame(0, $byNumber[4]['fee_amount_cents']);
     }
 }
