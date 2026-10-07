@@ -62,13 +62,13 @@ class InstallmentController extends Controller
         $balanceDue = $invoice->balanceDueCents();
 
         if ($balanceDue <= 0) {
-            return response()->json(['message' => 'Invoice has no outstanding balance.'], 422);
+            return response()->json(['message' => __('Invoice has no outstanding balance.')], 422);
         }
 
         // Check if installment plan already exists for this invoice
         $existing = InstallmentPlan::where('invoice_id', $invoice->id)->count();
         if ($existing > 0) {
-            return response()->json(['message' => 'An installment plan already exists for this invoice.'], 422);
+            return response()->json(['message' => __('An installment plan already exists for this invoice.')], 422);
         }
 
         $installmentAmountCents = (int) ceil($balanceDue / $data['total_installments']);
@@ -150,7 +150,7 @@ class InstallmentController extends Controller
 
         if ($invoices->isEmpty()) {
             return response()->json([
-                'message' => 'No eligible invoices found. All students in this class either have no outstanding balance or already have installment plans.',
+                'message' => __('No eligible invoices found. All students in this class either have no outstanding balance or already have installment plans.'),
                 'created' => 0,
                 'skipped' => 0,
             ], 200);
@@ -201,7 +201,7 @@ class InstallmentController extends Controller
         });
 
         return response()->json([
-            'message' => "Installment plans created for {$created} student(s).",
+            'message' => __('Installment plans created for :count student(s).', ['count' => $created]),
             'created' => $created,
         ], 201);
     }
@@ -222,12 +222,12 @@ class InstallmentController extends Controller
 
         if ((int) $data['installment_number'] !== (int) $installment->installment_number) {
             throw ValidationException::withMessages([
-                'installment_number' => 'Installment number does not match this record.',
+                'installment_number' => __('Installment number does not match this record.'),
             ]);
         }
 
         if ($installment->status === 'paid') {
-            return response()->json(['message' => 'This installment is already marked as paid.'], 422);
+            return response()->json(['message' => __('This installment is already marked as paid.')], 422);
         }
 
         // Determine the amount to record — adding new amount to existing paid amount

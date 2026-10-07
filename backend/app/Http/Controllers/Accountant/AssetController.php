@@ -193,13 +193,13 @@ class AssetController extends Controller
     {
         if (! in_array($asset->status, ['disposed', 'lost', 'written_off'])) {
             return response()->json([
-                'message' => 'Mali inaweza kufutwa tu ikiwa ina hadhi: disposed, lost, au written_off.',
+                'message' => __('An asset can only be deleted when its status is: disposed, lost or written_off.'),
             ], 422);
         }
 
         AuditLogger::log('asset.deleted', $asset, ['before' => $asset->toArray()]);
         $asset->delete();
 
-        return response()->json(['message' => 'Mali imefutwa.']);
+        return response()->json(['message' => __('Asset deleted.')]);
     }
 }

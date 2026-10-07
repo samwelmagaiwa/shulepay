@@ -81,7 +81,7 @@ class AuthController extends Controller
             ]);
 
             throw ValidationException::withMessages([
-                'email' => ['Barua pepe au neno la siri si sahihi.'],
+                'email' => [__('The email or password is incorrect.')],
             ]);
         }
 
@@ -99,7 +99,7 @@ class AuthController extends Controller
                 'attempted_at' => now(),
             ]);
             throw ValidationException::withMessages([
-                'email' => ['Akaunti yako imezuiwa. Wasiliana na msimamizi.'],
+                'email' => [__('Your account has been blocked. Contact an administrator.')],
             ]);
         }
 
@@ -117,7 +117,7 @@ class AuthController extends Controller
                 ]);
                 $schoolName = School::find($schoolId)?->name ?? 'that school';
                 throw ValidationException::withMessages([
-                    'school_id' => ["You do not have access to {$schoolName}. Please contact your administrator."],
+                    'school_id' => [__('You do not have access to :school. Please contact your administrator.', ['school' => $schoolName])],
                 ]);
             }
         }
@@ -166,7 +166,7 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(['message' => 'Umefanikiwa kutoka.']);
+        return response()->json(['message' => __('You have been logged out.')]);
     }
 
     public function me(Request $request): JsonResponse

@@ -54,7 +54,7 @@ class PrimaryFeeCategoryController extends Controller
         ]);
 
         $schoolId = $this->activeSchoolId($request);
-        abort_if(! $schoolId, 422, 'No active school selected.');
+        abort_if(! $schoolId, 422, __('No active school selected.'));
 
         foreach ($data['tiers'] as $tier => $rows) {
             if (! in_array($tier, self::TIERS, true)) {

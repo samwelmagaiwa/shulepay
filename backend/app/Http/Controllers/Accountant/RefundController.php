@@ -49,7 +49,7 @@ class RefundController extends Controller
 
         if ($data['amount_cents'] > $paidCents) {
             return response()->json([
-                'message' => 'Refund amount exceeds total paid amount.',
+                'message' => __('Refund amount exceeds total paid amount.'),
                 'paid_cents' => $paidCents,
             ], 422);
         }
@@ -107,7 +107,7 @@ class RefundController extends Controller
         $schoolId = $refund->invoice?->school_id;
         abort_unless(
             $schoolId !== null && auth()->user()->canAccessSchool((int) $schoolId),
-            403, 'Forbidden.'
+            403, __('Forbidden.')
         );
 
         DB::transaction(function () use ($refund) {
@@ -129,6 +129,6 @@ class RefundController extends Controller
             }
         });
 
-        return response()->json(['message' => 'Refund deleted.']);
+        return response()->json(['message' => __('Refund deleted.')]);
     }
 }

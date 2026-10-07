@@ -97,18 +97,18 @@ class StatementController extends Controller
                 'exception' => $e::class,
             ]);
 
-            return response()->json(['message' => 'Imeshindwa kutengeneza taarifa ya ada.'], 500);
+            return response()->json(['message' => __('Failed to generate the fee statement.')], 500);
         }
     }
 
     private function authoriseOwnership($user, Student $student): void
     {
         if (! $user->guardian) {
-            abort(403, 'Access denied.');
+            abort(403, __('Access denied.'));
         }
         $owns = $user->guardian->students()->where('students.id', $student->id)->exists();
         if (! $owns) {
-            abort(403, 'Access denied.');
+            abort(403, __('Access denied.'));
         }
     }
 }

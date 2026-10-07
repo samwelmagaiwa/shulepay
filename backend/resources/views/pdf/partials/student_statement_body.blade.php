@@ -30,7 +30,7 @@
      school's branding settings. See pdf/partials/letterhead.blade.php. --}}
 @include('pdf.partials.letterhead', [
   'lh' => $lh,
-  'docTitle' => 'Taarifa ya Malipo Yote (Ankara Zote)',
+  'docTitle' => __('pdf.full_statement_title'),
   'compact' => true,
 ])
 
@@ -94,7 +94,7 @@
   <tbody>
     @if($olderInvoices->isNotEmpty())
     <tr>
-      <td><em>Ankara za awali ({{ $olderInvoices->count() }})</em></td>
+      <td><em>{{ __('pdf.earlier_invoices', ['count' => $olderInvoices->count()]) }}</em></td>
       <td class="amt">{{ $money($olderGross) }}</td>
       <td class="amt">{{ $money($olderPaid) }}</td>
       <td class="amt {{ $olderBalance > 0 ? 'balance-due' : 'balance-paid' }}">{{ $money($olderBalance) }}</td>
@@ -105,11 +105,11 @@
       <td>
         {{ $inv->term ?: '—' }}
         <span class="status-{{ $inv->status }}"{!! $dense ? '' : ' style="display:block"' !!}>
-          {{ ['paid' => 'Amelipa', 'partial' => 'Amelipa Kiasi', 'unpaid' => 'Hajalipa'][$inv->status] ?? $inv->status }}
+          {{ in_array($inv->status, ['paid', 'partial', 'unpaid'], true) ? __('pdf.status_'.$inv->status) : $inv->status }}
         </span>
         <span class="row-meta">
-          Ankara: {{ $inv->invoice_number ?: '—' }}
-          @if($inv->method_label) &middot; {{ $inv->method_label }} @endif
+          {{ __('pdf.invoice_colon') }} {{ $inv->invoice_number ?: '—' }}
+          @if($inv->method) &middot; {{ $inv->method->label() }} @endif
         </span>
       </td>
       <td class="amt">{{ $money($inv->gross_cents) }}</td>
@@ -146,6 +146,6 @@
 
 <div class="hr"></div>
 <div class="footer">
-  Taarifa hii inaonyesha ankara zote za mwanafunzi huyu na malipo yaliyofanyika.<br>
+  {{ __('pdf.full_statement_footer') }}<br>
   {{ $appName }} &copy; {{ date('Y') }} {{ $appTagline }}
 </div>

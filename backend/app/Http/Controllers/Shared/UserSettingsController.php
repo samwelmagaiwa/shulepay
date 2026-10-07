@@ -61,7 +61,7 @@ class UserSettingsController extends Controller
         if (isset($data['current_password'])) {
             if (! Hash::check($data['current_password'], $user->password)) {
                 throw ValidationException::withMessages([
-                    'current_password' => ['Neno la siri la sasa si sahihi.'],
+                    'current_password' => [__('The current password is incorrect.')],
                 ]);
             }
             unset($data['current_password']);
@@ -69,7 +69,7 @@ class UserSettingsController extends Controller
 
         $user->update($data);
 
-        return response()->json(['message' => 'Taarifa zimesasishwa.', 'user' => [
+        return response()->json(['message' => __('Your details have been updated.'), 'user' => [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
@@ -92,7 +92,7 @@ class UserSettingsController extends Controller
 
         if (! Hash::check($data['current_password'], $user->password)) {
             throw ValidationException::withMessages([
-                'current_password' => ['Neno la siri la sasa si sahihi.'],
+                'current_password' => [__('The current password is incorrect.')],
             ]);
         }
 
@@ -101,7 +101,7 @@ class UserSettingsController extends Controller
             'must_change_password' => false,
         ]);
 
-        return response()->json(['message' => 'Neno la siri limebadilishwa.']);
+        return response()->json(['message' => __('Your password has been changed.')]);
     }
 
     /**
@@ -120,11 +120,11 @@ class UserSettingsController extends Controller
         if ($current) {
             $user->update(['2fa_enabled' => false]);
 
-            return response()->json(['enabled' => false, 'message' => '2FA imezimwa.']);
+            return response()->json(['enabled' => false, 'message' => __('Two-factor authentication has been turned off.')]);
         }
 
         if (! $user->phone) {
-            return response()->json(['message' => 'Lazima uwe na nambari ya simu ili kuwasha 2FA.'], 422);
+            return response()->json(['message' => __('You need a phone number to turn on two-factor authentication.')], 422);
         }
 
         OtpCode::where('user_id', $user->id)->whereNull('used_at')->update(['used_at' => now()]);
@@ -144,7 +144,7 @@ class UserSettingsController extends Controller
         return response()->json([
             'enabled' => false,
             'requires_verification' => true,
-            'message' => 'Msimbo wa uthibitisho umetumwa. Ingiza msimbo kuwasha 2FA.',
+            'message' => __('A verification code has been sent. Enter it to turn on two-factor authentication.'),
         ]);
     }
 
@@ -167,12 +167,12 @@ class UserSettingsController extends Controller
             ->first();
 
         if (! $otp) {
-            return response()->json(['message' => 'Msimbo si sahihi au umeisha muda wake.'], 422);
+            return response()->json(['message' => __('The code is incorrect or has expired.')], 422);
         }
 
         $otp->update(['used_at' => now()]);
         $user->update(['2fa_enabled' => true]);
 
-        return response()->json(['enabled' => true, 'message' => '2FA imewashwa.']);
+        return response()->json(['enabled' => true, 'message' => __('Two-factor authentication has been turned on.')]);
     }
 }

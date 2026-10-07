@@ -25,12 +25,13 @@ enum SchoolLevel: string
         return self::tryFrom($val);
     }
 
+    /** Display name in the language of the current request. */
     public function label(): string
     {
-        return match ($this) {
-            self::Primary, self::Msingi => 'Msingi',
-            self::Secondary, self::Sekondari => 'Sekondari',
-        };
+        return __('enums.school_level.'.(match ($this) {
+            self::Primary, self::Msingi => 'primary',
+            self::Secondary, self::Sekondari => 'secondary',
+        }));
     }
 
     public function classPrefix(): string

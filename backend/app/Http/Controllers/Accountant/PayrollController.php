@@ -53,7 +53,7 @@ class PayrollController extends Controller
             ->exists();
 
         if ($exists) {
-            return response()->json(['message' => 'Payroll entry already exists for this employee and period.'], 422);
+            return response()->json(['message' => __('Payroll entry already exists for this employee and period.')], 422);
         }
 
         $basic = (int) $employee->getRawOriginal('basic_salary_cents');
@@ -87,7 +87,7 @@ class PayrollController extends Controller
     public function markPaid(Payroll $payroll): JsonResponse
     {
         if ($payroll->status === 'paid') {
-            return response()->json(['message' => 'Payroll entry already marked as paid.'], 422);
+            return response()->json(['message' => __('Payroll entry already marked as paid.')], 422);
         }
 
         $before = $payroll->toArray();
@@ -118,7 +118,7 @@ class PayrollController extends Controller
             ?? auth()->user()->school_id;
 
         if (! $schoolId) {
-            return response()->json(['message' => 'No active school set.'], 422);
+            return response()->json(['message' => __('No active school set.')], 422);
         }
 
         $employees = Employee::where('school_id', $schoolId)
@@ -163,7 +163,7 @@ class PayrollController extends Controller
         });
 
         return response()->json([
-            'message' => 'Bulk payroll generation completed.',
+            'message' => __('Bulk payroll generation completed.'),
             'created' => $created,
             'skipped' => $skipped,
         ]);

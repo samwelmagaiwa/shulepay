@@ -33,14 +33,17 @@ class OutstandingDebtsExport implements FromArray, ShouldAutoSize, WithEvents, W
         ], $this->rows);
 
         $totalDebt = array_sum(array_column($this->rows, 'debt_cents'));
-        $rows[] = ['TOTAL ('.count($this->rows).' debtors)', '', '', '', '', round($totalDebt / 100), ''];
+        $rows[] = [__('exports.debtors_total', ['count' => count($this->rows)]), '', '', '', '', round($totalDebt / 100), ''];
 
         return $rows;
     }
 
     public function headings(): array
     {
-        return ['Student Name', 'Class', 'Parent/Guardian Name', 'Parent Phone', 'Village/Street', 'Debt Amount (TZS)', 'Terms Not Paid'];
+        return [
+            __('exports.student_name'), __('exports.class'), __('exports.parent_name'), __('exports.parent_phone'),
+            __('exports.village_street'), __('exports.debt_amount_tzs'), __('exports.terms_not_paid'),
+        ];
     }
 
     public function styles(Worksheet $sheet): array

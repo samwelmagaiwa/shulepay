@@ -62,7 +62,7 @@ class BulkImportController extends Controller
             $rows = $this->parseFile($file);
         } catch (\Throwable $e) {
             return response()->json([
-                'message' => 'Faili haiwezi kusomwa: '.$e->getMessage(),
+                'message' => __('The file could not be read: :error', ['error' => $e->getMessage()]),
             ], 422);
         }
 
@@ -195,7 +195,7 @@ class BulkImportController extends Controller
         });
 
         return response()->json([
-            'message' => 'Import complete.',
+            'message' => __('Import complete.'),
             'imported' => $result['imported'],
             'skipped' => $result['skipped'],
             'errors' => $result['errors'],

@@ -123,7 +123,7 @@ class SchoolController extends Controller
             $school->update(['is_active' => false]);
             AuditLogger::log('school.deactivated', $school, []);
 
-            return response()->json(['message' => 'School deactivated (has existing students).']);
+            return response()->json(['message' => __('School deactivated (has existing students).')]);
         }
 
         AuditLogger::log('school.deleted', $school, $school->toArray());

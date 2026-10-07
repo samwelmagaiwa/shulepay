@@ -73,9 +73,11 @@ class StudentStatementPdf
                     'status' => $inv->status instanceof \BackedEnum ? $inv->status->value : $inv->status,
                     // Only shown when a term settled through exactly one payment — a
                     // term split across several payments (different methods) has no
-                    // single "method" that would be accurate to print.
-                    'method_label' => $inv->payments->count() === 1
-                        ? $inv->payments->first()->method?->label()
+                    // single "method" that would be accurate to print. The enum is
+                    // passed through and labelled by the view, so the wording follows
+                    // the language at the moment of rendering.
+                    'method' => $inv->payments->count() === 1
+                        ? $inv->payments->first()->method
                         : null,
                     'payments' => $inv->payments->map(fn ($p) => (object) [
                         'paid_at' => $p->paid_at,

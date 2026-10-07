@@ -6,7 +6,7 @@
   file just supplies the one-student HTML document wrapper.
 --}}
 <!DOCTYPE html>
-<html lang="sw">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="utf-8">
 <style>

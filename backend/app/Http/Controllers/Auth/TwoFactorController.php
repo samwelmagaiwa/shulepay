@@ -27,7 +27,7 @@ class TwoFactorController extends Controller
         $user = User::findOrFail($request->user_id);
 
         if (! $user->phone) {
-            return response()->json(['message' => 'Nambari ya simu haipatikani.'], 422);
+            return response()->json(['message' => __('The phone number is not available.')], 422);
         }
 
         // Invalidate previous unused OTPs for this user
@@ -49,7 +49,7 @@ class TwoFactorController extends Controller
             // SMS failure must not prevent OTP creation
         }
 
-        return response()->json(['message' => 'Msimbo umetumwa', 'expires_in' => 600]);
+        return response()->json(['message' => __('The code has been sent'), 'expires_in' => 600]);
     }
 
     /**
@@ -73,7 +73,7 @@ class TwoFactorController extends Controller
             ->first();
 
         if (! $otp) {
-            return response()->json(['message' => 'Msimbo si sahihi au umeisha muda wake.'], 422);
+            return response()->json(['message' => __('The code is incorrect or has expired.')], 422);
         }
 
         $otp->update(['used_at' => now()]);

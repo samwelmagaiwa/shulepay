@@ -94,24 +94,24 @@ class UpdateStudentFullRequest extends FormRequest
             if ($sponsorship === 'full') {
                 $validator->errors()->add(
                     'generate_new_invoice',
-                    'A fully sponsored student with no payments cannot have an invoice generated.'
+                    __('A fully sponsored student with no payments cannot have an invoice generated.')
                 );
 
                 return;
             }
 
             if ($fee <= 0) {
-                $validator->errors()->add('total_tuition_fee_cents', 'Total tuition fee is required.');
+                $validator->errors()->add('total_tuition_fee_cents', __('Total tuition fee is required.'));
             }
 
             if ($sponsorship === 'full_paid') {
                 $sponsored = (int) $this->input('sponsored_amount_cents', 0);
                 if ($sponsored <= 0) {
-                    $validator->errors()->add('sponsored_amount_cents', 'Enter the amount the sponsor is covering.');
+                    $validator->errors()->add('sponsored_amount_cents', __('Enter the amount the sponsor is covering.'));
                 } elseif ($fee > 0 && $sponsored > $fee) {
                     $validator->errors()->add(
                         'sponsored_amount_cents',
-                        'Sponsored amount cannot be greater than the total tuition fee.'
+                        __('Sponsored amount cannot be greater than the total tuition fee.')
                     );
                 }
             }
@@ -120,16 +120,16 @@ class UpdateStudentFullRequest extends FormRequest
                 if ($discount <= 0) {
                     $validator->errors()->add(
                         'discount_amount_cents',
-                        'Enter the discount amount for the selected discount type.'
+                        __('Enter the discount amount for the selected discount type.')
                     );
                 } elseif ($fee > 0 && $discount > $fee) {
                     $validator->errors()->add(
                         'discount_amount_cents',
-                        'Discount cannot be greater than the total tuition fee.'
+                        __('Discount cannot be greater than the total tuition fee.')
                     );
                 }
             } elseif ($discount > 0) {
-                $validator->errors()->add('discount_type', 'Select a discount type for the amount entered.');
+                $validator->errors()->add('discount_type', __('Select a discount type for the amount entered.'));
             }
         });
     }

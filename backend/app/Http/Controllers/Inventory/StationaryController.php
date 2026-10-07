@@ -88,7 +88,7 @@ class StationaryController extends Controller
      */
     public function approve(Request $request, StationaryRequest $stationaryRequest): JsonResponse
     {
-        abort_if(! $stationaryRequest->isPending(), 422, 'Only pending requests can be approved.');
+        abort_if(! $stationaryRequest->isPending(), 422, __('Only pending requests can be approved.'));
 
         $stationaryRequest->update([
             'status' => 'approved',
@@ -104,7 +104,7 @@ class StationaryController extends Controller
      */
     public function provide(Request $request, StationaryRequest $stationaryRequest): JsonResponse
     {
-        abort_if(! in_array($stationaryRequest->status, ['pending', 'approved'], true), 422, 'Already provided or rejected.');
+        abort_if(! in_array($stationaryRequest->status, ['pending', 'approved'], true), 422, __('Already provided or rejected.'));
 
         $data = $request->validate([
             'quantity_provided' => ['required', 'numeric', 'min:0.5'],
@@ -116,7 +116,7 @@ class StationaryController extends Controller
             $item = InventoryItem::lockForUpdate()->find($stationaryRequest->item_id);
 
             if ($item && (float) $item->quantity < $qty) {
-                abort(422, "Insufficient stock. Available: {$item->quantity} {$item->unit}.");
+                abort(422, __('Insufficient stock. Available: :quantity :unit.', ['quantity' => $item->quantity, 'unit' => $item->unit]));
             }
 
             // Deduct from stock
@@ -152,7 +152,7 @@ class StationaryController extends Controller
      */
     public function reject(Request $request, StationaryRequest $stationaryRequest): JsonResponse
     {
-        abort_if(! $stationaryRequest->isPending(), 422, 'Only pending requests can be rejected.');
+        abort_if(! $stationaryRequest->isPending(), 422, __('Only pending requests can be rejected.'));
 
         $data = $request->validate([
             'rejection_reason' => ['nullable', 'string', 'max:500'],

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Http\Middleware\SetLocale;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Tests\TestCase;
 
 /**
@@ -59,6 +60,21 @@ class LocaleTest extends TestCase
             // A missing key returns the key itself — that is the failure to catch.
             $this->assertNotSame('pdf.'.$key, $sw, "Swahili label missing: {$key}");
             $this->assertNotSame('pdf.'.$key, $en, "English label missing: {$key}");
+        }
+    }
+
+    /**
+     * Adding a label to one language and forgetting the other shows the user the
+     * raw key (or English) in the other language — compare the two key sets.
+     */
+    public function test_both_languages_define_the_same_keys(): void
+    {
+        foreach (['pdf', 'enums', 'exports'] as $file) {
+            $en = array_keys(Arr::dot(require base_path("lang/en/{$file}.php")));
+            $sw = array_keys(Arr::dot(require base_path("lang/sw/{$file}.php")));
+
+            $this->assertSame([], array_values(array_diff($en, $sw)), "lang/sw/{$file}.php is missing keys");
+            $this->assertSame([], array_values(array_diff($sw, $en)), "lang/en/{$file}.php is missing keys");
         }
     }
 }

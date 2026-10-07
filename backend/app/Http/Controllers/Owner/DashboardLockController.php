@@ -78,20 +78,20 @@ class DashboardLockController extends Controller
         $lock = DashboardPrivacy::lockFor($user);
 
         if ($lock === null) {
-            return response()->json(['message' => 'Hakuna msimbo uliowekwa.'], 422);
+            return response()->json(['message' => __('No code has been set.')], 422);
         }
 
         $throttle = 'dashboard-unlock:'.$user->id;
         if (RateLimiter::tooManyAttempts($throttle, 5)) {
             return response()->json([
-                'message' => 'Umejaribu mara nyingi. Subiri sekunde '.RateLimiter::availableIn($throttle).'.',
+                'message' => __('Too many attempts. Wait :seconds seconds.', ['seconds' => RateLimiter::availableIn($throttle)]),
             ], 429);
         }
 
         if (! Hash::check($request->string('code')->toString(), $lock->code_hash)) {
             RateLimiter::hit($throttle, 60);
 
-            return response()->json(['message' => 'Msimbo si sahihi.'], 422);
+            return response()->json(['message' => __('The code is incorrect.')], 422);
         }
 
         RateLimiter::clear($throttle);
@@ -109,21 +109,21 @@ class DashboardLockController extends Controller
         $lock = DashboardPrivacy::lockFor($user);
 
         if ($lock === null) {
-            return response()->json(['message' => 'Hakuna msimbo uliowekwa.'], 422);
+            return response()->json(['message' => __('No code has been set.')], 422);
         }
 
         // A 4-digit code is brute-forceable in seconds without this.
         $throttle = 'dashboard-unlock:'.$user->id;
         if (RateLimiter::tooManyAttempts($throttle, 5)) {
             return response()->json([
-                'message' => 'Umejaribu mara nyingi. Subiri sekunde '.RateLimiter::availableIn($throttle).'.',
+                'message' => __('Too many attempts. Wait :seconds seconds.', ['seconds' => RateLimiter::availableIn($throttle)]),
             ], 429);
         }
 
         if (! Hash::check($request->string('code')->toString(), $lock->code_hash)) {
             RateLimiter::hit($throttle, 60);
 
-            return response()->json(['message' => 'Msimbo si sahihi.'], 422);
+            return response()->json(['message' => __('The code is incorrect.')], 422);
         }
 
         RateLimiter::clear($throttle);
@@ -146,7 +146,7 @@ class DashboardLockController extends Controller
         $user = $request->user();
 
         if (! Hash::check($request->string('password')->toString(), $user->password)) {
-            return response()->json(['message' => 'Nenosiri si sahihi.'], 422);
+            return response()->json(['message' => __('The password is incorrect.')], 422);
         }
 
         DashboardPrivacy::lockFor($user)?->delete();

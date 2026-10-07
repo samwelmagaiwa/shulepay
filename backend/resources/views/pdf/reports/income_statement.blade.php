@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="sw">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="UTF-8">
 <style>
@@ -29,27 +29,27 @@
 
 <div class="header">
     <h1>{{ $school?->name ?? 'ShulePay' }}</h1>
-    <p>Income Statement (Profit &amp; Loss)</p>
-    <p>Period: {{ $report['period']['from'] }} to {{ $report['period']['to'] }}</p>
-    <p>Generated: {{ now()->format('d M Y H:i') }}</p>
+    <p>{{ __('pdf.income_statement_title') }}</p>
+    <p>{{ __('pdf.period') }}: {{ __('pdf.period_range', ['from' => $report['period']['from'], 'to' => $report['period']['to']]) }}</p>
+    <p>{{ __('pdf.generated') }}: {{ now()->locale(app()->getLocale())->translatedFormat('d M Y H:i') }}</p>
 </div>
 
 <div class="statement">
     {{-- REVENUE --}}
-    <div class="section-title">REVENUE</div>
+    <div class="section-title">{{ __('pdf.revenue') }}</div>
     <table>
         <tr>
-            <td>Fee Collections</td>
+            <td>{{ __('pdf.fee_collections') }}</td>
             <td>TZS {{ number_format($report['revenue']['fee_collections'] / 100, 2) }}</td>
         </tr>
         <tr class="subtotal">
-            <td>Total Revenue</td>
+            <td>{{ __('pdf.total_revenue') }}</td>
             <td>TZS {{ number_format($report['revenue']['total'] / 100, 2) }}</td>
         </tr>
     </table>
 
     {{-- EXPENSES --}}
-    <div class="section-title">EXPENSES</div>
+    <div class="section-title">{{ __('pdf.expenses') }}</div>
     <table>
         @foreach($report['expenses']['by_category'] as $cat)
         <tr>
@@ -58,11 +58,11 @@
         </tr>
         @endforeach
         <tr>
-            <td>Payroll</td>
+            <td>{{ __('pdf.payroll') }}</td>
             <td>TZS {{ number_format($report['expenses']['payroll'] / 100, 2) }}</td>
         </tr>
         <tr class="subtotal">
-            <td>Total Expenses</td>
+            <td>{{ __('pdf.total_expenses') }}</td>
             <td>TZS {{ number_format($report['expenses']['total'] / 100, 2) }}</td>
         </tr>
     </table>
@@ -71,12 +71,12 @@
     <table style="margin-top: 16px;">
         @php $net = $report['net_income_cents']; @endphp
         <tr class="net-income {{ $net >= 0 ? 'positive' : 'negative' }}">
-            <td>{{ $net >= 0 ? 'NET INCOME' : 'NET LOSS' }}</td>
+            <td>{{ $net >= 0 ? __('pdf.net_income') : __('pdf.net_loss') }}</td>
             <td>TZS {{ number_format(abs($net) / 100, 2) }}</td>
         </tr>
     </table>
 </div>
 
-<div class="footer">ShulePay &mdash; Fee Management System</div>
+<div class="footer">{{ __('pdf.report_footer') }}</div>
 </body>
 </html>

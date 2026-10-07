@@ -239,7 +239,7 @@ class InvoiceController extends Controller
         // must never be.
         if (! auth()->user()?->isSuperAdmin()
             && auth()->user()?->getAllPermissions()->contains('name', 'invoices.edit_restricted')) {
-            abort(403, 'Editing invoices is restricted for your role.');
+            abort(403, __('Editing invoices is restricted for your role.'));
         }
 
         $data = $request->validate([
@@ -260,10 +260,9 @@ class InvoiceController extends Controller
 
         if ($newTotal < $paid) {
             return throw ValidationException::withMessages([
-                'total_amount_cents' => sprintf(
-                    'This invoice already has %s paid against it. Lowering the total below that would be an overpayment — record a refund instead.',
-                    'TZS '.number_format($paid / 100)
-                ),
+                'total_amount_cents' => __('This invoice already has :paid paid against it. Lowering the total below that would be an overpayment — record a refund instead.', [
+                    'paid' => 'TZS '.number_format($paid / 100),
+                ]),
             ]);
         }
 
@@ -272,7 +271,7 @@ class InvoiceController extends Controller
         // rewriting one would misstate what the parent was charged for.
         if ($invoice->lines->count() > 1) {
             return throw ValidationException::withMessages([
-                'total_amount_cents' => 'This invoice has an itemised breakdown and cannot be edited here.',
+                'total_amount_cents' => __('This invoice has an itemised breakdown and cannot be edited here.'),
             ]);
         }
 

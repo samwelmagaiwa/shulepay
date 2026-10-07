@@ -54,7 +54,7 @@ class FeeStructureController extends Controller
         ])->first();
 
         if ($existing) {
-            return response()->json(['message' => 'A fee structure already exists for this class and term.'], 422);
+            return response()->json(['message' => __('A fee structure already exists for this class and term.')], 422);
         }
 
         // `name` is a required NOT NULL column with no default — omitting it here
@@ -98,7 +98,7 @@ class FeeStructureController extends Controller
 
         if ($terms->count() < $data['installments_count']) {
             return response()->json([
-                'message' => "This academic year only has {$terms->count()} term(s), but {$data['installments_count']} installments are required. Please add more terms first.",
+                'message' => __('This academic year only has :count term(s), but :needed installments are required. Please add more terms first.', ['count' => $terms->count(), 'needed' => $data['installments_count']]),
             ], 422);
         }
 
@@ -119,7 +119,7 @@ class FeeStructureController extends Controller
 
             if ($existing) {
                 return response()->json([
-                    'message' => "A fee structure already exists for this class and term '{$term->name}'. Delete it first before creating a new one.",
+                    'message' => __("A fee structure already exists for this class and term ':term'. Delete it first before creating a new one.", ['term' => $term->name]),
                 ], 422);
             }
 
@@ -148,7 +148,7 @@ class FeeStructureController extends Controller
         }
 
         return response()->json([
-            'message' => "Full tuition fee structure created with {$data['installments_count']} installments (every {$monthsPerInstallment} months).",
+            'message' => __('Full tuition fee structure created with :count installments (every :months months).', ['count' => $data['installments_count'], 'months' => $monthsPerInstallment]),
             'structures' => $created,
         ], 201);
     }

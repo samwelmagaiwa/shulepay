@@ -37,7 +37,7 @@ class ReceiptController extends Controller
         $user = $request->user();
         $schoolId = Payment::allSchools()->where('receipt_id', $receipt->id)->value('school_id');
         if (! $schoolId || (! $user->isSuperAdmin() && ! $user->canAccessSchool($schoolId))) {
-            abort(403, 'Access denied.');
+            abort(403, __('Access denied.'));
         }
 
         $receipt->load(['student.currentEnrollment.school', 'payment.invoice.term']);
@@ -65,7 +65,7 @@ class ReceiptController extends Controller
         $user = $request->user();
         $schoolId = Invoice::allSchools()->where('student_id', $student->id)->value('school_id');
         if ($schoolId && ! $user->isSuperAdmin() && ! $user->canAccessSchool($schoolId)) {
-            abort(403, 'Access denied.');
+            abort(403, __('Access denied.'));
         }
 
         $content = $this->statementPdf->generate($student);
@@ -187,12 +187,12 @@ class ReceiptController extends Controller
         $limit = $request->integer('limit', self::MAX_BATCH);
         $students = $query->skip($offset)->take($limit)->get();
 
-        abort_if($students->isEmpty(), 404, 'Hakuna wanafunzi wanaolingana na kigezo hiki.');
+        abort_if($students->isEmpty(), 404, __('No students match this filter.'));
 
         abort_if(
             $students->count() > self::MAX_BATCH,
             422,
-            'Wanafunzi ni wengi mno kuchapisha kwa mara moja (kikomo ni '.self::MAX_BATCH.') — punguza kigezo la kuchuja.'
+            __('Too many students to print at once (the limit is :max) — narrow the filter.', ['max' => self::MAX_BATCH])
         );
 
         $content = $this->bulkPdf->generate($students, $request->status);

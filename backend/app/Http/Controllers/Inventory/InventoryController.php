@@ -298,7 +298,7 @@ class InventoryController extends Controller
         if ($item->type === 'fixed_asset') {
             if (! in_array($item->status, ['disposed', 'lost', 'written_off'])) {
                 return response()->json([
-                    'message' => 'Mali inaweza kufutwa tu ikiwa ina hadhi: disposed, lost, au written_off.',
+                    'message' => __('An asset can only be deleted when its status is: disposed, lost or written_off.'),
                 ], 422);
             }
             AuditLogger::log('inventory.asset_deleted', $item, ['before' => $item->toArray()]);
@@ -306,7 +306,7 @@ class InventoryController extends Controller
 
         $item->delete();
 
-        return response()->json(['message' => 'Imefutwa.']);
+        return response()->json(['message' => __('Deleted.')]);
     }
 
     // ── Dispose (fixed assets only) ───────────────────────────────────────────
@@ -316,7 +316,7 @@ class InventoryController extends Controller
         $this->authorizeSchool($item->school_id);
 
         if ($item->type !== 'fixed_asset') {
-            return response()->json(['message' => 'Kuondoa kunafanywa tu kwa mali za kudumu.'], 422);
+            return response()->json(['message' => __('Disposal applies to fixed assets only.')], 422);
         }
 
         $data = $request->validate([
@@ -356,12 +356,12 @@ class InventoryController extends Controller
         $this->authorizeSchool($item->school_id);
 
         if ($item->type !== 'consumable') {
-            return response()->json(['message' => 'Muamala wa stoo ni kwa bidhaa za matumizi tu.'], 422);
+            return response()->json(['message' => __('Stock transactions apply to consumable items only.')], 422);
         }
 
         $user = auth()->user();
         if ($request->input('type') === 'adjustment' && ! $user->hasRole('superadmin') && ! $user->hasPermissionTo('inventory.adjustment')) {
-            return response()->json(['message' => 'You do not have permission to make inventory adjustments. Please contact your Superadmin.'], 403);
+            return response()->json(['message' => __('You do not have permission to make inventory adjustments. Please contact your Superadmin.')], 403);
         }
 
         $validated = $request->validate([
@@ -486,7 +486,7 @@ class InventoryController extends Controller
             : auth()->user()->school_id;
 
         if ($mySchool !== $schoolId) {
-            abort(403, 'Unauthorized');
+            abort(403, __('Unauthorized'));
         }
     }
 }

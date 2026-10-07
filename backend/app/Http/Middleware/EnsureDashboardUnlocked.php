@@ -22,7 +22,7 @@ class EnsureDashboardUnlocked
 
         if ($user && DashboardPrivacy::isLocked($user)) {
             return response()->json([
-                'message' => 'Takwimu za fedha zimefungwa. Fungua kwa msimbo wako kwanza.',
+                'message' => __('Financial figures are locked. Unlock them with your code first.'),
                 'locked' => true,
             ], 423);
         }

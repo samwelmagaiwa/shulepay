@@ -382,7 +382,7 @@ class StudentController extends Controller
             $student->delete();
         });
 
-        return response()->json(['message' => 'Student deleted.']);
+        return response()->json(['message' => __('Student deleted.')]);
     }
 
     /**
@@ -450,7 +450,7 @@ class StudentController extends Controller
         abort_unless(
             $schoolIds->contains(fn ($id) => $user->canAccessSchool((int) $id)),
             403,
-            'You do not have access to this student.'
+            __('You do not have access to this student.')
         );
     }
 }

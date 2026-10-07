@@ -73,12 +73,12 @@ class StudentTermBillingController extends Controller
         abort_if(
             (bool) $permissions?->contains('name', 'invoices.edit_restricted'),
             403,
-            'Editing invoices is restricted for your role.'
+            __('Editing invoices is restricted for your role.')
         );
         abort_if(
             (bool) $permissions?->contains('name', 'payments.edit_restricted'),
             403,
-            'Editing payments is restricted for your role.'
+            __('Editing payments is restricted for your role.')
         );
     }
 
@@ -100,7 +100,7 @@ class StudentTermBillingController extends Controller
         }
 
         $current = $student->currentEnrollment?->school_id ?? $enrolled->first();
-        abort_if(! $current, 422, 'This student has no enrollment, so there is nothing to bill.');
+        abort_if(! $current, 422, __('This student has no enrollment, so there is nothing to bill.'));
 
         return (int) $current;
     }
@@ -117,7 +117,7 @@ class StudentTermBillingController extends Controller
         abort_unless(
             $schoolIds->contains(fn ($id) => $user->canAccessSchool((int) $id)),
             403,
-            'You do not have access to this student.'
+            __('You do not have access to this student.')
         );
     }
 }

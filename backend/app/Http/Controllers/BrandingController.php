@@ -31,7 +31,7 @@ class BrandingController extends Controller
                 ->first();
 
             if (! $school) {
-                return response()->json(['message' => 'School not found.'], 404);
+                return response()->json(['message' => __('School not found.')], 404);
             }
 
             $schoolBranding = ($school->settings ?? [])['branding'] ?? [];
@@ -72,7 +72,7 @@ class BrandingController extends Controller
         abort_unless(
             $user->hasRole('owner') || $user->hasRole('superadmin'),
             403,
-            'Only owners and superadmins can update branding.'
+            __('Only owners and superadmins can update branding.')
         );
 
         // The school whose record these details belong to — needed up front so the
@@ -130,7 +130,7 @@ class BrandingController extends Controller
         }
 
         $school = $user->school;
-        abort_if(! $school, 422, 'No school is associated with your account.');
+        abort_if(! $school, 422, __('No school is associated with your account.'));
 
         return $this->updateSchool($request, $validated, $school);
     }
@@ -163,11 +163,11 @@ class BrandingController extends Controller
             }
             SystemSetting::set('branding', $branding);
 
-            return response()->json(['message' => 'Logo removed.', 'logo_url' => null]);
+            return response()->json(['message' => __('Logo removed.'), 'logo_url' => null]);
         }
 
         $school = $user->school;
-        abort_if(! $school, 422, 'No school is associated with your account.');
+        abort_if(! $school, 422, __('No school is associated with your account.'));
 
         return $this->removeSchoolLogo($school);
     }
@@ -196,7 +196,7 @@ class BrandingController extends Controller
 
         return response()->json(array_merge(
             $this->resolve($branding, null),
-            ['message' => 'System branding updated successfully.']
+            ['message' => __('System branding updated successfully.')]
         ));
     }
 
@@ -250,7 +250,7 @@ class BrandingController extends Controller
         $system = SystemSetting::get('branding', []);
         $response = array_merge(
             $this->resolve($branding, $system, $school),
-            ['message' => 'Branding updated successfully.']
+            ['message' => __('Branding updated successfully.')]
         );
 
         if ($asSuperadmin) {
@@ -272,7 +272,7 @@ class BrandingController extends Controller
         $settings['branding'] = $branding;
         $school->update(['settings' => $settings]);
 
-        return response()->json(['message' => 'Logo removed.', 'logo_url' => null]);
+        return response()->json(['message' => __('Logo removed.'), 'logo_url' => null]);
     }
 
     /**

@@ -90,6 +90,6 @@ class EmployeeController extends Controller
         AuditLog::record('employee.deleted', $employee, $employee->toArray(), []);
         $employee->delete();
 
-        return response()->json(['message' => 'Employee deleted.']);
+        return response()->json(['message' => __('Employee deleted.')]);
     }
 }

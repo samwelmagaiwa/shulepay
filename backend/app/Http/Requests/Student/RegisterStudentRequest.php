@@ -106,51 +106,51 @@ class RegisterStudentRequest extends FormRequest
     {
         return [
             // Student identity
-            'first_name.required' => 'First name is required.',
-            'first_name.max' => 'First name must not exceed 100 characters.',
-            'last_name.required' => 'Last name is required.',
-            'last_name.max' => 'Last name must not exceed 100 characters.',
-            'gender.required' => 'Please select a gender.',
-            'gender.in' => 'Gender must be "male" or "female".',
-            'date_of_birth.required' => 'Date of birth is required.',
-            'date_of_birth.date' => 'Date of birth is not a valid date.',
-            'date_of_birth.before' => 'Date of birth must be before today.',
-            'status.required' => 'Student status is required.',
-            'status.in' => 'Invalid student status.',
-            'photo.image' => 'Photo must be an image file (JPG, PNG, etc.).',
-            'photo.max' => 'Photo must not exceed 2 MB.',
+            'first_name.required' => __('First name is required.'),
+            'first_name.max' => __('First name must not exceed 100 characters.'),
+            'last_name.required' => __('Last name is required.'),
+            'last_name.max' => __('Last name must not exceed 100 characters.'),
+            'gender.required' => __('Please select a gender.'),
+            'gender.in' => __('Gender must be "male" or "female".'),
+            'date_of_birth.required' => __('Date of birth is required.'),
+            'date_of_birth.date' => __('Date of birth is not a valid date.'),
+            'date_of_birth.before' => __('Date of birth must be before today.'),
+            'status.required' => __('Student status is required.'),
+            'status.in' => __('Invalid student status.'),
+            'photo.image' => __('Photo must be an image file (JPG, PNG, etc.).'),
+            'photo.max' => __('Photo must not exceed 2 MB.'),
             // Identifications
-            'identifications.*.type.required_with' => 'Identification type is required.',
-            'identifications.*.type.in' => 'Invalid identification type.',
-            'identifications.*.number.required_with' => 'Identification number is required.',
-            'identifications.*.expires_at.date' => 'Expiry date is not a valid date.',
-            'identifications.*.expires_at.after' => 'Expiry date must be in the future.',
+            'identifications.*.type.required_with' => __('Identification type is required.'),
+            'identifications.*.type.in' => __('Invalid identification type.'),
+            'identifications.*.number.required_with' => __('Identification number is required.'),
+            'identifications.*.expires_at.date' => __('Expiry date is not a valid date.'),
+            'identifications.*.expires_at.after' => __('Expiry date must be in the future.'),
             // Enrollment
-            'school_id.required' => 'Please select a school.',
-            'school_id.exists' => 'The selected school does not exist.',
-            'school_class_id.required' => 'Please select a class.',
-            'school_class_id.exists' => 'The selected class does not exist.',
-            'academic_year_id.required' => 'Please select an academic year.',
-            'academic_year_id.exists' => 'The selected academic year does not exist.',
-            'term_id.required' => 'Please select a term.',
-            'term_id.exists' => 'The selected term does not exist.',
-            'enrollment_date.required' => 'Enrollment date is required.',
-            'enrollment_date.date' => 'Enrollment date is not a valid date.',
+            'school_id.required' => __('Please select a school.'),
+            'school_id.exists' => __('The selected school does not exist.'),
+            'school_class_id.required' => __('Please select a class.'),
+            'school_class_id.exists' => __('The selected class does not exist.'),
+            'academic_year_id.required' => __('Please select an academic year.'),
+            'academic_year_id.exists' => __('The selected academic year does not exist.'),
+            'term_id.required' => __('Please select a term.'),
+            'term_id.exists' => __('The selected term does not exist.'),
+            'enrollment_date.required' => __('Enrollment date is required.'),
+            'enrollment_date.date' => __('Enrollment date is not a valid date.'),
             // Guardians
-            'guardians.required' => 'At least one guardian is required.',
-            'guardians.array' => 'Guardian data is invalid.',
-            'guardians.min' => 'At least one guardian is required.',
-            'guardians.*.full_name.required' => 'Guardian full name is required.',
-            'guardians.*.relationship.required' => 'Guardian relationship is required.',
-            'guardians.*.relationship.in' => 'Relationship must be: father, mother, or guardian.',
+            'guardians.required' => __('At least one guardian is required.'),
+            'guardians.array' => __('Guardian data is invalid.'),
+            'guardians.min' => __('At least one guardian is required.'),
+            'guardians.*.full_name.required' => __('Guardian full name is required.'),
+            'guardians.*.relationship.required' => __('Guardian relationship is required.'),
+            'guardians.*.relationship.in' => __('Relationship must be: father, mother, or guardian.'),
 
-            'guardians.*.email.email' => 'Guardian email address is invalid.',
+            'guardians.*.email.email' => __('Guardian email address is invalid.'),
             // Financial
-            'discount_amount_cents.integer' => 'Discount amount must be a number.',
-            'discount_amount_cents.min' => 'Discount amount cannot be negative.',
-            'opening_balance_cents.integer' => 'Opening balance must be a number.',
-            'opening_balance_cents.min' => 'Opening balance cannot be negative.',
-            'payment_history.max' => 'An academic year has at most 4 terms.',
+            'discount_amount_cents.integer' => __('Discount amount must be a number.'),
+            'discount_amount_cents.min' => __('Discount amount cannot be negative.'),
+            'opening_balance_cents.integer' => __('Opening balance must be a number.'),
+            'opening_balance_cents.min' => __('Opening balance cannot be negative.'),
+            'payment_history.max' => __('An academic year has at most 4 terms.'),
         ];
     }
 
@@ -176,13 +176,13 @@ class RegisterStudentRequest extends FormRequest
                 if ($fee > 0) {
                     $validator->errors()->add(
                         'total_tuition_fee_cents',
-                        'A fully sponsored student with no payments cannot have a tuition fee.'
+                        __('A fully sponsored student with no payments cannot have a tuition fee.')
                     );
                 }
                 if (! empty($this->input('payment_history'))) {
                     $validator->errors()->add(
                         'payment_history',
-                        'A fully sponsored student with no payments cannot have payment history.'
+                        __('A fully sponsored student with no payments cannot have payment history.')
                     );
                 }
 
@@ -193,7 +193,7 @@ class RegisterStudentRequest extends FormRequest
             if ($fee <= 0) {
                 $validator->errors()->add(
                     'total_tuition_fee_cents',
-                    'Total tuition fee is required.'
+                    __('Total tuition fee is required.')
                 );
             }
 
@@ -204,12 +204,12 @@ class RegisterStudentRequest extends FormRequest
                 if ($sponsored <= 0) {
                     $validator->errors()->add(
                         'sponsored_amount_cents',
-                        'Enter the amount the sponsor is covering.'
+                        __('Enter the amount the sponsor is covering.')
                     );
                 } elseif ($fee > 0 && $sponsored > $fee) {
                     $validator->errors()->add(
                         'sponsored_amount_cents',
-                        'Sponsored amount cannot be greater than the total tuition fee.'
+                        __('Sponsored amount cannot be greater than the total tuition fee.')
                     );
                 }
             }
@@ -220,18 +220,18 @@ class RegisterStudentRequest extends FormRequest
                 if ($discount <= 0) {
                     $validator->errors()->add(
                         'discount_amount_cents',
-                        'Enter the discount amount for the selected discount type.'
+                        __('Enter the discount amount for the selected discount type.')
                     );
                 } elseif ($fee > 0 && $discount > $fee) {
                     $validator->errors()->add(
                         'discount_amount_cents',
-                        'Discount cannot be greater than the total tuition fee.'
+                        __('Discount cannot be greater than the total tuition fee.')
                     );
                 }
             } elseif ($discount > 0) {
                 $validator->errors()->add(
                     'discount_type',
-                    'Select a discount type for the amount entered.'
+                    __('Select a discount type for the amount entered.')
                 );
             }
 
@@ -266,7 +266,7 @@ class RegisterStudentRequest extends FormRequest
                 if ($fee > 0 && $sumOfFees > $fee) {
                     $validator->errors()->add(
                         'payment_history',
-                        'The terms total more than the annual tuition fee.'
+                        __('The terms total more than the annual tuition fee.')
                     );
                 }
 
@@ -274,7 +274,7 @@ class RegisterStudentRequest extends FormRequest
                 if ($chargedCap > 0 && $totalPaid > $chargedCap) {
                     $validator->errors()->add(
                         'payment_history_paid_total',
-                        'Total paid across all terms exceeds the Total Charged amount.'
+                        __('Total paid across all terms exceeds the Total Charged amount.')
                     );
                 }
             }

@@ -103,7 +103,7 @@ class RolloverController extends Controller
         foreach ($data['promotions'] as $i => $promo) {
             if (in_array($promo['action'], ['promoted', 'repeated'], true) && empty($promo['new_school_class_id'])) {
                 return response()->json([
-                    'message' => "Select a class for promotions.{$i} (student {$promo['student_id']}).",
+                    'message' => __('Select a class for promotions.:index (student :student).', ['index' => $i, 'student' => $promo['student_id']]),
                 ], 422);
             }
         }
@@ -229,7 +229,7 @@ class RolloverController extends Controller
         });
 
         return response()->json([
-            'message' => 'Rollover executed successfully.',
+            'message' => __('Rollover executed successfully.'),
             'summary' => $summary,
         ]);
     }

@@ -36,7 +36,7 @@ class TermController extends Controller
         }
 
         if (! $year || ! in_array((int) $year->school_id, $allowed, true)) {
-            abort(403, 'This term belongs to another school.');
+            abort(403, __('This term belongs to another school.'));
         }
     }
 
@@ -55,7 +55,7 @@ class TermController extends Controller
             $schoolId = (int) $request->query('school_id');
 
             if ($allowed !== null && ! in_array($schoolId, $allowed, true)) {
-                abort(403, 'This school is not accessible.');
+                abort(403, __('This school is not accessible.'));
             }
 
             $query->whereHas('academicYear', fn ($q) => $q->where('school_id', $schoolId));

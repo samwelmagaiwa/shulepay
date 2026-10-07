@@ -8,7 +8,7 @@
     $billedOf = fn ($i) => $i->total_amount_cents->cents() + $i->arrears_cents->cents() - $i->discount_cents->cents();
 @endphp
 <!DOCTYPE html>
-<html lang="sw">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="utf-8">
 <style>
@@ -61,12 +61,12 @@
 
   @include('pdf.partials.letterhead', [
     'lh' => $lh,
-    'docTitle' => 'Taarifa ya Ada',
+    'docTitle' => __('pdf.fee_statement_title'),
     'compact' => false,
   ])
 
   <div class="center" style="margin-top:6px;">
-    <div class="sub">Imetolewa: {{ now()->format('d/m/Y H:i') }}</div>
+    <div class="sub">{{ __('pdf.issued') }}: {{ now()->format('d/m/Y H:i') }}</div>
   </div>
 
   <div class="hr"></div>
@@ -118,7 +118,7 @@
             <td class="amt {{ $bal > 0 ? 'due' : 'paid' }}">{{ $money($bal) }}</td>
             <td>
               <span class="badge b-{{ $status }}">
-                {{ ['paid' => 'IMELIPWA', 'partial' => 'SEHEMU', 'unpaid' => 'HAIJALIPWA'][$status] ?? strtoupper($status) }}
+                {{ in_array($status, ['paid', 'partial', 'unpaid'], true) ? __('pdf.badge_'.$status) : strtoupper($status) }}
               </span>
             </td>
           </tr>
@@ -157,7 +157,7 @@
   @endif
 
   <div class="footer">
-    Hati hii imetolewa na mfumo na ni sahihi bila saini.<br>
+    {{ __('pdf.fee_statement_footer') }}<br>
     {{ $appName }} &copy; {{ date('Y') }} {{ $appTagline }}
   </div>
 </body>

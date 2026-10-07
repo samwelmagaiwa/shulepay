@@ -7,7 +7,7 @@
   invoice — one section per student in this one document.
 --}}
 <!DOCTYPE html>
-<html lang="sw">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="utf-8">
 <style>
@@ -87,7 +87,7 @@
   </div>
 @empty
   <div class="section">
-    <p style="text-align:center; color:#777; margin-top:60px;">Hakuna wanafunzi wanaolingana na kigezo hiki.</p>
+    <p style="text-align:center; color:#777; margin-top:60px;">{{ __('pdf.no_matching_students') }}</p>
   </div>
 @endforelse
 
