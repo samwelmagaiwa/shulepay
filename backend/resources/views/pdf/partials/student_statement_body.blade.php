@@ -40,8 +40,8 @@
      receipt's number. --}}
 <table style="width:100%; border-collapse:collapse; margin-top:10px;">
   <tr>
-    <td style="font-size:10px; color:#666; letter-spacing:1px;">TAARIFA NA.</td>
-    <td style="font-size:10px; color:#666; text-align:right; letter-spacing:1px;">TAREHE</td>
+    <td style="font-size:10px; color:#666; letter-spacing:1px;">{{ __('pdf.statement_no') }}</td>
+    <td style="font-size:10px; color:#666; text-align:right; letter-spacing:1px;">{{ __('pdf.date') }}</td>
   </tr>
   <tr>
     <td style="font-size:16px; font-weight:bold; color:#007f3e;">{{ $statementNumber }}</td>
@@ -53,28 +53,28 @@
 
 <table class="kv">
   <tr>
-    <td class="k">Mwanafunzi</td>
+    <td class="k">{{ __('pdf.student') }}</td>
     <td class="v">{{ $student->fullName() ?: '—' }}</td>
   </tr>
   <tr>
-    <td class="k">Namba ya Usajili</td>
+    <td class="k">{{ __('pdf.admission_no') }}</td>
     <td class="v">{{ $enrollment?->admission_number ?: '—' }}</td>
   </tr>
   @if($enrollment?->schoolClass)
   <tr>
-    <td class="k">Darasa</td>
+    <td class="k">{{ __('pdf.class') }}</td>
     <td class="v">{{ $enrollment->schoolClass->name }}</td>
   </tr>
   @endif
   @if($enrollment?->academicYear)
   <tr>
-    <td class="k">Mwaka wa Masomo</td>
+    <td class="k">{{ __('pdf.academic_year') }}</td>
     <td class="v">{{ $enrollment->academicYear->name }}</td>
   </tr>
   @endif
   @if($guardian)
   <tr>
-    <td class="k">Mzazi / Mlezi</td>
+    <td class="k">{{ __('pdf.guardian') }}</td>
     <td class="v">{{ $guardian->fullName() }}</td>
   </tr>
   @endif
@@ -85,10 +85,10 @@
 <table class="items {{ $dense ? 'dense' : '' }}">
   <thead>
     <tr>
-      <th>Muhula</th>
-      <th class="amt">Ankara</th>
-      <th class="amt">Alicholipa</th>
-      <th class="amt">Salio</th>
+      <th>{{ __('pdf.term') }}</th>
+      <th class="amt">{{ __('pdf.invoice') }}</th>
+      <th class="amt">{{ __('pdf.paid_column') }}</th>
+      <th class="amt">{{ __('pdf.balance') }}</th>
     </tr>
   </thead>
   <tbody>
@@ -117,7 +117,7 @@
       <td class="amt {{ $inv->balance_cents > 0 ? 'balance-due' : 'balance-paid' }}">{{ $money($inv->balance_cents) }}</td>
     </tr>
     @empty
-    <tr><td colspan="4" class="center">Hakuna ankara.</td></tr>
+    <tr><td colspan="4" class="center">{{ __('pdf.no_invoices') }}</td></tr>
     @endforelse
   </tbody>
 </table>
@@ -126,22 +126,22 @@
 
 <table class="kv">
   <tr>
-    <td class="k">Jumla ya Ankara Zote</td>
+    <td class="k">{{ __('pdf.all_invoices_total') }}</td>
     <td class="v">{{ $money($totalInvoiced) }}</td>
   </tr>
   <tr>
-    <td class="k">Jumla Iliyolipwa</td>
+    <td class="k">{{ __('pdf.total_paid') }}</td>
     <td class="v balance-paid">{{ $money($totalPaid) }}</td>
   </tr>
 </table>
 
 <div class="amount-box">
-  <div class="amount-lbl">SALIO LA JUMLA (MADENI YOTE)</div>
+  <div class="amount-lbl">{{ __('pdf.grand_balance') }}</div>
   <div class="amount {{ $totalBalance > 0 ? 'balance-due' : 'balance-paid' }}">{{ $money($totalBalance) }}</div>
 </div>
 
 @if($totalBalance <= 0)
-  <div class="center bold" style="color:#007f3e;">✓ ANKARA ZOTE ZIMELIPWA</div>
+  <div class="center bold" style="color:#007f3e;">{{ __('pdf.all_paid') }}</div>
 @endif
 
 <div class="hr"></div>

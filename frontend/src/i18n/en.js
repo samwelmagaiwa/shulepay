@@ -48,6 +48,8 @@ export default {
     changePassword:   'Change Password',
   },
   common: {
+    paymentMethod: 'Payment Method',
+    previous:      'Previous',
     reload:      'Reload',
     loadFailed:  'Could not load. Please try again.',
     save:        'Save',
@@ -464,6 +466,7 @@ export default {
     downloadStatement:     'Download Statement',
   },
   students: {
+    guardian:     'Guardian',
     noTermsBilledYet: 'This student has no invoices yet. Add the terms below.',
     terms: 'Terms',
     addMissingTerm: 'Add a missing term',
@@ -1016,6 +1019,7 @@ export default {
     },
   },
   payments: {
+    invoice:     'Invoice',
     title:           'Payment Records',
     subtitle:        'Search a student or invoice and record a fee payment',
     record:          'Record Payment',
@@ -1382,6 +1386,7 @@ export default {
     itemSearchPlaceholder: 'Search item name...',
   },
   assets: {
+    location:    'Location',
     title:       'School Assets',
     subtitle:    'Record and manage school assets',
     add:         'Add Asset',
@@ -1431,6 +1436,7 @@ export default {
       inUse:        'In Use',
     },
     detail: {
+      custody:      'Custody & Condition',
       title:        'Asset Detail',
       identity:     '1. Identity',
       purchase:     '2. Purchase',
@@ -1530,6 +1536,8 @@ export default {
       reducing_balance: 'Reducing Balance',
     },
     disposeModal: {
+      title:             'Dispose of Asset',
+      confirmDisposal:   'Confirm disposal',
       disposalDate:      'Disposal Date',
       disposalValue:     'Disposal Value (TZS)',
       disposalReason:    'Disposal Reason',

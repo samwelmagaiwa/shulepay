@@ -48,6 +48,8 @@ export default {
     changePassword:   'Badilisha Neno la Siri',
   },
   common: {
+    paymentMethod: 'Njia ya Malipo',
+    previous:      'Iliyopita',
     reload:      'Pakia upya',
     loadFailed:  'Imeshindwa kupakia. Jaribu tena.',
     save:        'Hifadhi',
@@ -458,6 +460,7 @@ export default {
     downloadStatement:     'Pakua Taarifa',
   },
   students: {
+    guardian:     'Mlezi',
     noTermsBilledYet: 'Mwanafunzi huyu hana ankara bado. Ongeza mihula chini.',
     terms: 'Mihula',
     addMissingTerm: 'Ongeza muhula uliosahaulika',
@@ -1006,6 +1009,7 @@ export default {
     },
   },
   payments: {
+    invoice:     'Ankara',
     title:           'Rekodi Malipo',
     subtitle:        'Tafuta mwanafunzi au ankara na usajili malipo ya ada',
     record:          'Rekodi Malipo',
@@ -1371,6 +1375,7 @@ export default {
     itemSearchPlaceholder: 'Tafuta jina la bidhaa...',
   },
   assets: {
+    location:    'Mahali',
     title:       'Mali za Shule',
     subtitle:    'Rekodi na simamia mali za shule',
     add:         'Ongeza Mali',
@@ -1420,6 +1425,7 @@ export default {
       inUse:        'Zinazotumiwa',
     },
     detail: {
+      custody:      'Ulindaji na Hali',
       title:        'Maelezo ya Mali',
       identity:     '1. Utambulisho',
       purchase:     '2. Ununuzi',
@@ -1519,6 +1525,8 @@ export default {
       reducing_balance: 'Mizani Inayopungua',
     },
     disposeModal: {
+      title:             'Tupa Mali',
+      confirmDisposal:   'Thibitisha utupaji',
       disposalDate:      'Tarehe ya Kutupwa',
       disposalValue:     'Thamani ya Utupaji (TZS)',
       disposalReason:    'Sababu ya Kutupwa',

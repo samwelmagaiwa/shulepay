@@ -19,6 +19,10 @@ api.interceptors.request.use(config => {
   const token = localStorage.getItem('shulepay_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
 
+  // Printed receipts and statements are rendered by the server, so it has to
+  // know which language the user is working in.
+  config.headers['X-Lang'] = localStorage.getItem('shulepay_lang') || 'en'
+
   const schoolId = localStorage.getItem('active_school_id')
   if (schoolId && Number(schoolId) > 0) {
     config.headers['X-School-Id'] = schoolId

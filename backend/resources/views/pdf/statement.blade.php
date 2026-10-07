@@ -73,32 +73,32 @@
 
   <table class="kv">
     <tr>
-      <td class="k">Mwanafunzi</td>
+      <td class="k">{{ __('pdf.student') }}</td>
       <td class="v">{{ $student->fullName() }}</td>
-      <td class="k">Namba ya Usajili</td>
+      <td class="k">{{ __('pdf.admission_no') }}</td>
       <td class="v">{{ $enrollment?->admission_number ?: '—' }}</td>
     </tr>
     <tr>
-      <td class="k">Darasa</td>
+      <td class="k">{{ __('pdf.class') }}</td>
       <td class="v">{{ $enrollment?->schoolClass?->name ?: '—' }}</td>
-      <td class="k">Shule</td>
+      <td class="k">{{ __('pdf.school') }}</td>
       <td class="v">{{ $school?->name ?: '—' }}</td>
     </tr>
   </table>
 
   @if($invoices->isEmpty())
-    <p class="muted center" style="margin-top:30px;">Hakuna ankara kwa mwanafunzi huyu.</p>
+    <p class="muted center" style="margin-top:30px;">{{ __('pdf.no_invoices_for_student') }}</p>
   @else
     <table class="inv">
       <thead>
         <tr>
-          <th>Ankara</th>
-          <th>Muhula</th>
-          <th>Mwaka</th>
-          <th class="amt">Jumla</th>
-          <th class="amt">Imelipwa</th>
-          <th class="amt">Salio</th>
-          <th>Hali</th>
+          <th>{{ __('pdf.invoice') }}</th>
+          <th>{{ __('pdf.term') }}</th>
+          <th>{{ __('pdf.year') }}</th>
+          <th class="amt">{{ __('pdf.total') }}</th>
+          <th class="amt">{{ __('pdf.paid') }}</th>
+          <th class="amt">{{ __('pdf.balance') }}</th>
+          <th>{{ __('pdf.status') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -138,21 +138,21 @@
 
     <table class="totals">
       <tr>
-        <td class="k">Jumla ya Ada</td>
+        <td class="k">{{ __('pdf.fees_total') }}</td>
         <td class="v">{{ $money($totalBilled) }}</td>
       </tr>
       <tr>
-        <td class="k">Jumla Iliyolipwa</td>
+        <td class="k">{{ __('pdf.total_paid') }}</td>
         <td class="v paid">{{ $money($totalPaid) }}</td>
       </tr>
       <tr class="grand">
-        <td class="k bold">SALIO</td>
+        <td class="k bold">{{ __('pdf.balance_caps') }}</td>
         <td class="v {{ $totalBalance > 0 ? 'due' : 'paid' }}">{{ $money($totalBalance) }}</td>
       </tr>
     </table>
 
     @if($totalBalance <= 0)
-      <div class="center bold" style="color:#007f3e; margin-top:14px;">✓ ADA YOTE IMELIPWA</div>
+      <div class="center bold" style="color:#007f3e; margin-top:14px;">{{ __('pdf.all_fees_paid') }}</div>
     @endif
   @endif
 

@@ -89,8 +89,8 @@
        reference rather than part of the school's address block. --}}
   <table style="width:100%; border-collapse:collapse; margin-top:10px;">
     <tr>
-      <td style="font-size:10px; color:#666; letter-spacing:1px;">NAMBA YA RISITI</td>
-      <td style="font-size:10px; color:#666; text-align:right; letter-spacing:1px;">TAREHE</td>
+      <td style="font-size:10px; color:#666; letter-spacing:1px;">{{ __('pdf.receipt_no') }}</td>
+      <td style="font-size:10px; color:#666; text-align:right; letter-spacing:1px;">{{ __('pdf.date') }}</td>
     </tr>
     <tr>
       <td style="font-size:19px; font-weight:bold; color:#007f3e;">{{ $receipt->receipt_number }}</td>
@@ -105,23 +105,23 @@
   {{-- ── Student ────────────────────────────────────────────── --}}
   <table class="kv">
     <tr>
-      <td class="k">Mwanafunzi</td>
+      <td class="k">{{ __('pdf.student') }}</td>
       <td class="v">{{ $receipt->student?->fullName() ?: '—' }}</td>
     </tr>
     <tr>
-      <td class="k">Namba ya Usajili</td>
+      <td class="k">{{ __('pdf.admission_no') }}</td>
       {{-- admission_number lives on the enrollment, not on the student --}}
       <td class="v">{{ $enrollment?->admission_number ?: '—' }}</td>
     </tr>
     @if($enrollment?->schoolClass)
     <tr>
-      <td class="k">Darasa</td>
+      <td class="k">{{ __('pdf.class') }}</td>
       <td class="v">{{ $enrollment->schoolClass->name }}</td>
     </tr>
     @endif
     @if($guardian)
     <tr>
-      <td class="k">Mzazi / Mlezi</td>
+      <td class="k">{{ __('pdf.guardian') }}</td>
       <td class="v">{{ $guardian->fullName() }}</td>
     </tr>
     @endif
@@ -133,30 +133,30 @@
   {{-- ── Payment / invoice context ──────────────────────────── --}}
   <table class="kv">
     <tr>
-      <td class="k">Ankara</td>
+      <td class="k">{{ __('pdf.invoice') }}</td>
       <td class="v">{{ $invoice?->invoice_number ?: '—' }}</td>
     </tr>
     <tr>
-      <td class="k">Muhula</td>
+      <td class="k">{{ __('pdf.term') }}</td>
       <td class="v">{{ $invoice?->term?->name ?: '—' }}</td>
     </tr>
     @if($invoice?->academicYear)
     <tr>
-      <td class="k">Mwaka wa Masomo</td>
+      <td class="k">{{ __('pdf.academic_year') }}</td>
       <td class="v">{{ $invoice->academicYear->name }}</td>
     </tr>
     @endif
     <tr>
-      <td class="k">Tarehe ya Malipo</td>
+      <td class="k">{{ __('pdf.paid_at') }}</td>
       <td class="v">{{ $payment->paid_at?->format('d/m/Y') ?: '—' }}</td>
     </tr>
     <tr>
-      <td class="k">Njia ya Malipo</td>
+      <td class="k">{{ __('pdf.method') }}</td>
       <td class="v">{{ $payment->method->label() }}</td>
     </tr>
     @if($payment->reference_number)
     <tr>
-      <td class="k">Kumbukumbu</td>
+      <td class="k">{{ __('pdf.reference') }}</td>
       <td class="v">{{ $payment->reference_number }}</td>
     </tr>
     @endif
@@ -168,8 +168,8 @@
   <table class="items {{ $dense ? 'dense' : '' }}">
     <thead>
       <tr>
-        <th>Maelezo</th>
-        <th class="amt">Kiasi</th>
+        <th>{{ __('pdf.description') }}</th>
+        <th class="amt">{{ __('pdf.amount') }}</th>
       </tr>
     </thead>
     <tbody>
@@ -191,25 +191,25 @@
 
   {{-- ── Amount received ────────────────────────────────────── --}}
   <div class="amount-box">
-    <div class="amount-lbl">KIASI KILICHOLIPWA</div>
+    <div class="amount-lbl">{{ __('pdf.amount_paid_caps') }}</div>
     <div class="amount">{{ $money($payment->amount_cents->cents()) }}</div>
   </div>
 
   {{-- ── Running invoice position ───────────────────────────── --}}
   <table class="kv">
     <tr>
-      <td class="k">Jumla ya Ankara</td>
+      <td class="k">{{ __('pdf.invoice_total') }}</td>
       <td class="v">{{ $money($invoiceTotal) }}</td>
     </tr>
     <tr>
-      <td class="k">Jumla Iliyolipwa</td>
+      <td class="k">{{ __('pdf.total_paid') }}</td>
       <td class="v balance-paid">{{ $money($invoicePaid) }}</td>
     </tr>
   </table>
   <div class="hr-solid"></div>
   <table class="kv">
     <tr>
-      <td class="k bold">SALIO</td>
+      <td class="k bold">{{ __('pdf.balance_caps') }}</td>
       <td class="v {{ $invoiceDue > 0 ? 'balance-due' : 'balance-paid' }}">
         {{ $money($invoiceDue) }}
       </td>
@@ -226,7 +226,7 @@
   <div class="hr"></div>
   <table class="kv">
     <tr>
-      <td class="k">Imepokelewa na</td>
+      <td class="k">{{ __('pdf.received_by') }}</td>
       <td class="v">{{ $payment->recorder->name }}</td>
     </tr>
   </table>
