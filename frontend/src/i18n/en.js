@@ -464,6 +464,9 @@ export default {
     downloadStatement:     'Download Statement',
   },
   students: {
+    terms: 'Terms',
+    addMissingTerm: 'Add a missing term',
+    termPickTerm: 'Choose the academic year and term you are adding.',
     termFeeFirst: 'Enter the fee first — the parent can pay later.',
     termWillBeCreated: 'An invoice for this term will be created when you save.',
     termPaidOverFee: 'Payments for {term} are more than its fee.',

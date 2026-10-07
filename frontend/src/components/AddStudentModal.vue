@@ -971,6 +971,90 @@
             </CCardBody>
           </CCard>
 
+          <!-- Missing terms, entered exactly as on the registration step: year,
+               term, fee, then any payments already recorded in the books. -->
+          <div class="mb-2">
+            <CBadge color="warning">{{ newTerms.length }} {{ t('students.terms') }}</CBadge>
+          </div>
+
+          <div v-for="(entry, ei) in newTerms" :key="'new' + ei"
+               class="border rounded-3 p-3 mb-3 position-relative"
+               style="border-color:#ffc107!important;background:#fffdf0;">
+            <CButton size="sm" color="danger" variant="ghost" class="position-absolute"
+                     style="top:8px;right:8px;" @click="newTerms.splice(ei, 1)">✕</CButton>
+
+            <div class="fw-semibold small mb-2">🗓️ {{ t('students.term') }} {{ ei + 1 }}</div>
+
+            <CRow class="g-2 mb-2">
+              <CCol xs="12" sm="4">
+                <label class="form-label fw-semibold mb-1">{{ t('students.academicYear') }} <span class="text-danger">*</span></label>
+                <CFormSelect v-model="entry.academic_year_id" @update:modelValue="entry.term_id = ''">
+                  <option value="">— {{ t('students.selectYear') }} —</option>
+                  <option v-for="y in unbilledYears" :key="y.id" :value="y.id">{{ y.name }}</option>
+                </CFormSelect>
+              </CCol>
+              <CCol xs="12" sm="4">
+                <label class="form-label fw-semibold mb-1">{{ t('students.term') }} <span class="text-danger">*</span></label>
+                <!-- Only terms this student has no invoice for, so a term can
+                     never be billed twice. -->
+                <CFormSelect v-model="entry.term_id">
+                  <option value="">— {{ t('students.selectTerm') }} —</option>
+                  <option v-for="tm in unbilledTermsFor(entry)" :key="tm.term_id" :value="tm.term_id">{{ tm.term_name }}</option>
+                </CFormSelect>
+                <div v-if="selectedTermPeriod(entry)" class="text-muted" style="font-size:.72rem;">
+                  📅 {{ selectedTermPeriod(entry) }}
+                </div>
+              </CCol>
+              <CCol xs="12" sm="4">
+                <label class="form-label fw-semibold mb-1">{{ t('students.termFeeAmount') }} <span class="text-danger">*</span></label>
+                <CFormInput type="text" inputmode="numeric" placeholder="0"
+                            :value="formatAmount(entry.fee_tzs)"
+                            @input="entry.fee_tzs = parseAmount($event.target.value)" />
+              </CCol>
+            </CRow>
+
+            <div class="small fw-semibold text-muted mb-1">{{ t('students.paymentsRecorded') }}</div>
+            <div v-for="(pmt, pi) in entry.payments" :key="pi" class="d-flex gap-2 align-items-end mb-2 flex-wrap">
+              <div style="flex:1;min-width:120px;">
+                <label class="form-label mb-1 small">{{ t('students.paidDate') }}</label>
+                <CFormInput type="date" v-model="pmt.paid_at" :max="today" />
+              </div>
+              <div style="flex:1;min-width:100px;">
+                <label class="form-label mb-1 small">{{ t('students.paidAmount') }}</label>
+                <CFormInput type="text" inputmode="numeric" placeholder="0"
+                            :value="formatAmount(pmt.amount_tzs)"
+                            @input="pmt.amount_tzs = parseAmount($event.target.value)" />
+              </div>
+              <div style="flex:1;min-width:100px;">
+                <!-- Optional: a term can be billed for the parent to pay later,
+                     and an old book entry often does not say how it was paid. -->
+                <label class="form-label mb-1 small">{{ t('students.paymentMethod') }}</label>
+                <CFormSelect v-model="pmt.method">
+                  <option value="">— {{ t('common.optional') }} —</option>
+                  <option value="cash">{{ t('payments.methods.cash') }}</option>
+                  <option value="mpesa">M-Pesa</option>
+                  <option value="bank">{{ t('payments.methods.bank') }}</option>
+                  <option value="cheque">{{ t('payments.methods.cheque') }}</option>
+                </CFormSelect>
+              </div>
+              <div style="flex:1.5;min-width:120px;">
+                <label class="form-label mb-1 small">{{ t('students.migrationNote') }}</label>
+                <CFormInput v-model="pmt.notes" placeholder="e.g. Receipt #123" />
+              </div>
+              <div class="pb-1">
+                <CButton size="sm" color="danger" variant="ghost" @click="entry.payments.splice(pi, 1)">✕</CButton>
+              </div>
+            </div>
+
+            <CButton size="sm" color="warning" variant="outline" @click="addNewTermPayment(entry)">
+              + {{ t('students.addPayment') }}
+            </CButton>
+          </div>
+
+          <CButton v-if="unbilledYears.length" color="warning" class="mb-3" @click="addNewTerm">
+            + {{ t('students.addMissingTerm') }}
+          </CButton>
+
           <CAlert color="info" class="py-2 small mb-0">{{ t('students.termBillingNote') }}</CAlert>
         </template>
       </div>
@@ -1481,6 +1565,7 @@ async function loadTermBilling() {
   termBillingError.value = ''
   try {
     const { data } = await api.get(`/students/${props.editStudentId}/term-billing`)
+    newTerms.value = []
     termBilling.value = (data.terms || []).map((row) => ({
       ...row,
       fee_tzs: row.invoice_id ? toTzs(row.fee_amount_cents) : null,
@@ -1500,6 +1585,49 @@ async function loadTermBilling() {
   }
 }
 
+// Terms the student has no invoice for, offered as registration-style cards so
+// a forgotten instalment can be added with its year, term, fee and any payments
+// already written in the books.
+const newTerms = ref([])
+
+const unbilledYears = computed(() => {
+  const seen = new Map()
+  for (const row of termBilling.value) {
+    if (!row.invoice_id && !seen.has(row.academic_year_id)) {
+      seen.set(row.academic_year_id, { id: row.academic_year_id, name: row.academic_year_name })
+    }
+  }
+  return [...seen.values()]
+})
+
+// Excludes terms already chosen on another card, so two cards cannot bill the
+// same term.
+function unbilledTermsFor(entry) {
+  const taken = newTerms.value.filter((e) => e !== entry).map((e) => e.term_id)
+  return termBilling.value.filter((row) =>
+    !row.invoice_id
+    && String(row.academic_year_id) === String(entry.academic_year_id)
+    && !taken.includes(row.term_id))
+}
+
+function selectedTermPeriod(entry) {
+  const row = termBilling.value.find((r) => String(r.term_id) === String(entry.term_id))
+  if (!row || (!row.start_date && !row.end_date)) return ''
+  return `${fmtTermDate(row.start_date)} — ${fmtTermDate(row.end_date)}`
+}
+
+const termNameFor = (termId) =>
+  termBilling.value.find((r) => String(r.term_id) === String(termId))?.term_name || ''
+
+function addNewTerm() {
+  const year = unbilledYears.value[0]
+  newTerms.value.push({ academic_year_id: year?.id || '', term_id: '', fee_tzs: null, payments: [] })
+}
+
+function addNewTermPayment(entry) {
+  entry.payments.push({ id: null, amount_tzs: null, paid_at: today, method: '', notes: '' })
+}
+
 function addTermPayment(row) {
   row.payments.push({ id: null, amount_tzs: 0, paid_at: new Date().toISOString().slice(0, 10), method: 'cash', reference_number: '' })
 }
@@ -1507,6 +1635,17 @@ function addTermPayment(row) {
 // Reasons this step cannot be saved yet, in the user's language.
 function termBillingProblems() {
   const problems = []
+  for (const entry of newTerms.value) {
+    const fee = Number(entry.fee_tzs) || 0
+    const paid = entry.payments.reduce((n, p) => n + (Number(p.amount_tzs) || 0), 0)
+    if (!entry.term_id || !entry.academic_year_id) {
+      problems.push(t('students.termPickTerm'))
+    } else if (fee <= 0) {
+      problems.push(t('students.termFeeMissing', { term: termNameFor(entry.term_id) }))
+    } else if (paid > fee) {
+      problems.push(t('students.termPaidOverFee', { term: termNameFor(entry.term_id) }))
+    }
+  }
   for (const row of termBilling.value) {
     const fee = Number(row.fee_tzs) || 0
     const paid = billedPaid(row)
@@ -1524,22 +1663,37 @@ function termBillingProblems() {
 // Only terms that carry a fee or a payment are sent; untouched empty terms are
 // not requests to bill anything.
 function termBillingPayload() {
-  return termBilling.value
+  const mapPayments = (list) => list
+    .filter((p) => (Number(p.amount_tzs) || 0) > 0 && p.paid_at)
+    .map((p) => ({
+      id: p.id || null,
+      amount_cents: toCents(p.amount_tzs),
+      paid_at: p.paid_at,
+      // Optional: left blank, the server records it as cash rather than refusing.
+      method: p.method || null,
+      reference_number: p.reference_number || null,
+      notes: p.notes || null,
+    }))
+
+  const existing = termBilling.value
     .filter((row) => (Number(row.fee_tzs) || 0) > 0 || row.payments.length)
     .map((row) => ({
       term_id: row.term_id,
       academic_year_id: row.academic_year_id,
       fee_amount_cents: toCents(row.fee_tzs),
-      payments: row.payments
-        .filter((p) => (Number(p.amount_tzs) || 0) > 0 && p.paid_at)
-        .map((p) => ({
-          id: p.id || null,
-          amount_cents: toCents(p.amount_tzs),
-          paid_at: p.paid_at,
-          method: p.method || 'cash',
-          reference_number: p.reference_number || null,
-        })),
+      payments: mapPayments(row.payments),
     }))
+
+  const added = newTerms.value
+    .filter((e) => e.term_id && e.academic_year_id && (Number(e.fee_tzs) || 0) > 0)
+    .map((e) => ({
+      term_id: e.term_id,
+      academic_year_id: e.academic_year_id,
+      fee_amount_cents: toCents(e.fee_tzs),
+      payments: mapPayments(e.payments),
+    }))
+
+  return [...existing, ...added]
 }
 
 const defaultGuardian = () => ({

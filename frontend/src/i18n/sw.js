@@ -458,6 +458,9 @@ export default {
     downloadStatement:     'Pakua Taarifa',
   },
   students: {
+    terms: 'Mihula',
+    addMissingTerm: 'Ongeza muhula uliosahaulika',
+    termPickTerm: 'Chagua mwaka wa masomo na muhula unaoongeza.',
     termFeeFirst: 'Weka ada kwanza — mzazi anaweza kulipa baadaye.',
     termWillBeCreated: 'Ankara ya muhula huu itatengenezwa ukihifadhi.',
     termPaidOverFee: 'Malipo ya {term} yanazidi ada yake.',

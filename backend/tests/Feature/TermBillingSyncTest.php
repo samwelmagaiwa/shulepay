@@ -198,6 +198,22 @@ class TermBillingSyncTest extends TestCase
         ]);
     }
 
+    /** Payment method is optional on the form: a book entry often does not say. */
+    public function test_payment_without_a_method_is_recorded_as_cash(): void
+    {
+        $this->sync([
+            $this->entry(4, 230000, [[
+                'amount_cents' => 50000, 'paid_at' => '2026-10-01', 'method' => null, 'notes' => 'Receipt #123',
+            ]]),
+        ]);
+
+        $payment = Payment::query()->where('student_id', $this->student->id)->latest('id')->firstOrFail();
+
+        $this->assertSame('cash', $payment->method instanceof \BackedEnum ? $payment->method->value : $payment->method);
+        $this->assertSame('Receipt #123', $payment->notes);
+        $this->assertSame(50000, (int) $payment->getRawOriginal('amount_cents'));
+    }
+
     public function test_empty_rows_bill_nothing(): void
     {
         $result = $this->sync([$this->entry(2, 0), $this->entry(4, 0)]);
