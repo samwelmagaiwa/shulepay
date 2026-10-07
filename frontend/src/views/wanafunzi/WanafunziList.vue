@@ -216,6 +216,7 @@
       :edit-student-id="showEditModal ? editStudent?.id : null"
       @close="showAddModal = false; showEditModal = false"
       @saved="onStudentSaved"
+      @refreshed="fetchData"
       @registered="onStudentRegistered"
     />
   </CContainer>

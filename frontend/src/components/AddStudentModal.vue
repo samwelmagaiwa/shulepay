@@ -1311,7 +1311,9 @@ const props = defineProps({
   mode: { type: String, default: 'create' },
   editStudentId: { type: [Number, String], default: null },
 })
-const emit  = defineEmits(['close', 'registered', 'saved'])
+// 'refreshed' = the student's own details saved, but the modal stays open
+// (the terms step still has something to fix); the list behind refreshes.
+const emit  = defineEmits(['close', 'registered', 'saved', 'refreshed'])
 const isEditMode = computed(() => props.mode === 'edit')
 
 const schoolsStore = useSchoolsStore()
@@ -1479,6 +1481,23 @@ async function loadTermBilling() {
 
 function addTermPayment(row) {
   row.payments.push({ id: null, amount_tzs: 0, paid_at: new Date().toISOString().slice(0, 10), method: 'cash', reference_number: '' })
+}
+
+// Reasons this step cannot be saved yet, in the user's language.
+function termBillingProblems() {
+  const problems = []
+  for (const row of termBilling.value) {
+    const fee = Number(row.fee_tzs) || 0
+    const paid = billedPaid(row)
+    const label = `${row.term_name} ${row.academic_year_name || ''}`.trim()
+    if (paid > fee) {
+      problems.push(t('students.termPaidOverFee', { term: label }))
+    }
+    if (fee === 0 && paid > 0) {
+      problems.push(t('students.termFeeMissing', { term: label }))
+    }
+  }
+  return problems
 }
 
 // Only terms that carry a fee or a payment are sent; untouched empty terms are
@@ -2123,6 +2142,14 @@ async function submit() {
   errors.value = {}
 
   if (isEditMode.value) {
+    const problems = termBillingProblems()
+    if (problems.length) {
+      submitError.value = problems[0]
+      step.value = steps.value.length
+      saving.value = false
+
+      return
+    }
     await submitEdit()
     return
   }
@@ -2337,10 +2364,26 @@ async function submitEdit() {
     await api.post(`/students/${props.editStudentId}/full`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
 
     // Billing goes second and in its own request: it updates existing invoices
-    // and payments, so it must not be retried by a failed student save.
+    // and payments, so it must not be retried by a failed student save. A
+    // failure here is reported separately — the student's own details are
+    // already saved, and saying "save failed" would be untrue.
     const terms = termBillingPayload()
     if (terms.length) {
-      await api.put(`/students/${props.editStudentId}/term-billing`, { terms })
+      try {
+        await api.put(`/students/${props.editStudentId}/term-billing`, { terms })
+      } catch (billingError) {
+        const message = billingError?.response?.data?.errors?.terms?.[0]
+          || billingError?.response?.data?.message
+          || t('common.saveFailed')
+        submitError.value = t('students.termBillingFailed', { reason: message })
+        step.value = steps.value.length
+        // The figures stay on screen so the fix is one edit away, and the list
+        // behind the modal still refreshes with the saved student details.
+        emit('refreshed')
+        saving.value = false
+
+        return
+      }
     }
 
     emit('saved')

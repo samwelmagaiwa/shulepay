@@ -464,6 +464,9 @@ export default {
     downloadStatement:     'Download Statement',
   },
   students: {
+    termPaidOverFee: 'Payments for {term} are more than its fee.',
+    termFeeMissing: 'Enter the fee for {term} before recording a payment.',
+    termBillingFailed: 'Student details were saved, but the terms could not be: {reason}',
     stepTermsPayments: 'Terms & Payments',
     termBillingHint: "Correct a term's fee, record a payment, or add a term that was never invoiced.",
     termBillingEmpty: 'No terms found for this student.',

@@ -458,6 +458,9 @@ export default {
     downloadStatement:     'Pakua Taarifa',
   },
   students: {
+    termPaidOverFee: 'Malipo ya {term} yanazidi ada yake.',
+    termFeeMissing: 'Weka ada ya {term} kabla ya kurekodi malipo.',
+    termBillingFailed: 'Taarifa za mwanafunzi zimehifadhiwa, lakini muhula haukuhifadhiwa: {reason}',
     stepTermsPayments: 'Muhula na Malipo',
     termBillingHint: 'Rekebisha ada ya muhula, weka malipo, au ongeza muhula ambao haujatengenezewa ankara.',
     termBillingEmpty: 'Hakuna muhula uliopatikana kwa mwanafunzi huyu.',
