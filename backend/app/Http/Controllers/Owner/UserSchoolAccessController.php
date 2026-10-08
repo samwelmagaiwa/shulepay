@@ -40,7 +40,7 @@ class UserSchoolAccessController extends Controller
         // Owners may only grant access to schools they themselves can access
         $actor = auth()->user();
         if (! $actor->hasRole('superadmin') && ! $actor->canAccessSchool($school->id)) {
-            return response()->json(['message' => 'You do not have access to grant access to this school.'], 403);
+            return response()->json(['message' => __('You do not have access to grant access to this school.')], 403);
         }
 
         // Ensure multi_school is not in forbidden_permissions (would block the permission check)
@@ -65,7 +65,7 @@ class UserSchoolAccessController extends Controller
         ]);
 
         return response()->json([
-            'message' => "Access to school '{$school->name}' granted to {$user->name}.",
+            'message' => __("Access to school ':school' granted to :user.", ['school' => $school->name, 'user' => $user->name]),
             'has_multi_school' => true,
             'accessible_schools' => $user->accessibleSchools()->select('schools.id', 'schools.name', 'schools.level')->get(),
         ]);
@@ -90,7 +90,7 @@ class UserSchoolAccessController extends Controller
         $hasMulti = $remaining > 0;
 
         return response()->json([
-            'message' => "Access to school '{$school->name}' revoked from {$user->name}.",
+            'message' => __("Access to school ':school' revoked from :user.", ['school' => $school->name, 'user' => $user->name]),
             'has_multi_school' => $hasMulti,
             'accessible_schools' => $user->accessibleSchools()->select('schools.id', 'schools.name', 'schools.level')->get(),
         ]);

@@ -109,7 +109,7 @@ class RolePermissionController extends Controller
             'teacher', 'head_teacher', 'headmaster', 'academic_teacher'];
 
         if (in_array($role->name, $protected)) {
-            return response()->json(['message' => "Role '{$role->name}' is a system role and cannot be deleted."], 422);
+            return response()->json(['message' => __("Role ':role' is a system role and cannot be deleted.", ['role' => $role->name])], 422);
         }
 
         AuditLogger::log('role_deleted', null, [

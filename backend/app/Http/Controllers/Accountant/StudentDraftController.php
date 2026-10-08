@@ -23,7 +23,7 @@ class StudentDraftController extends Controller
     {
         $user = $request->user();
         if (! $user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return response()->json(['error' => __('Unauthorized')], 401);
         }
 
         $query = StudentDraft::where('user_id', $user->id);
@@ -36,7 +36,7 @@ class StudentDraftController extends Controller
         if ($request->filled('school_id')) {
             $schoolId = (int) $request->query('school_id');
             if ($allowed !== null && ! in_array($schoolId, $allowed, true)) {
-                return response()->json(['error' => 'Unauthorized'], 403);
+                return response()->json(['error' => __('Unauthorized')], 403);
             }
             $query->where('school_id', $schoolId);
         }
@@ -53,7 +53,7 @@ class StudentDraftController extends Controller
             // TEMPORARY diagnostic fields — remove once the repeated 403 on
             // student-drafts is root-caused. Reveals only IDs, not sensitive data.
             return response()->json([
-                'error' => 'Unauthorized',
+                'error' => __('Unauthorized'),
                 'debug' => [
                     'draft_id' => $draft->id,
                     'draft_user_id' => $draft->user_id,
@@ -66,7 +66,7 @@ class StudentDraftController extends Controller
 
         $allowed = $this->userSchoolIds($request);
         if ($allowed !== null && ! in_array($draft->school_id, $allowed, true)) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return response()->json(['error' => __('Unauthorized')], 403);
         }
 
         $draft->update(['last_accessed_at' => now()]);
@@ -78,13 +78,13 @@ class StudentDraftController extends Controller
     {
         $user = $request->user();
         if (! $user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return response()->json(['error' => __('Unauthorized')], 401);
         }
 
         $schoolId = (int) $request->input('school_id');
         $allowed = $this->userSchoolIds($request);
         if ($allowed !== null && ! in_array($schoolId, $allowed, true)) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return response()->json(['error' => __('Unauthorized')], 403);
         }
 
         $rules = [
@@ -147,7 +147,7 @@ class StudentDraftController extends Controller
             // TEMPORARY diagnostic fields — remove once the repeated 403 on
             // student-drafts is root-caused. Reveals only IDs, not sensitive data.
             return response()->json([
-                'error' => 'Unauthorized',
+                'error' => __('Unauthorized'),
                 'debug' => [
                     'draft_id' => $draft->id,
                     'draft_user_id' => $draft->user_id,
@@ -160,7 +160,7 @@ class StudentDraftController extends Controller
 
         $allowed = $this->userSchoolIds($request);
         if ($allowed !== null && ! in_array($draft->school_id, $allowed, true)) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return response()->json(['error' => __('Unauthorized')], 403);
         }
 
         $rules = [
@@ -216,7 +216,7 @@ class StudentDraftController extends Controller
             // TEMPORARY diagnostic fields — remove once the repeated 403 on
             // student-drafts is root-caused. Reveals only IDs, not sensitive data.
             return response()->json([
-                'error' => 'Unauthorized',
+                'error' => __('Unauthorized'),
                 'debug' => [
                     'draft_id' => $draft->id,
                     'draft_user_id' => $draft->user_id,
@@ -229,7 +229,7 @@ class StudentDraftController extends Controller
 
         $allowed = $this->userSchoolIds($request);
         if ($allowed !== null && ! in_array($draft->school_id, $allowed, true)) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return response()->json(['error' => __('Unauthorized')], 403);
         }
 
         $draft->delete();

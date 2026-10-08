@@ -77,7 +77,7 @@
               <div style="flex-shrink:0;">
                 <img v-if="student.photo" :src="student.photo"
                      class="rounded-circle border shadow-sm"
-                     style="width:80px;height:80px;object-fit:cover;" alt="Picha" />
+                     style="width:80px;height:80px;object-fit:cover;" :alt="t('students.photoAlt')" />
                 <div v-else class="rounded-circle border d-flex align-items-center justify-content-center bg-light"
                      style="width:80px;height:80px;font-size:2.2rem;color:#adb5bd;">👤</div>
               </div>
@@ -103,14 +103,14 @@
               <CCol xs="12" md="4">
                 <CCard class="h-100">
                   <CCardHeader class="fw-semibold small py-2" style="background:#f8fffe;">
-                    👤 Taarifa za Mwanafunzi
+                    👤 {{ t('studentDetail.personalInfo') }}
                   </CCardHeader>
                   <CCardBody class="p-2">
                     <InfoRow :label="t('students.gender')" :value="(student.gender === 'me' || student.gender === 'male') ? t('students.male') : (student.gender === 'ke' || student.gender === 'female') ? t('students.female') : '—'" />
                     <InfoRow :label="t('students.dob')" :value="student.date_of_birth || '—'" />
                     <InfoRow :label="t('students.admitDate')" :value="student.admitted_at || student.admission_date || '—'" />
                     <InfoRow :label="t('common.status')" :value="statusLabel(student.status)" />
-                    <InfoRow v-if="student.birth_certificate_no" label="Cheti cha Kuzaliwa" :value="student.birth_certificate_no" />
+                    <InfoRow v-if="student.birth_certificate_no" :label="t('studentDetail.birthCertificate')" :value="student.birth_certificate_no" />
                     <InfoRow v-if="student.notes" :label="t('common.notes')" :value="student.notes" />
                   </CCardBody>
                 </CCard>
@@ -120,12 +120,12 @@
               <CCol xs="12" md="4">
                 <CCard class="h-100">
                   <CCardHeader class="fw-semibold small py-2" style="background:#fff8f8;">
-                    🩺 Taarifa za Kiafya
+                    🩺 {{ t('studentDetail.healthInfo') }}
                   </CCardHeader>
                   <CCardBody class="p-2">
-                    <InfoRow label="Kundi la Damu" :value="student.blood_group || 'Haijulikani'" />
-                    <InfoRow label="Mzio (Allergies)" :value="student.allergies || 'Hakuna'" />
-                    <InfoRow label="Matatizo ya Kiafya" :value="student.medical_conditions || 'Hakuna'" />
+                    <InfoRow :label="t('studentDetail.bloodGroup')" :value="student.blood_group || t('studentDetail.unknown')" />
+                    <InfoRow :label="t('studentDetail.allergies')" :value="student.allergies || t('studentDetail.none')" />
+                    <InfoRow :label="t('studentDetail.medicalConditions')" :value="student.medical_conditions || t('studentDetail.none')" />
                   </CCardBody>
                 </CCard>
               </CCol>
@@ -134,16 +134,16 @@
               <CCol xs="12" md="4">
                 <CCard class="h-100">
                   <CCardHeader class="fw-semibold small py-2" style="background:#f8f8ff;">
-                    📍 Makazi & Anwani
+                    📍 {{ t('studentDetail.addressInfo') }}
                   </CCardHeader>
                   <CCardBody class="p-2">
-                    <InfoRow v-if="student.address" label="Anwani" :value="student.address" />
-                    <InfoRow v-if="student.region" label="Mkoa" :value="student.region" />
-                    <InfoRow v-if="student.district" label="Wilaya" :value="student.district" />
-                    <InfoRow v-if="student.ward" label="Kata" :value="student.ward" />
-                    <InfoRow v-if="student.street" label="Mtaa/Kijiji" :value="student.street" />
+                    <InfoRow v-if="student.address" :label="t('studentDetail.address')" :value="student.address" />
+                    <InfoRow v-if="student.region" :label="t('studentDetail.region')" :value="student.region" />
+                    <InfoRow v-if="student.district" :label="t('studentDetail.district')" :value="student.district" />
+                    <InfoRow v-if="student.ward" :label="t('studentDetail.ward')" :value="student.ward" />
+                    <InfoRow v-if="student.street" :label="t('studentDetail.street')" :value="student.street" />
                     <div v-if="!student.address && !student.region && !student.district"
-                         class="text-muted small text-center py-2">Hakuna taarifa za makazi</div>
+                         class="text-muted small text-center py-2">{{ t('studentDetail.noAddress') }}</div>
                   </CCardBody>
                 </CCard>
               </CCol>
@@ -248,8 +248,8 @@
                         {{ p.invoice.invoice_number }} 
                         <span class="text-body-secondary fw-normal">· {{ p.invoice.term }}</span>
                       </div>
-                      <div class="small text-muted">{{ p.paid_at }} &middot; {{ p.method }}</div>
-                      <div v-if="p.reference_number" class="small text-muted">Ref: {{ p.reference_number }}</div>
+                      <div class="small text-muted">{{ p.paid_at }} &middot; {{ methodLabel(p.method) }}</div>
+                      <div v-if="p.reference_number" class="small text-muted">{{ t('studentDrawer.refShort') }} {{ p.reference_number }}</div>
                     </div>
                     <CButton v-if="p.receipt_id" size="sm" color="secondary" variant="outline"
                              @click="downloadReceipt(p.receipt_id)" style="min-height:44px;">
@@ -343,28 +343,26 @@
                     <div>
                       <div class="fw-bold" style="color:#007f3e;">{{ plan.invoice_number }}</div>
                       <div class="small text-muted mt-1">
-                        {{ plan.total }} awamu ·
-                        {{ formatMoney(plan.amount_each) }} kila moja ·
-                        Malipo {{ plan.paid_count }}/{{ plan.total }}
+                        {{ t('studentDetail.planSummary', { total: plan.total, amount: formatMoney(plan.amount_each), paid: plan.paid_count }) }}
                       </div>
                     </div>
                     <CBadge :color="plan.all_paid ? 'success' : 'warning'" class="px-2 py-1">
-                      {{ plan.all_paid ? '✓ Imekamilika' : '⏳ Inaendelea' }}
+                      {{ plan.all_paid ? t('studentDrawer.planComplete') : t('studentDetail.planOngoingIcon') }}
                     </CBadge>
                   </div>
 
                   <!-- Progress bar -->
                   <div style="border-left:1px solid #c3e6cb; border-right:1px solid #c3e6cb; padding:8px 12px; background:#f8fffe;">
                     <div class="d-flex justify-content-between mb-1" style="font-size:.72rem; color:#6c757d;">
-                      <span>Maendeleo ya Malipo</span>
+                      <span>{{ t('studentDetail.paymentProgress') }}</span>
                       <span class="fw-semibold">{{ Math.round(plan.paid_count / plan.total * 100) }}%</span>
                     </div>
                     <CProgress :value="Math.round(plan.paid_count / plan.total * 100)"
                                :color="plan.all_paid ? 'success' : 'warning'"
                                style="height:10px;" />
                     <div class="d-flex justify-content-between mt-1" style="font-size:.68rem; color:#6c757d;">
-                      <span>Kimelipwa: {{ formatMoney(plan.total_paid_cents) }}</span>
-                      <span class="text-danger">Kinabaki: {{ formatMoney(plan.total_remaining_cents) }}</span>
+                      <span>{{ t('studentDetail.paidAmount', { amount: formatMoney(plan.total_paid_cents) }) }}</span>
+                      <span class="text-danger">{{ t('studentDetail.remainingAmount', { amount: formatMoney(plan.total_remaining_cents) }) }}</span>
                     </div>
                   </div>
 
@@ -374,10 +372,10 @@
                     <div class="d-flex align-items-center px-3 py-1"
                          style="background:#e8f5ee; font-size:.68rem; font-weight:600; color:#495057; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid #c3e6cb;">
                       <div style="width:60px;">#</div>
-                      <div style="flex:1;">Tarehe</div>
-                      <div style="width:130px; text-align:right;">Kiasi Kinachohitajika</div>
-                      <div style="width:130px; text-align:right;">Kilicholipwa</div>
-                      <div style="width:80px; text-align:center;">Hali</div>
+                      <div style="flex:1;">{{ t('common.date') }}</div>
+                      <div style="width:130px; text-align:right;">{{ t('installments.amountRequired') }}</div>
+                      <div style="width:130px; text-align:right;">{{ t('installments.amountAlreadyPaid') }}</div>
+                      <div style="width:80px; text-align:center;">{{ t('common.status') }}</div>
                       <div style="width:64px;"></div>
                     </div>
                     <div v-for="item in plan.items" :key="item.id"
@@ -389,7 +387,7 @@
                       <div style="flex:1; font-size:.78rem;">
                         <span>{{ item.due_date }}</span>
                         <span v-if="isOverdue(item.due_date) && item.status !== 'paid'"
-                              class="ms-1 badge bg-danger" style="font-size:.62rem;">Imechelewa</span>
+                              class="ms-1 badge bg-danger" style="font-size:.62rem;">{{ t('studentDetail.overdueShort') }}</span>
                       </div>
                       <!-- Expected amount -->
                       <div style="width:130px; text-align:right; font-size:.78rem;">
@@ -414,9 +412,9 @@
                               :class="item.status === 'paid' ? 'bg-success'
                                     : item.status === 'partial' ? 'bg-warning text-dark'
                                     : isOverdue(item.due_date) ? 'bg-danger' : 'bg-secondary'">
-                          {{ item.status === 'paid' ? 'Imelipwa'
-                           : item.status === 'partial' ? 'Sehemu'
-                           : isOverdue(item.due_date) ? 'Imechelewa' : 'Inasubiri' }}
+                          {{ item.status === 'paid' ? t('statusBadge.paid')
+                           : item.status === 'partial' ? t('statusBadge.partial')
+                           : isOverdue(item.due_date) ? t('studentDetail.overdueShort') : t('statusBadge.pending') }}
                         </span>
                       </div>
                       <!-- Pay button -->
@@ -424,7 +422,7 @@
                         <CButton v-if="item.status !== 'paid'" size="sm" color="success" variant="outline"
                                  style="font-size:.68rem; padding:2px 8px; min-height:28px;"
                                  @click="openInstallmentPay(item)">
-                          Lipa
+                          {{ t('common.pay') }}
                         </CButton>
                       </div>
                     </div>
@@ -434,47 +432,47 @@
 
               <!-- Empty state — compact, no gap before form -->
               <div v-if="!installments.length" class="text-muted small mb-2 d-flex align-items-center gap-2">
-                <span style="font-size:1rem;">📋</span> Hakuna mipango ya awamu.
+                <span style="font-size:1rem;">📋</span> {{ t('studentDrawer.noPlans') }}
               </div>
 
               <!-- Create new plan (only shows when invoice has balance and no existing plan) -->
               <div v-if="unpaidInvoices.length" class="rounded overflow-hidden"
                    style="border:1px solid #c3e6cb;">
                 <div class="px-3 py-2" style="background:linear-gradient(135deg,#f8fffe,#e8f5ee); border-bottom:1px solid #c3e6cb;">
-                  <span class="fw-bold small" style="color:#007f3e;">➕ Unda Mpango Mpya wa Awamu</span>
+                  <span class="fw-bold small" style="color:#007f3e;">{{ t('studentDetail.createPlanTitle') }}</span>
                 </div>
                 <div class="p-3" style="background:#fff;">
                   <div class="mb-2">
-                    <label class="form-label small fw-semibold">Chagua Ankara</label>
+                    <label class="form-label small fw-semibold">{{ t('studentDetail.chooseInvoice') }}</label>
                     <select class="form-select form-select-sm" v-model="newPlan.invoice_id">
-                      <option value="">-- Chagua Ankara --</option>
+                      <option value="">{{ t('studentDetail.chooseInvoiceOption') }}</option>
                       <option v-for="inv in unpaidInvoices" :key="inv.id" :value="inv.id">
-                        {{ inv.invoice_number }} · Deni: {{ formatMoney(inv.balance_due_cents) }}
+                        {{ t('studentDetail.invoiceBalanceOption', { invoice: inv.invoice_number, amount: formatMoney(inv.balance_due_cents) }) }}
                       </option>
                     </select>
                   </div>
                   <!-- Auto-preview when invoice selected -->
                   <div v-if="newPlan.invoice_id" class="mb-3 p-2 rounded" style="background:#f8fffe; border:1px solid #e0f2ec;">
-                    <div class="small text-muted mb-1">Deni linalobaki:</div>
+                    <div class="small text-muted mb-1">{{ t('studentDetail.remainingBalance') }}</div>
                     <div class="fw-bold" style="color:#007f3e;">{{ formatMoney(getInvoiceBalance(newPlan.invoice_id)) }}</div>
                     <div v-if="newPlan.total_installments >= 2" class="small text-muted mt-1">
-                      → Kila awamu ≈
+                      {{ t('studentDetail.eachInstallment') }}
                       <strong>{{ formatMoney(Math.ceil(getInvoiceBalance(newPlan.invoice_id) / newPlan.total_installments)) }}</strong>
                     </div>
                   </div>
                   <div class="row g-2 mb-3">
                     <div class="col-4">
-                      <label class="form-label small fw-semibold">Idadi ya Awamu</label>
+                      <label class="form-label small fw-semibold">{{ t('studentDetail.installmentCount') }}</label>
                       <input type="number" class="form-control form-control-sm" v-model.number="newPlan.total_installments" min="2" max="12" />
-                      <div class="text-muted" style="font-size:.65rem;">Min 2, Max 12</div>
+                      <div class="text-muted" style="font-size:.65rem;">{{ t('studentDetail.minMax') }}</div>
                     </div>
                     <div class="col-4">
-                      <label class="form-label small fw-semibold">Siku Kati</label>
+                      <label class="form-label small fw-semibold">{{ t('studentDetail.daysBetween') }}</label>
                       <input type="number" class="form-control form-control-sm" v-model.number="newPlan.interval_days" min="7" max="90" />
-                      <div class="text-muted" style="font-size:.65rem;">7–90 siku</div>
+                      <div class="text-muted" style="font-size:.65rem;">{{ t('studentDetail.daysRange') }}</div>
                     </div>
                     <div class="col-4">
-                      <label class="form-label small fw-semibold">Tarehe ya Kwanza</label>
+                      <label class="form-label small fw-semibold">{{ t('studentDetail.firstDate') }}</label>
                       <input type="date" class="form-control form-control-sm" v-model="newPlan.start_date" />
                     </div>
                   </div>
@@ -484,7 +482,7 @@
                            @click="createInstallmentPlan"
                            style="min-height:36px; background:#007f3e; border-color:#007f3e;">
                     <CSpinner v-if="creatingPlan" size="sm" class="me-1" />
-                    Unda Mpango
+                    {{ t('studentDetail.createPlan') }}
                   </CButton>
                 </div>
               </div>
@@ -684,10 +682,10 @@
 
         <label class="form-label fw-semibold small mb-1">{{ t('payments.method') }}</label>
         <CFormSelect v-model="payForm.method" class="mb-2">
-          <option value="cash">Cash</option>
-          <option value="mpesa">M-Pesa</option>
-          <option value="bank">Bank</option>
-          <option value="cheque">Cheque</option>
+          <option value="cash">{{ t('payments.methods.cash') }}</option>
+          <option value="mpesa">{{ t('payments.methods.mpesa') }}</option>
+          <option value="bank">{{ t('payments.methods.bank') }}</option>
+          <option value="cheque">{{ t('payments.methods.cheque') }}</option>
         </CFormSelect>
 
         <label class="form-label fw-semibold small mb-1">{{ t('payments.reference') }}</label>
@@ -735,7 +733,7 @@
           {{ t('invoices.totalAmount') }} <span class="text-danger">*</span>
         </label>
         <CFormInput v-model="editAmountDisplay" type="text" inputmode="numeric"
-                    autocomplete="off" placeholder="e.g. 200,000" @keyup.enter="saveInvoice" />
+                    autocomplete="off" :placeholder="t('common.exampleValue', { value: '200,000' })" @keyup.enter="saveInvoice" />
 
         <div v-if="editInvoice && editInvoice.paid_cents > 0" class="form-text small">
           {{ t('invoices.alreadyPaidHint', { paid: formatMoney(editInvoice.paid_cents) }) }}
@@ -769,7 +767,7 @@ import InfoRow from '@/components/InfoRow.vue'
 import { downloadReceipt as downloadReceiptPdf } from '@/utils/receipt'
 import LipiaModal from '@/components/LipiaModal.vue'
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 const route   = useRoute()
 const store   = useStudentsStore()
 const payStore = usePaymentsStore()
@@ -935,6 +933,10 @@ function statusLabel(s) {
     graduated: 'statusBadge.graduated', dropped: 'statusBadge.dropped',
   }
   return map[s] ? t(map[s]) : (s || '—')
+}
+
+function methodLabel(m) {
+  return te(`payments.methods.${m}`) ? t(`payments.methods.${m}`) : (m || '—')
 }
 
 function progressPct(plan) {
@@ -1118,7 +1120,7 @@ async function confirmInstPay() {
     await loadInstallments()
     await store.fetchStudent(route.params.id)
   } catch (e) {
-    instPayError.value = e?.response?.data?.message || 'Imeshindwa kulipa awamu'
+    instPayError.value = e?.response?.data?.message || t('studentDetail.payInstallmentFailed')
   } finally {
     instPaying.value = false
   }
@@ -1173,7 +1175,7 @@ async function createInstallmentPlan() {
     newPlan.value = { invoice_id: '', total_installments: 3, interval_days: 30, start_date: today }
     await loadInstallments()
   } catch (e) {
-    createPlanError.value = e?.response?.data?.message || 'Imeshindwa kuunda mpango'
+    createPlanError.value = e?.response?.data?.message || t('studentDetail.createPlanFailed')
   } finally {
     creatingPlan.value = false
   }

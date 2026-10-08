@@ -68,7 +68,7 @@
         <small class="text-medium-emphasis">
           {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
         </small>
-        <CPagination aria-label="Page" size="sm">
+        <CPagination :aria-label="t('common.pagination')" size="sm">
           <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; load()">{{ t('common.first') }}</CPaginationItem>
           <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; load()">{{ p }}</CPaginationItem>
           <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; load()">{{ t('common.last') }}</CPaginationItem>
@@ -128,7 +128,7 @@
         <small class="text-medium-emphasis">
           {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
         </small>
-        <CPagination aria-label="Page" size="sm">
+        <CPagination :aria-label="t('common.pagination')" size="sm">
           <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; load()">{{ t('common.first') }}</CPaginationItem>
           <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; load()">{{ p }}</CPaginationItem>
           <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; load()">{{ t('common.last') }}</CPaginationItem>
@@ -379,7 +379,7 @@ async function submitEmployee() {
     showModal.value = false
     await load()
   } catch (e) {
-    formError.value = e?.response?.data?.message || 'Imeshindwa. Jaribu tena.'
+    formError.value = e?.response?.data?.message || t('common.actionFailed')
   } finally {
     saving.value = false
   }

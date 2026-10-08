@@ -33,7 +33,7 @@ class DiscountController extends Controller
         $invoice = Invoice::with('payments')->findOrFail($data['invoice_id']);
 
         if ($data['amount_cents'] > $invoice->balanceDueCents()) {
-            return response()->json(['message' => 'Discount cannot exceed the remaining balance.'], 422);
+            return response()->json(['message' => __('Discount cannot exceed the remaining balance.')], 422);
         }
 
         $discount = DB::transaction(function () use ($data, $invoice) {

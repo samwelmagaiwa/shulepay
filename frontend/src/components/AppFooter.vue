@@ -1,6 +1,8 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useBrandingStore } from '@/stores/branding'
+const { t } = useI18n()
 const branding = useBrandingStore()
 
 const today = computed(() => {
@@ -17,11 +19,11 @@ const today = computed(() => {
     <div>
       <a href="#" target="_blank"></a>
       <span class="ms-1"
-        >&copy; {{ new Date().getFullYear() }} {{ branding.appName }}. Tarehe ya Leo: {{ today }}</span
+        >&copy; {{ new Date().getFullYear() }} {{ branding.appName }}. {{ t('footer.today') }}: {{ today }}</span
       >
     </div>
     <div class="ms-auto">
-      <span class="me-1">Imetengenezwa na</span>
+      <span class="me-1">{{ t('footer.madeBy') }}</span>
       <a href="https://nexoryatech.com" target="_blank">{{ branding.appTagline }}</a>
     </div>
   </CFooter>

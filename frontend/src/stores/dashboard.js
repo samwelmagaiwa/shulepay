@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/services/api'
+import { i18n } from '@/i18n'
 
 export const useDashboardStore = defineStore('dashboard', () => {
   const stats   = ref(null)
@@ -44,11 +45,11 @@ export const useDashboardStore = defineStore('dashboard', () => {
   })
 
   const compLabel = computed(() => {
-    if (selectedPeriod.value === 'day') return 'Jana'
-    if (selectedPeriod.value === 'week') return 'Wiki Iliyopita'
-    if (selectedPeriod.value === 'month') return 'Mwezi Uliopita'
-    if (selectedPeriod.value === 'year') return 'Mwaka Uliopita'
-    return 'Kipindi Kilichopita'
+    if (selectedPeriod.value === 'day') return i18n.global.t('dashboard.compYesterday')
+    if (selectedPeriod.value === 'week') return i18n.global.t('dashboard.compLastWeek')
+    if (selectedPeriod.value === 'month') return i18n.global.t('dashboard.compLastMonth')
+    if (selectedPeriod.value === 'year') return i18n.global.t('dashboard.compLastYear')
+    return i18n.global.t('dashboard.compPrevious')
   })
 
   // ── Stats mapped to the shape SocialStatsWidgets expects ─────────────────
@@ -56,18 +57,18 @@ export const useDashboardStore = defineStore('dashboard', () => {
     const s = stats.value
     if (!s) return null
     return {
-      total_patients:   s.total_students   || 0,
+      total_students:   s.total_students   || 0,
       // "Outstanding Debt" card (SocialStatsWidgets) reads this — it must be the
       // actual TZS amount still owed, not a count of invoices. That count is a
       // different metric and stays available separately as `pending` below.
-      emergency_visits: Math.round((s.total_outstanding_cents || 0) / 100), // TZS
+      outstanding_amount: Math.round((s.total_outstanding_cents || 0) / 100), // TZS
       // "New Students" card was never wired to a real field (new_students never
       // existed on this payload — always read as 0). Repurposed to show fully
       // sponsored, no-payments students instead.
-      new_visits:       s.sponsored_free_count || 0,
-      followups:        Math.round((s.today_collections || 0) / 100), // TZS
-      consulted:        s.paid_invoices    || 0,
-      consulted_amount: Math.round((s.paid_amount_cents || 0) / 100), // TZS
+      sponsored_free:       s.sponsored_free_count || 0,
+      today_collections:        Math.round((s.today_collections || 0) / 100), // TZS
+      paid_invoices:        s.paid_invoices    || 0,
+      paid_amount: Math.round((s.paid_amount_cents || 0) / 100), // TZS
       // Paid + Partial invoices combined — count and actual amount collected.
       paid_partial_count:  s.paid_partial_invoices     || 0,
       paid_partial_amount: Math.round((s.paid_partial_amount_cents || 0) / 100), // TZS
@@ -80,11 +81,11 @@ export const useDashboardStore = defineStore('dashboard', () => {
     const s = stats.value
     if (!s) return null
     return {
-      total_patients:   s.total_students   || 0,
-      emergency_visits: 0,
-      new_visits:       0,
-      followups:        Math.round((s.yesterday_collections || 0) / 100),
-      consulted:        0,
+      total_students:   s.total_students   || 0,
+      outstanding_amount: 0,
+      sponsored_free:       0,
+      today_collections:        Math.round((s.yesterday_collections || 0) / 100),
+      paid_invoices:        0,
       pending:          0,
     }
   })
@@ -110,7 +111,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       datasets: [
         {
           type: 'line',
-          label: 'Mwelekeo wa Jumla',
+          label: i18n.global.t('dashboard.seriesTrend'),
           data: amounts,
           borderColor: '#1e293b',
           backgroundColor: '#1e293b',
@@ -120,37 +121,37 @@ export const useDashboardStore = defineStore('dashboard', () => {
         },
         {
           type: 'bar',
-          label: 'Wanafunzi Wote',
+          label: i18n.global.t('dashboard.seriesStudents'),
           data: amounts.map(() => 0), // student daily count not available
           backgroundColor: '#3b82f6',
         },
         {
           type: 'bar',
-          label: 'Madeni Yanayodai',
+          label: i18n.global.t('dashboard.seriesOutstanding'),
           data: amounts.map(() => 0),
           backgroundColor: '#dc3545',
         },
         {
           type: 'bar',
-          label: 'Yaliyolipwa',
+          label: i18n.global.t('dashboard.seriesPaid'),
           data: amounts,
           backgroundColor: '#16a34a',
         },
         {
           type: 'bar',
-          label: 'Bado Hawajalipa',
+          label: i18n.global.t('dashboard.seriesNotPaid'),
           data: amounts.map(() => 0),
           backgroundColor: '#ec4899',
         },
         {
           type: 'bar',
-          label: 'Wanafunzi Wapya',
+          label: i18n.global.t('dashboard.seriesNew'),
           data: amounts.map(() => 0),
           backgroundColor: '#06b6d4',
         },
         {
           type: 'bar',
-          label: 'Makusanyo ya Leo',
+          label: i18n.global.t('dashboard.seriesToday'),
           data: amounts,
           backgroundColor: '#6610f2',
         },
@@ -158,27 +159,27 @@ export const useDashboardStore = defineStore('dashboard', () => {
     }
   })
 
-  // ── Clinic/School bar chart ───────────────────────────────────────────────
-  // DashboardClinicBarChart.vue expects realClinics array with:
-  // { clinic_name, total_visits, previous_visits, consulted, pending,
-  //   previous_consulted, previous_pending, trend, interpretation, comparison_dates }
-  const realClinics = computed(() => {
+  // ── Schools bar chart ─────────────────────────────────────────────────────
+  // DashboardSchoolBarChart.vue expects a schoolBreakdown array with:
+  // { school_name, total_invoices, previous_invoices, paid, pending,
+  //   previous_paid, previous_pending, trend, interpretation, comparison_dates }
+  const schoolBreakdown = computed(() => {
     const s = stats.value
     if (!s) return []
 
     return (s.school_breakdown || []).map(school => {
       const total = school.count || 0
       return {
-        clinic_name:        school.school || 'Unknown',
-        total_visits:       total,
-        previous_visits:    school.previous_count || 0,
-        consulted:          school.paid_count      || 0,
+        school_name:        school.school || i18n.global.t('dashboard.unknownLabel'),
+        total_invoices:     total,
+        previous_invoices: school.previous_count || 0,
+        paid:               school.paid_count      || 0,
         pending:            school.unpaid_count    || 0,
-        previous_consulted: school.prev_paid_count || 0,
+        previous_paid:      school.prev_paid_count || 0,
         previous_pending:   school.prev_unpaid_count || 0,
         trend:              school.trend            || 0,
-        interpretation:     school.trend > 0 ? 'Imeongezeka' : school.trend < 0 ? 'Imepungua' : 'Sawa',
-        comparison_dates:   'vs Kipindi Kilichopita',
+        interpretation:     i18n.global.t(school.trend > 0 ? 'dashboard.trendUp' : school.trend < 0 ? 'dashboard.trendDown' : 'dashboard.trendFlat'),
+        comparison_dates:   i18n.global.t('dashboard.vsPrevious'),
       }
     })
   })
@@ -191,21 +192,17 @@ export const useDashboardStore = defineStore('dashboard', () => {
   //
   // count is the debt in TZS, since that is what the panel ranks and shows a
   // percentage of; unpaid_students rides alongside for the headcount.
-  const referralStats = computed(() => {
+  const classDebtStats = computed(() => {
     const s = stats.value
     if (!s) return []
 
     return (s.class_debt_breakdown || []).map(row => ({
-      name: row.class_name || 'Unknown',
+      name: row.class_name || i18n.global.t('dashboard.unknownLabel'),
       code: '',
       count: Math.round((row.debt_cents || 0) / 100),
       unpaidStudents: row.unpaid_students || 0,
     }))
   })
-
-  // ── Legacy stubs (Dashboard.vue patientCategories uses these) ────────────
-  const metrics = computed(() => [])
-  const clinics  = computed(() => [])
 
   // ── Dashboard privacy lock ────────────────────────────────────────────────
   // The backend omits the money figures entirely while locked and marks the
@@ -282,15 +279,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
       const { data } = await api.get('/dashboard/stats')
       stats.value = data
     } catch (e) {
-      error.value = e?.response?.data?.message || 'Failed to load dashboard'
+      error.value = e?.response?.data?.message || i18n.global.t('errors.loadDashboard')
     } finally {
       loading.value = false
     }
-  }
-
-  async function fetchPendingPatients() {
-    // ShulePay doesn't have a pending-patients endpoint; return empty array
-    return []
   }
 
   async function fetchAbsentByClass(date) {
@@ -342,11 +334,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
     offlineTimerCountdown, futureDateWarning, isSyncing,
     // Computed data
     realStats, previousStats, compLabel,
-    serviceTrendData, realClinics, referralStats,
+    serviceTrendData, schoolBreakdown, classDebtStats,
     // Legacy stubs
-    metrics, clinics,
     // Actions
-    fetchStats, fetchPendingPatients, fetchAbsentByClass, fetchDiscountedByClass, setBreakdownMode, calculateDateRange, stopPulse,
+    fetchStats, fetchAbsentByClass, fetchDiscountedByClass, setBreakdownMode, calculateDateRange, stopPulse,
     // Privacy lock
     isLocked, lockConfigured, lockEnabled, unlockedUntil,
     fetchLockStatus, setLock, unlock, deactivateLock, removeLock,

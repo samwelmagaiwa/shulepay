@@ -35,8 +35,8 @@ class PaymentPromiseController extends Controller
 
         // Validate invoice belongs to student and has a balance
         $invoice = Invoice::findOrFail($data['invoice_id']);
-        abort_if($invoice->student_id !== (int) $data['student_id'], 422, 'Invoice does not belong to this student.');
-        abort_if($invoice->balanceDueCents() <= 0, 422, 'This invoice has no outstanding balance.');
+        abort_if($invoice->student_id !== (int) $data['student_id'], 422, __('Invoice does not belong to this student.'));
+        abort_if($invoice->balanceDueCents() <= 0, 422, __('This invoice has no outstanding balance.'));
 
         $promise = PaymentPromise::create([
             ...$data,
@@ -63,6 +63,6 @@ class PaymentPromiseController extends Controller
     {
         $paymentPromise->delete();
 
-        return response()->json(['message' => 'Deleted.']);
+        return response()->json(['message' => __('Deleted.')]);
     }
 }

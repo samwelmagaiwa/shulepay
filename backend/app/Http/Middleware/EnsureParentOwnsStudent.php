@@ -20,7 +20,7 @@ class EnsureParentOwnsStudent
         }
 
         if (! $user->guardian) {
-            abort(403, 'Access denied.');
+            abort(403, __('Access denied.'));
         }
 
         $owns = $user->guardian->students()
@@ -28,7 +28,7 @@ class EnsureParentOwnsStudent
             ->exists();
 
         if (! $owns) {
-            abort(403, 'Access denied — this student does not belong to you.');
+            abort(403, __('Access denied — this student does not belong to you.'));
         }
 
         return $next($request);

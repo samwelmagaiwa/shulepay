@@ -128,10 +128,14 @@ class AttendanceController extends Controller
                 'type' => 'absence_alert',
                 'title' => "Wanafunzi {$absentRecords->count()} hawakuhudhuria - {$className}",
                 'body' => "Tarehe {$date}: {$absentNames}",
+                // The wording is built when the notification is read (see
+                // SchoolNotification), so keep what it is made from.
                 'data' => [
                     'class_id' => $classId,
+                    'class_name' => $className,
                     'date' => $date,
                     'absent_count' => $absentRecords->count(),
+                    'absent_names' => $absentNames,
                 ],
                 'recipient_role' => 'owner',
                 'is_read' => false,

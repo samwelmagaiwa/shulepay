@@ -175,7 +175,7 @@ async function send() {
     success.value   = true
     setTimeout(() => emit('close'), 2500)
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Imeshindwa kutuma SMS.'
+    error.value = e?.response?.data?.message || t('errors.smsFailed')
   } finally {
     sending.value = false
   }

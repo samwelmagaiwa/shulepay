@@ -118,7 +118,7 @@ class BudgetController extends Controller
     public function activate(Budget $budget): JsonResponse
     {
         if ($budget->status !== 'draft') {
-            return response()->json(['message' => 'Only draft budgets can be activated.'], 422);
+            return response()->json(['message' => __('Only draft budgets can be activated.')], 422);
         }
 
         $before = $budget->toArray();
@@ -131,7 +131,7 @@ class BudgetController extends Controller
     public function close(Budget $budget): JsonResponse
     {
         if ($budget->status !== 'active') {
-            return response()->json(['message' => 'Only active budgets can be closed.'], 422);
+            return response()->json(['message' => __('Only active budgets can be closed.')], 422);
         }
 
         $before = $budget->toArray();

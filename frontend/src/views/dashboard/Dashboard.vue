@@ -1,5 +1,5 @@
 <script setup>
-import { defineAsyncComponent, computed, ref, onMounted, watch, onUnmounted } from 'vue'
+import { defineAsyncComponent, computed, ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useSchoolStore } from '@/stores/school'
@@ -33,33 +33,13 @@ import '@vuepic/vue-datepicker/dist/main.css'
 
 import DashboardPieCharts from './DashboardPieCharts.vue'
 import WidgetsStatsD from '../widgets/SocialStatsWidgets.vue'
-import DashboardRadarChart from './DashboardRadarChart.vue'
-import DashboardClinicBarChart from './DashboardClinicBarChart.vue'
+import DashboardSchoolBarChart from './DashboardSchoolBarChart.vue'
 import ServiceTrendChart from './ServiceTrendChart.vue'
 
 const MainChart = defineAsyncComponent(() => import('./MainChart.vue'))
 
 const isAutoScrollEnabled = computed(() => autoScroll.isEnabled.value)
 const hiddenPieCategories = ref([]) // Track hidden categories for pie chart
-// Show outage slideshow ONLY when API is unreachable AND grace period has completely expired
-const showOutageSlideshow = computed(
-  () => {
-    // If API is available, definitely NO slideshow
-    if (dashboard.remoteApiAvailable !== false) return false
-
-    // If we are in the 5-minute silent window, do NOT show slideshow
-    if (dashboard.remoteApiAvailable === false && !dashboard.isOfflineUIReported) return false
-    
-    // If we are currently using cached fallback data, do NOT show slideshow
-    if (dashboard.isUsingCachedData) return false
-    
-    // If there is any active countdown at all, stay on the dashboard
-    if (dashboard.offlineTimerCountdown !== null) return false
-    
-    // Final check: Only show slideshow if we are truly offline, 5m delay has passed, and 15m grace has expired
-    return dashboard.remoteApiAvailable === false && !dashboard.isUsingCachedData && dashboard.offlineTimerCountdown === null
-  }
-)
 const showOfflineIndicator = computed(
   () => dashboard.remoteApiAvailable === false && dashboard.isUsingCachedData && dashboard.isOfflineUIReported
 )
@@ -70,28 +50,8 @@ const formatOfflineCountdown = computed(() => {
   const secs = seconds % 60
   return `${minutes}:${String(secs).padStart(2, '0')}`
 })
-const outageSlides = ['/outage-slides/slide-1.jpg', '/outage-slides/slide-2.jpg', '/outage-slides/slide-3.jpg']
-const activeOutageSlide = ref(0)
-
 let syncInterval = null
-let outageSlideInterval = null
 
-const startOutageSlideshow = () => {
-  if (outageSlideInterval) return
-
-  outageSlideInterval = setInterval(() => {
-    activeOutageSlide.value = (activeOutageSlide.value + 1) % outageSlides.length
-  }, 5000)
-}
-
-const stopOutageSlideshow = () => {
-  if (outageSlideInterval) {
-    clearInterval(outageSlideInterval)
-    outageSlideInterval = null
-  }
-
-  activeOutageSlide.value = 0
-}
 
 onMounted(() => {
   dashboard.fetchStats()
@@ -104,23 +64,9 @@ onMounted(() => {
   // }, 300000) // 5 minutes
 })
 
-watch(
-  showOutageSlideshow,
-  (isActive) => {
-    if (isActive) {
-      startOutageSlideshow()
-      return
-    }
-
-    stopOutageSlideshow()
-  },
-  { immediate: true },
-)
-
 onUnmounted(() => {
   if (typeof dashboard.stopPulse === 'function') dashboard.stopPulse() // Cleanup polling
   if (syncInterval) clearInterval(syncInterval)
-  stopOutageSlideshow()
 })
 
 const getCategoryColor = (title) => {
@@ -153,7 +99,7 @@ const CLASS_COLOURS = [
 
 const classFeeCollection = computed(() => dashboard.stats?.class_fee_collection || null)
 
-const patientCategories = computed(() => {
+const classFees = computed(() => {
   const locked = dashboard.isLocked
   const rows = classFeeCollection.value?.classes || []
 
@@ -195,7 +141,7 @@ const patientCategories = computed(() => {
     { title: 'Total', value: locked ? MASK : 'TZS ' + total.toLocaleString(), color: 'grey' },
   ]
 })
-// Patient Category Chart Data (Bar + Line combination)
+// Fee collection chart data (Bar + Line combination)
 // Full shilling figures (23,948,000) overlap on a bar and crowd an axis; these
 // labels use compact form (23.9M) while tooltips keep the exact amount.
 const compactTzs = (v) => {
@@ -210,12 +156,12 @@ const compactTzs = (v) => {
 // the card says so rather than showing an empty axis that reads as a fault.
 const feeChartState = computed(() => {
   if (dashboard.isLocked) return 'locked'
-  const any = patientCategories.value.some((c) => c.title !== 'Total' && !c.unassigned && c.numericValue > 0)
+  const any = classFees.value.some((c) => c.title !== 'Total' && !c.unassigned && c.numericValue > 0)
   return any ? 'ready' : 'empty'
 })
 
 const categoryChartData = computed(() => {
-  const categories = patientCategories.value.filter((c) => c.title !== 'Total' && !c.unassigned)
+  const categories = classFees.value.filter((c) => c.title !== 'Total' && !c.unassigned)
   const values = categories.map((c) => c.numericValue || 0)
   const colors = categories.map((c) => c.color)
 
@@ -344,9 +290,9 @@ const categoryBarLabelsPlugin = {
   },
 }
 
-// Patient Category Pie Chart Data
+// Fee collection pie chart data
 const categoryPieChartData = computed(() => {
-  const categories = patientCategories.value.filter((c) => c.title !== 'Total' && !c.unassigned)
+  const categories = classFees.value.filter((c) => c.title !== 'Total' && !c.unassigned)
   const values = categories.map((c) => {
     if (hiddenPieCategories.value.includes(c.title)) return 0
     return c.numericValue || 0
@@ -476,7 +422,7 @@ const categoryPieLabelsPlugin = {
 }
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return 'Date is empty'
+  if (!dateStr) return t('errors.dateEmpty')
   if (typeof dateStr === 'string' && dateStr.includes('T')) {
     return dateStr.split('T')[0]
   }
@@ -489,18 +435,6 @@ const formatDate = (dateStr) => {
     class="dashboard-grid px-0 pt-0 pb-3"
     style="position: relative; min-height: 400px; overflow-x: hidden"
   >
-    <div v-if="showOutageSlideshow" class="outage-slideshow-shell">
-      <div
-        class="outage-slideshow-track"
-        :style="{ transform: `translateX(-${activeOutageSlide * 100}%)` }"
-      >
-        <div v-for="slide in outageSlides" :key="slide" class="outage-slide">
-          <img :src="slide" alt="Hospital view" class="outage-slide-image" />
-        </div>
-      </div>
-    </div>
-
-    <template v-else>
       <LoadingBanner v-if="dashboard.isLoading" />
 
       <!-- Future Date Warning Alert -->
@@ -538,7 +472,7 @@ const formatDate = (dateStr) => {
 
       <DashboardPieCharts />
 
-      <!-- Patient Categories Ribbon (Original) -->
+      <!-- Class fee ribbon -->
       <div class="card premium-shadow mb-4 overflow-hidden border-0">
         <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center gap-2">
@@ -555,7 +489,7 @@ const formatDate = (dateStr) => {
         <div class="card-body p-3">
           <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-xl-7 g-3">
             <div
-              v-for="(item, index) in patientCategories.filter((c) => c.title !== 'Total')"
+              v-for="(item, index) in classFees.filter((c) => c.title !== 'Total')"
               :key="index"
               class="col"
             >
@@ -588,10 +522,10 @@ const formatDate = (dateStr) => {
             <div class="col">
               <div class="p-3 border border-primary rounded h-100 d-flex flex-column align-items-center justify-content-between text-center bg-primary-subtle shadow-sm">
                 <span class="text-uppercase fw-bold text-dark mb-1" style="font-size: 0.85rem"
-                  >TOTAL</span
+                  >{{ t('common.total') }}</span
                 >
                 <h3 class="mb-1 fw-extrabold text-primary fs-4">
-                  {{ patientCategories.find((c) => c.title === 'Total')?.value || '0' }}
+                  {{ classFees.find((c) => c.title === 'Total')?.value || '0' }}
                 </h3>
                 <div
                   class="progress-line mt-1 bg-primary"
@@ -609,7 +543,7 @@ const formatDate = (dateStr) => {
 
       <UnassignedFeesModal v-model:visible="showUnassigned" />
 
-      <!-- Patient Category Analytics - Two Cards Side by Side -->
+      <!-- Fee collection analytics - two cards side by side -->
       <CRow class="mb-4">
         <CCol :lg="6">
           <div class="card h-100 border-0 shadow-sm">
@@ -644,7 +578,7 @@ const formatDate = (dateStr) => {
               </h5>
               <div class="d-flex flex-wrap justify-content-start mt-2 gap-2">
                 <span
-                  v-for="(item, index) in patientCategories.filter((c) => c.title !== 'Total' && !c.unassigned)"
+                  v-for="(item, index) in classFees.filter((c) => c.title !== 'Total' && !c.unassigned)"
                   :key="index"
                   class="category-pill clickable-pill"
                   :class="{ 'pill-hidden': isCategoryHidden(item.title) }"
@@ -683,48 +617,17 @@ const formatDate = (dateStr) => {
       <!-- All Classes Histogram (Diverging Fee & Debt Comparison) -->
       <CRow class="mb-4 pb-4">
         <CCol :md="12">
-          <DashboardClinicBarChart />
+          <DashboardSchoolBarChart />
         </CCol>
       </CRow>
       
         <!-- Auto-scroll boundary marker - last section -->
         <div data-auto-scroll-boundary style="height: 1px;"></div>
       </div>
-    </template>
   </div>
 </template>
 
 <style scoped>
-.outage-slideshow-shell {
-  position: relative;
-  width: 100%;
-  min-height: calc(100vh - 120px);
-  overflow: hidden;
-  border-radius: 18px;
-  background: #f8fafc;
-}
-
-.outage-slideshow-track {
-  display: flex;
-  width: 100%;
-  min-height: calc(100vh - 120px);
-  transition: transform 0.9s ease-in-out;
-}
-
-.outage-slide {
-  flex: 0 0 100%;
-  min-height: calc(100vh - 120px);
-  background: #fff;
-}
-
-.outage-slide-image {
-  width: 100%;
-  height: 100%;
-  min-height: calc(100vh - 120px);
-  object-fit: cover;
-  display: block;
-}
-
 /* Scrollbar Styling */
 .custom-scrollbar::-webkit-scrollbar {
   height: 6px;
@@ -780,15 +683,6 @@ const formatDate = (dateStr) => {
 
 .chart-container {
   padding: 15px;
-}
-
-@media (max-width: 991.98px) {
-  .outage-slideshow-shell,
-  .outage-slideshow-track,
-  .outage-slide,
-  .outage-slide-image {
-    min-height: 60vh;
-  }
 }
 
 

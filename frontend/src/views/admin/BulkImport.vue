@@ -191,7 +191,7 @@ async function previewImport() {
     previewData.value = data.data || data
     step.value = 1
   } catch (e) {
-    uploadError.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia faili'
+    uploadError.value = e?.response?.data?.message || t('errors.uploadFile')
   } finally {
     previewing.value = false
   }
@@ -209,7 +209,7 @@ async function executeImport() {
     importResult.value = data.data || data
     step.value = 2
   } catch (e) {
-    importError.value = e?.response?.data?.message || 'Hitilafu wakati wa kuingiza data'
+    importError.value = e?.response?.data?.message || t('errors.importData')
   } finally {
     importing.value = false
   }

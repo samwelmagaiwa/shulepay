@@ -1,6 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
+import { getRoleLabel } from '@/utils/roles'
+import { moduleLabel, permissionLabel } from '@/utils/permissions'
+
+const { t } = useI18n()
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const roles          = ref([])
@@ -20,14 +25,7 @@ const isRestriction = (perm) => String(perm).endsWith('_restricted')
 // 'invoices.edit_restricted' would otherwise render as 'edit restricted', which
 // reads as a state rather than an instruction. 'restrict editing' is the action
 // the tick actually performs.
-function permLabel(perm) {
-  if (perm === 'multi_school') return 'Multi-School Access'
-  const tail = String(perm).split('.')[1] ?? perm
-  if (isRestriction(perm)) {
-    return '🔒 restrict ' + tail.replace('_restricted', '') + 'ing'
-  }
-  return tail.replace(/_/g, ' ')
-}
+const permLabel = permissionLabel
 const savingPerms    = ref(false)
 const permSaved      = ref(false)
 
@@ -73,7 +71,7 @@ async function load() {
     roles.value          = data.roles
     allPermissions.value = data.all_permissions
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Failed to load roles'
+    error.value = e?.response?.data?.message || t('rolesAdmin.loadFailed')
   } finally {
     loading.value = false
   }
@@ -137,7 +135,7 @@ async function savePermissions() {
     activeRole.value = { ...activeRole.value, permissions: data.permissions }
     permSaved.value  = true
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Failed to save permissions'
+    error.value = e?.response?.data?.message || t('rolesAdmin.saveFailed')
   } finally {
     savingPerms.value = false
   }
@@ -166,7 +164,7 @@ function openUserPerms(user) {
     loadSchoolAccessData(user.id)
   } catch (e) {
     console.error('[openUserPerms] error:', e)
-    userPermError.value = 'Imeshindwa kufungua dirisha. Jaribu tena.'
+    userPermError.value = t('rolesAdmin.openFailed')
     userPermModal.value = true
   }
 }
@@ -212,7 +210,7 @@ async function toggleSchoolAccess(school) {
       }
     }
   } catch (e) {
-    userPermError.value = e?.response?.data?.message || 'Failed to update school access'
+    userPermError.value = e?.response?.data?.message || t('rolesAdmin.schoolAccessFailed')
   } finally {
     schoolGranting.value = null
   }
@@ -308,7 +306,7 @@ const directPermsToSave = computed(() => [...userPerms.value].filter(p => !userP
 async function saveUserPermissions() {
   if (!selectedUser.value) return
   if (schoolGranting.value || schoolAccessLoading.value) {
-    userPermError.value = 'Subiri operesheni ya shule ikamilike kwanza.'
+    userPermError.value = t('rolesAdmin.waitForSchool')
     return
   }
   if (!userPermsChanged.value) return
@@ -322,7 +320,7 @@ async function saveUserPermissions() {
     // Conflict check: cannot grant and deny the same perm
     const conflict = directToSave.filter(p => forbidToSave.includes(p))
     if (conflict.length) {
-      userPermError.value = `Mgongano: ruhusa moja haiwezi kupewa na kukatazwa kwa wakati mmoja: ${conflict.join(', ')}`
+      userPermError.value = t('rolesAdmin.conflict', { perms: conflict.join(', ') })
       return
     }
 
@@ -358,7 +356,7 @@ async function saveUserPermissions() {
   } catch (e) {
     userPermError.value = e?.response?.data?.message
       || e?.response?.data?.errors?.permissions?.[0]
-      || 'Imeshindwa kuhifadhi. Jaribu tena.'
+      || t('rolesAdmin.saveUserFailed')
   } finally {
     savingUserPerms.value = false
   }
@@ -390,9 +388,9 @@ const multiSchoolUsers = computed(() =>
 // ── Create role ───────────────────────────────────────────────────────────────
 async function createRole() {
   createError.value = ''
-  if (!newRoleName.value.trim()) { createError.value = 'Role name is required'; return }
+  if (!newRoleName.value.trim()) { createError.value = t('rolesAdmin.nameRequired'); return }
   const slug = newRoleName.value.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z_]/g, '')
-  if (!slug) { createError.value = 'Use only letters and underscores'; return }
+  if (!slug) { createError.value = t('rolesAdmin.nameInvalid'); return }
 
   creating.value = true
   try {
@@ -403,7 +401,7 @@ async function createRole() {
     selectRole(data)
   } catch (e) {
     const errs = e?.response?.data?.errors?.name
-    createError.value = errs ? errs[0] : (e?.response?.data?.message || 'Failed to create role')
+    createError.value = errs ? errs[0] : (e?.response?.data?.message || t('rolesAdmin.createFailed'))
   } finally {
     creating.value = false
   }
@@ -418,7 +416,7 @@ async function deleteRole() {
     roles.value = roles.value.filter(r => r.id !== confirmDelete.value.id)
     confirmDelete.value = null
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Failed to delete role'
+    error.value = e?.response?.data?.message || t('rolesAdmin.deleteFailed')
     confirmDelete.value = null
   }
 }
@@ -455,11 +453,11 @@ function initials(name) {
 
     <!-- Header row: title + both action buttons -->
     <div class="d-flex align-items-center justify-content-between mb-2 flex-shrink-0">
-      <h6 class="mb-0 fw-bold">Roles &amp; Permissions</h6>
+      <h6 class="mb-0 fw-bold">{{ t('nav.rolesPermissions') }}</h6>
       <div class="d-flex align-items-center gap-2">
         <CAlert v-if="error" color="danger" class="mb-0 py-1 px-3 small" dismissible @close="error = ''">{{ error }}</CAlert>
         <CButton color="success" size="sm" @click="showCreate = true; newRoleName = ''; createError = ''">
-          + Create Role
+          {{ t('rolesAdmin.createRole') }}
         </CButton>
         <CButton
           v-if="activeRole"
@@ -469,9 +467,9 @@ function initials(name) {
           style="min-width:140px;"
         >
           <CSpinner v-if="savingPerms" size="sm" class="me-1" />
-          Save Permissions
+          {{ t('userMgmt.savePermissions') }}
         </CButton>
-        <CAlert v-if="permSaved" color="success" class="mb-0 py-1 px-3 small">Saved ✓</CAlert>
+        <CAlert v-if="permSaved" color="success" class="mb-0 py-1 px-3 small">{{ t('rolesAdmin.saved') }}</CAlert>
       </div>
     </div>
 
@@ -485,7 +483,7 @@ function initials(name) {
         <!-- Roles list — scrolls internally, shrinks to make room for users card -->
         <CCard class="border-0 shadow-sm mb-3 d-flex flex-column" style="flex:1 1 0; min-height:0; overflow:hidden;">
           <CCardHeader class="fw-bold bg-transparent border-bottom flex-shrink-0">
-            Roles <CBadge color="secondary" class="ms-1">{{ roles.length }}</CBadge>
+            {{ t('rolesAdmin.roles') }} <CBadge color="secondary" class="ms-1">{{ roles.length }}</CBadge>
           </CCardHeader>
           <CCardBody class="p-0" style="overflow-y:auto; flex:1 1 0;">
             <div
@@ -498,15 +496,15 @@ function initials(name) {
               @click="selectRole(role)"
             >
               <div>
-                <div class="fw-semibold small">{{ role.name }}</div>
+                <div class="fw-semibold small">{{ getRoleLabel(role.name) }}</div>
                 <div class="text-muted" style="font-size:.72rem;">
-                  {{ permCount(role) }} permission{{ permCount(role) !== 1 ? 's' : '' }}
-                  <span v-if="isSystem(role)" class="ms-1 text-warning">⚙ system</span>
+                  {{ t('rolesAdmin.permissionCount', { count: permCount(role) }, permCount(role)) }}
+                  <span v-if="isSystem(role)" class="ms-1 text-warning">{{ t('rolesAdmin.system') }}</span>
                 </div>
               </div>
               <div class="d-flex align-items-center gap-1">
                 <CBadge :color="roleBadgeColor(role.name)" class="px-2" style="font-size:.7rem;">
-                  {{ role.name }}
+                  {{ getRoleLabel(role.name) }}
                 </CBadge>
                 <CButton
                   v-if="!isSystem(role)"
@@ -516,20 +514,20 @@ function initials(name) {
                 >✕</CButton>
               </div>
             </div>
-            <div v-if="!roles.length" class="text-center text-muted py-4 small">No roles found</div>
+            <div v-if="!roles.length" class="text-center text-muted py-4 small">{{ t('rolesAdmin.noRoles') }}</div>
           </CCardBody>
         </CCard>
 
         <!-- Users in selected role — always visible at bottom, scrolls internally -->
         <CCard v-if="activeRole" class="border-0 shadow-sm flex-shrink-0" style="max-height:45%; overflow:hidden;">
           <CCardHeader class="bg-transparent border-bottom d-flex align-items-center justify-content-between">
-            <span class="fw-bold small">Users with <code>{{ activeRole.name }}</code></span>
+            <span class="fw-bold small"><i18n-t keypath="rolesAdmin.usersWithRole" tag="span"><template #role><code>{{ activeRole.name }}</code></template></i18n-t></span>
             <CSpinner v-if="roleUsersLoading" size="sm" />
             <CBadge v-else color="secondary">{{ roleUsers.length }}</CBadge>
           </CCardHeader>
           <CCardBody class="p-0" style="overflow-y:auto; max-height:calc(45vh - 60px);">
             <div v-if="!roleUsersLoading && !roleUsers.length" class="text-center text-muted py-3 small">
-              No users with this role
+              {{ t('rolesAdmin.noUsersInRole') }}
             </div>
             <div
               v-for="u in roleUsers" :key="u.id"
@@ -544,9 +542,9 @@ function initials(name) {
                 <div>
                   <div class="fw-semibold" style="font-size:.82rem;">{{ u.name }}</div>
                   <div class="text-muted" style="font-size:.7rem;">
-                    {{ u.school?.name ?? 'No school' }}
+                    {{ u.school?.name ?? t('rolesAdmin.noSchool') }}
                     <span v-if="userDirectCount(u) > 0" class="ms-1 text-success">
-                      +{{ userDirectCount(u) }} extra
+                      {{ t('rolesAdmin.extraCount', { count: userDirectCount(u) }) }}
                     </span>
                   </div>
                 </div>
@@ -556,7 +554,7 @@ function initials(name) {
                 style="font-size:.7rem; padding:2px 8px; white-space:nowrap;"
                 @click="openUserPerms(u)"
               >
-                Manage
+                {{ t('rolesAdmin.manage') }}
               </CButton>
             </div>
           </CCardBody>
@@ -570,14 +568,14 @@ function initials(name) {
           <template v-if="!activeRole">
             <CCardBody class="text-center text-muted py-5">
               <div class="display-6 mb-2">🔐</div>
-              <div>Select a role on the left to manage its permissions</div>
+              <div>{{ t('rolesAdmin.selectRoleHint') }}</div>
             </CCardBody>
           </template>
 
           <template v-else>
             <CCardHeader class="bg-transparent border-bottom flex-shrink-0">
-              <span class="fw-bold">{{ activeRole.name }}</span>
-              <span class="text-muted ms-2 small">{{ activePermCount }} / {{ totalPermCount }} permissions selected</span>
+              <span class="fw-bold">{{ getRoleLabel(activeRole.name) }}</span>
+              <span class="text-muted ms-2 small">{{ t('rolesAdmin.selectedOf', { done: activePermCount, total: totalPermCount }) }}</span>
             </CCardHeader>
 
             <CCardBody style="overflow-y:auto; flex:1 1 0;">
@@ -589,9 +587,9 @@ function initials(name) {
                   <div class="d-flex align-items-center gap-2">
                     <span style="font-size:1.2rem;">🏫</span>
                     <div>
-                      <div class="fw-bold text-primary">Multi-School Access</div>
+                      <div class="fw-bold text-primary">{{ t('permissionLabels.multi_school') }}</div>
                       <div class="text-muted" style="font-size:.72rem;">
-                        Users with this permission can be granted access to multiple schools and switch between them after login.
+                        {{ t('rolesAdmin.multiSchoolDesc') }}
                       </div>
                     </div>
                   </div>
@@ -613,7 +611,7 @@ function initials(name) {
                       </svg>
                     </div>
                     <span class="fw-semibold">
-                      {{ activePerms.has('multi_school') ? 'Enabled for this role' : 'Enable for this role' }}
+                      {{ activePerms.has('multi_school') ? t('rolesAdmin.enabledForRole') : t('rolesAdmin.enableForRole') }}
                     </span>
                   </div>
                 </div>
@@ -632,7 +630,7 @@ function initials(name) {
                       style="cursor:pointer;"
                       @click="toggleModule(perms)"
                     >
-                      <span class="fw-semibold small">{{ module }}</span>
+                      <span class="fw-semibold small">{{ moduleLabel(module) }}</span>
                       <div class="d-flex align-items-center gap-1">
                         <small class="opacity-75">{{ perms.filter(p => activePerms.has(p)).length }}/{{ perms.length }}</small>
                       </div>
@@ -664,7 +662,7 @@ function initials(name) {
                           :class="activePerms.has(perm)
                             ? (isRestriction(perm) ? 'fw-semibold text-danger' : 'fw-semibold text-dark')
                             : (isRestriction(perm) ? 'text-danger' : 'text-muted')"
-                          :title="isRestriction(perm) ? 'When ticked, this role cannot edit — the button is shown but disabled.' : ''"
+                          :title="isRestriction(perm) ? t('permissionLabels.restrictedHint') : ''"
                         >
                           {{ permLabel(perm) }}
                         </span>
@@ -691,8 +689,8 @@ function initials(name) {
             <div>
               <div class="fw-bold" style="font-size:1rem;">{{ selectedUser?.name }}</div>
               <div class="text-muted small fw-normal">
-                {{ selectedUser?.school?.name ?? 'No school' }} &middot;
-                Role: <code>{{ activeRole?.name }}</code>
+                {{ selectedUser?.school?.name ?? t('rolesAdmin.noSchool') }} &middot;
+                {{ t('rolesAdmin.roleLabel', { role: getRoleLabel(activeRole?.name) }) }}
               </div>
             </div>
           </div>
@@ -704,24 +702,24 @@ function initials(name) {
         <div class="d-flex align-items-center gap-3 px-4 py-2 border-bottom bg-light flex-wrap" style="font-size:.78rem;">
           <div class="d-flex align-items-center gap-1">
             <div style="width:14px;height:14px;background:#007f3e;border-radius:50%;"></div>
-            <span class="text-muted">Role permission</span>
+            <span class="text-muted">{{ t('rolesAdmin.legendRole') }}</span>
           </div>
           <div class="d-flex align-items-center gap-1">
             <div style="width:14px;height:14px;background:#0d6efd;border-radius:50%;"></div>
-            <span class="text-muted">Extra (user only)</span>
+            <span class="text-muted">{{ t('rolesAdmin.legendExtra') }}</span>
           </div>
           <div class="d-flex align-items-center gap-1">
             <div style="width:14px;height:14px;background:#dc3545;border-radius:50%;"></div>
-            <span class="text-muted">Denied (overrides role)</span>
+            <span class="text-muted">{{ t('rolesAdmin.legendDenied') }}</span>
           </div>
           <div class="ms-auto d-flex align-items-center gap-3">
-            <span v-if="userExtraCount > 0" class="fw-semibold text-primary">+{{ userExtraCount }} extra</span>
-            <span v-if="userForbiddenCount > 0" class="fw-semibold text-danger">{{ userForbiddenCount }} denied</span>
+            <span v-if="userExtraCount > 0" class="fw-semibold text-primary">{{ t('rolesAdmin.extraCount', { count: userExtraCount }) }}</span>
+            <span v-if="userForbiddenCount > 0" class="fw-semibold text-danger">{{ t('rolesAdmin.deniedCount', { count: userForbiddenCount }) }}</span>
             <CButton size="sm" color="secondary" variant="ghost"
               style="font-size:.72rem; padding:2px 10px; white-space:nowrap;"
               :disabled="userExtraCount === 0 && userForbiddenCount === 0"
               @click="resetToRoleDefaults"
-            >↺ Reset to role defaults</CButton>
+            >{{ t('rolesAdmin.resetToRole') }}</CButton>
           </div>
         </div>
 
@@ -734,22 +732,21 @@ function initials(name) {
             <div class="d-flex align-items-center justify-content-between px-3 py-2"
               style="background:linear-gradient(135deg,#0d6efd18,#0d6efd08);">
               <div>
-                <div class="fw-bold text-primary">🏫 Multi-School Access</div>
+                <div class="fw-bold text-primary">{{ t('rolesAdmin.schoolAccessTitle') }}</div>
                 <div class="text-muted" style="font-size:.72rem;">
-                  Toggle schools below. Primary school is always accessible — only grant extras.
-                  Granting any school automatically gives the <code>multi_school</code> permission.
+                  {{ t('rolesAdmin.schoolAccessDesc') }}
                 </div>
               </div>
               <div class="d-flex align-items-center gap-2">
                 <CSpinner v-if="schoolAccessLoading" size="sm" />
                 <span v-else class="badge text-primary px-2 py-1" style="background:#0d6efd20; font-size:.75rem; border-radius:20px;">
-                  {{ userGrantedSchools.length > 0 ? `${userGrantedSchools.length} extra school${userGrantedSchools.length !== 1 ? 's' : ''} granted` : 'Primary school only' }}
+                  {{ userGrantedSchools.length > 0 ? t('rolesAdmin.extraSchools', { count: userGrantedSchools.length }, userGrantedSchools.length) : t('rolesAdmin.primarySchoolOnly') }}
                 </span>
               </div>
             </div>
             <div class="p-3">
-              <div v-if="schoolAccessLoading" class="text-center py-2 text-muted small">Loading schools…</div>
-              <div v-else-if="!allSchools.length" class="text-muted small">No active schools found.</div>
+              <div v-if="schoolAccessLoading" class="text-center py-2 text-muted small">{{ t('rolesAdmin.loadingSchools') }}</div>
+              <div v-else-if="!allSchools.length" class="text-muted small">{{ t('rolesAdmin.noActiveSchools') }}</div>
               <div v-else class="d-flex flex-wrap gap-2">
                 <div
                   v-for="school in allSchools" :key="school.id"
@@ -779,18 +776,18 @@ function initials(name) {
                   </div>
                   <div class="flex-grow-1">
                     <div class="fw-semibold" style="font-size:.84rem;">{{ school.name }}</div>
-                    <div class="text-muted" style="font-size:.68rem; text-transform:capitalize;">{{ school.level ?? '—' }}</div>
+                    <div class="text-muted" style="font-size:.68rem; text-transform:capitalize;">{{ school.level === 'primary' ? t('schools.primary') : school.level === 'secondary' ? t('schools.secondary') : (school.level ?? '—') }}</div>
                   </div>
                   <span
                     v-if="school.id === selectedUser?.school_id"
                     class="badge text-success ms-1"
                     style="background:#007f3e20; font-size:.6rem;"
-                  >primary</span>
+                  >{{ t('rolesAdmin.primaryBadge') }}</span>
                   <span
                     v-else-if="userGrantedSchools.includes(school.id)"
                     class="badge text-primary ms-1"
                     style="background:#0d6efd20; font-size:.6rem;"
-                  >granted</span>
+                  >{{ t('rolesAdmin.grantedBadge') }}</span>
                 </div>
               </div>
             </div>
@@ -810,12 +807,12 @@ function initials(name) {
                       : 'background:#f8f9fa;'"
                   @click="toggleUserModule(perms)"
                 >
-                  <span class="fw-semibold small">{{ module }}</span>
+                  <span class="fw-semibold small">{{ moduleLabel(module) }}</span>
                   <div class="d-flex align-items-center gap-2">
                     <small class="opacity-75">
                       {{ perms.filter(p => userHasPerm(p)).length }}/{{ perms.length }}
                       <span v-if="perms.some(p => userForbidden.value.has(p))" class="text-danger ms-1">
-                        ({{ perms.filter(p => userForbidden.value.has(p)).length }} denied)
+                        ({{ t('rolesAdmin.deniedCount', { count: perms.filter(p => userForbidden.value.has(p)).length }) }})
                       </span>
                     </small>
                   </div>
@@ -860,7 +857,7 @@ function initials(name) {
                       :style="permSource(perm) === 'forbidden' ? 'background:rgba(220,53,69,.15);color:#dc3545;' :
                               permSource(perm) === 'direct'    ? 'background:rgba(13,110,253,.15);color:#0d6efd;' :
                                                                  'background:rgba(0,127,62,.15);color:#007f3e;'"
-                    >{{ permSource(perm) === 'forbidden' ? 'denied' : permSource(perm) === 'direct' ? 'user' : 'role' }}</span>
+                    >{{ permSource(perm) === 'forbidden' ? t('rolesAdmin.sourceDenied') : permSource(perm) === 'direct' ? t('rolesAdmin.sourceUser') : t('rolesAdmin.sourceRole') }}</span>
                   </div>
                 </div>
               </div>
@@ -872,23 +869,23 @@ function initials(name) {
       <CModalFooter class="border-top">
         <div class="me-auto text-muted small d-flex align-items-center gap-3 flex-wrap">
           <span v-if="schoolGranting || schoolAccessLoading" class="text-warning fw-semibold">
-            ⏳ School operation in progress…
+            {{ t('rolesAdmin.schoolBusy') }}
           </span>
           <template v-else-if="userPermsChanged">
             <span v-if="directPermsToSave.length > 0" class="text-primary">
-              +{{ directPermsToSave.length }} extra to save
+              {{ t('rolesAdmin.extraToSave', { count: directPermsToSave.length }) }}
             </span>
             <span v-if="userForbiddenCount > 0" class="text-danger">
-              {{ userForbiddenCount }} denied
+              {{ t('rolesAdmin.deniedCount', { count: userForbiddenCount }) }}
             </span>
             <span v-if="directPermsToSave.length === 0 && userForbiddenCount === 0" class="text-muted">
-              Reset to role defaults
+              {{ t('rolesAdmin.resetToRoleShort') }}
             </span>
           </template>
-          <span v-else class="text-muted">🟢 role &nbsp;🔵 user &nbsp;🔴 denied</span>
+          <span v-else class="text-muted">{{ t('rolesAdmin.legendShort') }}</span>
         </div>
-        <CAlert v-if="userPermSaved && !userPermsChanged" color="success" class="mb-0 py-1 px-3 small">Saved ✓</CAlert>
-        <CButton color="secondary" variant="ghost" @click="userPermModal = false; userPermSaved = false">Close</CButton>
+        <CAlert v-if="userPermSaved && !userPermsChanged" color="success" class="mb-0 py-1 px-3 small">{{ t('rolesAdmin.saved') }}</CAlert>
+        <CButton color="secondary" variant="ghost" @click="userPermModal = false; userPermSaved = false">{{ t('common.close') }}</CButton>
         <CButton
           color="primary"
           :disabled="savingUserPerms || !!schoolGranting || schoolAccessLoading || !userPermsChanged"
@@ -896,47 +893,45 @@ function initials(name) {
           style="min-width:160px;"
         >
           <CSpinner v-if="savingUserPerms" size="sm" class="me-1"/>
-          {{ userPermsChanged ? 'Save User Permissions' : 'No Changes' }}
+          {{ userPermsChanged ? t('rolesAdmin.saveUserPerms') : t('rolesAdmin.noChanges') }}
         </CButton>
       </CModalFooter>
     </CModal>
 
     <!-- Create Role Modal -->
     <CModal :visible="showCreate" @close="showCreate = false" size="sm" backdrop="static">
-      <CModalHeader><CModalTitle>Create New Role</CModalTitle></CModalHeader>
+      <CModalHeader><CModalTitle>{{ t('rolesAdmin.createTitle') }}</CModalTitle></CModalHeader>
       <CModalBody>
         <CAlert v-if="createError" color="danger" class="py-2 small">{{ createError }}</CAlert>
-        <CFormLabel class="fw-semibold">Role Name</CFormLabel>
+        <CFormLabel class="fw-semibold">{{ t('rolesAdmin.roleName') }}</CFormLabel>
         <CFormInput
           v-model="newRoleName"
-          placeholder="e.g. librarian"
+          :placeholder="t('rolesAdmin.roleNamePlaceholder')"
           @keyup.enter="createRole"
           autofocus
         />
         <div class="text-muted small mt-1">
-          Lowercase letters and underscores only.
-          Preview: <code>{{ newRoleName.trim().toLowerCase().replace(/\s+/g,'_').replace(/[^a-z_]/g,'') || '—' }}</code>
+          {{ t('rolesAdmin.roleNameHint') }} <code>{{ newRoleName.trim().toLowerCase().replace(/\s+/g,'_').replace(/[^a-z_]/g,'') || '—' }}</code>
         </div>
       </CModalBody>
       <CModalFooter>
-        <CButton color="secondary" variant="ghost" @click="showCreate = false">Cancel</CButton>
+        <CButton color="secondary" variant="ghost" @click="showCreate = false">{{ t('common.cancel') }}</CButton>
         <CButton color="success" :disabled="creating || !newRoleName.trim()" @click="createRole">
           <CSpinner v-if="creating" size="sm" class="me-1" />
-          Create Role
+          {{ t('rolesAdmin.createAction') }}
         </CButton>
       </CModalFooter>
     </CModal>
 
     <!-- Delete Confirm Modal -->
     <CModal :visible="!!confirmDelete" @close="confirmDelete = null" size="sm">
-      <CModalHeader><CModalTitle>Delete Role</CModalTitle></CModalHeader>
+      <CModalHeader><CModalTitle>{{ t('rolesAdmin.deleteTitle') }}</CModalTitle></CModalHeader>
       <CModalBody>
-        Delete role <strong>{{ confirmDelete?.name }}</strong>?
-        Any users with this role will lose their access.
+        {{ t('rolesAdmin.deleteBody', { name: confirmDelete?.name }) }}
       </CModalBody>
       <CModalFooter>
-        <CButton color="secondary" variant="ghost" @click="confirmDelete = null">Cancel</CButton>
-        <CButton color="danger" @click="deleteRole">Delete</CButton>
+        <CButton color="secondary" variant="ghost" @click="confirmDelete = null">{{ t('common.cancel') }}</CButton>
+        <CButton color="danger" @click="deleteRole">{{ t('common.delete') }}</CButton>
       </CModalFooter>
     </CModal>
 

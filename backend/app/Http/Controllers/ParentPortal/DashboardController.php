@@ -155,7 +155,7 @@ class DashboardController extends Controller
             ->exists();
 
         if (! $owns) {
-            abort(403, 'Access denied — this receipt does not belong to your child.');
+            abort(403, __('Access denied — this receipt does not belong to your child.'));
         }
 
         $content = app(ReceiptPdf::class)->generate($receipt);
@@ -185,7 +185,7 @@ class DashboardController extends Controller
             ->exists();
 
         if (! $owns) {
-            abort(403, 'Access denied — this student is not your child.');
+            abort(403, __('Access denied — this student is not your child.'));
         }
 
         $content = app(StudentStatementPdf::class)->generate($student);
@@ -216,7 +216,7 @@ class DashboardController extends Controller
 
         $owns = $guardian && $guardian->students()->where('students.id', $studentId)->exists();
         if (! $owns) {
-            abort(403, 'Access denied — this student is not your child.');
+            abort(403, __('Access denied — this student is not your child.'));
         }
 
         $month = $request->filled('month')

@@ -48,7 +48,7 @@ class PaymentController extends Controller
     {
         if (! auth()->user()?->isSuperAdmin()
             && auth()->user()?->getAllPermissions()->contains('name', 'payments.edit_restricted')) {
-            abort(403, 'Editing payments is restricted for your role.');
+            abort(403, __('Editing payments is restricted for your role.'));
         }
 
         $data = $request->validate([
@@ -87,7 +87,7 @@ class PaymentController extends Controller
     {
         if (! auth()->user()?->isSuperAdmin()) {
             return response()->json([
-                'message' => 'Only a superadmin can reverse a payment.',
+                'message' => __('Only a superadmin can reverse a payment.'),
             ], 403);
         }
 
@@ -99,7 +99,7 @@ class PaymentController extends Controller
             $invoice?->syncStatus();
         });
 
-        return response()->json(['message' => 'Payment reversed.']);
+        return response()->json(['message' => __('Payment reversed.')]);
     }
 
     public function store(StorePaymentRequest $request): JsonResponse

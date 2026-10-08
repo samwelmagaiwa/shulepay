@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="sw">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="UTF-8">
 <style>
@@ -25,42 +25,42 @@
 
 <div class="header">
     <h1>{{ $school?->name ?? 'ShulePay' }}</h1>
-    <p>Fee Collections Report &mdash; {{ $report['period']['from'] }} to {{ $report['period']['to'] }}</p>
-    <p>Generated: {{ now()->format('d M Y H:i') }}</p>
+    <p>{{ __('pdf.collections_title') }} &mdash; {{ __('pdf.period_range', ['from' => $report['period']['from'], 'to' => $report['period']['to']]) }}</p>
+    <p>{{ __('pdf.generated') }}: {{ now()->locale(app()->getLocale())->translatedFormat('d M Y H:i') }}</p>
 </div>
 
-<div class="section-title">Summary</div>
+<div class="section-title">{{ __('pdf.summary') }}</div>
 <div class="summary-grid">
     <div class="summary-box">
-        <div class="label">Total Payments</div>
+        <div class="label">{{ __('pdf.total_payments') }}</div>
         <div class="value">{{ number_format($report['summary']['total_payments']) }}</div>
     </div>
     <div class="summary-box">
-        <div class="label">Total Collected</div>
+        <div class="label">{{ __('pdf.total_collected') }}</div>
         <div class="value">{{ number_format($report['summary']['total_amount_cents'] / 100, 2) }}</div>
     </div>
     <div class="summary-box">
-        <div class="label">Invoices</div>
+        <div class="label">{{ __('pdf.invoices') }}</div>
         <div class="value">{{ number_format($report['summary']['invoice_count']) }}</div>
     </div>
     <div class="summary-box">
-        <div class="label">Paid</div>
+        <div class="label">{{ __('pdf.paid') }}</div>
         <div class="value">{{ number_format($report['summary']['paid_count']) }}</div>
     </div>
     <div class="summary-box">
-        <div class="label">Partial</div>
+        <div class="label">{{ __('pdf.partial') }}</div>
         <div class="value">{{ number_format($report['summary']['partial_count']) }}</div>
     </div>
     <div class="summary-box">
-        <div class="label">Unpaid</div>
+        <div class="label">{{ __('pdf.unpaid') }}</div>
         <div class="value">{{ number_format($report['summary']['unpaid_count']) }}</div>
     </div>
 </div>
 
-<div class="section-title">Collections by Period</div>
+<div class="section-title">{{ __('pdf.collections_by_period') }}</div>
 <table>
     <thead>
-        <tr><th>Period</th><th>Payments</th><th>Amount (TZS)</th></tr>
+        <tr><th>{{ __('pdf.period') }}</th><th>{{ __('pdf.payments') }}</th><th>{{ __('pdf.amount_tzs') }}</th></tr>
     </thead>
     <tbody>
         @php $grandTotal = 0; @endphp
@@ -73,22 +73,22 @@
             </tr>
         @endforeach
         <tr class="total-row">
-            <td>TOTAL</td>
+            <td>{{ __('pdf.total_caps') }}</td>
             <td>{{ number_format($report['summary']['total_payments']) }}</td>
             <td>{{ number_format($grandTotal / 100, 2) }}</td>
         </tr>
     </tbody>
 </table>
 
-<div class="section-title">Collections by Payment Method</div>
+<div class="section-title">{{ __('pdf.collections_by_method') }}</div>
 <table>
     <thead>
-        <tr><th>Method</th><th>Count</th><th>Amount (TZS)</th></tr>
+        <tr><th>{{ __('pdf.method_column') }}</th><th>{{ __('pdf.count') }}</th><th>{{ __('pdf.amount_tzs') }}</th></tr>
     </thead>
     <tbody>
         @foreach($report['by_method'] as $m)
             <tr>
-                <td>{{ strtoupper($m['method']) }}</td>
+                <td>{{ mb_strtoupper(\App\Enums\PaymentMethod::tryFrom((string) $m['method'])?->label() ?? (string) $m['method']) }}</td>
                 <td>{{ number_format($m['count']) }}</td>
                 <td>{{ number_format($m['amount_cents'] / 100, 2) }}</td>
             </tr>
@@ -96,10 +96,10 @@
     </tbody>
 </table>
 
-<div class="section-title">Collections by Class</div>
+<div class="section-title">{{ __('pdf.collections_by_class') }}</div>
 <table>
     <thead>
-        <tr><th>Class</th><th>Amount (TZS)</th></tr>
+        <tr><th>{{ __('pdf.class') }}</th><th>{{ __('pdf.amount_tzs') }}</th></tr>
     </thead>
     <tbody>
         @foreach($report['by_class'] as $c)
@@ -111,6 +111,6 @@
     </tbody>
 </table>
 
-<div class="footer">ShulePay &mdash; Fee Management System</div>
+<div class="footer">{{ __('pdf.report_footer') }}</div>
 </body>
 </html>

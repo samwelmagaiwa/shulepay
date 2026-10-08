@@ -36,7 +36,7 @@ class NotificationController extends Controller
     public function markRead(Request $request, SchoolNotification $notification)
     {
         if ($notification->school_id !== $this->schoolId()) {
-            abort(403, 'Unauthorized');
+            abort(403, __('Unauthorized'));
         }
 
         $notification->update(['is_read' => true, 'read_at' => now()]);
@@ -57,7 +57,7 @@ class NotificationController extends Controller
             ->where('is_read', false)
             ->update(['is_read' => true, 'read_at' => now()]);
 
-        return response()->json(['message' => 'Arifa zote zimewekwa kuwa zimesomwa']);
+        return response()->json(['message' => __('All notifications marked as read')]);
     }
 
     public function unreadCount(Request $request)

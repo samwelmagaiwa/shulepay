@@ -111,6 +111,7 @@
 </template>
 
 <script setup>
+import { dateLocale } from '@/utils/dates'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
@@ -128,7 +129,7 @@ const initials = computed(() => {
   return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
 })
 
-const todayDate = computed(() => new Date().toLocaleDateString('en-TZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))
+const todayDate = computed(() => new Date().toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))
 
 onMounted(async () => {
   try {

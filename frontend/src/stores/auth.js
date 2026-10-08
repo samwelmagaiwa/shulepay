@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/services/api'
+import { i18n } from '@/i18n'
 
 export const useAuthStore = defineStore('auth', () => {
   // Read from localStorage once at init — guard against 'undefined' string
@@ -62,7 +63,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     const { token: t, user: u } = res.data
 
-    if (!t) throw new Error('Seva haikutoa tokeni sahihi.')
+    if (!t) throw new Error(i18n.global.t('errors.invalidToken'))
 
     // Persist to localStorage FIRST
     localStorage.setItem('shulepay_token', t)

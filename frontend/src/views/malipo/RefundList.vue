@@ -86,7 +86,7 @@
       <small class="text-medium-emphasis">
         {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
       </small>
-      <CPagination aria-label="Page" size="sm">
+      <CPagination :aria-label="t('common.pagination')" size="sm">
         <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; loadData()">{{ t('common.first') }}</CPaginationItem>
         <CPaginationItem
           v-for="p in visiblePages"
@@ -194,7 +194,7 @@
             <!-- Amount -->
             <div class="mb-3">
               <label class="form-label fw-semibold">{{ t('refunds.amountLabel') }} <span class="text-danger">*</span></label>
-              <CFormInput type="number" v-model.number="addForm.amount" min="1" placeholder="e.g. 20000" />
+              <CFormInput type="number" v-model.number="addForm.amount" min="1" :placeholder="t('common.exampleValue', { value: '20000' })" />
             </div>
           </CCol>
 

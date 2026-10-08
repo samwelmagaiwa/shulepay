@@ -16,7 +16,7 @@ class EnsureUserIsActive
             $user->tokens()->delete();
 
             return response()->json([
-                'message' => 'Your account has been deactivated. Please contact an administrator.',
+                'message' => __('Your account has been deactivated. Please contact an administrator.'),
                 'code' => 'ACCOUNT_DEACTIVATED',
             ], 403);
         }

@@ -1,13 +1,16 @@
 <script setup>
+import { dateLocale } from '@/utils/dates'
 import { onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useNotificationsStore } from '@/stores/notifications'
 
+const { t } = useI18n()
 const store = useNotificationsStore()
 
 function formatTime(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
-  return d.toLocaleString('sw-TZ', { dateStyle: 'medium', timeStyle: 'short' })
+  return d.toLocaleString(dateLocale(), { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 function notifIcon(type) {
@@ -35,7 +38,7 @@ onMounted(async () => {
   <CContainer class="py-3" style="max-width:800px;">
     <div class="d-flex align-items-center justify-content-between mb-3">
       <h4 class="mb-0 fw-bold">
-        🔔 Arifa
+        🔔 {{ t('arifa.title') }}
         <CBadge v-if="store.unreadCount > 0" color="danger" class="ms-2">{{ store.unreadCount }}</CBadge>
       </h4>
       <CButton
@@ -45,7 +48,7 @@ onMounted(async () => {
         size="sm"
         @click="store.markAllRead"
       >
-        Weka Zote Zimesomwa
+        {{ t('arifa.markAllRead') }}
       </CButton>
     </div>
 
@@ -71,7 +74,7 @@ onMounted(async () => {
               <div class="text-muted small mt-1">{{ formatTime(notif.created_at) }}</div>
             </div>
             <div v-if="!notif.is_read" class="flex-shrink-0">
-              <span class="badge rounded-pill bg-primary">Mpya</span>
+              <span class="badge rounded-pill bg-primary">{{ t('arifa.new') }}</span>
             </div>
           </div>
         </CCardBody>
@@ -80,7 +83,7 @@ onMounted(async () => {
 
     <div v-else class="text-center text-muted py-5">
       <div class="display-6 mb-2">🔔</div>
-      <div>Hakuna arifa mpya</div>
+      <div>{{ t('arifa.none') }}</div>
     </div>
   </CContainer>
 </template>

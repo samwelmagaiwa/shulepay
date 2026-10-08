@@ -14,12 +14,12 @@
             <CCol xs="12" sm="4" md="3">
               <CFormSelect v-model="filters.action" @update:modelValue="load" style="min-height:44px;">
                 <option value="">{{ t('audit.filters.allActions') }}</option>
-                <option value="create">Kuunda</option>
-                <option value="update">Kubadilisha</option>
-                <option value="delete">Kufuta</option>
-                <option value="login">Kuingia</option>
-                <option value="logout">Kutoka</option>
-                <option value="payment">Malipo</option>
+                <option value="create">{{ t('audit.actionCreate') }}</option>
+                <option value="update">{{ t('audit.actionUpdate') }}</option>
+                <option value="delete">{{ t('audit.actionDelete') }}</option>
+                <option value="login">{{ t('audit.actionLogin') }}</option>
+                <option value="logout">{{ t('audit.actionLogout') }}</option>
+                <option value="payment">{{ t('audit.actionPayment') }}</option>
               </CFormSelect>
             </CCol>
             <CCol xs="12" sm="6" md="3">
@@ -51,10 +51,10 @@
               <div class="fw-semibold">{{ log.user?.name || log.user_email }}</div>
               <div class="small text-muted">{{ formatDate(log.created_at) }}</div>
             </div>
-            <CBadge :color="actionColor(log.action)">{{ log.action }}</CBadge>
+            <CBadge :color="actionColor(log.action)">{{ actionLabel(log.action) }}</CBadge>
           </div>
           <div class="mt-1 small">
-            <span class="text-muted">Kitu: </span>{{ shortType(log.subject_type) }} #{{ log.subject_id }}
+            <span class="text-muted">{{ t('audit.subject') }}: </span>{{ shortType(log.subject_type) }} #{{ log.subject_id }}
           </div>
           <div v-if="log.ip" class="small text-muted">IP: {{ log.ip }}</div>
         </div>
@@ -82,7 +82,7 @@
                   <div class="small text-muted">{{ log.user?.role }}</div>
                 </CTableDataCell>
                 <CTableDataCell>
-                  <CBadge :color="actionColor(log.action)">{{ log.action }}</CBadge>
+                  <CBadge :color="actionColor(log.action)">{{ actionLabel(log.action) }}</CBadge>
                 </CTableDataCell>
                 <CTableDataCell class="small">
                   {{ shortType(log.subject_type) }}
@@ -127,11 +127,12 @@
 </template>
 
 <script setup>
+import { dateLocale } from '@/utils/dates'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 
 const logs       = ref([])
 const loading    = ref(false)
@@ -149,7 +150,7 @@ const pageNumbers = computed(() => {
 
 function formatDate(dt) {
   if (!dt) return '—'
-  return new Date(dt).toLocaleString('sw-TZ', {
+  return new Date(dt).toLocaleString(dateLocale(), {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit',
   })
@@ -159,6 +160,11 @@ function shortType(type) {
   if (!type) return '—'
   // "App\Models\Invoice" → "Invoice"
   return type.split('\\').pop()
+}
+
+function actionLabel(action) {
+  const key = 'audit.action' + String(action || '').charAt(0).toUpperCase() + String(action || '').slice(1)
+  return te(key) ? t(key) : action
 }
 
 function actionColor(action) {

@@ -10,14 +10,9 @@ enum PaymentMethod: string
     case Cheque = 'cheque';
     case Sponsor = 'sponsor';
 
+    /** Display name in the language of the current request. */
     public function label(): string
     {
-        return match ($this) {
-            self::Cash => 'Taslimu',
-            self::Mpesa => 'M-Pesa',
-            self::Bank => 'Benki',
-            self::Cheque => 'Hundi',
-            self::Sponsor => 'Mfadhili',
-        };
+        return __('enums.payment_method.'.$this->value);
     }
 }

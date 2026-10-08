@@ -62,7 +62,7 @@
               <CButton color="outline-success" size="sm" :disabled="issuing" @click="loadPreview" style="min-height:38px;">
                 <CSpinner v-if="issuing && !pdfUrl" size="sm" class="me-1" />
                 <CIcon v-else icon="cilMagnifyingGlass" class="me-1" />
-                Preview
+                {{ t('clearance.preview') }}
               </CButton>
               <CButton color="success" size="sm" :disabled="issuing" @click="downloadCert" style="min-height:38px;">
                 <CSpinner v-if="issuing && pdfUrl" size="sm" class="me-1" />
@@ -218,7 +218,7 @@ async function checkClearance() {
     const { data } = await api.get('/clearance/check', { params })
     result.value = data.data || data
   } catch (e) {
-    checkError.value = e?.response?.data?.message || 'Hitilafu wakati wa kuangalia hali'
+    checkError.value = e?.response?.data?.message || t('errors.checkStatus')
   } finally {
     checking.value = false
   }
@@ -238,7 +238,7 @@ async function loadPreview() {
   try {
     pdfUrl.value = await fetchPdf()
   } catch (e) {
-    checkError.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakua hati'
+    checkError.value = e?.response?.data?.message || t('errors.downloadDocument')
   } finally {
     issuing.value = false
   }
@@ -254,7 +254,7 @@ async function downloadCert() {
     a.download = `clearance-${selectedStudent.value?.full_name?.replace(/\s+/g, '-')}.pdf`
     a.click()
   } catch (e) {
-    checkError.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakua hati'
+    checkError.value = e?.response?.data?.message || t('errors.downloadDocument')
   } finally {
     issuing.value = false
   }

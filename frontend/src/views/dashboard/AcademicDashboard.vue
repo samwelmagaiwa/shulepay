@@ -116,6 +116,7 @@
 </template>
 
 <script setup>
+import { dateLocale } from '@/utils/dates'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
@@ -141,8 +142,8 @@ const roleLabel = computed(() => {
   }
   return map[auth.user?.role] || t('dashboard.academicTeacher')
 })
-const todayDate = computed(() => new Date().toLocaleDateString('en-TZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))
-const todayShort = computed(() => new Date().toLocaleDateString('en-TZ', { day: 'numeric', month: 'short', year: 'numeric' }))
+const todayDate = computed(() => new Date().toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))
+const todayShort = computed(() => new Date().toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short', year: 'numeric' }))
 
 const totals = computed(() => {
   const present = summary.value.reduce((a, r) => a + r.present, 0)

@@ -72,6 +72,6 @@ class SupplierController extends Controller
         AuditLog::record('supplier.deleted', $supplier, $supplier->toArray(), []);
         $supplier->delete();
 
-        return response()->json(['message' => 'Supplier deleted.']);
+        return response()->json(['message' => __('Supplier deleted.')]);
     }
 }

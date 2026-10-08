@@ -94,6 +94,30 @@ npm run dev              # runs on http://localhost:3000
 
 ---
 
+## Languages (English / Kiswahili)
+
+The language switcher in the header changes everything the user reads, including
+printed documents. The frontend sends the chosen language on every request
+(`X-Lang`), and the backend applies it (`SetLocale` middleware).
+
+| What | Where | Rule |
+|------|-------|------|
+| Screens | `frontend/src/i18n/{en,sw}.js` | Use `t('section.key')`; add the key to **both** files |
+| Dates | `frontend/src/utils/dates.js` | `toLocaleDateString(dateLocale(), …)`, never a fixed locale |
+| Role / permission names | `utils/roles.js`, `utils/permissions.js` | Reuse the helpers; don't print raw role or permission names |
+| Receipts, statements, reports, clearance | `backend/lang/{en,sw}/pdf.php` | Use `__('pdf.key')` in the Blade views |
+| Excel / CSV headings | `backend/lang/{en,sw}/exports.php` | |
+| Payment method, invoice status, school level | `backend/lang/{en,sw}/enums.php` | Enum `label()` is translated |
+| API messages and validation errors | English text in code via `__('…')`, Swahili in `backend/lang/sw.json` and `lang/sw/validation.php` | |
+
+Not translated on purpose: SMS sent to parents (their language, not the sender's),
+school-entered data (class and term names), the bulk-import CSV header row (machine-read).
+
+`php artisan test` fails if a printed document mixes languages, a message in the
+code has no Swahili entry, or the two language files drift apart.
+
+---
+
 ## Production Deployment
 
 Deployment is fully automated via GitHub Actions on every push to `master`:

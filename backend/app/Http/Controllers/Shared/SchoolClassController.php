@@ -63,7 +63,7 @@ class SchoolClassController extends Controller
         $hasEnrollments = Enrollment::where('school_class_id', $schoolClass->id)->exists();
 
         if ($hasEnrollments) {
-            return response()->json(['message' => 'Cannot delete class with enrolled students.'], 422);
+            return response()->json(['message' => __('Cannot delete class with enrolled students.')], 422);
         }
 
         $schoolClass->delete();

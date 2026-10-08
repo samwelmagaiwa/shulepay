@@ -70,8 +70,7 @@ class ExpenseCategoryController extends Controller
 
         if ($inUse > 0) {
             return response()->json([
-                'message' => "This category is used by {$inUse} expense(s) and cannot be deleted. "
-                    .'Re-file those expenses under another category first.',
+                'message' => __('This category is used by :count expense(s) and cannot be deleted. Re-file those expenses under another category first.', ['count' => $inUse]),
                 'expenses_count' => $inUse,
             ], 422);
         }
@@ -82,6 +81,6 @@ class ExpenseCategoryController extends Controller
         AuditLog::record('expense_category.deleted', $expenseCategory, $expenseCategory->toArray(), []);
         $expenseCategory->delete();
 
-        return response()->json(['message' => 'Category deleted.']);
+        return response()->json(['message' => __('Category deleted.')]);
     }
 }

@@ -34,13 +34,13 @@ class UserController extends Controller
 
         if (in_array($role, self::ROLES_PRIMARY) && $level !== 'primary') {
             throw ValidationException::withMessages([
-                'role' => "Role '$role' is only allowed for primary schools.",
+                'role' => __("Role ':role' is only allowed for primary schools.", ['role' => $role]),
             ]);
         }
 
         if (in_array($role, self::ROLES_SECONDARY) && $level !== 'secondary') {
             throw ValidationException::withMessages([
-                'role' => "Role '$role' is only allowed for secondary schools.",
+                'role' => __("Role ':role' is only allowed for secondary schools.", ['role' => $role]),
             ]);
         }
     }
@@ -117,7 +117,7 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): JsonResponse
     {
-        abort_unless($user->school_id === auth()->user()->school_id, 403, 'Forbidden.');
+        abort_unless($user->school_id === auth()->user()->school_id, 403, __('Forbidden.'));
 
         $data = $request->validate([
             'name' => 'sometimes|required|string|max:255',
@@ -160,7 +160,7 @@ class UserController extends Controller
     public function destroy(User $user): JsonResponse
     {
         if (auth()->id() === $user->id) {
-            return response()->json(['message' => 'Cannot delete your own account.'], 422);
+            return response()->json(['message' => __('Cannot delete your own account.')], 422);
         }
 
         AuditLogger::log('user_deleted', $user, [

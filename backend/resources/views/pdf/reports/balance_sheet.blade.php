@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="sw">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="UTF-8">
 <style>
@@ -34,8 +34,8 @@
 
 <div class="header">
     <h1>{{ $school?->name ?? 'ShulePay' }}</h1>
-    <p>Balance Sheet &mdash; As of {{ $report['as_of'] }}</p>
-    <p>Generated: {{ now()->format('d M Y H:i') }}</p>
+    <p>{{ __('pdf.balance_sheet_title') }} &mdash; {{ __('pdf.as_of', ['date' => $report['as_of']]) }}</p>
+    <p>{{ __('pdf.generated') }}: {{ now()->locale(app()->getLocale())->translatedFormat('d M Y H:i') }}</p>
 </div>
 
 @php
@@ -50,31 +50,31 @@
 
 {{-- LEFT: ASSETS --}}
 <td style="width:48%; padding: 0; border: none;">
-    <div class="section-title assets-title">ASSETS</div>
+    <div class="section-title assets-title">{{ __('pdf.assets') }}</div>
     <table>
         <tr>
             <td>
-                Cash &amp; Bank<br>
+                {{ __('pdf.cash_and_bank') }}<br>
                 <span class="description">{{ $assets['cash_and_bank']['description'] }}</span>
             </td>
             <td>TZS {{ number_format($assets['cash_and_bank']['amount_cents'] / 100, 2) }}</td>
         </tr>
         <tr>
             <td>
-                Receivables<br>
+                {{ __('pdf.receivables') }}<br>
                 <span class="description">{{ $assets['receivables']['description'] }}</span>
             </td>
             <td>TZS {{ number_format($assets['receivables']['amount_cents'] / 100, 2) }}</td>
         </tr>
         <tr>
             <td>
-                Fixed Assets<br>
+                {{ __('pdf.fixed_assets') }}<br>
                 <span class="description">{{ $assets['fixed_assets']['description'] }}</span>
             </td>
             <td>TZS {{ number_format($assets['fixed_assets']['amount_cents'] / 100, 2) }}</td>
         </tr>
         <tr class="total-row">
-            <td>TOTAL ASSETS</td>
+            <td>{{ __('pdf.total_assets') }}</td>
             <td>TZS {{ number_format($assets['total'] / 100, 2) }}</td>
         </tr>
     </table>
@@ -84,36 +84,36 @@
 
 {{-- RIGHT: LIABILITIES + EQUITY --}}
 <td style="width:48%; padding: 0; border: none;">
-    <div class="section-title liab-title">LIABILITIES</div>
+    <div class="section-title liab-title">{{ __('pdf.liabilities') }}</div>
     <table>
         <tr>
             <td>
-                Payables<br>
+                {{ __('pdf.payables') }}<br>
                 <span class="description">{{ $liabilities['payables']['description'] }}</span>
             </td>
             <td>TZS {{ number_format($liabilities['payables']['amount_cents'] / 100, 2) }}</td>
         </tr>
         <tr class="liab-total">
-            <td>TOTAL LIABILITIES</td>
+            <td>{{ __('pdf.total_liabilities') }}</td>
             <td>TZS {{ number_format($liabilities['total'] / 100, 2) }}</td>
         </tr>
     </table>
 
-    <div class="section-title equity-title" style="margin-top: 12px;">EQUITY</div>
+    <div class="section-title equity-title" style="margin-top: 12px;">{{ __('pdf.equity') }}</div>
     <table>
         <tr>
-            <td>Retained Earnings / Fund Balance</td>
+            <td>{{ __('pdf.retained_earnings') }}</td>
             <td>TZS {{ number_format($equity['retained'] / 100, 2) }}</td>
         </tr>
         <tr class="equity-total">
-            <td>TOTAL EQUITY</td>
+            <td>{{ __('pdf.total_equity') }}</td>
             <td>TZS {{ number_format($equity['total'] / 100, 2) }}</td>
         </tr>
     </table>
 
     <table style="margin-top: 8px;">
         <tr style="background: #f3f4f6;">
-            <td style="font-weight:bold;">LIABILITIES + EQUITY</td>
+            <td style="font-weight:bold;">{{ __('pdf.liabilities_plus_equity') }}</td>
             <td style="font-weight:bold; text-align:right;">
                 TZS {{ number_format(($liabilities['total'] + $equity['total']) / 100, 2) }}
             </td>
@@ -124,6 +124,6 @@
 </tr>
 </table>
 
-<div class="footer">ShulePay &mdash; Fee Management System</div>
+<div class="footer">{{ __('pdf.report_footer') }}</div>
 </body>
 </html>

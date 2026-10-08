@@ -56,7 +56,7 @@ class PettyCashController extends Controller
             } else {
                 $balanceAfter = $currentBalance - $data['amount_cents'];
                 if ($balanceAfter < 0) {
-                    return response()->json(['message' => 'Insufficient petty cash balance.'], 422);
+                    return response()->json(['message' => __('Insufficient petty cash balance.')], 422);
                 }
             }
 

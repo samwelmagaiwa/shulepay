@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="sw">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="UTF-8">
 <style>
@@ -38,38 +38,38 @@
 
 <div class="header">
     <h1>{{ $student['school'] ?? 'ShulePay' }}</h1>
-    <p>Student Fee Statement</p>
-    <p>Generated: {{ now()->format('d M Y H:i') }}</p>
+    <p>{{ __('pdf.student_statement_title') }}</p>
+    <p>{{ __('pdf.generated') }}: {{ now()->locale(app()->getLocale())->translatedFormat('d M Y H:i') }}</p>
 </div>
 
 <div class="student-info">
     <table>
         <tr>
-            <td>Student Name</td>
+            <td>{{ __('pdf.student_name') }}</td>
             <td>{{ $student['full_name'] }}</td>
-            <td>Admission No.</td>
+            <td>{{ __('pdf.admission_no') }}</td>
             <td>{{ $student['admission_number'] }}</td>
         </tr>
         <tr>
-            <td>Class</td>
+            <td>{{ __('pdf.class') }}</td>
             <td>{{ $student['school_class'] }}</td>
-            <td>Academic Year</td>
+            <td>{{ __('pdf.academic_year') }}</td>
             <td>{{ $student['academic_year'] }}</td>
         </tr>
     </table>
 </div>
 
-<div class="section-title">Invoice &amp; Payment History</div>
+<div class="section-title">{{ __('pdf.invoice_history') }}</div>
 <table class="inv-table">
     <thead>
         <tr>
-            <th>Invoice No.</th>
-            <th>Due Date</th>
-            <th>Term</th>
-            <th>Gross (TZS)</th>
-            <th>Paid (TZS)</th>
-            <th>Balance (TZS)</th>
-            <th>Status</th>
+            <th>{{ __('pdf.invoice_no') }}</th>
+            <th>{{ __('pdf.due_date') }}</th>
+            <th>{{ __('pdf.term') }}</th>
+            <th>{{ __('pdf.gross_tzs') }}</th>
+            <th>{{ __('pdf.paid_tzs') }}</th>
+            <th>{{ __('pdf.balance_tzs') }}</th>
+            <th>{{ __('pdf.status') }}</th>
         </tr>
     </thead>
     <tbody>
@@ -81,16 +81,16 @@
             <td>{{ number_format($inv['gross_cents'] / 100, 2) }}</td>
             <td>{{ number_format($inv['paid_cents'] / 100, 2) }}</td>
             <td>{{ number_format($inv['balance_cents'] / 100, 2) }}</td>
-            <td>{{ strtoupper($inv['status']) }}</td>
+            <td>{{ mb_strtoupper(\App\Enums\InvoiceStatus::tryFrom((string) $inv['status'])?->label() ?? (string) $inv['status']) }}</td>
         </tr>
         @if(count($inv['payments']) > 0)
         <tr>
             <td colspan="7" style="padding: 0; border: none;">
                 @foreach($inv['payments'] as $p)
                 <div class="payment-sub">
-                    &rarr; {{ $p['paid_at'] }} | {{ strtoupper($p['method']) }} | TZS {{ number_format($p['amount_cents'] / 100, 2) }}
+                    &rarr; {{ $p['paid_at'] }} | {{ mb_strtoupper(\App\Enums\PaymentMethod::tryFrom((string) $p['method'])?->label() ?? (string) $p['method']) }} | TZS {{ number_format($p['amount_cents'] / 100, 2) }}
                     @if($p['reference_number'])
-                     | Ref: {{ $p['reference_number'] }}
+                     | {{ __('pdf.ref') }}: {{ $p['reference_number'] }}
                     @endif
                 </div>
                 @endforeach
@@ -104,15 +104,15 @@
 <div class="balance-summary clearfix">
     <table>
         <tr>
-            <td>Total Invoiced</td>
+            <td>{{ __('pdf.total_invoiced') }}</td>
             <td>TZS {{ number_format($report['total_invoiced_cents'] / 100, 2) }}</td>
         </tr>
         <tr>
-            <td>Total Paid</td>
+            <td>{{ __('pdf.total_paid') }}</td>
             <td>TZS {{ number_format($report['total_paid_cents'] / 100, 2) }}</td>
         </tr>
         <tr class="balance-row">
-            <td>Outstanding Balance</td>
+            <td>{{ __('pdf.outstanding_balance') }}</td>
             <td>TZS {{ number_format($report['balance_cents'] / 100, 2) }}</td>
         </tr>
     </table>
@@ -120,13 +120,13 @@
 
 <div class="signature" style="margin-top: 60px;">
     <div>
-        <div class="sig-line">Accountant Signature &amp; Stamp</div>
+        <div class="sig-line">{{ __('pdf.accountant_signature') }}</div>
     </div>
     <div>
-        <div class="sig-line">Parent / Guardian Signature</div>
+        <div class="sig-line">{{ __('pdf.guardian_signature') }}</div>
     </div>
 </div>
 
-<div class="footer">ShulePay &mdash; Fee Management System &mdash; This is a computer-generated statement.</div>
+<div class="footer">{{ __('pdf.report_footer') }} &mdash; {{ __('pdf.computer_generated') }}</div>
 </body>
 </html>

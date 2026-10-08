@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import api from '@/services/api'
+import { i18n } from '@/i18n'
 
 export const useExpensesStore = defineStore('expenses', () => {
   const expenses = ref([])
@@ -17,7 +18,7 @@ export const useExpensesStore = defineStore('expenses', () => {
       expenses.value = data.data || data
       pagination.value = data.meta || {}
     } catch (e) {
-      error.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia data'
+      error.value = e?.response?.data?.message || i18n.global.t('errors.loadData')
     } finally {
       loading.value = false
     }

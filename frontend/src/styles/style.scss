@@ -190,14 +190,6 @@ body {
   font-size: 1rem;
 }
 
-// Patient Categories Grid
-.patient-categories-grid {
-  display: grid;
-  gap: 1.5rem;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  margin-bottom: 2rem;
-}
-
 .category-card {
   background: var(--cui-card-bg, #fff);
   border-left: 4px solid transparent; // colored via utility class

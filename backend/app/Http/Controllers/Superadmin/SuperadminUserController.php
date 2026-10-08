@@ -129,7 +129,7 @@ class SuperadminUserController extends Controller
         if (isset($data['role'])) {
             // Prevent demoting another superadmin (their role can only be managed by themselves)
             if ($user->hasRole('superadmin') && $data['role'] !== 'superadmin') {
-                abort(422, 'Superadmin role cannot be changed through this interface.');
+                abort(422, __('Superadmin role cannot be changed through this interface.'));
             }
             $user->syncRoles([$data['role']]);
         }
@@ -158,7 +158,7 @@ class SuperadminUserController extends Controller
         ]);
 
         if (! $user->is_active) {
-            return response()->json(['message' => 'User is already deactivated.'], 422);
+            return response()->json(['message' => __('User is already deactivated.')], 422);
         }
 
         // Revoke all active tokens immediately — no further API access
@@ -176,7 +176,7 @@ class SuperadminUserController extends Controller
         ]);
 
         return response()->json([
-            'message' => "User '{$user->name}' has been deactivated.",
+            'message' => __("User ':user' has been deactivated.", ['user' => $user->name]),
             'user' => $user->load(['roles', 'school']),
         ]);
     }
@@ -187,7 +187,7 @@ class SuperadminUserController extends Controller
         $this->guardSelf($user);
 
         if ($user->is_active) {
-            return response()->json(['message' => 'User is already active.'], 422);
+            return response()->json(['message' => __('User is already active.')], 422);
         }
 
         $user->update([
@@ -201,7 +201,7 @@ class SuperadminUserController extends Controller
         ]);
 
         return response()->json([
-            'message' => "User '{$user->name}' has been reactivated.",
+            'message' => __("User ':user' has been reactivated.", ['user' => $user->name]),
             'user' => $user->load(['roles', 'school']),
         ]);
     }
@@ -221,7 +221,7 @@ class SuperadminUserController extends Controller
         $unknown = array_diff($data['permissions'], $known);
         if (! empty($unknown)) {
             return response()->json([
-                'message' => 'Unknown permissions: '.implode(', ', $unknown),
+                'message' => __('Unknown permissions: :list', ['list' => implode(', ', $unknown)]),
             ], 422);
         }
 
@@ -231,7 +231,7 @@ class SuperadminUserController extends Controller
         $unknownForbid = array_diff($forbidList, $known);
         if (! empty($unknownForbid)) {
             return response()->json([
-                'message' => 'Unknown permissions in the forbidden list: '.implode(', ', $unknownForbid),
+                'message' => __('Unknown permissions in the forbidden list: :list', ['list' => implode(', ', $unknownForbid)]),
             ], 422);
         }
 
@@ -239,7 +239,7 @@ class SuperadminUserController extends Controller
         $conflict = array_intersect($data['permissions'], $forbidList);
         if (! empty($conflict)) {
             return response()->json([
-                'message' => 'Conflict: a permission cannot be both granted and forbidden at the same time: '.implode(', ', $conflict),
+                'message' => __('Conflict: a permission cannot be both granted and forbidden at the same time: :list', ['list' => implode(', ', $conflict)]),
             ], 422);
         }
 
@@ -308,7 +308,7 @@ class SuperadminUserController extends Controller
         $unknown = array_diff($forbidList, $known);
         if (! empty($unknown)) {
             return response()->json([
-                'message' => 'Unknown permissions: '.implode(', ', $unknown),
+                'message' => __('Unknown permissions: :list', ['list' => implode(', ', $unknown)]),
             ], 422);
         }
 
@@ -317,7 +317,7 @@ class SuperadminUserController extends Controller
         $conflict = array_intersect($forbidList, $directPerms);
         if (! empty($conflict)) {
             return response()->json([
-                'message' => 'Conflict: these permissions are directly granted — remove them first before forbidding: '.implode(', ', $conflict),
+                'message' => __('Conflict: these permissions are directly granted — remove them first before forbidding: :list', ['list' => implode(', ', $conflict)]),
             ], 422);
         }
 
@@ -336,7 +336,7 @@ class SuperadminUserController extends Controller
         ]);
 
         return response()->json([
-            'message' => "Restrictions updated for '{$user->name}'.",
+            'message' => __("Restrictions updated for ':user'.", ['user' => $user->name]),
             'user' => $user->load(['roles', 'permissions', 'school']),
             'forbidden_permissions' => $user->forbidden_permissions ?? [],
         ]);
@@ -346,14 +346,14 @@ class SuperadminUserController extends Controller
     private function guardSelf(User $user): void
     {
         if (auth()->id() === $user->id) {
-            abort(422, 'You cannot modify your own account through this interface.');
+            abort(422, __('You cannot modify your own account through this interface.'));
         }
     }
 
     private function guardSuperadmin(User $user): void
     {
         if ($user->hasRole('superadmin')) {
-            abort(422, 'Superadmin accounts cannot be deactivated or deleted through this interface.');
+            abort(422, __('Superadmin accounts cannot be deactivated or deleted through this interface.'));
         }
     }
 }

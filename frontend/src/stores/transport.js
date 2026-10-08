@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import api from '@/services/api'
+import { i18n } from '@/i18n'
 
 export const useTransportStore = defineStore('transport', () => {
   const vehicles      = ref([])
@@ -18,7 +19,7 @@ export const useTransportStore = defineStore('transport', () => {
       const { data } = await api.get('/transport/vehicles', { params })
       vehicles.value = data
     } catch (e) {
-      error.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia magari'
+      error.value = e?.response?.data?.message || i18n.global.t('errors.loadVehicles')
     } finally {
       loading.value = false
     }

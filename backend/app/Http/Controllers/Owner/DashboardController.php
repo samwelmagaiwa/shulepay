@@ -42,7 +42,7 @@ class DashboardController extends Controller
         $user = $request->user();
 
         if (DashboardPrivacy::isLocked($user)) {
-            return response()->json(['message' => 'Dashboard figures are locked.', 'locked' => true], 423);
+            return response()->json(['message' => __('Dashboard figures are locked.'), 'locked' => true], 423);
         }
 
         return response()->json($collection->unassigned($this->schoolId($request)));

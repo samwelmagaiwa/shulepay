@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import api from '@/services/api'
+import { i18n } from '@/i18n'
 
 export const useBudgetsStore = defineStore('budgets', () => {
   const budgets = ref([])
@@ -14,7 +15,7 @@ export const useBudgetsStore = defineStore('budgets', () => {
       const { data } = await api.get('/budgets')
       budgets.value = data.data || data
     } catch (e) {
-      error.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia bajeti'
+      error.value = e?.response?.data?.message || i18n.global.t('errors.loadBudgets')
     } finally {
       loading.value = false
     }

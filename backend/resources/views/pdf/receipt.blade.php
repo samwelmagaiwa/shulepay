@@ -31,7 +31,7 @@
     $hiddenTotal = $hiddenLines->sum(fn ($l) => $l->amount_cents->cents());
 @endphp
 <!DOCTYPE html>
-<html lang="sw">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="utf-8">
 <style>
@@ -81,7 +81,7 @@
   {{-- ── Letterhead (shared with statements and reports) ─────── --}}
   @include('pdf.partials.letterhead', [
     'lh' => $lh,
-    'docTitle' => 'Risiti ya Malipo',
+    'docTitle' => __('pdf.receipt_title'),
     'compact' => false,
   ])
 
@@ -181,7 +181,7 @@
       @endforeach
       @if($hiddenLines->isNotEmpty())
       <tr>
-        <td>Vipengele vingine ({{ $hiddenLines->count() }})</td>
+        <td>{{ __('pdf.other_items', ['count' => $hiddenLines->count()]) }}</td>
         <td class="amt">{{ $money($hiddenTotal) }}</td>
       </tr>
       @endif
@@ -218,7 +218,7 @@
 
   @if($invoiceDue <= 0)
     <div class="center bold settled" style="color:#007f3e; margin-top:10px;">
-      ✓ ANKARA IMELIPWA YOTE
+      {{ __('pdf.receipt_settled') }}
     </div>
   @endif
 
@@ -235,7 +235,7 @@
 
   <div class="hr"></div>
   <div class="footer">
-    Asante kwa malipo yako. Hati hii ni ushahidi wa malipo.<br>
+    {{ __('pdf.receipt_footer') }}<br>
     {{ $appName }} &copy; {{ date('Y') }} {{ $appTagline }}
   </div>
 </body>

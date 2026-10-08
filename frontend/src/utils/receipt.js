@@ -1,4 +1,5 @@
 import api from '@/services/api'
+import { i18n } from '@/i18n'
 
 /**
  * Receipt printing / downloading.
@@ -54,7 +55,7 @@ async function fetchPdfBlob(receiptId) {
   }
   // Some error responses still arrive as a blob; make sure this really is a PDF.
   if (data.type && !data.type.includes('pdf')) {
-    throw new Error('Server did not return a PDF')
+    throw new Error(i18n.global.t('errors.notAPdf'))
   }
   return data
 }
@@ -103,7 +104,7 @@ export async function printStudentStatement(studentId) {
     await decodeBlobErrorBody(e)
   }
   if (data.type && !data.type.includes('pdf')) {
-    throw new Error('Server did not return a PDF')
+    throw new Error(i18n.global.t('errors.notAPdf'))
   }
 
   const url = URL.createObjectURL(data)
@@ -142,7 +143,7 @@ export async function printBulkInvoices(params) {
     await decodeBlobErrorBody(e)
   }
   if (data.type && !data.type.includes('pdf')) {
-    throw new Error('Server did not return a PDF')
+    throw new Error(i18n.global.t('errors.notAPdf'))
   }
 
   const url = URL.createObjectURL(data)

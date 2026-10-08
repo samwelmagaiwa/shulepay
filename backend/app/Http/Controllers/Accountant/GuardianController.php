@@ -199,7 +199,7 @@ class GuardianController extends Controller
         abort_unless(
             $schoolIds->contains(fn ($id) => $user->canAccessSchool((int) $id)),
             403,
-            'You do not have access to this guardian.'
+            __('You do not have access to this guardian.')
         );
     }
 

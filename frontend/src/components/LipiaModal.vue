@@ -123,7 +123,7 @@
               v-model.number="form.amount"
               :max="maxAmount"
               min="1"
-              placeholder="e.g. 50000"
+              :placeholder="t('common.exampleValue', { value: '50000' })"
               size="lg"
               @input="updatePreview"
             />

@@ -24,7 +24,7 @@
         <CButton color="primary" class="lf-add" @click="showAddModal = true">
           <CIcon icon="cilPlus" class="me-1" /> {{ t('students.add') }}
         </CButton>
-        <CPagination v-if="meta.last_page > 1" aria-label="Page" class="mb-0 lf-pages">
+        <CPagination v-if="meta.last_page > 1" :aria-label="t('common.pagination')" class="mb-0 lf-pages">
           <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; fetchData()">{{ t('common.prev') }}</CPaginationItem>
           <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; fetchData()">{{ p }}</CPaginationItem>
           <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; fetchData()">{{ t('common.next') }}</CPaginationItem>
@@ -223,6 +223,7 @@
 </template>
 
 <script setup>
+import { dateLocale } from '@/utils/dates'
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -368,7 +369,7 @@ async function doDelete() {
     // find the screen later and remember why they wanted it.
     if (hadInvoices) showOrphanModal.value = true
   } catch (e) {
-    alert(e?.response?.data?.message || 'Imeshindwa kufuta.')
+    alert(e?.response?.data?.message || t('errors.deleteFailed'))
   } finally {
     deleting.value = false
   }
@@ -440,7 +441,7 @@ const fmtDate = (d) => {
   if (!d) return ''
   const dt = new Date(d)
   if (isNaN(dt)) return d
-  return `${dt.getDate()}-${dt.toLocaleString('en-GB', { month: 'long' })}-${dt.getFullYear()}`
+  return `${dt.getDate()}-${dt.toLocaleString(dateLocale(), { month: 'long' })}-${dt.getFullYear()}`
 }
 const genderLabel = (g) => (g === 'male' || g === 'me' ? t('students.male') : g === 'female' || g === 'ke' ? t('students.female') : '')
 const sponsorshipLabel = (v) => ({

@@ -1,4 +1,5 @@
 <script setup>
+import { dateLocale } from '@/utils/dates'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
@@ -42,7 +43,7 @@ async function load() {
     years.value   = yRes.data.data ?? yRes.data
     if (sRes) schools.value = sRes.data.data ?? sRes.data
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Imeshindwa kupakia miaka ya masomo'
+    error.value = e?.response?.data?.message || t('errors.loadAcademicYears')
   } finally {
     loading.value = false
   }
@@ -123,7 +124,7 @@ async function doDelete() {
 
 function fmtDate(d) {
   if (!d) return '—'
-  return new Date(d).toLocaleDateString('sw-TZ', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(d).toLocaleDateString(dateLocale(), { day: '2-digit', month: 'short', year: 'numeric' })
 }
 </script>
 

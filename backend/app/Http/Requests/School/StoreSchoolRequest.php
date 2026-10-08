@@ -38,10 +38,10 @@ class StoreSchoolRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'code.unique' => 'School code already taken. Choose a different abbreviation.',
-            'code.alpha_num' => 'School code must contain only letters and numbers.',
-            'code.uppercase' => 'School code must be uppercase (e.g. MSG, KGSS).',
-            'logo.max' => 'Logo file must be 2 MB or smaller.',
+            'code.unique' => __('School code already taken. Choose a different abbreviation.'),
+            'code.alpha_num' => __('School code must contain only letters and numbers.'),
+            'code.uppercase' => __('School code must be uppercase (e.g. MSG, KGSS).'),
+            'logo.max' => __('Logo file must be 2 MB or smaller.'),
         ];
     }
 }

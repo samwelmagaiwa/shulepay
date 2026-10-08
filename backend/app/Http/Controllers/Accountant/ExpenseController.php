@@ -62,7 +62,7 @@ class ExpenseController extends Controller
     public function update(Request $request, Expense $expense): JsonResponse
     {
         if ($expense->status !== 'pending') {
-            return response()->json(['message' => 'Only pending expenses can be updated.'], 422);
+            return response()->json(['message' => __('Only pending expenses can be updated.')], 422);
         }
 
         $data = $request->validate([
@@ -91,20 +91,20 @@ class ExpenseController extends Controller
         // who did it either way.
         if ($expense->status !== 'pending' && ! auth()->user()?->isSuperAdmin()) {
             return response()->json([
-                'message' => 'Only pending expenses can be deleted. An approved expense can only be removed by a superadmin.',
+                'message' => __('Only pending expenses can be deleted. An approved expense can only be removed by a superadmin.'),
             ], 422);
         }
 
         AuditLog::record('expense.deleted', $expense, $expense->toArray(), []);
         $expense->delete();
 
-        return response()->json(['message' => 'Expense deleted.']);
+        return response()->json(['message' => __('Expense deleted.')]);
     }
 
     public function approve(Expense $expense): JsonResponse
     {
         if ($expense->status !== 'pending') {
-            return response()->json(['message' => 'Expense is not pending.'], 422);
+            return response()->json(['message' => __('Expense is not pending.')], 422);
         }
 
         $before = $expense->toArray();

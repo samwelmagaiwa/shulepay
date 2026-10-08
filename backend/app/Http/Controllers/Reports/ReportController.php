@@ -616,22 +616,22 @@ class ReportController extends Controller
         return response()->json([
             'assets' => [
                 'cash_and_bank' => [
-                    'description' => 'Received fees (payments total)',
+                    'description' => __('exports.desc_cash_and_bank'),
                     'amount_cents' => (int) $cashAndBank,
                 ],
                 'receivables' => [
-                    'description' => 'Outstanding invoices',
+                    'description' => __('exports.desc_receivables'),
                     'amount_cents' => (int) $receivables,
                 ],
                 'fixed_assets' => [
-                    'description' => 'Asset register book value',
+                    'description' => __('exports.desc_fixed_assets'),
                     'amount_cents' => (int) $fixedAssets,
                 ],
                 'total' => $totalAssets,
             ],
             'liabilities' => [
                 'payables' => [
-                    'description' => 'Supplier balances owed',
+                    'description' => __('exports.desc_payables'),
                     'amount_cents' => $payables,
                 ],
                 'total' => $totalLiab,
@@ -1002,6 +1002,17 @@ class ReportController extends Controller
     //  Private helpers
     // ─────────────────────────────────────────────────────────
 
+    /** Month name (1–12) in the language of the current request. */
+    private function monthName(int|string $month): string
+    {
+        $month = (int) $month;
+        if ($month < 1 || $month > 12) {
+            return (string) $month;
+        }
+
+        return \Carbon\Carbon::create(2000, $month, 1)->locale(app()->getLocale())->translatedFormat('F');
+    }
+
     /**
      * Resolve report data for PDF / Excel based on type string.
      * Returns [viewName, data, csvHeaders, csvRows, csvRowStyles] — csvHeaders/Rows/RowStyles
@@ -1023,7 +1034,10 @@ class ReportController extends Controller
                 $school = $this->resolveSchool($request);
                 $data = compact('report', 'school');
                 if ($forCsv) {
-                    $csvHeaders = ['Period', 'Collected (TZS)', 'Total Debt (TZS)', 'Debtors (Terms Not Paid)', 'Total Partial Paid (TZS)', 'Payment Count'];
+                    $csvHeaders = [
+                        __('exports.period'), __('exports.collected_tzs'), __('exports.total_debt_tzs'),
+                        __('exports.debtors_terms'), __('exports.partial_paid_tzs'), __('exports.payment_count'),
+                    ];
                     $csvRows = array_map(
                         fn ($r) => [
                             $r['period'],
@@ -1036,15 +1050,21 @@ class ReportController extends Controller
                         $report['rows']
                     );
 
-                    $discountLabels = ['sibling' => 'Sibling Discount', 'staff' => 'Staff Discount', 'sponsor' => 'Sponsor Discount', 'other' => 'Other Discount'];
+                    $discountLabels = [
+                        'sibling' => __('exports.discount_sibling'), 'staff' => __('exports.discount_staff'),
+                        'sponsor' => __('exports.discount_sponsor'), 'other' => __('exports.discount_other'),
+                    ];
                     $discountColors = ['sibling' => 'E0E7FF', 'staff' => 'D1FAE5', 'sponsor' => 'FEF3C7', 'other' => 'E5E7EB'];
-                    $sponsorshipLabels = ['half' => 'Half Sponsored', 'full' => 'Fully Sponsored (Free)', 'full_paid' => 'Fully Sponsored (Paid via Sponsor)'];
+                    $sponsorshipLabels = [
+                        'half' => __('exports.sponsorship_half'), 'full' => __('exports.sponsorship_full'),
+                        'full_paid' => __('exports.sponsorship_full_paid'),
+                    ];
                     $sponsorshipColors = ['half' => 'BAE6FD', 'full' => 'BBF7D0', 'full_paid' => 'FBCFE8'];
 
                     $csvRows[] = ['', '', '', '', '', ''];
 
                     $csvRowStyles[count($csvRows)] = ['bg' => '6366F1', 'color' => 'FFFFFF', 'bold' => true];
-                    $csvRows[] = ['DISCOUNTS BY TYPE', 'Students', 'Amount (TZS)', '', '', ''];
+                    $csvRows[] = [__('exports.discounts_by_type'), __('exports.students'), __('exports.amount_tzs'), '', '', ''];
                     foreach ($report['by_discount_type'] ?? [] as $d) {
                         $csvRowStyles[count($csvRows)] = ['bg' => $discountColors[$d['type']] ?? 'F3F4F6'];
                         $csvRows[] = [$discountLabels[$d['type']] ?? $d['type'], $d['count'], round($d['amount_cents'] / 100), '', '', ''];
@@ -1053,7 +1073,7 @@ class ReportController extends Controller
                     $csvRows[] = ['', '', '', '', '', ''];
 
                     $csvRowStyles[count($csvRows)] = ['bg' => '0EA5E9', 'color' => 'FFFFFF', 'bold' => true];
-                    $csvRows[] = ['SPONSORSHIPS BY TYPE', 'Students', 'Amount Collected (TZS)', '', '', ''];
+                    $csvRows[] = [__('exports.sponsorships_by_type'), __('exports.students'), __('exports.amount_collected_tzs'), '', '', ''];
                     foreach ($report['by_sponsorship_type'] ?? [] as $s) {
                         $csvRowStyles[count($csvRows)] = ['bg' => $sponsorshipColors[$s['type']] ?? 'F3F4F6'];
                         $csvRows[] = [$sponsorshipLabels[$s['type']] ?? $s['type'], $s['count'], round($s['amount_cents'] / 100), '', '', ''];
@@ -1067,7 +1087,11 @@ class ReportController extends Controller
                 $school = $this->resolveSchool($request);
                 $data = compact('report', 'school');
                 if ($forCsv) {
-                    $csvHeaders = ['Class', 'Students', 'Billed (TZS)', 'Collected (TZS)', 'Outstanding (TZS)', 'Paid Invoices', 'Partial Invoices', 'Unpaid Invoices'];
+                    $csvHeaders = [
+                        __('exports.class'), __('exports.students'), __('exports.billed_tzs'), __('exports.collected_tzs'),
+                        __('exports.outstanding_tzs'), __('exports.paid_invoices'), __('exports.partial_invoices'),
+                        __('exports.unpaid_invoices'),
+                    ];
                     $csvRows = array_map(
                         fn ($r) => [
                             $r['class_name'],
@@ -1090,11 +1114,10 @@ class ReportController extends Controller
                 $school = $this->resolveSchool($request);
                 $data = compact('report', 'school');
                 if ($forCsv) {
-                    $months = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                    $csvHeaders = ['Month', 'Collections (TZS)', 'Expenses (TZS)', 'Net (TZS)'];
+                    $csvHeaders = [__('exports.month'), __('exports.collections_tzs'), __('exports.expenses_tzs'), __('exports.net_tzs')];
                     $csvRows = array_map(
                         fn ($r) => [
-                            $months[$r['month']] ?? $r['month'],
+                            $this->monthName($r['month']),
                             round($r['collections_cents'] / 100),
                             round($r['expenses_cents'] / 100),
                             round($r['net_cents'] / 100),
@@ -1110,7 +1133,11 @@ class ReportController extends Controller
                 $school = $this->resolveSchool($request);
                 $data = compact('report', 'school');
                 if ($forCsv) {
-                    $csvHeaders = ['Full Name', 'Admission No.', 'Class', 'Guardian Name', 'Guardian Phone', 'Village/Street', 'Oldest Invoice Date', 'Days Overdue', 'Outstanding (TZS)', 'Terms Not Paid', 'Bucket'];
+                    $csvHeaders = [
+                        __('exports.full_name'), __('exports.admission_no'), __('exports.class'), __('exports.guardian_name'),
+                        __('exports.guardian_phone'), __('exports.village_street'), __('exports.oldest_invoice_date'),
+                        __('exports.days_overdue'), __('exports.outstanding_tzs'), __('exports.terms_not_paid'), __('exports.bucket'),
+                    ];
                     foreach ($report['buckets'] as $bucket => $info) {
                         foreach ($info['students'] as $s) {
                             $csvRows[] = [
@@ -1140,7 +1167,10 @@ class ReportController extends Controller
                 $data = compact('report', 'school');
 
                 if ($forCsv) {
-                    $csvHeaders = ['Student Name', 'Class', 'Parent/Guardian Name', 'Parent Phone', 'Village/Street', 'Debt Amount (TZS)', 'Terms Not Paid'];
+                    $csvHeaders = [
+                        __('exports.student_name'), __('exports.class'), __('exports.parent_name'), __('exports.parent_phone'),
+                        __('exports.village_street'), __('exports.debt_amount_tzs'), __('exports.terms_not_paid'),
+                    ];
                     foreach ($byStudent as $r) {
                         $csvRows[] = [
                             $r['student_name'],
@@ -1163,15 +1193,15 @@ class ReportController extends Controller
                 $school = $this->resolveSchool($request);
                 $data = compact('report', 'school');
                 if ($forCsv) {
-                    $csvHeaders = ['Line Item', 'Amount (cents)'];
-                    $csvRows[] = ['Fee Collections', $report['revenue']['fee_collections']];
-                    $csvRows[] = ['Total Revenue', $report['revenue']['total']];
+                    $csvHeaders = [__('exports.line_item'), __('exports.amount_cents')];
+                    $csvRows[] = [__('exports.fee_collections'), $report['revenue']['fee_collections']];
+                    $csvRows[] = [__('exports.total_revenue'), $report['revenue']['total']];
                     foreach ($report['expenses']['by_category'] as $cat) {
-                        $csvRows[] = ['Expense: '.$cat['category'], $cat['amount_cents']];
+                        $csvRows[] = [__('exports.expense_prefix').': '.$cat['category'], $cat['amount_cents']];
                     }
-                    $csvRows[] = ['Payroll', $report['expenses']['payroll']];
-                    $csvRows[] = ['Total Expenses', $report['expenses']['total']];
-                    $csvRows[] = ['Net Income', $report['net_income_cents']];
+                    $csvRows[] = [__('exports.payroll'), $report['expenses']['payroll']];
+                    $csvRows[] = [__('exports.total_expenses'), $report['expenses']['total']];
+                    $csvRows[] = [__('exports.net_income'), $report['net_income_cents']];
                 }
                 break;
 
@@ -1181,15 +1211,15 @@ class ReportController extends Controller
                 $school = $this->resolveSchool($request);
                 $data = compact('report', 'school');
                 if ($forCsv) {
-                    $csvHeaders = ['Section', 'Line Item', 'Amount (cents)'];
-                    $csvRows[] = ['Assets', 'Cash & Bank', $report['assets']['cash_and_bank']['amount_cents']];
-                    $csvRows[] = ['Assets', 'Receivables', $report['assets']['receivables']['amount_cents']];
-                    $csvRows[] = ['Assets', 'Fixed Assets', $report['assets']['fixed_assets']['amount_cents']];
-                    $csvRows[] = ['Assets', 'Total', $report['assets']['total']];
-                    $csvRows[] = ['Liabilities', 'Payables', $report['liabilities']['payables']['amount_cents']];
-                    $csvRows[] = ['Liabilities', 'Total', $report['liabilities']['total']];
-                    $csvRows[] = ['Equity', 'Retained', $report['equity']['retained']];
-                    $csvRows[] = ['Equity', 'Total', $report['equity']['total']];
+                    $csvHeaders = [__('exports.section'), __('exports.line_item'), __('exports.amount_cents')];
+                    $csvRows[] = [__('exports.assets'), __('exports.cash_and_bank'), $report['assets']['cash_and_bank']['amount_cents']];
+                    $csvRows[] = [__('exports.assets'), __('exports.receivables'), $report['assets']['receivables']['amount_cents']];
+                    $csvRows[] = [__('exports.assets'), __('exports.fixed_assets'), $report['assets']['fixed_assets']['amount_cents']];
+                    $csvRows[] = [__('exports.assets'), __('exports.total'), $report['assets']['total']];
+                    $csvRows[] = [__('exports.liabilities'), __('exports.payables'), $report['liabilities']['payables']['amount_cents']];
+                    $csvRows[] = [__('exports.liabilities'), __('exports.total'), $report['liabilities']['total']];
+                    $csvRows[] = [__('exports.equity'), __('exports.retained'), $report['equity']['retained']];
+                    $csvRows[] = [__('exports.equity'), __('exports.total'), $report['equity']['total']];
                 }
                 break;
 
@@ -1199,15 +1229,15 @@ class ReportController extends Controller
                 $school = $this->resolveSchool($request);
                 $data = compact('report', 'school');
                 if ($forCsv) {
-                    $csvHeaders = ['Section', 'Line Item', 'Amount (cents)'];
-                    $csvRows[] = ['Operating', 'Fee Collections', $report['operating']['fee_collections']];
-                    $csvRows[] = ['Operating', 'Expense Payments', $report['operating']['expense_payments']];
-                    $csvRows[] = ['Operating', 'Payroll Payments', $report['operating']['payroll_payments']];
-                    $csvRows[] = ['Operating', 'Supplier Payments', $report['operating']['supplier_payments']];
-                    $csvRows[] = ['Operating', 'Net', $report['operating']['net']];
-                    $csvRows[] = ['Investing', 'Asset Purchases', $report['investing']['asset_purchases']];
-                    $csvRows[] = ['Investing', 'Net', $report['investing']['net']];
-                    $csvRows[] = ['Total', 'Net Change', $report['net_change_cents']];
+                    $csvHeaders = [__('exports.section'), __('exports.line_item'), __('exports.amount_cents')];
+                    $csvRows[] = [__('exports.operating'), __('exports.fee_collections'), $report['operating']['fee_collections']];
+                    $csvRows[] = [__('exports.operating'), __('exports.expense_payments'), $report['operating']['expense_payments']];
+                    $csvRows[] = [__('exports.operating'), __('exports.payroll_payments'), $report['operating']['payroll_payments']];
+                    $csvRows[] = [__('exports.operating'), __('exports.supplier_payments'), $report['operating']['supplier_payments']];
+                    $csvRows[] = [__('exports.operating'), __('exports.net'), $report['operating']['net']];
+                    $csvRows[] = [__('exports.investing'), __('exports.asset_purchases'), $report['investing']['asset_purchases']];
+                    $csvRows[] = [__('exports.investing'), __('exports.net'), $report['investing']['net']];
+                    $csvRows[] = [__('exports.total'), __('exports.net_change'), $report['net_change_cents']];
                 }
                 break;
 
@@ -1216,7 +1246,10 @@ class ReportController extends Controller
                 $view = 'student_statement';
                 $data = ['report' => $report];
                 if ($forCsv) {
-                    $csvHeaders = ['Invoice No.', 'Due Date', 'Term', 'Gross (cents)', 'Paid (cents)', 'Balance (cents)', 'Status'];
+                    $csvHeaders = [
+                        __('exports.invoice_no'), __('exports.due_date'), __('exports.term'), __('exports.gross_cents'),
+                        __('exports.paid_cents'), __('exports.balance_cents'), __('exports.status'),
+                    ];
                     foreach ($report['invoices'] as $inv) {
                         $csvRows[] = [
                             $inv['invoice_number'],
@@ -1232,7 +1265,7 @@ class ReportController extends Controller
                 break;
 
             default:
-                abort(404, "Unknown report type: {$type}");
+                abort(404, __('Unknown report type: :type', ['type' => $type]));
         }
 
         return [$view, $data, $csvHeaders, $csvRows, $csvRowStyles];

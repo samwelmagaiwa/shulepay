@@ -81,7 +81,7 @@ class ClearanceController extends Controller
 
         if ($outstandingCents > 0) {
             return response()->json([
-                'message' => 'Student has outstanding fees and cannot be cleared.',
+                'message' => __('Student has outstanding fees and cannot be cleared.'),
                 'outstanding_cents' => $outstandingCents,
             ], 422);
         }

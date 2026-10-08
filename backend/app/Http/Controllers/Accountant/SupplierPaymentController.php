@@ -69,6 +69,6 @@ class SupplierPaymentController extends Controller
             $supplierPayment->delete();
         });
 
-        return response()->json(['message' => 'Payment deleted and balance reversed.']);
+        return response()->json(['message' => __('Payment deleted and balance reversed.')]);
     }
 }
