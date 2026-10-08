@@ -6,7 +6,7 @@ import { CChartBar } from '@coreui/vue-chartjs'
 import { useDashboardStore } from '@/stores/dashboard'
 import { Chart, registerables } from 'chart.js'
 import { CIcon } from '@coreui/icons-vue'
-import { cilHospital, cilChart, cilBarChart } from '@coreui/icons'
+import { cilChart, cilBarChart } from '@coreui/icons'
 import { MASK } from '@/utils/maskedValue'
 
 Chart.register(...registerables)
@@ -253,12 +253,12 @@ const needsScroll = computed(() => {
 
 const metricDetails = computed(() => [
   { id: 'trend', label: t('dashboard.seriesOverallTrend'), color: '#1e293b' },
-  { id: 'opd', label: t('dashboard.cardTotalStudents'), color: '#3b82f6' },
-  { id: 'emergency', label: t('dashboard.cardDebt'), color: '#dc3545' },
-  { id: 'consulted', label: t('dashboard.seriesPaid'), color: '#16a34a' },
-  { id: 'not_consulted', label: dashboard.isTodaySelected ? t('dashboard.cardNotPaidToday') : t('dashboard.cardUnpaid'), color: '#ec4899' },
-  { id: 'new', label: t('dashboard.cardNewStudents'), color: '#06b6d4' },
-  { id: 'followup', label: t('dashboard.cardTodayCollect'), color: '#6610f2' },
+  { id: 'students', label: t('dashboard.cardTotalStudents'), color: '#3b82f6' },
+  { id: 'debt', label: t('dashboard.cardDebt'), color: '#dc3545' },
+  { id: 'paid', label: t('dashboard.seriesPaid'), color: '#16a34a' },
+  { id: 'unpaid', label: dashboard.isTodaySelected ? t('dashboard.cardNotPaidToday') : t('dashboard.cardUnpaid'), color: '#ec4899' },
+  { id: 'new_students', label: t('dashboard.cardNewStudents'), color: '#06b6d4' },
+  { id: 'today', label: t('dashboard.cardTodayCollect'), color: '#6610f2' },
 ])
 
 // ── Top-card figures, plotted on the bar chart ─────────────────────────────
@@ -275,11 +275,11 @@ const cardMetrics = computed(() => {
   // zero bar that would read as "nothing owed" or "nothing collected".
   const money = (v) => (locked ? null : Number(v) || 0)
   return [
-    { id: 'students', label: t('dashboard.cardTotalStudents'), color: '#3b82f6', kind: 'count', value: Number(rs.total_patients) || 0 },
-    { id: 'debt', label: t('dashboard.cardDebt'), color: '#dc3545', kind: 'money', value: money(rs.emergency_visits) },
+    { id: 'students', label: t('dashboard.cardTotalStudents'), color: '#3b82f6', kind: 'count', value: Number(rs.total_students) || 0 },
+    { id: 'debt', label: t('dashboard.cardDebt'), color: '#dc3545', kind: 'money', value: money(rs.outstanding_amount) },
     // Same figure as the Total Expenses card: approved expenses this academic year.
     { id: 'expenses', label: t('dashboard.totalExpenses'), color: '#06b6d4', kind: 'money', value: money(Math.round((Number(dashboard.stats?.revenue_vs_expenses?.expenses_cents) || 0) / 100)) },
-    { id: 'today', label: t('dashboard.cardTodayCollect'), color: '#6610f2', kind: 'money', value: money(rs.followups) },
+    { id: 'today', label: t('dashboard.cardTodayCollect'), color: '#6610f2', kind: 'money', value: money(rs.today_collections) },
     // The paid-invoice count is withheld with the money, so it hides too.
     { id: 'paid_count', label: t('dashboard.cardPaidInvoices'), color: '#16a34a', kind: 'count', value: locked ? null : Number(rs.paid_partial_count) || 0 },
     { id: 'paid_amount', label: t('dashboard.seriesPaidAmount'), color: '#ec4899', kind: 'money', value: money(rs.paid_partial_amount) },
@@ -382,26 +382,15 @@ const cardValueLabels = {
   },
 }
 
-const keyReferralMap = {
-  '000037': 'SELF REFERRAL',
-}
+const classDebtLoading = computed(() => !dashboard.isInitialized || dashboard.classDebtStats === null)
 
-const referralLoading = computed(() => !dashboard.isInitialized || dashboard.referralStats === null)
-
-const referralData = computed(() => {
-  const stats = dashboard.referralStats
-  if (!stats || !Array.isArray(stats)) return []
-  return stats.map((item) => {
-    let name = item.name
-    if ((!name || name.toLowerCase().includes('facility')) && keyReferralMap[item.code]) {
-      name = keyReferralMap[item.code]
-    }
-    return { ...item, name }
-  })
+const classDebtData = computed(() => {
+  const stats = dashboard.classDebtStats
+  return Array.isArray(stats) ? stats : []
 })
 
-const totalReferrals = computed(() => {
-  return referralData.value.reduce((sum, item) => sum + (item.count || 0), 0)
+const totalClassDebt = computed(() => {
+  return classDebtData.value.reduce((sum, item) => sum + (item.count || 0), 0)
 })
 
 const barLabelsPlugin = {
@@ -431,7 +420,7 @@ const barLabelsPlugin = {
         ctx.save()
         // SPECIAL HANDLING FOR TREND LINE (Index 0)
         // Skip labels for the line chart (Trend) to avoid redundancy and misalignment
-        // Total OPD (dataset index 1) will now have its label drawn on top of its bar like other metrics
+        // Total students (dataset index 1) will now have its label drawn on top of its bar like other metrics
         if (datasetIndex === 0) return
 
         const yPos =
@@ -530,12 +519,11 @@ const maxDataValue = computed(() => {
   if (!breakdownEnabled.value && dashboard.realStats && numLabels <= 1) {
     const rs = dashboard.realStats
     const cardValues = [
-      rs.total_patients || 0,
-      rs.emergency_patients || 0,
-      rs.consulted || 0,
+      rs.total_students || 0,
+      rs.paid_invoices || 0,
       rs.pending || 0,
-      rs.new_visits || 0,
-      rs.followups || 0,
+      rs.sponsored_free || 0,
+      rs.today_collections || 0,
     ]
     const cardMax = Math.max(...cardValues)
     if (cardMax > max) max = cardMax
@@ -580,7 +568,7 @@ const chartOptions = computed(() => {
             let label = context.dataset.label || ''
             const value = context.raw || 0
             
-            // Special handling for not_consulted dataset (index 4)
+            // Special handling for the unpaid dataset (index 4)
             if (context.datasetIndex === 4) {
               const xLabel = context.label || ''
               if (xLabel !== 'Today' && !xLabel.toLowerCase().includes('today')) {
@@ -618,7 +606,7 @@ const chartOptions = computed(() => {
         title: isBreakdownMode
           ? {
               display: true,
-              text: 'Patients',
+              text: t('nav.students'),
               font: { size: 12, weight: '600' },
               color: '#64748b',
             }
@@ -674,19 +662,19 @@ const chartOptions = computed(() => {
               style="padding: 4px 8px; font-size: 11px"
               >{{ t('dashboard.totalDebtLabel') }}</span
             >
-            <span v-if="referralLoading" class="pill-value text-muted fs-6 px-3">...</span>
+            <span v-if="classDebtLoading" class="pill-value text-muted fs-6 px-3">...</span>
             <span v-else class="pill-value text-danger fs-6 px-3">{{
-              dashboard.isLocked ? MASK : 'TZS ' + totalReferrals.toLocaleString()
+              dashboard.isLocked ? MASK : 'TZS ' + totalClassDebt.toLocaleString()
             }}</span>
           </div>
           <CBadge
-            v-if="!referralLoading"
+            v-if="!classDebtLoading"
             color="primary"
             shape="rounded-pill"
             class="facilities-badge shadow-sm"
             style="font-size: 11px; padding: 4px 12px"
           >
-            {{ t('dashboard.schoolsCount', { count: referralData.length }) }}
+            {{ t('dashboard.schoolsCount', { count: classDebtData.length }) }}
           </CBadge>
         </div>
       </div>
@@ -742,22 +730,22 @@ const chartOptions = computed(() => {
 
         <CCol :xl="4" :lg="12" class="p-0 bg-light-subtle">
           <div
-            class="referral-container"
+            class="class-debt-container"
             :style="{ height: breakdownEnabled ? '660px' : '580px', overflowY: 'auto' }"
           >
             <div class="px-1 py-4">
               <div class="mb-4">
                 <h6 class="fw-bold text-dark-emphasis mb-0 d-flex align-items-center">
-                  <CIcon :icon="cilHospital" class="me-2 text-primary" />
+                  <CIcon :icon="cilBarChart" class="me-2 text-primary" />
                   {{ t('dashboard.classDebtTitle') }}
                 </h6>
               </div>
 
               <div
-                v-if="referralData.length > 0"
-                class="referral-table-wrapper rounded-3 border shadow-sm bg-white table-responsive"
+                v-if="classDebtData.length > 0"
+                class="class-debt-table-wrapper rounded-3 border shadow-sm bg-white table-responsive"
               >
-                <table class="table table-hover align-middle mb-0 referral-table">
+                <table class="table table-hover align-middle mb-0 class-debt-table">
                   <thead class="table-light">
                     <tr>
                       <th class="py-2 text-uppercase" style="font-size: 11px; width: auto">
@@ -778,31 +766,31 @@ const chartOptions = computed(() => {
                     </tr>
                   </thead>
                   <tbody class="bg-white">
-                    <tr v-for="(hosp, index) in referralData" :key="hosp.name" 
-                      class="referral-row" 
+                    <tr v-for="(row, index) in classDebtData" :key="row.name" 
+                      class="class-debt-row" 
                       :class="[
                         index % 2 === 0 ? 'even-row' : 'odd-row',
-                        index === 0 ? 'top-referral-row' : ''
+                        index === 0 ? 'top-class-debt-row' : ''
                       ]"
                     >
                       <td class="py-2 position-relative">
                         <div v-if="index === 0" class="top-badge" style="top: -2px; left: 10px;">{{ t('dashboard.topOne') }}</div>
                         <div class="d-flex align-items-center gap-2">
                           <span
-                            v-if="hosp.name && hosp.name.trim()"
+                            v-if="row.name && row.name.trim()"
                             class="fw-bold text-dark"
                             style="font-size: 13px"
-                            :title="hosp.name"
+                            :title="row.name"
                           >
-                            {{ hosp.name }}
+                            {{ row.name }}
                           </span>
                           <span
                             v-else
-                            class="facility-code-name fw-semibold text-muted"
+                            class="class-code-name fw-semibold text-muted"
                             style="font-size: 12px"
-                            :title="t('common.school') + ' ' + hosp.code"
+                            :title="t('common.school') + ' ' + row.code"
                           >
-                            {{ t('common.school') }} {{ hosp.code }}
+                            {{ t('common.school') }} {{ row.code }}
                           </span>
                         </div>
                       </td>
@@ -817,8 +805,8 @@ const chartOptions = computed(() => {
                       >
                         <span class="fw-bold" style="font-size: 16px; color: #4f46e5">
                           {{
-                            totalReferrals > 0
-                              ? (((hosp.count || 0) / totalReferrals) * 100).toFixed(1) + '%'
+                            totalClassDebt > 0
+                              ? (((row.count || 0) / totalClassDebt) * 100).toFixed(1) + '%'
                               : '0%'
                           }}
                         </span>
@@ -826,10 +814,10 @@ const chartOptions = computed(() => {
                       <td class="text-end pe-3 py-2" style="width: 1%; white-space: nowrap">
                         <div class="d-flex flex-column align-items-end gap-1">
                           <span class="fw-bold text-danger" style="font-size: 15px">{{
-                            dashboard.isLocked ? MASK : 'TZS ' + (hosp.count || 0).toLocaleString()
+                            dashboard.isLocked ? MASK : 'TZS ' + (row.count || 0).toLocaleString()
                           }}</span>
                           <span class="text-muted" style="font-size: 11px; white-space: nowrap">
-                            {{ t('dashboard.unpaidStudentsCount', { count: hosp.unpaidStudents || 0 }) }}
+                            {{ t('dashboard.unpaidStudentsCount', { count: row.unpaidStudents || 0 }) }}
                           </span>
                           <div
                             class="progress shadow-sm"
@@ -839,7 +827,7 @@ const chartOptions = computed(() => {
                               class="progress-bar bg-danger"
                               role="progressbar"
                               :style="{
-                                width: (hosp.count / (referralData[0]?.count || 1)) * 100 + '%',
+                                width: (row.count / (classDebtData[0]?.count || 1)) * 100 + '%',
                               }"
                             ></div>
                           </div>
@@ -854,7 +842,7 @@ const chartOptions = computed(() => {
                 v-else
                 class="d-flex flex-column align-items-center justify-content-center py-5 opacity-50"
               >
-                <CIcon :icon="cilHospital" size="xl" class="mb-2" />
+                <CIcon :icon="cilBarChart" size="xl" class="mb-2" />
                 <p class="small">{{ t('dashboard.noInvoiceData') }}</p>
               </div>
             </div>
@@ -903,20 +891,20 @@ const chartOptions = computed(() => {
   z-index: 2;
 }
 
-.referral-container::-webkit-scrollbar {
+.class-debt-container::-webkit-scrollbar {
   width: 6px;
 }
 
-.referral-container::-webkit-scrollbar-thumb {
+.class-debt-container::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.05);
   border-radius: 10px;
 }
 
-.referral-container:hover::-webkit-scrollbar-thumb {
+.class-debt-container:hover::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
 }
 
-.referral-table thead th {
+.class-debt-table thead th {
   font-size: 11px;
   text-transform: uppercase;
   color: #64748b;
@@ -925,26 +913,26 @@ const chartOptions = computed(() => {
   border-bottom: 2px solid #e2e8f0;
 }
 
-.referral-row {
+.class-debt-row {
   transition: all 0.2s ease;
   border-left: 3px solid transparent;
 }
 
-.referral-row.even-row td {
+.class-debt-row.even-row td {
   background-color: #f1f5f9 !important; /* Force visibility even without hover */
 }
 
-.referral-row.odd-row td {
+.class-debt-row.odd-row td {
   background-color: #ffffff !important;
 }
 
-.referral-row:hover {
+.class-debt-row:hover {
   background-color: rgba(59, 130, 246, 0.1) !important;
   border-left-color: #3b82f6;
   transform: translateX(2px);
 }
 
-.top-referral-row {
+.top-class-debt-row {
   border-left-color: #4f46e5;
   background-color: rgba(79, 70, 229, 0.03) !important;
 }

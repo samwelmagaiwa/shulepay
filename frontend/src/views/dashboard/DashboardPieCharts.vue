@@ -414,7 +414,7 @@ const polarPlugins = [
 
 <template>
   <div class="row mb-4 mx-0 px-0">
-    <!-- Patient Age Distribution (Polar Area - Expanded to col-6) -->
+    <!-- Student distribution by class (polar area, col-6) -->
     <div class="col-lg-6 col-md-12">
       <div class="card h-100 border-0 shadow-sm">
         <div class="card-header bg-transparent border-0 font-weight-bold pb-0 pt-3">

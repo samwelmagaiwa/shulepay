@@ -2,20 +2,18 @@
 import { CChart } from '@coreui/vue-chartjs'
 import { CIcon } from '@coreui/icons-vue'
 import {
-  cilBed,
   cilPeople,
-  cilMedicalCross,
   cilClock,
   cilXCircle,
   cilChartLine,
   cilHistory,
-  cilHospital,
   cilFile,
   cilUser,
   cilChevronBottom,
   cilChevronTop,
   cilInfo,
   cilPrint,
+  cilWallet,
 } from '@coreui/icons'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useI18n } from 'vue-i18n'
@@ -33,8 +31,8 @@ const dashboard = useDashboardStore()
 // Rendering that 0 would be worse than useless — it reads as "nothing was
 // collected" — hence the explicit mask.
 const LOCKED_KEYS = new Set([
-  'emergency_visits',      // outstanding debt
-  'followups',             // today's collections
+  'outstanding_amount',    // outstanding debt
+  'today_collections',             // today's collections
   'paid_partial_count',    // paid invoices — count
   'paid_partial_amount',   // paid invoices — amount
 ])
@@ -146,12 +144,6 @@ const exportOutstandingDebts = async () => {
   }
 }
 
-// ── Legacy pending list (kept to avoid breaking other callers) ────────────
-const showPendingList = ref(false)
-const pendingPatients = ref([])
-const isListLoading   = ref(false)
-const togglePendingList = () => {}
-const fetchPendingPatients = () => {}
 </script>
 
 <template>
@@ -176,7 +168,7 @@ const fetchPendingPatients = () => {}
       :gutter="3"
       class="row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3 px-0 mx-0 metrics-row"
     >
-      <!-- Total OPD -->
+      <!-- Total students -->
       <CCol class="metric-col">
         <div
           class="stat-card stat-card--stacked premium-shadow shadow-indigo"
@@ -190,12 +182,12 @@ const fetchPendingPatients = () => {}
               <span class="stat-label">{{ t('dashboard.cardTotalStudents') }}</span>
             </div>
             <div class="stat-main-info">
-              <h3 class="stat-value stacked-amount" style="color: #6366f1">{{ getValue('total_patients') }}</h3>
+              <h3 class="stat-value stacked-amount" style="color: #6366f1">{{ getValue('total_students') }}</h3>
               <!-- Sponsored students are a subset of all students, so they sit
                    on the same card, separated by divider lines. -->
               <div class="card-expenses">
                 <span class="card-expenses-label">{{ t('dashboard.cardSponsoredFree') }}</span>
-                <span class="card-expenses-value" style="color: #0ea5e9">{{ getValue('new_visits') }}</span>
+                <span class="card-expenses-value" style="color: #0ea5e9">{{ getValue('sponsored_free') }}</span>
               </div>
             </div>
           </div>
@@ -224,7 +216,7 @@ const fetchPendingPatients = () => {}
         </div>
       </CCol>
 
-      <!-- Followups -->
+      <!-- Today's collections -->
       <CCol class="metric-col">
         <div
           class="stat-card premium-shadow shadow-violet"
@@ -235,7 +227,7 @@ const fetchPendingPatients = () => {}
               <CIcon :icon="cilUser" class="stat-icon" style="color: #a855f7" />
             </div>
             <div class="stat-main-info">
-              <h3 class="stat-value" style="color: #a855f7">{{ getValue('followups') }}</h3>
+              <h3 class="stat-value" style="color: #a855f7">{{ getValue('today_collections') }}</h3>
               <span class="stat-label">{{ t('dashboard.cardTodayCollect') }}</span>
             </div>
           </div>
@@ -244,7 +236,7 @@ const fetchPendingPatients = () => {}
             class="stat-card-footer mt-auto pt-1"
           >
             <div class="stat-comparison">
-              <span class="prev-value text-muted">{{ getPrevValue('followups') }}</span>
+              <span class="prev-value text-muted">{{ getPrevValue('today_collections') }}</span>
               <span class="prev-label ms-1">{{ dashboard.compLabel }}</span>
             </div>
           </div>
@@ -261,11 +253,7 @@ const fetchPendingPatients = () => {}
             <!-- Top row: icon top-left, title, print button top-right. -->
             <div class="stacked-title-row">
               <div class="stat-icon-wrapper" style="background-color: rgba(244, 63, 94, 0.15)">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                     xmlns="http://www.w3.org/2000/svg" class="stat-icon">
-                  <rect x="10" y="2" width="4" height="20" rx="1" fill="#f43f5e" />
-                  <rect x="2" y="10" width="20" height="4" rx="1" fill="#f43f5e" />
-                </svg>
+                <CIcon :icon="cilWallet" class="stat-icon" style="color: #f43f5e" />
               </div>
               <span class="stat-label">{{ t('dashboard.cardDebt') }}</span>
               <button
@@ -283,8 +271,8 @@ const fetchPendingPatients = () => {}
               <h3
                 class="stat-value stacked-amount stacked-amount--solo"
                 style="color: #f43f5e"
-                :title="`${moneyPrefix('emergency_visits')}${getValue('emergency_visits')}`"
-              >{{ moneyPrefix('emergency_visits') }}{{ getValue('emergency_visits') }}</h3>
+                :title="`${moneyPrefix('outstanding_amount')}${getValue('outstanding_amount')}`"
+              >{{ moneyPrefix('outstanding_amount') }}{{ getValue('outstanding_amount') }}</h3>
               <!-- Invoices behind the debt: unpaid plus partly paid. -->
               <div class="card-expenses">
                 <span class="card-expenses-label">{{ t('dashboard.invoicesOwing') }}</span>
@@ -302,7 +290,7 @@ const fetchPendingPatients = () => {}
         </div>
       </CCol>
 
-      <!-- Total Consulted -->
+      <!-- Paid invoices -->
       <CCol class="metric-col">
         <div
           class="stat-card stat-card--stacked premium-shadow shadow-emerald"
@@ -378,14 +366,14 @@ const fetchPendingPatients = () => {}
             <div v-else-if="discountedByClass.length === 0" class="no-data-text">
               {{ t('dashboard.noDiscountedStudents', 'No students with a discount') }}
             </div>
-            <div v-else class="patient-list">
+            <div v-else class="student-list">
               <!-- Total row -->
-              <div class="patient-item absent-total-row">
+              <div class="student-item absent-total-row">
                 <span class="mr-number fw-bold">{{ t('common.total') }}</span>
                 <span class="absent-count-badge absent-count-total">{{ totalDiscounted }}</span>
               </div>
               <!-- Per class rows -->
-              <div v-for="cls in discountedByClass" :key="cls.class_id" class="patient-item">
+              <div v-for="cls in discountedByClass" :key="cls.class_id" class="student-item">
                 <span class="mr-number">{{ cls.class_name || '—' }}</span>
                 <span class="absent-count-badge">{{ cls.discounted }}</span>
               </div>
@@ -699,13 +687,13 @@ const fetchPendingPatients = () => {}
   }
 }
 
-.patient-list {
+.student-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.patient-item {
+.student-item {
   display: flex;
   align-items: center;
   font-size: 0.85rem; /* Increased from 0.75rem */
