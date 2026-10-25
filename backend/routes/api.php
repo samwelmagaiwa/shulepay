@@ -65,7 +65,9 @@ use App\Http\Controllers\Shared\UserSettingsController;
 use App\Http\Controllers\Sms\SmsController;
 use App\Http\Controllers\Superadmin\RolePermissionController;
 use App\Http\Controllers\Superadmin\SuperadminUserController;
+use App\Http\Controllers\Transport\FuelLogController;
 use App\Http\Controllers\Transport\TransportController;
+use App\Http\Controllers\Transport\VehicleDocumentController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public ────────────────────────────────────────────────────
@@ -413,6 +415,20 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('vehicles/{vehicle}/maintenance', [TransportController::class, 'maintenance']);
             Route::post('vehicles/{vehicle}/maintenance', [TransportController::class, 'storeMaintenance']);
             Route::get('summary', [TransportController::class, 'vehicleSummary']);
+
+            // Vehicle documents (insurance, licence, inspection...) with expiry alerts.
+            Route::get('documents/alerts', [VehicleDocumentController::class, 'alerts']);
+            Route::get('vehicles/{vehicle}/documents', [VehicleDocumentController::class, 'index']);
+            Route::post('vehicles/{vehicle}/documents', [VehicleDocumentController::class, 'store']);
+            Route::put('documents/{document}', [VehicleDocumentController::class, 'update']);
+            Route::delete('documents/{document}', [VehicleDocumentController::class, 'destroy']);
+
+            // Fuel logs.
+            Route::get('fuel/summary', [FuelLogController::class, 'fleet']);
+            Route::get('vehicles/{vehicle}/fuel', [FuelLogController::class, 'index']);
+            Route::post('vehicles/{vehicle}/fuel', [FuelLogController::class, 'store']);
+            Route::put('fuel/{log}', [FuelLogController::class, 'update']);
+            Route::delete('fuel/{log}', [FuelLogController::class, 'destroy']);
         });
 
         // Inventory (consumables + fixed assets)

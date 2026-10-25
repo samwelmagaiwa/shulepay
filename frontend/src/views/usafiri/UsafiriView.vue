@@ -1,15 +1,21 @@
-<script setup>
+﻿<script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTransportStore } from '@/stores/transport'
 import { useAuthStore }      from '@/stores/auth'
 import { useSchoolsStore }   from '@/stores/schools'
+import ExpiryAlertsBanner from '@/components/transport/ExpiryAlertsBanner.vue'
+import VehicleDocumentsTab from '@/components/transport/VehicleDocumentsTab.vue'
+import FuelLogsTab from '@/components/transport/FuelLogsTab.vue'
+import XStats from '@/components/XStats.vue'
+import XGrid from '@/components/XGrid.vue'
 
 const { t }       = useI18n()
 const store       = useTransportStore()
 const auth        = useAuthStore()
 const schoolsStore = useSchoolsStore()
 const activeTab   = ref(0)
+const alertsKey   = ref(0)   // bumped when a document changes, so the banner reloads
 
 const isSuperAdmin = computed(() => auth.isSuperAdmin)
 const schools      = computed(() => schoolsStore.schools)
@@ -23,6 +29,56 @@ function confirmOk() {
   confirm.value.onOk?.()
   confirm.value.visible = false
 }
+
+
+// ─── List design (same as the Expenses page) ────────────────────────────────
+const selVehicleId = ref(null)
+const selRouteId = ref(null)
+const selSubId = ref(null)
+const selMaintId = ref(null)
+const cards = computed(() => [
+  { label: t('transport.totalVehicles'), value: store.summaryStats.total_vehicles ?? 0, tone: 'blue' },
+  { label: t('transport.activeVehicles'), value: store.summaryStats.active_vehicles ?? 0, tone: 'green' },
+  { label: t('transport.inMaintenance'), value: store.summaryStats.maintenance_vehicles ?? 0, tone: 'amber' },
+  { label: t('transport.studentsOnTransport'), value: store.summaryStats.students_on_transport ?? 0, tone: 'gray' },
+])
+const vehicleColumns = computed(() => [
+  { key: 'plate_number', label: t('transport.plateNumber'), w: 'minmax(110px, 1fr)' },
+  { key: 'model', label: t('transport.makeModelYear'), w: 'minmax(170px, 2fr)' },
+  { key: 'capacity', label: t('transport.capacity'), w: 'minmax(110px, 1fr)' },
+  { key: 'driver_name', label: t('transport.driverName'), w: 'minmax(130px, 1.2fr)' },
+  { key: 'status', label: t('transport.status'), w: 'minmax(100px, .9fr)' },
+  { key: 'subscribed_students', label: t('transport.studentsOnTransport'), w: 'minmax(100px, .9fr)', align: 'end' },
+])
+const routeColumns = computed(() => [
+  { key: 'name', label: t('transport.routeName'), w: 'minmax(150px, 1.6fr)' },
+  { key: 'start_point', label: t('transport.from'), w: 'minmax(110px, 1fr)' },
+  { key: 'end_point', label: t('transport.to'), w: 'minmax(110px, 1fr)' },
+  { key: 'distance_km', label: t('transport.distance'), w: 'minmax(80px, .7fr)', align: 'end' },
+  { key: 'monthly_fare_cents', label: t('transport.farePerMonth'), w: 'minmax(120px, 1fr)', align: 'end' },
+  { key: 'is_active', label: t('transport.status'), w: 'minmax(90px, .8fr)' },
+])
+const subColumns = computed(() => [
+  { key: 'student', label: t('transport.student'), w: 'minmax(160px, 2fr)' },
+  { key: 'vehicle', label: t('transport.vehicle'), w: 'minmax(100px, 1fr)' },
+  { key: 'route', label: t('transport.route'), w: 'minmax(130px, 1.2fr)' },
+  { key: 'direction', label: t('transport.direction'), w: 'minmax(100px, 1fr)' },
+  { key: 'start_date', label: t('transport.startDate'), w: 'minmax(100px, 1fr)' },
+])
+const maintColumns = computed(() => [
+  { key: 'service_date', label: t('transport.serviceDate'), w: 'minmax(100px, 1fr)' },
+  { key: 'type', label: t('transport.typeLabel'), w: 'minmax(100px, 1fr)' },
+  { key: 'description', label: t('transport.descriptionLabel'), w: 'minmax(200px, 2.5fr)' },
+  { key: 'cost_cents', label: t('transport.cost'), w: 'minmax(110px, 1fr)', align: 'end' },
+  { key: 'next_service_date', label: t('transport.nextService'), w: 'minmax(110px, 1fr)' },
+])
+const vehicleMenu = () => [
+  { label: '✏️ ' + t('common.edit'), run: openEditVehicle },
+  { label: '🗑️ ' + t('common.delete'), run: deleteVehicle, danger: true },
+]
+const routeMenu = () => [{ label: '✏️ ' + t('common.edit'), run: openEditRoute }]
+const subMenu = () => [{ label: '🗑️ ' + t('transport.remove'), run: removeSub, danger: true }]
+const vehiclePill = (st) => ({ active: 'xg-pill--green', maintenance: 'xg-pill--amber', inactive: 'xg-pill--gray' }[st] || 'xg-pill--gray')
 
 // ─── Vehicles ────────────────────────────────────────────────────────────────
 const showVehicleModal = ref(false)
@@ -229,7 +285,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <CContainer fluid class="py-3">
+  <CContainer fluid class="xg-page">
     <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
       <h4 class="mb-0 fw-bold">🚌 {{ t('transport.title') }}</h4>
       <div v-if="schools.length" class="d-flex align-items-center gap-2">
@@ -241,41 +297,9 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Summary Cards -->
-    <CRow class="mb-4 g-3">
-      <CCol xs="6" md="3">
-        <CCard class="border-0 shadow-sm h-100">
-          <CCardBody class="text-center">
-            <div class="fs-2 fw-bold text-primary">{{ store.summaryStats.total_vehicles ?? 0 }}</div>
-            <div class="small text-muted">{{ t('transport.totalVehicles') }}</div>
-          </CCardBody>
-        </CCard>
-      </CCol>
-      <CCol xs="6" md="3">
-        <CCard class="border-0 shadow-sm h-100">
-          <CCardBody class="text-center">
-            <div class="fs-2 fw-bold text-success">{{ store.summaryStats.active_vehicles ?? 0 }}</div>
-            <div class="small text-muted">{{ t('transport.activeVehicles') }}</div>
-          </CCardBody>
-        </CCard>
-      </CCol>
-      <CCol xs="6" md="3">
-        <CCard class="border-0 shadow-sm h-100">
-          <CCardBody class="text-center">
-            <div class="fs-2 fw-bold text-warning">{{ store.summaryStats.maintenance_vehicles ?? 0 }}</div>
-            <div class="small text-muted">{{ t('transport.inMaintenance') }}</div>
-          </CCardBody>
-        </CCard>
-      </CCol>
-      <CCol xs="6" md="3">
-        <CCard class="border-0 shadow-sm h-100">
-          <CCardBody class="text-center">
-            <div class="fs-2 fw-bold text-info">{{ store.summaryStats.students_on_transport ?? 0 }}</div>
-            <div class="small text-muted">{{ t('transport.studentsOnTransport') }}</div>
-          </CCardBody>
-        </CCard>
-      </CCol>
-    </CRow>
+    <XStats :cards="cards" />
+
+    <ExpiryAlertsBanner :refresh-key="alertsKey" @open-documents="activeTab = 4" />
 
     <!-- Tabs -->
     <CCard class="border-0 shadow-sm">
@@ -286,6 +310,8 @@ onMounted(async () => {
             <CTab :item-key="1">🗺️ {{ t('transport.tabRoutes') }}</CTab>
             <CTab :item-key="2">👦 {{ t('transport.tabStudents') }}</CTab>
             <CTab :item-key="3">🔧 {{ t('transport.tabMaintenance') }}</CTab>
+            <CTab :item-key="4">📄 {{ t('transport.tabDocuments') }}</CTab>
+            <CTab :item-key="5">⛽ {{ t('transport.tabFuel') }}</CTab>
           </CTabList>
 
           <CTabContent class="p-3">
@@ -295,43 +321,14 @@ onMounted(async () => {
               <div class="d-flex justify-content-end mb-3">
                 <CButton color="success" @click="openAddVehicle">+ {{ t('transport.addVehicle') }}</CButton>
               </div>
-              <div v-if="store.loading" class="text-center py-4"><CSpinner /></div>
-              <CTable v-else responsive hover class="align-middle">
-                <CTableHead class="table-light">
-                  <CTableRow>
-                    <CTableHeaderCell>#</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.plateNumber') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.makeModelYear') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.capacity') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.driverName') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.status') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.studentsOnTransport') }}</CTableHeaderCell>
-                    <CTableHeaderCell></CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow v-for="(v, i) in store.vehicles" :key="v.id">
-                    <CTableDataCell>{{ i + 1 }}</CTableDataCell>
-                    <CTableDataCell class="fw-semibold">{{ v.plate_number }}</CTableDataCell>
-                    <CTableDataCell>{{ v.make }} {{ v.model }} ({{ v.year }})</CTableDataCell>
-                    <CTableDataCell>{{ v.capacity }} {{ t('transport.passengers') }}</CTableDataCell>
-                    <CTableDataCell>{{ v.driver_name || '—' }}</CTableDataCell>
-                    <CTableDataCell>
-                      <CBadge :color="statusBadge(v.status)">{{ t(`transport.status_${v.status}`) }}</CBadge>
-                    </CTableDataCell>
-                    <CTableDataCell>{{ v.subscribed_students || 0 }}</CTableDataCell>
-                    <CTableDataCell>
-                      <CButtonGroup size="sm">
-                        <CButton color="primary" variant="ghost" @click="openEditVehicle(v)">✏️</CButton>
-                        <CButton color="danger"  variant="ghost" @click="deleteVehicle(v)">🗑️</CButton>
-                      </CButtonGroup>
-                    </CTableDataCell>
-                  </CTableRow>
-                  <CTableRow v-if="!store.vehicles.length">
-                    <CTableDataCell colspan="8" class="text-center text-muted py-4">{{ t('transport.noVehicles') }}</CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
+              <XGrid v-model:selected-id="selVehicleId" :columns="vehicleColumns" :rows="store.vehicles" :loading="store.loading" :empty="t('transport.noVehicles')"
+                     :min-width="860" :menu="vehicleMenu" @open="openEditVehicle">
+                <template #cell-plate_number="{ row }"><span class="xg-name">{{ row.plate_number }}</span></template>
+                <template #cell-model="{ row }">{{ row.make }} {{ row.model }} ({{ row.year }})</template>
+                <template #cell-capacity="{ row }">{{ row.capacity }} {{ t('transport.passengers') }}</template>
+                <template #cell-status="{ row }"><span class="xg-pill" :class="vehiclePill(row.status)">{{ t(`transport.status_${row.status}`) }}</span></template>
+                <template #cell-subscribed_students="{ row }">{{ row.subscribed_students || 0 }}</template>
+              </XGrid>
             </CTabPanel>
 
             <!-- Tab 2: Routes -->
@@ -339,41 +336,13 @@ onMounted(async () => {
               <div class="d-flex justify-content-end mb-3">
                 <CButton color="success" @click="openAddRoute">+ {{ t('transport.addRoute') }}</CButton>
               </div>
-              <CTable responsive hover class="align-middle">
-                <CTableHead class="table-light">
-                  <CTableRow>
-                    <CTableHeaderCell>#</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.routeName') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.from') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.to') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.distance') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.farePerMonth') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.status') }}</CTableHeaderCell>
-                    <CTableHeaderCell></CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow v-for="(r, i) in store.routes" :key="r.id">
-                    <CTableDataCell>{{ i + 1 }}</CTableDataCell>
-                    <CTableDataCell class="fw-semibold">{{ r.name }}</CTableDataCell>
-                    <CTableDataCell>{{ r.start_point }}</CTableDataCell>
-                    <CTableDataCell>{{ r.end_point }}</CTableDataCell>
-                    <CTableDataCell>{{ r.distance_km ? r.distance_km + ' km' : '—' }}</CTableDataCell>
-                    <CTableDataCell>{{ formatMoney(r.monthly_fare_cents) }}</CTableDataCell>
-                    <CTableDataCell>
-                      <CBadge :color="r.is_active ? 'success' : 'secondary'">
-                        {{ r.is_active ? t('transport.statusOpen') : t('transport.statusClosed') }}
-                      </CBadge>
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      <CButton size="sm" color="primary" variant="ghost" @click="openEditRoute(r)">✏️</CButton>
-                    </CTableDataCell>
-                  </CTableRow>
-                  <CTableRow v-if="!store.routes.length">
-                    <CTableDataCell colspan="8" class="text-center text-muted py-4">{{ t('transport.noRoutes') }}</CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
+              <XGrid v-model:selected-id="selRouteId" :columns="routeColumns" :rows="store.routes" :empty="t('transport.noRoutes')"
+                     :min-width="860" :menu="routeMenu" @open="openEditRoute">
+                <template #cell-name="{ row }"><span class="xg-name">{{ row.name }}</span></template>
+                <template #cell-distance_km="{ row }">{{ row.distance_km ? row.distance_km + ' km' : '—' }}</template>
+                <template #cell-monthly_fare_cents="{ row }"><span class="xg-strong">{{ formatMoney(row.monthly_fare_cents) }}</span></template>
+                <template #cell-is_active="{ row }"><span class="xg-pill" :class="row.is_active ? 'xg-pill--green' : 'xg-pill--gray'">{{ row.is_active ? t('transport.statusOpen') : t('transport.statusClosed') }}</span></template>
+              </XGrid>
             </CTabPanel>
 
             <!-- Tab 3: Subscriptions -->
@@ -381,37 +350,13 @@ onMounted(async () => {
               <div class="d-flex justify-content-end mb-3">
                 <CButton color="success" @click="openAddSub">+ {{ t('transport.enrollStudent') }}</CButton>
               </div>
-              <CTable responsive hover class="align-middle">
-                <CTableHead class="table-light">
-                  <CTableRow>
-                    <CTableHeaderCell>#</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.student') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.vehicle') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.route') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.direction') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.startDate') }}</CTableHeaderCell>
-                    <CTableHeaderCell></CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow v-for="(s, i) in store.subscriptions" :key="s.id">
-                    <CTableDataCell>{{ i + 1 }}</CTableDataCell>
-                    <CTableDataCell class="fw-semibold">
-                      {{ s.student ? `${s.student.first_name} ${s.student.last_name}` : '—' }}
-                    </CTableDataCell>
-                    <CTableDataCell>{{ s.vehicle?.plate_number || '—' }}</CTableDataCell>
-                    <CTableDataCell>{{ s.route?.name || '—' }}</CTableDataCell>
-                    <CTableDataCell>{{ t(`transport.direction_${s.direction}`) }}</CTableDataCell>
-                    <CTableDataCell>{{ s.start_date }}</CTableDataCell>
-                    <CTableDataCell>
-                      <CButton size="sm" color="danger" variant="ghost" @click="removeSub(s)">{{ t('transport.remove') }}</CButton>
-                    </CTableDataCell>
-                  </CTableRow>
-                  <CTableRow v-if="!store.subscriptions.length">
-                    <CTableDataCell colspan="7" class="text-center text-muted py-4">{{ t('transport.noStudents') }}</CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
+              <XGrid v-model:selected-id="selSubId" :columns="subColumns" :rows="store.subscriptions" :empty="t('transport.noStudents')"
+                     :min-width="780" :menu="subMenu">
+                <template #cell-student="{ row }"><span class="xg-name">{{ row.student ? `${row.student.first_name} ${row.student.last_name}` : '—' }}</span></template>
+                <template #cell-vehicle="{ row }">{{ row.vehicle?.plate_number || '—' }}</template>
+                <template #cell-route="{ row }">{{ row.route?.name || '—' }}</template>
+                <template #cell-direction="{ row }">{{ t(`transport.direction_${row.direction}`) }}</template>
+              </XGrid>
             </CTabPanel>
 
             <!-- Tab 4: Maintenance -->
@@ -427,29 +372,23 @@ onMounted(async () => {
                   + {{ t('transport.addRecord') }}
                 </CButton>
               </div>
-              <CTable v-if="store.maintenance.length" responsive hover class="align-middle">
-                <CTableHead class="table-light">
-                  <CTableRow>
-                    <CTableHeaderCell>{{ t('transport.serviceDate') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.typeLabel') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.descriptionLabel') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.cost') }}</CTableHeaderCell>
-                    <CTableHeaderCell>{{ t('transport.nextService') }}</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow v-for="m in store.maintenance" :key="m.id">
-                    <CTableDataCell>{{ m.service_date }}</CTableDataCell>
-                    <CTableDataCell>{{ t(`transport.maint_${m.type}`) }}</CTableDataCell>
-                    <CTableDataCell>{{ m.description }}</CTableDataCell>
-                    <CTableDataCell>{{ formatMoney(m.cost_cents) }}</CTableDataCell>
-                    <CTableDataCell>{{ m.next_service_date || '—' }}</CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
+              <XGrid v-if="store.maintenance.length" v-model:selected-id="selMaintId" :columns="maintColumns" :rows="store.maintenance" :min-width="720">
+                <template #cell-type="{ row }">{{ t(`transport.maint_${row.type}`) }}</template>
+                <template #cell-cost_cents="{ row }"><span class="xg-strong">{{ formatMoney(row.cost_cents) }}</span></template>
+              </XGrid>
               <div v-else class="text-center text-muted py-5">
                 {{ selectedVehicleId ? t('transport.noRecords') : t('transport.selectVehicleFirst') }}
               </div>
+            </CTabPanel>
+
+            <!-- Tab 5: Vehicle documents -->
+            <CTabPanel :item-key="4">
+              <VehicleDocumentsTab :vehicles="store.vehicles" @changed="alertsKey++" />
+            </CTabPanel>
+
+            <!-- Tab 6: Fuel logs -->
+            <CTabPanel :item-key="5">
+              <FuelLogsTab :vehicles="store.vehicles" />
             </CTabPanel>
           </CTabContent>
         </CTabs>

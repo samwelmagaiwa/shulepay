@@ -33,6 +33,16 @@ class Vehicle extends Model
         return $this->hasMany(StudentTransportSubscription::class);
     }
 
+    public function documents(): HasMany
+    {
+        return $this->hasMany(VehicleDocument::class);
+    }
+
+    public function fuelLogs(): HasMany
+    {
+        return $this->hasMany(FuelLog::class);
+    }
+
     public function maintenanceRecords(): HasMany
     {
         return $this->hasMany(VehicleMaintenance::class);

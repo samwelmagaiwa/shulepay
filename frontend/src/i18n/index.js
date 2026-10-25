@@ -9,6 +9,10 @@ import printingEn from './printing.en.js'
 import printingSw from './printing.sw.js'
 import purchasingEn from './purchasing.en.js'
 import purchasingSw from './purchasing.sw.js'
+import expensexEn from './expensex.en.js'
+import expensexSw from './expensex.sw.js'
+import budgetxEn from './budgetx.en.js'
+import budgetxSw from './budgetx.sw.js'
 
 const saved = localStorage.getItem('shulepay_lang') || 'en'
 
@@ -27,8 +31,8 @@ function withMissing(base, extra) {
 
 // A <name>.en.js / <name>.sw.js pair is the namespace `name`; the additions pair is merged at the root.
 export const messages = {
-  en: { ...withMissing(en, additionsEn), examx: examxEn, printing: printingEn, purchasing: purchasingEn },
-  sw: { ...withMissing(sw, additionsSw), examx: examxSw, printing: printingSw, purchasing: purchasingSw },
+  en: { ...withMissing(en, additionsEn), examx: examxEn, printing: printingEn, purchasing: purchasingEn, expensex: expensexEn, budgetx: budgetxEn },
+  sw: { ...withMissing(sw, additionsSw), examx: examxSw, printing: printingSw, purchasing: purchasingSw, expensex: expensexSw, budgetx: budgetxSw },
 }
 
 export const i18n = createI18n({

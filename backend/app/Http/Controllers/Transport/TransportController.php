@@ -8,6 +8,8 @@ use App\Models\StudentTransportSubscription;
 use App\Models\Vehicle;
 use App\Models\VehicleMaintenance;
 use App\Models\VehicleRoute;
+use App\Support\SchoolScope;
+use App\Support\Tenant;
 use Illuminate\Http\Request;
 
 class TransportController extends Controller
@@ -26,10 +28,10 @@ class TransportController extends Controller
 
     public function vehicles(Request $request)
     {
-        $schoolId = $this->resolveSchoolId($request);
+        $schoolId = $this->isTenantMode() ? null : $this->resolveSchoolId($request);
 
         $query = Vehicle::query();
-        if ($schoolId) {
+        if (! $this->isTenantMode() && $schoolId) {
             $query->where('school_id', $schoolId);
         }
 
@@ -66,11 +68,20 @@ class TransportController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $validated['school_id'] = $validated['school_id']
-            ?? (app()->bound('active_school') ? app('active_school')->id : auth()->user()->school_id);
+        // A tenant database is one school and has no school_id column.
+        if ($this->isTenantMode()) {
+            unset($validated['school_id']);
+        } else {
+            // A school named in the request must be one the user works in.
+            if (! empty($validated['school_id'])) {
+                SchoolScope::authorize($request->user(), (int) $validated['school_id']);
+            }
+            $validated['school_id'] = $validated['school_id']
+                ?? (app()->bound('active_school') ? app('active_school')->id : auth()->user()->school_id);
 
-        if (! $validated['school_id']) {
-            return response()->json(['message' => __('Please select a school.')], 422);
+            if (! $validated['school_id']) {
+                return response()->json(['message' => __('messages.please_select_a_school')], 422);
+            }
         }
 
         $vehicle = Vehicle::create($validated);
@@ -111,7 +122,7 @@ class TransportController extends Controller
 
     public function routes(Request $request)
     {
-        $schoolId = $this->resolveSchoolId($request);
+        $schoolId = $this->isTenantMode() ? null : $this->resolveSchoolId($request);
         $query = VehicleRoute::query();
         if ($schoolId) {
             $query->where('school_id', $schoolId);
@@ -134,11 +145,20 @@ class TransportController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        $validated['school_id'] = $validated['school_id']
-            ?? (app()->bound('active_school') ? app('active_school')->id : auth()->user()->school_id);
+        // A tenant database is one school and has no school_id column.
+        if ($this->isTenantMode()) {
+            unset($validated['school_id']);
+        } else {
+            // A school named in the request must be one the user works in.
+            if (! empty($validated['school_id'])) {
+                SchoolScope::authorize($request->user(), (int) $validated['school_id']);
+            }
+            $validated['school_id'] = $validated['school_id']
+                ?? (app()->bound('active_school') ? app('active_school')->id : auth()->user()->school_id);
 
-        if (! $validated['school_id']) {
-            return response()->json(['message' => __('Please select a school.')], 422);
+            if (! $validated['school_id']) {
+                return response()->json(['message' => __('messages.please_select_a_school')], 422);
+            }
         }
 
         $route = VehicleRoute::create($validated);
@@ -168,7 +188,7 @@ class TransportController extends Controller
 
     public function subscriptions(Request $request)
     {
-        $schoolId = $this->resolveSchoolId($request);
+        $schoolId = $this->isTenantMode() ? null : $this->resolveSchoolId($request);
 
         $subs = StudentTransportSubscription::when($schoolId, fn ($q) => $q->whereHas('vehicle', fn ($v) => $v->where('school_id', $schoolId)))
             ->where('is_active', true)
@@ -190,6 +210,13 @@ class TransportController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        // The vehicle and route must belong to the active school (both models scope themselves
+        // to it); the plain `exists` rules above would accept another school's ids.
+        Vehicle::findOrFail($validated['vehicle_id']);
+        if (! empty($validated['route_id'])) {
+            VehicleRoute::findOrFail($validated['route_id']);
+        }
+
         // Deactivate any existing active subscription for this student
         StudentTransportSubscription::where('student_id', $validated['student_id'])
             ->where('is_active', true)
@@ -204,6 +231,9 @@ class TransportController extends Controller
 
     public function unsubscribe(StudentTransportSubscription $subscription)
     {
+        // Route binding runs before the active school is set, so confirm the vehicle is ours.
+        Vehicle::findOrFail($subscription->vehicle_id);
+
         $subscription->update(['is_active' => false, 'end_date' => now()->toDateString()]);
 
         return response()->noContent();
@@ -236,7 +266,7 @@ class TransportController extends Controller
         ]);
 
         $validated['vehicle_id'] = $vehicle->id;
-        $validated['recorded_by'] = auth()->id();
+        $validated['recorded_by'] = Tenant::actorId();
         $validated['cost_cents'] = $validated['cost_cents'] ?? 0;
 
         // If type is 'maintenance', update vehicle status
@@ -251,7 +281,7 @@ class TransportController extends Controller
 
     public function vehicleSummary(Request $request)
     {
-        $schoolId = $this->resolveSchoolId($request);
+        $schoolId = $this->isTenantMode() ? null : $this->resolveSchoolId($request);
 
         $query = Vehicle::query();
         if ($schoolId) {
@@ -269,8 +299,13 @@ class TransportController extends Controller
         ]);
     }
 
-    private function authorizeSchool(int $schoolId): void
+    private function authorizeSchool(?int $schoolId): void
     {
+        // A tenant database holds one school only, so there is no other school to guard against.
+        if ($this->isTenantMode()) {
+            return;
+        }
+
         $user = auth()->user();
         // Superadmin can access any school's resources
         if ($user->hasRole('superadmin')) {
@@ -282,7 +317,7 @@ class TransportController extends Controller
             : $user->school_id;
 
         if ($userSchoolId !== $schoolId) {
-            abort(403, __('You do not have access to this resource.'));
+            abort(403, __('messages.you_do_not_have_access_to_this_2'));
         }
     }
 }
