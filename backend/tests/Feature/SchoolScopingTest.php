@@ -101,6 +101,25 @@ class SchoolScopingTest extends TestCase
         $this->assertContains('INV-SEK-001', $numbers);
     }
 
+    /** "All schools" mode must not turn a one-school user into a cross-school reader. */
+    public function test_all_schools_mode_only_covers_the_schools_the_user_may_access(): void
+    {
+        $token = $this->accountantA->createToken('t')->plainTextToken;
+
+        foreach (['/api/invoices?school_id=0', '/api/invoices'] as $url) {
+            $numbers = collect($this->withToken($token)->withHeaders(['X-School-Id' => '0'])->getJson($url)->assertOk()->json('data'))->pluck('invoice_number')->all();
+            $this->assertContains('INV-MSG-001', $numbers);
+            $this->assertNotContains('INV-SEK-001', $numbers, "{$url} leaked the other school's invoices");
+        }
+
+        // a user who really holds access to both schools does see both
+        \DB::table('user_school_access')->insert(['user_id' => $this->accountantA->id, 'school_id' => $this->sekondari->id, 'created_at' => now(), 'updated_at' => now()]);
+        $this->app['auth']->forgetGuards();
+        $both = collect($this->withToken($this->accountantA->createToken('t2')->plainTextToken)->withHeaders(['X-School-Id' => '0'])->getJson('/api/invoices')->assertOk()->json('data'))->pluck('invoice_number')->all();
+        $this->assertContains('INV-MSG-001', $both);
+        $this->assertContains('INV-SEK-001', $both);
+    }
+
     /** The list carries each student's real balance, not a missing field read as paid. */
     public function test_student_index_includes_outstanding_balance(): void
     {

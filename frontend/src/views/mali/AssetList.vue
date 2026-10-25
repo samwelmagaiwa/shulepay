@@ -372,7 +372,7 @@
             </CCol>
             <CCol xs="12" md="6">
               <label class="form-label fw-semibold">{{ t('assets.supplier') }}</label>
-              <CFormInput v-model="form.supplier_name" style="min-height:44px;" />
+              <SupplierPicker v-model="form.supplier_id" v-model:name="form.supplier_name" />
             </CCol>
             <CCol xs="12" md="6">
               <label class="form-label fw-semibold">{{ t('assets.invoiceNo') }}</label>
@@ -539,6 +539,7 @@ import { useI18n } from 'vue-i18n'
 import { useAssetsStore }  from '@/stores/assets'
 import { useSchoolsStore } from '@/stores/schools'
 import { useSchoolStore }  from '@/stores/school'
+import SupplierPicker from '@/components/SupplierPicker.vue'
 
 const { t } = useI18n()
 
@@ -599,7 +600,7 @@ const disposeForm = ref({ disposal_date: '', disposal_value: '', disposal_reason
 function defaultForm() {
   return {
     asset_tag: '', name: '', category: '', school_id: '', quantity: 1,
-    serial_no: '', purchase_cost: '', purchase_date: '', supplier_name: '',
+    serial_no: '', purchase_cost: '', purchase_date: '', supplier_name: '', supplier_id: '',
     invoice_no: '', funding_source: '', depreciation_method: '', useful_life_years: '',
     depreciation_rate: '', salvage_value: '', custodian: '', location: '',
     condition: 'good', status: 'in_use', warranty_expiry: '', notes: '',
@@ -752,6 +753,7 @@ function openEdit(a) {
     purchase_cost:       Math.round((a.purchase_cost_cents || a.cost_cents || 0) / 100),
     purchase_date:       a.purchase_date || '',
     supplier_name:       a.supplier_name || '',
+    supplier_id:         a.supplier_id || '',
     invoice_no:          a.invoice_no || '',
     funding_source:      a.funding_source || '',
     depreciation_method: a.depreciation_method || '',

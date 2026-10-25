@@ -86,7 +86,7 @@ class ExpenseCategoryDeletionTest extends TestCase
 
         $this->withToken($this->token())
             ->deleteJson("/api/expenses/{$expense->id}")
-            ->assertStatus(422);
+            ->assertForbidden();   // deleting spending is the owner's decision, not the accountant's
 
         $this->assertDatabaseHas('expenses', ['id' => $expense->id]);
     }
@@ -104,7 +104,7 @@ class ExpenseCategoryDeletionTest extends TestCase
         $this->app['auth']->forgetGuards();
 
         $this->withToken($admin->createToken('t')->plainTextToken)
-            ->deleteJson("/api/expenses/{$expense->id}")
+            ->deleteJson("/api/expenses/{$expense->id}", ['reason' => 'Recorded twice by mistake'])
             ->assertOk();
 
         $this->assertDatabaseMissing('expenses', ['id' => $expense->id]);

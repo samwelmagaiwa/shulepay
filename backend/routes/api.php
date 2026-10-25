@@ -9,11 +9,13 @@ use App\Http\Controllers\Accountant\EmployeeController;
 use App\Http\Controllers\Accountant\ExpenseCategoryController;
 use App\Http\Controllers\Accountant\ExpenseController;
 use App\Http\Controllers\Accountant\FeeStructureController;
+use App\Http\Controllers\Accountant\GoodsReceiptController;
 use App\Http\Controllers\Accountant\GuardianController;
 use App\Http\Controllers\Accountant\InstallmentController;
 use App\Http\Controllers\Accountant\InvoiceController;
 use App\Http\Controllers\Accountant\PaymentController;
 use App\Http\Controllers\Accountant\PaymentPromiseController;
+use App\Http\Controllers\Accountant\PaymentVoucherController;
 use App\Http\Controllers\Accountant\PayrollController;
 use App\Http\Controllers\Accountant\PettyCashController;
 use App\Http\Controllers\Accountant\PrimaryFeeCategoryController;
@@ -23,8 +25,13 @@ use App\Http\Controllers\Accountant\RolloverController;
 use App\Http\Controllers\Accountant\StudentController;
 use App\Http\Controllers\Accountant\StudentDraftController;
 use App\Http\Controllers\Accountant\StudentTermBillingController;
+use App\Http\Controllers\Accountant\SupplierBillController;
 use App\Http\Controllers\Accountant\SupplierController;
+use App\Http\Controllers\Accountant\SupplierDocumentController;
+use App\Http\Controllers\Accountant\SupplierImportController;
 use App\Http\Controllers\Accountant\SupplierPaymentController;
+use App\Http\Controllers\Accountant\SupplierReportController;
+use App\Http\Controllers\Accountant\SupplierSetupController;
 use App\Http\Controllers\Ai\AiChatController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AttendanceHistoryController;
@@ -345,6 +352,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('expenses', ExpenseController::class);
         Route::post('expenses/{expense}/approve', [ExpenseController::class, 'approve'])
             ->middleware('role:'.UserRole::guard(UserRole::adminStaff()));
+        Route::post('expenses/{expense}/reject', [ExpenseController::class, 'reject'])
+            ->middleware('role:'.UserRole::guard(UserRole::adminStaff()));
+
+        // Payment vouchers (supplier payment / expense / payroll) — a printable A4 page
+        Route::get('vouchers/{type}/{id}', [PaymentVoucherController::class, 'download'])
+            ->whereNumber('id')->middleware('throttle:30,1');
 
         // Petty Cash
         Route::get('petty-cash/balance', [PettyCashController::class, 'balance']);
@@ -358,8 +371,52 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('payroll/{payroll}/mark-paid', [PayrollController::class, 'markPaid']);
 
         // Suppliers
+        // (static paths first; approvals are the owner's alone)
+        $owner = 'role:'.UserRole::guard(UserRole::adminStaff());
+        Route::get('suppliers/overview', [SupplierReportController::class, 'overview']);
+        Route::get('suppliers/reports/aging', [SupplierReportController::class, 'aging']);
+        Route::get('suppliers/reports/spend', [SupplierReportController::class, 'spend']);
+        Route::get('suppliers/reports/tax', [SupplierReportController::class, 'tax']);
+        Route::get('suppliers/import/template', [SupplierImportController::class, 'template']);
+        Route::post('suppliers/import', [SupplierImportController::class, 'import']);
+        Route::get('suppliers/vendors', [SupplierImportController::class, 'vendors']);
+        Route::post('suppliers/vendors/link', [SupplierImportController::class, 'linkVendor']);
+        Route::get('suppliers/categories', [SupplierSetupController::class, 'categories']);
+        Route::post('suppliers/categories', [SupplierSetupController::class, 'storeCategory']);
+        Route::put('suppliers/categories/{category}', [SupplierSetupController::class, 'updateCategory']);
+        Route::delete('suppliers/categories/{category}', [SupplierSetupController::class, 'destroyCategory']);
+        Route::get('suppliers/settings', [SupplierSetupController::class, 'settings']);
+        Route::get('suppliers/permissions', [SupplierSetupController::class, 'permissions']);
+        Route::put('suppliers/settings', [SupplierSetupController::class, 'updateSettings'])->middleware($owner);
+        Route::get('suppliers/documents', [SupplierDocumentController::class, 'index']);
+        Route::post('suppliers/documents', [SupplierDocumentController::class, 'store']);
+        Route::delete('suppliers/documents/{document}', [SupplierDocumentController::class, 'destroy']);
+        Route::get('suppliers/{supplier}/statement', [SupplierController::class, 'statement']);
+        Route::get('suppliers/{supplier}/statement/pdf', [SupplierController::class, 'statementPdf']);
+        Route::get('suppliers/{supplier}/wht-suggestion', [SupplierController::class, 'whtSuggestion']);
+        Route::post('suppliers/{supplier}/status', [SupplierController::class, 'setStatus']);
+        Route::post('suppliers/{supplier}/merge', [SupplierController::class, 'merge']);
         Route::apiResource('suppliers', SupplierController::class);
-        Route::apiResource('supplier-payments', SupplierPaymentController::class)->only(['index', 'store', 'destroy']);
+
+        Route::get('supplier-bills', [SupplierBillController::class, 'index']);
+        Route::post('supplier-bills', [SupplierBillController::class, 'store']);
+        Route::get('supplier-bills/{bill}', [SupplierBillController::class, 'show']);
+        Route::put('supplier-bills/{bill}', [SupplierBillController::class, 'update']);
+        Route::post('supplier-bills/{bill}/attachment', [SupplierBillController::class, 'attach']);
+        Route::post('supplier-bills/{bill}/cancel', [SupplierBillController::class, 'cancel']);
+        Route::post('supplier-bills/{bill}/approve', [SupplierBillController::class, 'approve']);
+        Route::post('supplier-bills/{bill}/reject', [SupplierBillController::class, 'reject']);
+
+        Route::get('supplier-payments', [SupplierPaymentController::class, 'index']);
+        Route::post('supplier-payments', [SupplierPaymentController::class, 'store']);
+        Route::post('supplier-payments/{payment}/approve', [SupplierPaymentController::class, 'approve']);
+        Route::post('supplier-payments/{payment}/reject', [SupplierPaymentController::class, 'reject']);
+        Route::post('supplier-payments/{payment}/void', [SupplierPaymentController::class, 'void']);
+
+        Route::get('goods-receipts', [GoodsReceiptController::class, 'index']);
+        Route::post('goods-receipts', [GoodsReceiptController::class, 'store']);
+        Route::get('goods-receipts/{goodsReceipt}', [GoodsReceiptController::class, 'show']);
+        Route::post('goods-receipts/{goodsReceipt}/void', [GoodsReceiptController::class, 'void']);
 
         // Assets — custom routes MUST precede apiResource
         Route::get('assets/next-tag', [AssetController::class, 'nextTag']);

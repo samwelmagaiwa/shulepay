@@ -19,7 +19,7 @@ class UpdateAssetRequest extends FormRequest
             'asset_tag' => "sometimes|required|string|max:30|unique:assets,asset_tag,{$assetId}",
             'name' => 'sometimes|required|string|max:200',
             'category' => 'sometimes|required|in:furniture,technology,equipment,vehicles,buildings,sports,other',
-            'school_id' => 'sometimes|required|exists:schools,id',
+            'school_id' => app()->bound('tenancy.initialized') ? 'sometimes|integer' : 'sometimes|required|exists:mysql.schools,id',
             'quantity' => 'nullable|integer|min:1',
             'serial_no' => 'nullable|string|max:100',
             'photo' => 'nullable|image|max:2048',

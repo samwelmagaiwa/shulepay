@@ -1,7 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import api from '@/services/api'
-import { i18n } from '@/i18n'
 
 export const useExpensesStore = defineStore('expenses', () => {
   const expenses = ref([])
@@ -9,6 +8,8 @@ export const useExpensesStore = defineStore('expenses', () => {
   const loading = ref(false)
   const error = ref('')
   const pagination = ref({})
+  // Totals of everything the filters match, not just the page on screen
+  const summary = ref({})
 
   async function fetchExpenses(params = {}) {
     loading.value = true
@@ -17,8 +18,9 @@ export const useExpensesStore = defineStore('expenses', () => {
       const { data } = await api.get('/expenses', { params })
       expenses.value = data.data || data
       pagination.value = data.meta || {}
+      summary.value = data.summary || {}
     } catch (e) {
-      error.value = e?.response?.data?.message || i18n.global.t('errors.loadData')
+      error.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia data'
     } finally {
       loading.value = false
     }
@@ -71,13 +73,19 @@ export const useExpensesStore = defineStore('expenses', () => {
     return data
   }
 
-  async function deleteExpense(id) {
-    await api.delete(`/expenses/${id}`)
+  async function rejectExpense(id, reason) {
+    const { data } = await api.post(`/expenses/${id}/reject`, { reason })
+    return data
+  }
+
+  // an approved expense needs a reason; it is kept in the audit trail
+  async function deleteExpense(id, reason) {
+    await api.delete(`/expenses/${id}`, { data: reason ? { reason } : {} })
   }
 
   return {
-    expenses, categories, loading, error, pagination,
-    fetchExpenses, fetchCategories, createExpense, updateExpense, approveExpense, deleteExpense,
+    expenses, categories, loading, error, pagination, summary,
+    fetchExpenses, fetchCategories, createExpense, updateExpense, approveExpense, rejectExpense, deleteExpense,
     createCategory, updateCategory, deleteCategory,
   }
 })

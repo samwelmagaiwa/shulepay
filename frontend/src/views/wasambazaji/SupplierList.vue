@@ -1,461 +1,195 @@
 <template>
-  <CContainer fluid class="p-2 p-md-3">
-    <!-- Top Action Toolbar -->
-    <div class="d-flex justify-content-end mb-3">
-      <CButton color="success" @click="openAdd" style="min-height:40px;">
-        <CIcon icon="cilPlus" class="me-1" /> {{ t('suppliers.add') }}
-      </CButton>
+  <CContainer fluid class="sup-page p-2 p-md-3">
+    <!-- At-a-glance numbers -->
+    <CRow class="g-2 mb-3">
+      <CCol v-for="card in cards" :key="card.key" xs="6" md="4" xl="2">
+        <div class="border rounded p-2 h-100" :class="card.warn && card.value > 0 ? 'border-warning' : ''">
+          <div class="small text-muted">{{ t('purchasing.overview.' + card.key) }}</div>
+          <div class="fw-bold" :class="card.cls">{{ card.money ? formatMoney(card.value) : card.value }}</div>
+        </div>
+      </CCol>
+    </CRow>
+
+    <!-- Tabs and the active tab's filters / action button share one row that stays put while the data scrolls -->
+    <div ref="barEl" class="sup-bar d-flex flex-wrap align-items-center gap-2" :style="{ top: barTop + 'px' }">
+      <CNav variant="tabs" class="flex-nowrap sup-tabs">
+        <CNavItem v-for="tab in tabs" :key="tab">
+          <CNavLink :active="active === tab" class="text-nowrap" @click="selectTab(tab)">
+            {{ t('purchasing.tabs.' + tab) }}
+            <CBadge v-if="badge(tab)" color="warning" class="ms-1">{{ badge(tab) }}</CBadge>
+          </CNavLink>
+        </CNavItem>
+      </CNav>
+      <!-- the active tab teleports its toolbar here -->
+      <div id="sup-toolbar" class="sup-toolbar ms-auto d-flex flex-wrap align-items-center justify-content-end gap-2"></div>
     </div>
+    <div class="mb-3"></div>
 
-    <div v-if="loading" class="text-center py-5"><CSpinner color="primary" /></div>
+    <SuppliersTab v-if="active === 'suppliers'" :key="tabKey" @created="onSupplierCreated" @changed="loadOverview" @open-bill="goBill" @open-pay="goPay" @open-receive="goReceive" />
+    <BillsTab v-else-if="active === 'bills'" :key="tabKey" :preset="preset" @created="onBillCreated" @changed="loadOverview" />
+    <PaymentsTab v-else-if="active === 'payments'" :key="tabKey" :preset="preset" @created="onPaymentCreated" @changed="loadOverview" />
+    <GoodsReceiptsTab v-else-if="active === 'receipts'" :preset="preset" @changed="loadOverview" />
+    <DocumentsTab v-else-if="active === 'documents'" />
+    <ReportsTab v-else-if="active === 'reports'" />
+    <SettingsTab v-else-if="active === 'settings'" @changed="onSettingsChanged" />
 
-    <div v-else>
-      <!-- Mobile cards -->
-      <div class="d-md-none">
-        <div v-if="!suppliers.length" class="text-center text-muted py-5">{{ t('suppliers.noSuppliers') }}</div>
-        <div v-for="sup in suppliers" :key="sup.id" class="mb-2 border rounded p-3">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <div class="fw-bold">{{ sup.name }}</div>
-              <div class="small text-muted">{{ sup.contact_name }}</div>
-              <div class="small text-muted">{{ sup.phone }}</div>
-            </div>
-            <div class="text-end">
-              <div class="fw-bold" :class="(sup.balance_cents || 0) > 0 ? 'text-danger' : 'text-muted'">
-                {{ formatMoney(sup.balance_cents) }}
-              </div>
-              <div class="small text-muted">{{ t('suppliers.debt') }}</div>
-            </div>
-          </div>
-          <div class="d-flex gap-2 mt-2 flex-wrap">
-            <CButton v-if="(sup.balance_cents || 0) > 0" size="sm" color="primary"
-                     @click="openPayment(sup)" style="min-height:44px;">
-              {{ t('suppliers.pay') }}
-            </CButton>
-            <CButton size="sm" color="secondary" variant="outline" @click="openEdit(sup)"
-                     style="min-height:44px; min-width:44px;">
-              <CIcon icon="cilPencil" />
-            </CButton>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pagination (mobile) -->
-      <div v-if="meta.last_page > 1" class="d-md-none d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <small class="text-medium-emphasis">
-          {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
-        </small>
-        <CPagination :aria-label="t('common.pagination')" size="sm">
-          <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; load()">{{ t('common.first') }}</CPaginationItem>
-          <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; load()">{{ p }}</CPaginationItem>
-          <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; load()">{{ t('common.last') }}</CPaginationItem>
-        </CPagination>
-      </div>
-
-      <!-- Desktop table -->
-      <CCard class="d-none d-md-block">
-        <CCardBody class="p-0">
-          <CTable responsive hover class="mb-0">
-            <CTableHead class="table-light">
-              <CTableRow>
-                <CTableHeaderCell>{{ t('suppliers.name') }}</CTableHeaderCell>
-                <CTableHeaderCell class="d-none d-lg-table-cell">{{ t('suppliers.contactPerson') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('suppliers.phone') }}</CTableHeaderCell>
-                <CTableHeaderCell class="d-none d-lg-table-cell">{{ t('suppliers.email') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('suppliers.debt') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('common.actions') }}</CTableHeaderCell>
-              </CTableRow>
-            </CTableHead>
-            <CTableBody>
-              <CTableRow v-for="sup in suppliers" :key="sup.id">
-                <CTableDataCell>
-                  <div class="fw-semibold">{{ sup.name }}</div>
-                  <div class="small text-muted">{{ sup.address }}</div>
-                </CTableDataCell>
-                <CTableDataCell class="d-none d-lg-table-cell">{{ sup.contact_name }}</CTableDataCell>
-                <CTableDataCell>{{ sup.phone }}</CTableDataCell>
-                <CTableDataCell class="d-none d-lg-table-cell">{{ sup.email || '—' }}</CTableDataCell>
-                <CTableDataCell>
-                  <span class="fw-bold" :class="(sup.balance_cents || 0) > 0 ? 'text-danger' : 'text-success'">
-                    {{ formatMoney(sup.balance_cents) }}
-                  </span>
-                </CTableDataCell>
-                <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
-                  <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === sup.id ? null : sup.id">👁️</CButton>
-                  <div v-if="activeRow === sup.id"
-                       style="position:absolute; bottom:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
-                       @click.stop>
-                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(sup); activeRow = null">👁️ {{ t('common.view') }}</CButton>
-                    <CButton v-if="(sup.balance_cents || 0) > 0" size="sm" color="primary" variant="ghost" class="text-start" @click="openPayment(sup); activeRow = null">💳 {{ t('suppliers.pay') }}</CButton>
-                    <CButton size="sm" color="secondary" variant="ghost" class="text-start" @click="openEdit(sup); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
-                  </div>
-                </CTableDataCell>
-              </CTableRow>
-              <CTableRow v-if="!suppliers.length">
-                <CTableDataCell colspan="6" class="text-center text-muted py-4">{{ t('suppliers.noSuppliers') }}</CTableDataCell>
-              </CTableRow>
-            </CTableBody>
-          </CTable>
-        </CCardBody>
-      </CCard>
-
-      <!-- Pagination (desktop) -->
-      <div v-if="meta.last_page > 1" class="d-none d-md-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-        <small class="text-medium-emphasis">
-          {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
-        </small>
-        <CPagination :aria-label="t('common.pagination')" size="sm">
-          <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; load()">{{ t('common.first') }}</CPaginationItem>
-          <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; load()">{{ p }}</CPaginationItem>
-          <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; load()">{{ t('common.last') }}</CPaginationItem>
-        </CPagination>
-      </div>
-    </div>
-
-    <!-- View Supplier Modal -->
-    <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
-      <CModalHeader>
-        <CModalTitle>🏢 {{ t('suppliers.viewTitle') }}</CModalTitle>
-      </CModalHeader>
-      <CModalBody v-if="viewTarget" class="p-3">
-        <div class="p-3 bg-light rounded mb-4">
-          <div class="fw-bold fs-5">{{ viewTarget.name }}</div>
-          <div v-if="viewTarget.address" class="text-muted small mt-1">{{ viewTarget.address }}</div>
-        </div>
-        <CRow class="g-3">
-          <CCol xs="12" sm="6">
-            <div class="text-muted small fw-semibold mb-1">{{ t('suppliers.contactPerson') }}</div>
-            <div>{{ viewTarget.contact_name || '—' }}</div>
-          </CCol>
-          <CCol xs="12" sm="6">
-            <div class="text-muted small fw-semibold mb-1">{{ t('suppliers.phone') }}</div>
-            <div>{{ viewTarget.phone || '—' }}</div>
-          </CCol>
-          <CCol xs="12" sm="6">
-            <div class="text-muted small fw-semibold mb-1">{{ t('suppliers.email') }}</div>
-            <div>{{ viewTarget.email || '—' }}</div>
-          </CCol>
-          <CCol xs="12" sm="6">
-            <div class="text-muted small fw-semibold mb-1">{{ t('suppliers.debt') }}</div>
-            <div class="fw-bold" :class="(viewTarget.balance_cents || 0) > 0 ? 'text-danger' : 'text-success'">
-              {{ formatMoney(viewTarget.balance_cents) }}
-            </div>
-          </CCol>
-        </CRow>
-      </CModalBody>
-      <CModalFooter class="gap-2">
-        <CButton color="secondary" @click="showViewModal = false" style="min-height:44px;">{{ t('common.close') }}</CButton>
-        <CButton v-if="(viewTarget?.balance_cents || 0) > 0" color="primary" @click="openPayment(viewTarget); showViewModal = false" style="min-height:44px;">💳 {{ t('suppliers.pay') }}</CButton>
-        <CButton color="info" variant="outline" @click="openEdit(viewTarget); showViewModal = false" style="min-height:44px;">✏️ {{ t('common.edit') }}</CButton>
-      </CModalFooter>
-    </CModal>
-
-    <!-- Add/Edit Modal -->
-    <CModal :visible="showModal" @close="showModal = false" size="lg" class="modal-fullscreen-sm-down">
-      <CModalHeader>
-        <CModalTitle>{{ editSupplier ? t('suppliers.editTitle') : t('suppliers.addTitle') }}</CModalTitle>
-      </CModalHeader>
-      <CModalBody>
-        <CAlert v-if="formError" color="danger">{{ formError }}</CAlert>
-        <CRow class="g-3">
-          <CCol xs="12" md="6">
-            <label class="form-label fw-semibold">{{ t('suppliers.companyName') }} <span class="text-danger">*</span></label>
-            <CFormInput
-              v-model="form.name"
-              :class="{ 'is-invalid': fieldErrors.name }"
-              @blur="validateField('name')"
-              style="min-height:44px;" />
-            <div v-if="fieldErrors.name" class="invalid-feedback">{{ fieldErrors.name }}</div>
-          </CCol>
-          <CCol xs="12" md="6">
-            <label class="form-label fw-semibold">{{ t('suppliers.contactPerson') }}</label>
-            <CFormInput v-model="form.contact_name" style="min-height:44px;" />
-          </CCol>
-          <CCol xs="12" md="6">
-            <label class="form-label fw-semibold">{{ t('suppliers.phone') }}</label>
-            <CFormInput
-              v-model="form.phone"
-              placeholder="+255712345678"
-              :class="{ 'is-invalid': fieldErrors.phone }"
-              @blur="validateField('phone')"
-              style="min-height:44px;" />
-            <div v-if="fieldErrors.phone" class="invalid-feedback">{{ fieldErrors.phone }}</div>
-            <div class="form-text text-muted">{{ t('suppliers.phoneHint') }}</div>
-          </CCol>
-          <CCol xs="12" md="6">
-            <label class="form-label fw-semibold">{{ t('suppliers.email') }}</label>
-            <CFormInput
-              type="email"
-              v-model="form.email"
-              placeholder="email@example.com"
-              :class="{ 'is-invalid': fieldErrors.email }"
-              @blur="validateField('email')"
-              style="min-height:44px;" />
-            <div v-if="fieldErrors.email" class="invalid-feedback">{{ fieldErrors.email }}</div>
-          </CCol>
-          <CCol xs="12">
-            <label class="form-label fw-semibold">{{ t('suppliers.address') }}</label>
-            <CFormInput v-model="form.address" :maxlength="500" style="min-height:44px;" />
-          </CCol>
-        </CRow>
-      </CModalBody>
-      <CModalFooter class="flex-wrap gap-2">
-        <CButton color="secondary" @click="showModal = false" style="min-height:44px;">{{ t('common.close') }}</CButton>
-        <CButton color="primary" :disabled="saving || !form.name.trim()" @click="submitSupplier"
-                 class="ms-auto" style="min-height:44px;">
-          <CSpinner v-if="saving" size="sm" class="me-1" />
-          {{ editSupplier ? t('common.save') : t('suppliers.add') }}
-        </CButton>
-      </CModalFooter>
-    </CModal>
-
-    <!-- Payment Modal -->
-    <CModal :visible="showPayModal" @close="showPayModal = false" size="md" class="modal-fullscreen-sm-down">
-      <CModalHeader><CModalTitle>{{ t('suppliers.payTitle') }} — {{ payTarget?.name }}</CModalTitle></CModalHeader>
-      <CModalBody>
-        <CAlert v-if="payError" color="danger">{{ payError }}</CAlert>
-        <div class="mb-3 p-3 bg-light rounded border">
-          <div class="text-muted small mb-1">{{ t('suppliers.currentDebt') }}</div>
-          <div class="fw-bold fs-4 text-danger">{{ formatMoney(payTarget?.balance_cents) }}</div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">{{ t('common.amount') }} (TZS) <span class="text-danger">*</span></label>
-          <CFormInput
-            type="number"
-            v-model.number="payForm.amount_tzs"
-            min="1"
-            :class="{ 'is-invalid': payErrors.amount_tzs }"
-            @blur="validatePayField('amount_tzs')"
-            style="min-height:44px;" />
-          <div v-if="payErrors.amount_tzs" class="invalid-feedback">{{ payErrors.amount_tzs }}</div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">{{ t('common.paymentMethod') }} <span class="text-danger">*</span></label>
-          <CFormSelect v-model="payForm.method" style="min-height:44px;">
-            <option value="cash">{{ t('common.cash') }}</option>
-            <option value="mpesa">M-Pesa</option>
-            <option value="bank">{{ t('common.bank') }}</option>
-            <option value="cheque">{{ t('common.cheque') }}</option>
-          </CFormSelect>
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">{{ t('suppliers.reference') }}</label>
-          <CFormInput v-model="payForm.reference" placeholder="LPO-001, CHQ-045..." style="min-height:44px;" />
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">{{ t('common.date') }} <span class="text-danger">*</span></label>
-          <CFormInput
-            type="date"
-            v-model="payForm.payment_date"
-            :class="{ 'is-invalid': payErrors.payment_date }"
-            @blur="validatePayField('payment_date')"
-            style="min-height:44px;" />
-          <div v-if="payErrors.payment_date" class="invalid-feedback">{{ payErrors.payment_date }}</div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">{{ t('common.notes') }}</label>
-          <CFormTextarea v-model="payForm.notes" rows="2" />
-        </div>
-      </CModalBody>
-      <CModalFooter class="gap-2">
-        <CButton color="secondary" @click="showPayModal = false" style="min-height:44px;">{{ t('common.close') }}</CButton>
-        <CButton color="primary" :disabled="paying || !payForm.amount_tzs || !payForm.payment_date" @click="submitPayment"
-                 style="min-height:44px;">
-          <CSpinner v-if="paying" size="sm" class="me-1" />{{ t('suppliers.pay') }}
-        </CButton>
-      </CModalFooter>
-    </CModal>
+    <NextStepDialog :step="nextStep" :busy="flowBusy" :error="flowError" @yes="flowYes" @no="flowNo" />
   </CContainer>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { CPagination, CPaginationItem } from '@coreui/vue'
-import { useSuppliersStore } from '@/stores/suppliers'
+import { useRoute } from 'vue-router'
+import { purchasing, formatMoney, loadAccess, access } from '@/services/purchasing'
+import SuppliersTab from './SuppliersTab.vue'
+import BillsTab from './BillsTab.vue'
+import PaymentsTab from './PaymentsTab.vue'
+import GoodsReceiptsTab from './GoodsReceiptsTab.vue'
+import DocumentsTab from './DocumentsTab.vue'
+import ReportsTab from './ReportsTab.vue'
+import SettingsTab from './SettingsTab.vue'
+import NextStepDialog from './NextStepDialog.vue'
 
 const { t } = useI18n()
 
-const store     = useSuppliersStore()
-const suppliers = ref([])
-const loading   = ref(false)
-const page      = ref(1)
-const meta      = ref({ total: 0, last_page: 1, per_page: 20, current_page: 1 })
+const tabs = ['suppliers', 'bills', 'payments', 'receipts', 'documents', 'reports', 'settings']
+const route = useRoute()
+// A notification can open a specific tab (?tab=bills).
+const active = ref(tabs.includes(route.query.tab) ? route.query.tab : 'suppliers')
+// Lets "New bill" / "Pay" / "Receive goods" on a supplier row open the right tab with that supplier chosen.
+const preset = ref(null)
 
-const visiblePages = computed(() => {
-  const total = meta.value.last_page
-  const cur   = meta.value.current_page
-  const delta = 2
-  const start = Math.max(1, cur - delta)
-  const end   = Math.min(total, cur + delta)
-  return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+const overview = ref({})
+const cards = computed(() => [
+  { key: 'totalOwed', value: overview.value.total_owed_cents || 0, money: true, cls: 'text-danger' },
+  { key: 'overdue', value: overview.value.overdue_cents || 0, money: true, cls: 'text-danger', warn: true },
+  { key: 'dueThisWeek', value: overview.value.due_this_week_cents || 0, money: true },
+  { key: 'billsAwaiting', value: overview.value.bills_awaiting_approval || 0, warn: true },
+  { key: 'paymentsAwaiting', value: overview.value.payments_awaiting_approval || 0, warn: true },
+  { key: 'activeSuppliers', value: overview.value.active_suppliers || 0 },
+])
+
+function badge(tab) {
+  if (tab === 'bills') return overview.value.bills_awaiting_approval || 0
+  if (tab === 'payments') return overview.value.payments_awaiting_approval || 0
+  return 0
+}
+
+// Access switches are part of the settings: reload both after a save so the menus follow at once.
+function onSettingsChanged() {
+  loadAccess()
+  loadOverview()
+}
+
+async function loadOverview() {
+  try { overview.value = await purchasing.overview() } catch { /* the strip is optional */ }
+}
+
+// Opening a tab by hand must not re-open the "New ..." form a row action asked for earlier.
+function selectTab(tab) {
+  preset.value = null
+  active.value = tab
+}
+
+function go(tab, supplier) {
+  preset.value = { supplier, openNew: true, at: Date.now() }
+  active.value = tab
+}
+// ── Guided flow: supplier -> bill -> approval -> payment. After each step a card asks whether to carry on. ──
+const nextStep = ref(null)   // what the card shows now
+const flowBusy = ref(false)
+const flowError = ref('')
+const tabKey = ref(0)        // bumped to reload the tab behind the card
+let onYes = null
+
+function ask(step, yes) { nextStep.value = step; onYes = yes; flowError.value = '' }
+function endFlow() { nextStep.value = null; onYes = null; flowError.value = '' }
+function refreshTab() { preset.value = null; tabKey.value++ }
+const flowNo = () => { endFlow(); refreshTab() }
+async function flowYes() {
+  flowBusy.value = true
+  try { await onYes?.() } finally { flowBusy.value = false }
+}
+
+function onSupplierCreated(s) {
+  ask({ current: 'supplier', finished: true, title: t('purchasing.flow.supplierTitle'), text: t('purchasing.flow.supplierText', { name: s.name }) },
+    () => { endFlow(); go('bills', s) })
+}
+
+function onBillCreated(bill) {
+  const supplier = bill.supplier || { id: bill.supplier_id, name: '' }
+  const num = bill.bill_number
+  if (!access.can.bill_approve) {
+    ask({ current: 'bill', finished: true, info: true, title: t('purchasing.flow.sentTitle'), text: t('purchasing.flow.sentText', { number: num }) }, null)
+    return
+  }
+  ask({ current: 'bill', finished: true, title: t('purchasing.flow.approveTitle'), text: t('purchasing.flow.approveText', { number: num }) }, async () => {
+    try {
+      await purchasing.approveBill(bill.id)
+    } catch (e) {
+      flowError.value = e?.response?.data?.message || t('purchasing.common.saveFailed')
+      return
+    }
+    loadOverview()
+    ask({ current: 'approve', finished: true, title: t('purchasing.flow.payTitle'), text: t('purchasing.flow.payText', { number: num }) },
+      () => { endFlow(); go('payments', supplier) })
+  })
+}
+
+function onPaymentCreated(payment) {
+  if (!String(payment.status || '').includes('pending')) {
+    ask({ current: 'pay', finished: true, info: true, title: t('purchasing.flow.doneTitle'), text: t('purchasing.flow.doneText') }, null)
+  } else {
+    ask({ current: 'pay', finished: true, info: true, title: t('purchasing.flow.sentTitle'), text: t('purchasing.flow.paymentSentText') }, null)
+  }
+}
+
+const goBill = (s) => go('bills', s)
+const goPay = (s) => go('payments', s)
+const goReceive = (s) => go('receipts', s)
+
+// The app header is sticky too; the bar sticks just under it, whatever height the header has (it differs on phones).
+const barEl = ref(null)
+const barTop = ref(0)
+let headerObserver = null
+function measureHeader() {
+  const header = document.querySelector('.header-sticky, .header')
+  barTop.value = header ? Math.round(header.getBoundingClientRect().height) : 0
+}
+
+onMounted(() => {
+  loadAccess()
+  loadOverview()
+  measureHeader()
+  const header = document.querySelector('.header-sticky, .header')
+  if (header && 'ResizeObserver' in window) {
+    headerObserver = new ResizeObserver(measureHeader)
+    headerObserver.observe(header)
+  }
+  window.addEventListener('resize', measureHeader)
 })
-
-const showModal    = ref(false)
-const showPayModal = ref(false)
-const activeRow    = ref(null)
-const showViewModal = ref(false)
-const viewTarget    = ref(null)
-const saving      = ref(false)
-const paying      = ref(false)
-const formError   = ref('')
-const payError    = ref('')
-const editSupplier = ref(null)
-const payTarget    = ref(null)
-
-const form = ref({ name: '', contact_name: '', phone: '', email: '', address: '' })
-const fieldErrors = ref({ name: '', phone: '', email: '' })
-
-const payForm = ref({
-  amount_tzs: '',
-  method: 'bank',
-  reference: '',
-  payment_date: new Date().toISOString().split('T')[0],
-  notes: '',
+onBeforeUnmount(() => {
+  headerObserver?.disconnect()
+  window.removeEventListener('resize', measureHeader)
 })
-const payErrors = ref({ amount_tzs: '', payment_date: '' })
-
-function validateField(field) {
-  fieldErrors.value[field] = ''
-  if (field === 'name' && !form.value.name.trim()) {
-    fieldErrors.value.name = t('suppliers.errors.nameRequired')
-  }
-  if (field === 'phone' && form.value.phone) {
-    const phoneRx = /^\+?[0-9\s\-]{7,20}$/
-    if (!phoneRx.test(form.value.phone.trim())) {
-      fieldErrors.value.phone = t('suppliers.errors.phoneInvalid')
-    }
-  }
-  if (field === 'email' && form.value.email) {
-    const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRx.test(form.value.email.trim())) {
-      fieldErrors.value.email = t('suppliers.errors.emailInvalid')
-    }
-  }
-}
-
-function validatePayField(field) {
-  payErrors.value[field] = ''
-  if (field === 'amount_tzs' && (!payForm.value.amount_tzs || payForm.value.amount_tzs < 1)) {
-    payErrors.value.amount_tzs = t('suppliers.errors.amountRequired')
-  }
-  if (field === 'payment_date' && !payForm.value.payment_date) {
-    payErrors.value.payment_date = t('suppliers.errors.dateRequired')
-  }
-}
-
-function validateSupplierForm() {
-  ['name', 'phone', 'email'].forEach(f => validateField(f))
-  return !Object.values(fieldErrors.value).some(Boolean)
-}
-
-function validatePayForm() {
-  ['amount_tzs', 'payment_date'].forEach(f => validatePayField(f))
-  return !Object.values(payErrors.value).some(Boolean)
-}
-
-function formatMoney(cents) {
-  return 'TZS ' + Number((cents || 0) / 100).toLocaleString('sw-TZ', { minimumFractionDigits: 0 })
-}
-
-async function load() {
-  loading.value = true
-  try {
-    await store.fetchSuppliers({ page: page.value })
-    suppliers.value = store.suppliers
-    meta.value = store.pagination || meta.value
-  } catch {} finally { loading.value = false }
-}
-
-function openView(sup) { viewTarget.value = sup; showViewModal.value = true }
-
-function openAdd() {
-  editSupplier.value = null
-  formError.value    = ''
-  fieldErrors.value  = { name: '', phone: '', email: '' }
-  form.value = { name: '', contact_name: '', phone: '', email: '', address: '' }
-  showModal.value    = true
-}
-
-function openEdit(sup) {
-  editSupplier.value = sup
-  formError.value    = ''
-  fieldErrors.value  = { name: '', phone: '', email: '' }
-  form.value = { name: sup.name, contact_name: sup.contact_name || '', phone: sup.phone || '',
-    email: sup.email || '', address: sup.address || '' }
-  showModal.value = true
-}
-
-function openPayment(sup) {
-  payTarget.value = sup
-  payError.value  = ''
-  payErrors.value = { amount_tzs: '', payment_date: '' }
-  payForm.value = {
-    amount_tzs:   Math.round((sup.balance_cents || 0) / 100),
-    method:       'bank',
-    reference:    '',
-    payment_date: new Date().toISOString().split('T')[0],
-    notes:        '',
-  }
-  showPayModal.value = true
-}
-
-async function submitSupplier() {
-  if (!validateSupplierForm()) return
-  formError.value = ''
-  saving.value    = true
-  try {
-    if (editSupplier.value) {
-      await store.updateSupplier(editSupplier.value.id, form.value)
-    } else {
-      await store.createSupplier(form.value)
-    }
-    showModal.value = false
-    await load()
-  } catch (e) {
-    const errors = e?.response?.data?.errors
-    if (errors) {
-      if (errors.name)  fieldErrors.value.name  = errors.name[0]
-      if (errors.phone) fieldErrors.value.phone = errors.phone[0]
-      if (errors.email) fieldErrors.value.email = errors.email[0]
-      formError.value = t('common.fixErrors')
-    } else {
-      formError.value = e?.response?.data?.message || t('common.saveFailed')
-    }
-  } finally {
-    saving.value = false
-  }
-}
-
-async function submitPayment() {
-  if (!validatePayForm()) return
-  payError.value = ''
-  paying.value   = true
-  try {
-    await store.createPayment({
-      supplier_id:  payTarget.value.id,
-      amount_cents: Math.round(payForm.value.amount_tzs * 100),
-      method:       payForm.value.method,
-      reference:    payForm.value.reference || undefined,
-      payment_date: payForm.value.payment_date,
-      notes:        payForm.value.notes || undefined,
-    })
-    showPayModal.value = false
-    await load()
-  } catch (e) {
-    const errors = e?.response?.data?.errors
-    if (errors?.amount_cents) payErrors.value.amount_tzs   = errors.amount_cents[0]
-    if (errors?.payment_date) payErrors.value.payment_date = errors.payment_date[0]
-    payError.value = e?.response?.data?.message || t('common.saveFailed')
-  } finally {
-    paying.value = false
-  }
-}
-
-onMounted(() => { try { load() } catch {} })
 </script>
 
 <style scoped>
-:deep(.table-responsive) { overflow: visible; }
-:deep(.card) { overflow: visible; }
+.sup-bar {
+  position: sticky;
+  z-index: 1030; /* under the app header (1040), over the page content */
+  background: var(--cui-body-bg, #fff);
+  padding-top: 0.5rem;
+  border-bottom: 1px solid var(--cui-border-color, #dee2e6);
+}
+/* On a phone the tabs + filters would fill the screen, so they scroll with the page there. */
+@media (max-width: 767.98px) {
+  .sup-bar { position: static; }
+}
+.sup-tabs { border-bottom: 0; flex: 0 0 auto; }
+.sup-tabs .nav-link { padding: 0.45rem 0.7rem; font-size: 0.9rem; white-space: nowrap; }
+
+.sup-toolbar { flex: 1 1 auto; padding-bottom: 0.5rem; }
 </style>
+

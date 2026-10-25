@@ -20,11 +20,16 @@ class StationaryController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $schoolId = app()->bound('active_school') ? app('active_school')->id : $user->school_id;
 
         $query = StationaryRequest::with(['user:id,name', 'reviewer:id,name', 'item:id,name,quantity,unit'])
-            ->where('school_id', $schoolId)
             ->orderByDesc('created_at');
+
+        if (! $this->isTenantMode()) {
+            $schoolId = $this->schoolIdForQuery($request);
+            if ($schoolId) {
+                $query->where('school_id', $schoolId);
+            }
+        }
 
         if ($user->isStaff()) {
             $query->where('user_id', $user->id);
@@ -42,10 +47,16 @@ class StationaryController extends Controller
      */
     public function availableItems(Request $request): JsonResponse
     {
-        $schoolId = app()->bound('active_school') ? app('active_school')->id : $request->user()->school_id;
+        $query = InventoryItem::where('type', 'consumable');
 
-        $items = InventoryItem::where('school_id', $schoolId)
-            ->where('type', 'consumable')
+        if (! $this->isTenantMode()) {
+            $schoolId = $this->schoolIdForQuery($request);
+            if ($schoolId) {
+                $query->where('school_id', $schoolId);
+            }
+        }
+
+        $items = $query
             ->where('is_active', true)
             ->where('quantity', '>', 0)
             ->orderBy('name')
@@ -66,11 +77,9 @@ class StationaryController extends Controller
         ]);
 
         $user = $request->user();
-        $schoolId = app()->bound('active_school') ? app('active_school')->id : $user->school_id;
         $item = InventoryItem::findOrFail($data['item_id']);
 
-        $req = StationaryRequest::create([
-            'school_id' => $schoolId,
+        $reqData = [
             'user_id' => $user->id,
             'item_id' => $item->id,
             'item_name' => $item->name,
@@ -78,7 +87,13 @@ class StationaryController extends Controller
             'quantity_requested' => $data['quantity_requested'],
             'reason' => $data['reason'] ?? null,
             'status' => 'pending',
-        ]);
+        ];
+
+        if (! $this->isTenantMode()) {
+            $reqData['school_id'] = $this->schoolIdForQuery($request);
+        }
+
+        $req = StationaryRequest::create($reqData);
 
         return response()->json($req->load('item:id,name,quantity,unit'), 201);
     }
@@ -88,7 +103,7 @@ class StationaryController extends Controller
      */
     public function approve(Request $request, StationaryRequest $stationaryRequest): JsonResponse
     {
-        abort_if(! $stationaryRequest->isPending(), 422, __('Only pending requests can be approved.'));
+        abort_if(! $stationaryRequest->isPending(), 422, __('messages.only_pending_requests_can_be_approved'));
 
         $stationaryRequest->update([
             'status' => 'approved',
@@ -104,7 +119,7 @@ class StationaryController extends Controller
      */
     public function provide(Request $request, StationaryRequest $stationaryRequest): JsonResponse
     {
-        abort_if(! in_array($stationaryRequest->status, ['pending', 'approved'], true), 422, __('Already provided or rejected.'));
+        abort_if(! in_array($stationaryRequest->status, ['pending', 'approved'], true), 422, __('messages.already_provided_or_rejected'));
 
         $data = $request->validate([
             'quantity_provided' => ['required', 'numeric', 'min:0.5'],
@@ -123,16 +138,19 @@ class StationaryController extends Controller
             if ($item) {
                 $item->decrement('quantity', $qty);
 
-                InventoryTransaction::create([
+                $txData = [
                     'item_id' => $item->id,
-                    'school_id' => $stationaryRequest->school_id,
-                    'type' => 'issue_out',
+                    'type' => 'out',
                     'quantity' => $qty,
                     'notes' => "Issued to {$stationaryRequest->user->name} via stationary request #{$stationaryRequest->id}",
                     'issued_to' => $stationaryRequest->user->name,
                     'transaction_date' => now()->toDateString(),
                     'recorded_by' => $request->user()->id,
-                ]);
+                ];
+                if (! $this->isTenantMode()) {
+                    $txData['school_id'] = $stationaryRequest->school_id;
+                }
+                InventoryTransaction::create($txData);
             }
 
             $stationaryRequest->update([
@@ -152,7 +170,7 @@ class StationaryController extends Controller
      */
     public function reject(Request $request, StationaryRequest $stationaryRequest): JsonResponse
     {
-        abort_if(! $stationaryRequest->isPending(), 422, __('Only pending requests can be rejected.'));
+        abort_if(! $stationaryRequest->isPending(), 422, __('messages.only_pending_requests_can_be_rejected'));
 
         $data = $request->validate([
             'rejection_reason' => ['nullable', 'string', 'max:500'],
@@ -176,21 +194,21 @@ class StationaryController extends Controller
      */
     public function summary(Request $request): JsonResponse
     {
-        $schoolId = app()->bound('active_school') ? app('active_school')->id : $request->user()->school_id;
+        $schoolId = $this->isTenantMode() ? null : $this->schoolIdForQuery($request);
 
-        $counts = StationaryRequest::where('school_id', $schoolId)
+        $counts = StationaryRequest::when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
             ->selectRaw('status, count(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status');
 
         $recentIssued = StationaryRequest::with('user:id,name')
-            ->where('school_id', $schoolId)
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
             ->where('status', 'provided')
             ->orderByDesc('provided_at')
             ->limit(20)
             ->get(['id', 'user_id', 'item_name', 'quantity_provided', 'unit', 'provided_at']);
 
-        $lowStock = InventoryItem::where('school_id', $schoolId)
+        $lowStock = InventoryItem::when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
             ->where('type', 'consumable')
             ->where('is_active', true)
             ->whereColumn('quantity', '<=', 'reorder_level')

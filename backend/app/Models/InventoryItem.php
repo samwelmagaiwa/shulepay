@@ -20,7 +20,7 @@ class InventoryItem extends Model
         'type', 'school_id', 'category_id', 'name', 'description', 'location', 'is_active', 'notes',
 
         // Consumable fields
-        'unit', 'quantity', 'reorder_level', 'unit_cost_cents',
+        'unit', 'quantity', 'reorder_level', 'unit_cost_cents', 'supplier_id',
 
         // Identity (fixed asset)
         'asset_tag', 'serial_no', 'photo', 'category', 'condition', 'status',

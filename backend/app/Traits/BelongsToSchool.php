@@ -13,6 +13,16 @@ trait BelongsToSchool
             $school = app()->bound('active_school') ? app('active_school') : null;
             if ($school) {
                 $q->where($q->getModel()->getTable().'.school_id', $school->id);
+
+                return;
+            }
+
+            // No school selected ("Shule Zote" / all schools): a signed-in user still only sees the
+            // schools they have access to. A superadmin (empty list) sees everything, and so does
+            // code with nobody signed in (the scheduler, console commands).
+            $user = auth('sanctum')->user();
+            if ($user && ! $user->isSuperAdmin()) {
+                $q->whereIn($q->getModel()->getTable().'.school_id', $user->accessibleSchoolIdsOnce() ?: [0]);
             }
         });
 

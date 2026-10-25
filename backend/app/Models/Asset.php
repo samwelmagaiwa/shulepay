@@ -18,7 +18,7 @@ class Asset extends Model
         'purchase_date', 'condition', 'serial_number', 'location', 'notes',
 
         // Identity
-        'asset_tag', 'quantity', 'serial_no', 'photo',
+        'asset_tag', 'quantity', 'serial_no', 'photo', 'supplier_id',
 
         // Purchase
         'purchase_cost_cents', 'supplier_name', 'invoice_no', 'funding_source',

@@ -14,7 +14,7 @@ class Expense extends Model
     protected $fillable = [
         'school_id', 'category_id', 'amount_cents', 'description', 'vendor',
         'receipt_reference', 'expense_date', 'recorded_by', 'approved_by',
-        'approved_at', 'status', 'notes',
+        'approved_at', 'status', 'notes', 'supplier_id', 'supplier_bill_id', 'payment_mode', 'rejection_reason',
     ];
 
     protected $casts = [
@@ -38,8 +38,19 @@ class Expense extends Model
         return $this->belongsTo(User::class, 'recorded_by');
     }
 
+    /** The owner who approved or rejected it. */
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    public function supplierBill(): BelongsTo
+    {
+        return $this->belongsTo(SupplierBill::class);
     }
 }

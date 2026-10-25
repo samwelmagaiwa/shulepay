@@ -116,6 +116,14 @@ class User extends Authenticatable
             ->exists();
     }
 
+    private ?array $accessibleSchoolIds = null;
+
+    /** allAccessibleSchoolIds() remembered for this request — the school scope asks on every query. */
+    public function accessibleSchoolIdsOnce(): array
+    {
+        return $this->accessibleSchoolIds ??= $this->allAccessibleSchoolIds();
+    }
+
     /**
      * IDs of all schools this user can act on.
      * Empty array means "all schools" (superadmin only).

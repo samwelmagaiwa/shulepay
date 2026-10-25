@@ -8,6 +8,8 @@ use App\Http\Requests\Asset\UpdateAssetRequest;
 use App\Http\Resources\AssetResource;
 use App\Models\Asset;
 use App\Services\AuditLogger;
+use App\Services\Suppliers\SupplierSetup;
+use App\Support\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -19,15 +21,11 @@ class AssetController extends Controller
     {
         $query = Asset::with(['school', 'registeredBy', 'custodianEmployee'])->latest('created_at');
 
-        $user = auth()->user();
-        $requestedSchoolId = $request->filled('school_id')
-            ? $request->integer('school_id')
-            : ((int) $request->header('X-School-Id') ?: null);
-        $schoolId = ($user->hasRole('superadmin') || $user->hasRole('owner') || $user->hasRole('accountant'))
-            ? ($requestedSchoolId ?? $user->school_id)
-            : $user->school_id;
-        if ($schoolId) {
-            $query->where('school_id', $schoolId);
+        if (! $this->isTenantMode()) {
+            $schoolId = $this->schoolIdForQuery($request);
+            if ($schoolId) {
+                $query->where('school_id', $schoolId);
+            }
         }
         if ($request->filled('category')) {
             $query->where('category', $request->category);
@@ -46,13 +44,22 @@ class AssetController extends Controller
             });
         }
 
-        return AssetResource::collection($query->paginate(20));
+        // Totals of everything the filters match (every page), for the cards
+        $sum = (clone $query)->reorder()->selectRaw("COUNT(*) AS n, COALESCE(SUM(purchase_cost_cents), 0) AS cost, COALESCE(SUM(current_value_cents), 0) AS value, COALESCE(SUM(CASE WHEN status = 'in_use' THEN 1 ELSE 0 END), 0) AS in_use")->first();
+
+        return AssetResource::collection($query->paginate(min(max($request->integer('per_page', 20), 5), 200)))->additional(['summary' => [
+            'count' => (int) ($sum->n ?? 0),
+            'cost_cents' => (int) ($sum->cost ?? 0),
+            'value_cents' => (int) ($sum->value ?? 0),
+            'in_use' => (int) ($sum->in_use ?? 0),
+        ]]);
     }
 
     public function nextTag(Request $request): JsonResponse
     {
-        $request->validate(['school_id' => 'required|exists:schools,id']);
-        $tag = Asset::nextAssetTag((int) $request->school_id);
+        $request->validate(['school_id' => Tenant::active() ? 'sometimes|integer' : 'required|exists:mysql.schools,id']);
+        $schoolId = Tenant::active() ? Tenant::school()?->id : (int) $request->school_id;
+        $tag = Asset::nextAssetTag((int) $schoolId);
 
         return response()->json(['asset_tag' => $tag]);
     }
@@ -60,6 +67,7 @@ class AssetController extends Controller
     public function store(StoreAssetRequest $request): JsonResponse
     {
         $data = $request->validated();
+        $link = SupplierSetup::linkFrom($request);
 
         // Handle photo upload
         $photoPath = null;
@@ -67,9 +75,11 @@ class AssetController extends Controller
             $photoPath = $request->file('photo')->store('assets', 'public');
         }
 
-        $schoolId = auth()->user()->school_id ?? $data['school_id'];
+        $schoolId = Tenant::active() ? Tenant::school()?->id : (auth()->user()->school_id ?? $data['school_id']);
 
-        $asset = Asset::create([
+        // Tenant assets table carries no school_id column — every row already
+        // belongs to the one school the tenant connection is scoped to.
+        $asset = Asset::create(Tenant::stripSchoolId([
             'school_id' => $schoolId,
             'asset_tag' => $data['asset_tag'],
             'name' => $data['name'],
@@ -79,7 +89,8 @@ class AssetController extends Controller
             'photo' => $photoPath,
             'purchase_cost_cents' => isset($data['purchase_cost']) ? (int) round($data['purchase_cost'] * 100) : 0,
             'purchase_date' => $data['purchase_date'] ?? null,
-            'supplier_name' => $data['supplier_name'] ?? null,
+            'supplier_name' => $link['name'] ?? $data['supplier_name'] ?? null,
+            'supplier_id' => $link['id'] ?? null,
             'invoice_no' => $data['invoice_no'] ?? null,
             'funding_source' => $data['funding_source'] ?? null,
             'depreciation_method' => $data['depreciation_method'] ?? null,
@@ -93,9 +104,9 @@ class AssetController extends Controller
             'status' => $data['status'] ?? 'in_use',
             'warranty_expiry' => $data['warranty_expiry'] ?? null,
             'notes' => $data['notes'] ?? null,
-            'registered_by' => auth()->id(),
+            'registered_by' => Tenant::actorId(),
             'registered_at' => now(),
-        ]);
+        ]));
 
         AuditLogger::log('asset.created', $asset, ['after' => $asset->toArray()]);
 
@@ -110,6 +121,7 @@ class AssetController extends Controller
     public function update(UpdateAssetRequest $request, Asset $asset): JsonResponse
     {
         $data = $request->validated();
+        $link = SupplierSetup::linkFrom($request);
         $before = $asset->toArray();
 
         $updateData = array_filter([
@@ -120,7 +132,8 @@ class AssetController extends Controller
             'quantity' => $data['quantity'] ?? null,
             'serial_no' => $data['serial_no'] ?? null,
             'purchase_date' => $data['purchase_date'] ?? null,
-            'supplier_name' => $data['supplier_name'] ?? null,
+            'supplier_name' => $link['name'] ?? $data['supplier_name'] ?? null,
+            'supplier_id' => $link['id'] ?? null,
             'invoice_no' => $data['invoice_no'] ?? null,
             'funding_source' => $data['funding_source'] ?? null,
             'depreciation_method' => $data['depreciation_method'] ?? null,
@@ -193,13 +206,13 @@ class AssetController extends Controller
     {
         if (! in_array($asset->status, ['disposed', 'lost', 'written_off'])) {
             return response()->json([
-                'message' => __('An asset can only be deleted when its status is: disposed, lost or written_off.'),
+                'message' => __('messages.an_asset_can_only_be_deleted_if'),
             ], 422);
         }
 
         AuditLogger::log('asset.deleted', $asset, ['before' => $asset->toArray()]);
         $asset->delete();
 
-        return response()->json(['message' => __('Asset deleted.')]);
+        return response()->json(['message' => __('messages.asset_deleted')]);
     }
 }

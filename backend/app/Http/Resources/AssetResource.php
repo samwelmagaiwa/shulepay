@@ -16,8 +16,8 @@ class AssetResource extends JsonResource
             'name' => $this->name,
             'category' => $this->category,
             'school_id' => $this->school_id,
-            'school' => $this->whenLoaded('school', fn () => ['id' => $this->school->id, 'name' => $this->school->name]),
-            'school_name' => $this->whenLoaded('school', fn () => $this->school->name),
+            'school' => $this->whenLoaded('school', fn () => $this->school ? ['id' => $this->school->id, 'name' => $this->school->name] : null),
+            'school_name' => $this->whenLoaded('school', fn () => $this->school?->name),
             'quantity' => $this->quantity ?? 1,
             'serial_no' => $this->serial_no,
             // Legacy field

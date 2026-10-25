@@ -6,6 +6,10 @@ import { useSchoolsStore }    from '@/stores/schools'
 import { useSchoolStore }     from '@/stores/school'
 import { useAuthStore }       from '@/stores/auth'
 import { useEmployeesStore }  from '@/stores/employees'
+import SupplierPicker from '@/components/SupplierPicker.vue'
+import XStats from '@/components/XStats.vue'
+import XBar from '@/components/XBar.vue'
+import XGrid from '@/components/XGrid.vue'
 
 const { t }        = useI18n()
 const store        = useInventoryStore()
@@ -117,7 +121,7 @@ const selectedItem     = ref(null)
 const showTxnPanel     = ref(false)
 const itemTransactions = ref([])
 const txnLoading       = ref(false)
-const txnForm = ref({ type: 'in', quantity: 1, issued_to_employee_id: '', notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) })
+const txnForm = ref({ type: 'in', quantity: 1, issued_to_employee_id: '', notes: '', reference: '', supplier_id: '', delivery_note_no: '', transaction_date: new Date().toISOString().slice(0, 10) })
 const txnSaving = ref(false)
 const txnError  = ref('')
 
@@ -150,7 +154,7 @@ async function openItemPanel(item) {
   selectedItem.value = item
   showTxnPanel.value = true
   txnLoading.value = true
-  txnForm.value = { type: 'in', quantity: 1, issued_to_employee_id: '', notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) }
+  txnForm.value = { type: 'in', quantity: 1, issued_to_employee_id: '', notes: '', reference: '', supplier_id: '', delivery_note_no: '', transaction_date: new Date().toISOString().slice(0, 10) }
   // Load active employees for this school so dropdown is ready
   empStore.fetchActiveEmployees(item.school_id || navSchool.activeSchoolId)
   try {
@@ -190,7 +194,7 @@ async function recordTransaction() {
     if (result.item) selectedItem.value = result.item
     itemTransactions.value = await store.fetchTransactions(selectedItem.value.id)
     await store.fetchSummary()
-    txnForm.value = { type: 'in', quantity: 1, issued_to_employee_id: '', notes: '', reference: '', transaction_date: new Date().toISOString().slice(0, 10) }
+    txnForm.value = { type: 'in', quantity: 1, issued_to_employee_id: '', notes: '', reference: '', supplier_id: '', delivery_note_no: '', transaction_date: new Date().toISOString().slice(0, 10) }
     txnFieldErrors.value = { quantity: '', transaction_date: '', issued_to_employee_id: '' }
   } catch (e) {
     txnError.value = e?.response?.data?.message || t('common.saveFailed')
@@ -266,10 +270,55 @@ const assetSummaryCards = computed(() => {
   ]
 })
 
+
+// ── List design (same as the Expenses page) ──────────────────────────────────
+const selItemId = ref(null)
+const selAssetId = ref(null)
+const selItem = computed(() => filteredItems.value.find(i => i.id === selItemId.value) || null)
+const selAsset = computed(() => store.assets.find(a => a.id === selAssetId.value) || null)
+const toneOf = { primary: 'blue', info: 'blue', success: 'green', warning: 'amber', danger: 'red' }
+const assetCards = computed(() => assetSummaryCards.value.map(c => ({ ...c, tone: toneOf[c.color] || 'gray' })))
+const stockCards = computed(() => [
+  { label: t('inventory.totalItems'), value: store.summaryStats.total_items ?? 0, tone: 'gray' },
+  { label: t('inventory.lowStock'), value: store.summaryStats.low_stock_count ?? 0, tone: (store.summaryStats.low_stock_count ?? 0) > 0 ? 'red' : 'green' },
+  { label: t('inventory.totalValue'), value: formatMoney(store.summaryStats.total_value_cents), tone: 'blue' },
+])
+const itemColumns = computed(() => [
+  { key: 'name', label: t('inventory.itemName'), w: 'minmax(180px, 2.2fr)' },
+  { key: 'unit', label: t('inventory.unit'), w: 'minmax(70px, .7fr)' },
+  { key: 'quantity', label: t('inventory.quantity'), w: 'minmax(90px, .9fr)', align: 'end' },
+  { key: 'reorder_level', label: t('inventory.reorderLevel'), w: 'minmax(90px, .9fr)', align: 'end' },
+  { key: 'unit_cost_cents', label: t('inventory.unitCost'), w: 'minmax(110px, 1fr)', align: 'end' },
+  { key: 'total_value_cents', label: t('inventory.totalValueCol'), w: 'minmax(120px, 1.1fr)', align: 'end' },
+])
+const assetColumns = computed(() => [
+  { key: 'asset_tag', label: t('assets.assetTag'), w: 'minmax(90px, .9fr)' },
+  { key: 'name', label: t('assets.name'), w: 'minmax(170px, 2fr)' },
+  { key: 'category', label: t('assets.category'), w: 'minmax(100px, 1fr)' },
+  { key: 'quantity', label: t('assets.quantity'), w: 'minmax(60px, .5fr)', align: 'end' },
+  { key: 'purchase_cost_cents', label: t('assets.cost'), w: 'minmax(110px, 1.1fr)', align: 'end' },
+  { key: 'current_value_cents', label: t('assets.currentValue'), w: 'minmax(110px, 1.1fr)', align: 'end' },
+  { key: 'condition', label: t('assets.condition'), w: 'minmax(90px, .9fr)' },
+  { key: 'status', label: t('common.status'), w: 'minmax(100px, .9fr)' },
+])
+const itemMenu = () => [
+  { label: '📋 ' + t('inventory.btnTransactions'), run: openItemPanel },
+  { label: '✏️ ' + t('common.edit'), run: openEditItem },
+  { label: '🗑️ ' + t('common.delete'), run: confirmDeleteItem, danger: true },
+]
+const assetMenu = (a) => [
+  { label: '🔍 ' + t('assets.detail.title'), run: openDetail },
+  { label: '✏️ ' + t('common.edit'), run: openEdit },
+  ...(canDispose(a) ? [{ label: '📤 ' + t('assets.form.dispose'), run: openDispose }] : []),
+  ...(canDelete(a) ? [{ label: '🗑️ ' + t('common.delete'), run: confirmDelete, danger: true }] : []),
+]
+const conditionPill = (c) => ({ excellent: 'xg-pill--green', good: 'xg-pill--blue', fair: 'xg-pill--amber', poor: 'xg-pill--red' }[c] || 'xg-pill--gray')
+const statusPill = (s) => ({ in_use: 'xg-pill--green', under_repair: 'xg-pill--amber', lost: 'xg-pill--red', disposed: 'xg-pill--gray', written_off: 'xg-pill--gray' }[s] || 'xg-pill--gray')
+
 function defaultForm() {
   return {
     asset_tag: '', name: '', category: '', school_id: navSchool.activeSchoolId || '', quantity: 1,
-    serial_no: '', purchase_cost: '', purchase_date: '', supplier_name: '',
+    serial_no: '', purchase_cost: '', purchase_date: '', supplier_name: '', supplier_id: '',
     invoice_no: '', funding_source: '', depreciation_method: '', useful_life_years: '',
     depreciation_rate: '', salvage_value: '', custodian: '', custodian_employee_id: '', location: '',
     condition: 'good', status: 'in_use', warranty_expiry: '', notes: '',
@@ -352,6 +401,7 @@ function openEdit(a) {
     purchase_cost:       Math.round((a.purchase_cost_cents || 0) / 100),
     purchase_date:       a.purchase_date || '',
     supplier_name:       a.supplier_name || '',
+    supplier_id:         a.supplier_id || '',
     invoice_no:          a.invoice_no || '',
     funding_source:      a.funding_source || '',
     depreciation_method: a.depreciation_method || '',
@@ -400,7 +450,7 @@ async function submitAsset() {
     await store.fetchSummary()
   } catch (e) {
     const errors = e?.response?.data?.errors
-    formError.value = errors ? Object.values(errors).flat().join(' ') : (e?.response?.data?.message || t('common.actionFailed'))
+    formError.value = errors ? Object.values(errors).flat().join(' ') : (e?.response?.data?.message || 'Imeshindwa. Jaribu tena.')
   } finally {
     saving.value = false
   }
@@ -417,7 +467,7 @@ async function doDispose() {
     showDisposeModal.value = false
     await loadAssets()
   } catch (e) {
-    disposeError.value = e?.response?.data?.message || t('common.actionFailed')
+    disposeError.value = e?.response?.data?.message || 'Imeshindwa. Jaribu tena.'
   } finally {
     disposing.value = false
   }
@@ -474,289 +524,99 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
 </script>
 
 <template>
-  <CContainer fluid class="py-3">
+  <CContainer fluid class="xg-page">
 
-    <!-- ── Unified toolbar: tabs + filters + action button — single row ─────── -->
-    <div class="d-flex align-items-center gap-2 mb-3" style="overflow-x:auto; white-space:nowrap; flex-wrap:nowrap;">
-      <!-- Tab switcher -->
-      <div class="d-flex flex-shrink-0 border rounded" style="overflow:hidden;">
-        <button
-          @click="activeMainTab = 0"
-          :class="['btn btn-sm px-3', activeMainTab === 0 ? 'btn-primary' : 'btn-outline-secondary border-0']"
-          style="height:38px; white-space:nowrap; border-radius:0;">
-          {{ t('inventory.tabConsumables') }}
-        </button>
-        <button
-          @click="activeMainTab = 1"
-          :class="['btn btn-sm px-3', activeMainTab === 1 ? 'btn-primary' : 'btn-outline-secondary border-0']"
-          style="height:38px; white-space:nowrap; border-radius:0;">
-          {{ t('inventory.tabAssets') }}
-        </button>
-      </div>
-
-      <!-- Consumable filters (only on Stock tab) -->
-      <template v-if="activeMainTab === 0">
-        <select v-model="consumableSchoolId" class="form-select form-select-sm flex-shrink-0" style="height:38px; width:auto; max-width:180px;"
-          @change="store.fetchItems(consumableSchoolId ? { school_id: consumableSchoolId } : {})">
-          <option value="">{{ t('common.allSchools') }}</option>
-          <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
-        </select>
-        <select v-model="itemStockFilter" class="form-select form-select-sm flex-shrink-0" style="height:38px; width:auto;">
-          <option value="">{{ t('common.allStatuses') }}</option>
-          <option value="low">{{ t('inventory.statusLow') }}</option>
-          <option value="ok">{{ t('inventory.statusOk') }}</option>
-        </select>
-        <input v-model="itemSearch" :placeholder="t('inventory.itemSearchPlaceholder')" class="form-control form-control-sm flex-shrink-0" style="height:38px; width:200px;" />
-      </template>
-
-      <!-- Asset filters (only on Fixed Assets tab) -->
-      <template v-if="activeMainTab === 1">
-        <select v-model="assetFilters.school_id" @change="loadAssets(1)" class="form-select form-select-sm flex-shrink-0" style="height:38px; width:auto; max-width:180px;">
-          <option value="">{{ t('common.allSchools') }}</option>
-          <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
-        </select>
-        <select v-model="assetFilters.category" @change="loadAssets(1)" class="form-select form-select-sm flex-shrink-0" style="height:38px; width:auto;">
-          <option value="">{{ t('assets.allTypes') }}</option>
-          <option v-for="c in categoryOptions" :key="c.value" :value="c.value">{{ c.label }}</option>
-        </select>
-        <select v-model="assetFilters.condition" @change="loadAssets(1)" class="form-select form-select-sm flex-shrink-0" style="height:38px; width:auto;">
-          <option value="">{{ t('assets.allConditions') }}</option>
-          <option value="excellent">{{ t('assets.conditions.excellent') }}</option>
-          <option value="good">{{ t('assets.conditions.good') }}</option>
-          <option value="fair">{{ t('assets.conditions.fair') }}</option>
-          <option value="poor">{{ t('assets.conditions.poor') }}</option>
-        </select>
-        <select v-model="assetFilters.status" @change="loadAssets(1)" class="form-select form-select-sm flex-shrink-0" style="height:38px; width:auto;">
-          <option value="">{{ t('common.allStatuses') }}</option>
-          <option value="in_use">{{ t('assets.statuses.in_use') }}</option>
-          <option value="under_repair">{{ t('assets.statuses.under_repair') }}</option>
-          <option value="disposed">{{ t('assets.statuses.disposed') }}</option>
-          <option value="lost">{{ t('assets.statuses.lost') }}</option>
-          <option value="written_off">{{ t('assets.statuses.written_off') }}</option>
-        </select>
-        <input v-model="assetFilters.search" @input="debouncedLoadAssets" :placeholder="t('assets.searchPlaceholder')" class="form-control form-control-sm flex-shrink-0" style="height:38px; width:180px;" />
-      </template>
-
-      <!-- Action button pushed to the right -->
-      <CButton v-if="activeMainTab === 0" color="success" size="sm" @click="openAddItem" class="ms-auto flex-shrink-0" style="height:38px; white-space:nowrap;">
-        <CIcon icon="cilPlus" class="me-1" /> {{ t('inventory.addItem') }}
-      </CButton>
-      <CButton v-else color="success" size="sm" @click="openAdd" class="ms-auto flex-shrink-0" style="height:38px; white-space:nowrap;">
-        <CIcon icon="cilPlus" class="me-1" /> {{ t('assets.add') }}
-      </CButton>
+    <!-- Tabs: Stock (consumables) / Fixed assets -->
+    <div class="d-flex flex-shrink-0 border rounded mb-2" style="overflow:hidden; width:fit-content;">
+      <button :class="['btn btn-sm px-3', activeMainTab === 0 ? 'btn-primary' : 'btn-outline-secondary border-0']" style="border-radius:0;" @click="activeMainTab = 0">{{ t('inventory.tabConsumables') }}</button>
+      <button :class="['btn btn-sm px-3', activeMainTab === 1 ? 'btn-primary' : 'btn-outline-secondary border-0']" style="border-radius:0;" @click="activeMainTab = 1">{{ t('inventory.tabAssets') }}</button>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         CONSUMABLES TAB
-    ══════════════════════════════════════════════════════════════════════════ -->
-    <div v-show="activeMainTab === 0">
+    <!-- ══ CONSUMABLES TAB ══ -->
+    <div v-if="activeMainTab === 0">
+      <XStats :cards="stockCards" />
 
-      <!-- Summary Cards -->
-      <CRow class="mb-3 g-3">
-        <CCol xs="12" md="4">
-          <CCard class="border-0 shadow-sm h-100">
-            <CCardBody class="text-center">
-              <div class="fs-2 fw-bold text-primary">{{ store.summaryStats.total_items ?? 0 }}</div>
-              <div class="small text-muted">{{ t('inventory.totalItems') }}</div>
-            </CCardBody>
-          </CCard>
-        </CCol>
-        <CCol xs="12" md="4">
-          <CCard class="border-0 shadow-sm h-100">
-            <CCardBody class="text-center">
-              <div class="fs-2 fw-bold" :class="(store.summaryStats.low_stock_count ?? 0) > 0 ? 'text-danger' : 'text-success'">
-                {{ store.summaryStats.low_stock_count ?? 0 }}
-              </div>
-              <div class="small text-muted">
-                {{ t('inventory.lowStock') }}
-                <CBadge v-if="(store.summaryStats.low_stock_count ?? 0) > 0" color="danger" class="ms-1">!</CBadge>
-              </div>
-            </CCardBody>
-          </CCard>
-        </CCol>
-        <CCol xs="12" md="4">
-          <CCard class="border-0 shadow-sm h-100">
-            <CCardBody class="text-center">
-              <div class="fs-5 fw-bold text-info">{{ formatMoney(store.summaryStats.total_value_cents) }}</div>
-              <div class="small text-muted">{{ t('inventory.totalValue') }}</div>
-            </CCardBody>
-          </CCard>
-        </CCol>
-      </CRow>
+      <XBar :meta="{}" no-per-page :total="filteredItems.length" :filters-active="!!(itemStockFilter || itemSearch || consumableSchoolId)">
+        <template #actions>
+          <CButton color="success" size="sm" @click="openAddItem"><CIcon icon="cilPlus" class="me-1" /> {{ t('inventory.addItem') }}</CButton>
+        </template>
+        <template #filters>
+          <CFormSelect v-model="consumableSchoolId" @update:modelValue="store.fetchItems(consumableSchoolId ? { school_id: consumableSchoolId } : {})">
+            <option value="">{{ t('common.allSchools') }}</option>
+            <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
+          </CFormSelect>
+          <CFormSelect v-model="itemStockFilter">
+            <option value="">{{ t('common.allStatuses') }}</option>
+            <option value="low">{{ t('inventory.statusLow') }}</option>
+            <option value="ok">{{ t('inventory.statusOk') }}</option>
+          </CFormSelect>
+          <CFormInput v-model="itemSearch" class="xg-grow" :placeholder="t('inventory.itemSearchPlaceholder')" />
+        </template>
+        <template #toolbar>
+          <button class="xg-tb-btn" :disabled="!selItem" @click="selItem && openItemPanel(selItem)">📋 {{ t('inventory.btnTransactions') }}</button>
+          <button class="xg-tb-btn" :disabled="!selItem" @click="selItem && openEditItem(selItem)">✏️ {{ t('common.edit') }}</button>
+          <button class="xg-tb-btn is-danger" :disabled="!selItem" @click="selItem && confirmDeleteItem(selItem)">🗑️ {{ t('common.delete') }}</button>
+        </template>
+      </XBar>
 
-      <!-- Items Table -->
-      <CCard class="border-0 shadow-sm">
-        <CCardBody>
-          <div v-if="store.loading" class="text-center py-4"><CSpinner /></div>
-          <CTable v-else responsive hover class="align-middle">
-            <CTableHead class="table-light">
-              <CTableRow>
-                <CTableHeaderCell>#</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('inventory.itemName') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('inventory.unit') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('inventory.quantity') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('inventory.reorderLevel') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('inventory.unitCost') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('inventory.totalValueCol') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('common.actions') }}</CTableHeaderCell>
-              </CTableRow>
-            </CTableHead>
-            <CTableBody>
-              <CTableRow v-for="(item, i) in filteredItems" :key="item.id" :class="item.is_low_stock ? 'table-danger' : ''">
-                <CTableDataCell>{{ i + 1 }}</CTableDataCell>
-                <CTableDataCell>
-                  <span class="fw-semibold">{{ item.name }}</span>
-                  <span v-if="item.is_low_stock" class="ms-2 text-danger" :title="t('inventory.lowStockTitle')">⚠️</span>
-                </CTableDataCell>
-                <CTableDataCell>{{ item.unit }}</CTableDataCell>
-                <CTableDataCell :class="item.is_low_stock ? 'text-danger fw-bold' : ''">{{ Number(item.quantity).toLocaleString() }}</CTableDataCell>
-                <CTableDataCell>{{ Number(item.reorder_level).toLocaleString() }}</CTableDataCell>
-                <CTableDataCell>{{ formatMoney(item.unit_cost_cents) }}</CTableDataCell>
-                <CTableDataCell>{{ formatMoney(item.total_value_cents) }}</CTableDataCell>
-                <CTableDataCell style="min-width:48px; position:relative;">
-                  <CButton size="sm" color="secondary" variant="ghost" @click.stop="toggleItemActions(item.id)">👁️</CButton>
-                  <div v-if="expandedItemId === item.id"
-                       style="position:absolute; top:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:10; min-width:160px;"
-                       @click.stop>
-                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openItemPanel(item); expandedItemId=null">📋 {{ t('inventory.btnTransactions') }}</CButton>
-                    <CButton size="sm" color="primary" variant="ghost" class="text-start" @click="openEditItem(item); expandedItemId=null">✏️ {{ t('common.edit') }}</CButton>
-                    <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDeleteItem(item); expandedItemId=null">🗑️ {{ t('common.delete') }}</CButton>
-                  </div>
-                </CTableDataCell>
-              </CTableRow>
-              <CTableRow v-if="filteredItems.length === 0">
-                <CTableDataCell colspan="8" class="text-center text-muted py-4">{{ t('inventory.noItems') }}</CTableDataCell>
-              </CTableRow>
-            </CTableBody>
-          </CTable>
-        </CCardBody>
-      </CCard>
+      <XGrid v-model:selected-id="selItemId" :columns="itemColumns" :rows="filteredItems" :loading="store.loading" :empty="t('inventory.noItems')"
+             :min-width="900" :menu="itemMenu" :row-class="(i) => (i.is_low_stock ? 'xg-row--bad' : '')" @open="openItemPanel">
+        <template #cell-name="{ row }"><span class="xg-name">{{ row.name }}</span><span v-if="row.is_low_stock" class="ms-1" :title="t('inventory.statusLow')">⚠️</span></template>
+        <template #cell-quantity="{ row }"><span :class="row.is_low_stock ? 'xg-out' : 'xg-strong'">{{ Number(row.quantity).toLocaleString() }}</span></template>
+        <template #cell-reorder_level="{ row }">{{ Number(row.reorder_level).toLocaleString() }}</template>
+        <template #cell-unit_cost_cents="{ row }">{{ formatMoney(row.unit_cost_cents) }}</template>
+        <template #cell-total_value_cents="{ row }"><span class="xg-strong">{{ formatMoney(row.total_value_cents) }}</span></template>
+      </XGrid>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         FIXED ASSETS TAB
-    ══════════════════════════════════════════════════════════════════════════ -->
-    <div v-show="activeMainTab === 1">
+    <!-- ══ FIXED ASSETS TAB ══ -->
+    <div v-else>
+      <XStats :cards="assetCards" />
 
-      <!-- Summary Cards -->
-      <CRow class="g-2 mb-3">
-        <CCol v-for="card in assetSummaryCards" :key="card.label" xs="6" md="3">
-          <CCard class="border-0 shadow-sm h-100">
-            <CCardBody class="p-3">
-              <div class="text-muted small mb-1">{{ card.label }}</div>
-              <div class="fw-bold fs-5" :class="`text-${card.color}`">{{ card.value }}</div>
-            </CCardBody>
-          </CCard>
-        </CCol>
-      </CRow>
+      <XBar :meta="{ current_page: store.currentPage, last_page: store.lastPage, total: store.total, per_page: 20 }" no-per-page
+            :filters-active="!!(assetFilters.category || assetFilters.condition || assetFilters.status || assetFilters.search)" @page="goPage">
+        <template #actions>
+          <CButton color="success" size="sm" @click="openAdd"><CIcon icon="cilPlus" class="me-1" /> {{ t('assets.add') }}</CButton>
+        </template>
+        <template #filters>
+          <CFormSelect v-model="assetFilters.school_id" @update:modelValue="loadAssets(1)">
+            <option value="">{{ t('common.allSchools') }}</option>
+            <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
+          </CFormSelect>
+          <CFormSelect v-model="assetFilters.category" @update:modelValue="loadAssets(1)">
+            <option value="">{{ t('assets.allTypes') }}</option>
+            <option v-for="c in categoryOptions" :key="c.value" :value="c.value">{{ c.label }}</option>
+          </CFormSelect>
+          <CFormSelect v-model="assetFilters.condition" @update:modelValue="loadAssets(1)">
+            <option value="">{{ t('assets.allConditions') }}</option>
+            <option v-for="c in ['excellent', 'good', 'fair', 'poor']" :key="c" :value="c">{{ t('assets.conditions.' + c) }}</option>
+          </CFormSelect>
+          <CFormSelect v-model="assetFilters.status" @update:modelValue="loadAssets(1)">
+            <option value="">{{ t('common.allStatuses') }}</option>
+            <option v-for="s in ['in_use', 'under_repair', 'disposed', 'lost', 'written_off']" :key="s" :value="s">{{ t('assets.statuses.' + s) }}</option>
+          </CFormSelect>
+          <CFormInput v-model="assetFilters.search" class="xg-grow" :placeholder="t('assets.searchPlaceholder')" @input="debouncedLoadAssets" />
+        </template>
+        <template #toolbar>
+          <button class="xg-tb-btn" :disabled="!selAsset" @click="selAsset && openDetail(selAsset)">🔍 {{ t('assets.detail.title') }}</button>
+          <button class="xg-tb-btn" :disabled="!selAsset" @click="selAsset && openEdit(selAsset)">✏️ {{ t('common.edit') }}</button>
+          <button class="xg-tb-btn" :disabled="!selAsset || !canDispose(selAsset)" @click="selAsset && canDispose(selAsset) && openDispose(selAsset)">📤 {{ t('assets.form.dispose') }}</button>
+          <button class="xg-tb-btn is-danger" :disabled="!selAsset || !canDelete(selAsset)" @click="selAsset && canDelete(selAsset) && confirmDelete(selAsset)">🗑️ {{ t('common.delete') }}</button>
+        </template>
+      </XBar>
 
-      <div v-if="store.assetsLoading" class="text-center py-5"><CSpinner color="primary" /></div>
-
-      <div v-else>
-        <!-- Mobile cards -->
-        <div class="d-md-none">
-          <div v-if="!store.assets.length" class="text-center text-muted py-5">{{ t('assets.noAssets') }}</div>
-          <div v-for="a in store.assets" :key="a.id" class="mb-2 border rounded p-3">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <div class="flex-grow-1">
-                <div class="d-flex align-items-center gap-2 mb-1">
-                  <CBadge color="secondary" class="font-monospace small">{{ a.asset_tag || '—' }}</CBadge>
-                  <CBadge :color="conditionBadgeColor(a.condition)">{{ conditionLabel(a.condition) }}</CBadge>
-                </div>
-                <div class="fw-bold">{{ a.name }}</div>
-                <div class="small text-muted">{{ categoryLabel(a.category) }} · {{ a.location || '—' }}</div>
-              </div>
-              <CBadge :color="statusBadgeColor(a.status)" class="ms-2">{{ statusLabel(a.status) }}</CBadge>
-            </div>
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="small">
-                <div>{{ t('assets.cost') }}: <strong>{{ formatTZS(a.purchase_cost_cents) }}</strong></div>
-                <div>{{ t('assets.currentValue') }}: <strong :class="valueColor(a)">{{ formatTZS(a.current_value_cents) }}</strong></div>
-              </div>
-              <div class="d-flex gap-1">
-                <CButton size="sm" color="info" variant="outline" @click="openDetail(a)" style="min-height:44px; min-width:44px;"><CIcon icon="cilEyedropper" /></CButton>
-                <CButton size="sm" color="primary" variant="outline" @click="openEdit(a)" style="min-height:44px; min-width:44px;"><CIcon icon="cilPencil" /></CButton>
-                <CButton v-if="canDispose(a)" size="sm" color="warning" variant="outline" @click="openDispose(a)" style="min-height:44px; min-width:44px;"><CIcon icon="cilXCircle" /></CButton>
-                <CButton v-if="canDelete(a)" size="sm" color="danger" variant="ghost" @click="confirmDelete(a)" style="min-height:44px; min-width:44px;"><CIcon icon="cilTrash" /></CButton>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Desktop table -->
-        <CCard class="d-none d-md-block">
-          <CCardBody class="p-0">
-            <CTable responsive hover class="mb-0">
-              <CTableHead class="table-light">
-                <CTableRow>
-                  <CTableHeaderCell>{{ t('assets.assetTag') }}</CTableHeaderCell>
-                  <CTableHeaderCell>{{ t('assets.name') }}</CTableHeaderCell>
-                  <CTableHeaderCell>{{ t('assets.category') }}</CTableHeaderCell>
-                  <CTableHeaderCell class="d-none d-lg-table-cell">{{ t('assets.quantity') }}</CTableHeaderCell>
-                  <CTableHeaderCell>{{ t('assets.cost') }}</CTableHeaderCell>
-                  <CTableHeaderCell>{{ t('assets.currentValue') }}</CTableHeaderCell>
-                  <CTableHeaderCell class="d-none d-lg-table-cell">{{ t('assets.condition') }}</CTableHeaderCell>
-                  <CTableHeaderCell>{{ t('common.status') }}</CTableHeaderCell>
-                  <CTableHeaderCell>{{ t('common.actions') }}</CTableHeaderCell>
-                </CTableRow>
-              </CTableHead>
-              <CTableBody>
-                <CTableRow v-for="a in store.assets" :key="a.id">
-                  <CTableDataCell><span class="font-monospace small text-muted">{{ a.asset_tag || '—' }}</span></CTableDataCell>
-                  <CTableDataCell>
-                    <div class="fw-semibold">{{ a.name }}</div>
-                    <div v-if="a.serial_no" class="small text-muted">S/N: {{ a.serial_no }}</div>
-                  </CTableDataCell>
-                  <CTableDataCell>{{ categoryLabel(a.category) }}</CTableDataCell>
-                  <CTableDataCell class="d-none d-lg-table-cell">{{ a.quantity ?? 1 }}</CTableDataCell>
-                  <CTableDataCell>{{ formatTZS(a.purchase_cost_cents) }}</CTableDataCell>
-                  <CTableDataCell :class="valueColor(a)">{{ formatTZS(a.current_value_cents) }}</CTableDataCell>
-                  <CTableDataCell class="d-none d-lg-table-cell">
-                    <CBadge :color="conditionBadgeColor(a.condition)">{{ conditionLabel(a.condition) }}</CBadge>
-                  </CTableDataCell>
-                  <CTableDataCell>
-                    <CBadge :color="statusBadgeColor(a.status)">{{ statusLabel(a.status) }}</CBadge>
-                  </CTableDataCell>
-                  <CTableDataCell>
-                    <CDropdown variant="btn-group" placement="bottom-end">
-                      <CDropdownToggle color="primary" variant="outline" size="sm" class="py-1 px-2" :caret="false">
-                        <CIcon icon="cilLowVision" />
-                      </CDropdownToggle>
-                      <CDropdownMenu>
-                        <CDropdownItem @click="openDetail(a)" style="cursor:pointer;" class="d-flex align-items-center gap-2">
-                          <CIcon icon="cilLowVision" class="text-info" /> {{ t('assets.detail.title') }}
-                        </CDropdownItem>
-                        <CDropdownItem @click="openEdit(a)" style="cursor:pointer;" class="d-flex align-items-center gap-2">
-                          <CIcon icon="cilPencil" class="text-primary" /> {{ t('common.edit') }}
-                        </CDropdownItem>
-                        <CDropdownItem v-if="canDispose(a)" @click="openDispose(a)" style="cursor:pointer;" class="d-flex align-items-center gap-2">
-                          <CIcon icon="cilXCircle" class="text-warning" /> {{ t('assets.form.dispose') }}
-                        </CDropdownItem>
-                        <CDropdownDivider v-if="canDelete(a)" />
-                        <CDropdownItem v-if="canDelete(a)" @click="confirmDelete(a)" style="cursor:pointer;" class="d-flex align-items-center gap-2 text-danger">
-                          <CIcon icon="cilTrash" /> {{ t('common.delete') }}
-                        </CDropdownItem>
-                      </CDropdownMenu>
-                    </CDropdown>
-                  </CTableDataCell>
-                </CTableRow>
-                <CTableRow v-if="!store.assets.length">
-                  <CTableDataCell colspan="9" class="text-center text-muted py-4">{{ t('assets.noAssets') }}</CTableDataCell>
-                </CTableRow>
-              </CTableBody>
-            </CTable>
-          </CCardBody>
-        </CCard>
-
-        <!-- Pagination -->
-        <div v-if="store.lastPage > 1" class="d-flex justify-content-center mt-3">
-          <CPagination>
-            <CPaginationItem :disabled="store.currentPage <= 1" @click="goPage(store.currentPage - 1)">&laquo;</CPaginationItem>
-            <CPaginationItem v-for="p in store.lastPage" :key="p" :active="p === store.currentPage" @click="goPage(p)">{{ p }}</CPaginationItem>
-            <CPaginationItem :disabled="store.currentPage >= store.lastPage" @click="goPage(store.currentPage + 1)">&raquo;</CPaginationItem>
-          </CPagination>
-        </div>
-      </div>
+      <XGrid v-model:selected-id="selAssetId" :columns="assetColumns" :rows="store.assets" :loading="store.assetsLoading" :empty="t('assets.noAssets')"
+             :min-width="1000" :menu="assetMenu" :row-class="(a) => (['disposed', 'lost', 'written_off'].includes(a.status) ? 'xg-row--bad' : '')" @open="openDetail">
+        <template #cell-asset_tag="{ row }"><span class="xg-mono">{{ row.asset_tag || '—' }}</span></template>
+        <template #cell-name="{ row }">
+          <div class="xg-two"><span class="xg-name">{{ row.name }}</span><span v-if="row.serial_no" class="xg-sub">S/N: {{ row.serial_no }}</span></div>
+        </template>
+        <template #cell-category="{ row }">{{ categoryLabel(row.category) }}</template>
+        <template #cell-purchase_cost_cents="{ row }">{{ formatTZS(row.purchase_cost_cents) }}</template>
+        <template #cell-current_value_cents="{ row }"><span class="xg-strong">{{ formatTZS(row.current_value_cents) }}</span></template>
+        <template #cell-condition="{ row }"><span class="xg-pill" :class="conditionPill(row.condition)">{{ conditionLabel(row.condition) }}</span></template>
+        <template #cell-status="{ row }"><span class="xg-pill" :class="statusPill(row.status)">{{ statusLabel(row.status) }}</span></template>
+      </XGrid>
     </div>
 
     <!-- ══════════════════════════════════════════════
@@ -855,7 +715,16 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
               <!-- Reference -->
               <CCol :md="txnForm.type === 'out' ? 6 : 6">
                 <CFormLabel>{{ t('inventory.txnReference') }}</CFormLabel>
-                <CFormInput v-model="txnForm.reference" :placeholder="t('inventory.referencePlaceholder')" />
+                <CFormInput v-model="txnForm.reference" placeholder="LPO-001..." />
+              </CCol>
+              <!-- Which supplier delivered it (stock-in only) -->
+              <CCol v-if="txnForm.type === 'in'" xs="12" md="6">
+                <CFormLabel>{{ t('purchasing.picker.label') }}</CFormLabel>
+                <SupplierPicker v-model="txnForm.supplier_id" :allow-name="false" />
+              </CCol>
+              <CCol v-if="txnForm.type === 'in'" xs="12" md="6">
+                <CFormLabel>{{ t('purchasing.receipt.deliveryNote') }}</CFormLabel>
+                <CFormInput v-model="txnForm.delivery_note_no" />
               </CCol>
               <!-- Notes -->
               <CCol xs="12" md="6">
@@ -976,7 +845,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
       </CModalHeader>
       <CModalBody v-if="detailAsset">
         <div v-if="detailAsset.photo_url" class="mb-3 text-center">
-          <img :src="detailAsset.photo_url" class="img-fluid rounded" style="max-height:200px;" :alt="t('inventory.assetPhotoAlt')" />
+          <img :src="detailAsset.photo_url" class="img-fluid rounded" style="max-height:200px;" :alt="t('ui.inventoryView.assetPhoto')" />
         </div>
 
         <h6 class="text-primary fw-bold border-bottom pb-1 mb-2">{{ t('assets.detail.identity') }}</h6>
@@ -1064,9 +933,9 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
             <CCol xs="12" md="6">
               <label class="form-label fw-semibold">{{ t('assets.assetTag') }} *</label>
               <div class="input-group">
-                <CFormInput v-model="form.asset_tag" :placeholder="t('inventory.assetTagPlaceholder')" style="min-height:44px;" />
+                <CFormInput v-model="form.asset_tag" :placeholder="t('assets.form.assetTagPlaceholder')" style="min-height:44px;" />
                 <CButton color="outline-secondary" @click="autoFillTag" :disabled="loadingTag" style="min-height:44px;">
-                  <CSpinner v-if="loadingTag" size="sm" /><span v-else>{{ t('inventory.autoTag') }}</span>
+                  <CSpinner v-if="loadingTag" size="sm" /><span v-else>{{ t('common.themeAuto') }}</span>
                 </CButton>
               </div>
             </CCol>
@@ -1102,7 +971,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
           <CRow class="g-3">
             <CCol xs="12" md="6"><label class="form-label fw-semibold">{{ t('assets.cost') }} (TZS)</label><CFormInput type="number" v-model.number="form.purchase_cost" min="0" style="min-height:44px;" @input="updateDepPreview" /></CCol>
             <CCol xs="12" md="6"><label class="form-label fw-semibold">{{ t('assets.purchaseDate') }}</label><CFormInput type="date" v-model="form.purchase_date" style="min-height:44px;" @change="updateDepPreview" /></CCol>
-            <CCol xs="12" md="6"><label class="form-label fw-semibold">{{ t('assets.supplier') }}</label><CFormInput v-model="form.supplier_name" style="min-height:44px;" /></CCol>
+            <CCol xs="12" md="6"><label class="form-label fw-semibold">{{ t('assets.supplier') }}</label><SupplierPicker v-model="form.supplier_id" v-model:name="form.supplier_name" /></CCol>
             <CCol xs="12" md="6"><label class="form-label fw-semibold">{{ t('assets.invoiceNo') }}</label><CFormInput v-model="form.invoice_no" style="min-height:44px;" /></CCol>
             <CCol xs="12" md="6">
               <label class="form-label fw-semibold">{{ t('assets.fundingSource') }}</label>

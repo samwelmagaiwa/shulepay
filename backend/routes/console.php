@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\SendPromiseReminders;
+use App\Console\Commands\SendSupplierDocumentAlerts;
 use App\Console\Commands\SendVehicleDocumentAlerts;
 use App\Console\Commands\SendWeeklyReport;
 use Illuminate\Foundation\Inspiring;
@@ -30,5 +31,11 @@ Schedule::command(SendWeeklyReport::class)
 // document reaches 30, 14 or 7 days before expiry, or expires.
 Schedule::command(SendVehicleDocumentAlerts::class)
     ->dailyAt('07:30')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// Supplier document expiry alerts (tax clearance, licence, contract) — daily, in-app only.
+Schedule::command(SendSupplierDocumentAlerts::class)
+    ->dailyAt('07:40')
     ->withoutOverlapping()
     ->runInBackground();

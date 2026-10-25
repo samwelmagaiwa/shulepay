@@ -1,0 +1,92 @@
+<?php
+
+// Messages of the supplier purchasing module (suppliers, bills, payments, goods received, documents).
+// Same keys as lang/sw/suppliers.php.
+return [
+    'category_deleted' => 'Supplier type deleted.',
+    'category_hidden_in_use' => 'This supplier type is in use, so it was hidden instead of deleted.',
+    'deactivated_instead' => 'This supplier has bills or payments, so it was deactivated instead of deleted.',
+    'document_deleted' => 'Document deleted.',
+    'bill_expense_description' => 'Bill :number — :supplier',
+    'grn_stock_note' => 'Received from :supplier',
+    'grn_void_note' => 'Goods-received note voided: :reason',
+
+    // Default supplier types, shown in the language being used.
+    'categories' => [
+        'stationery' => 'Stationery',
+        'food' => 'Food & catering',
+        'construction' => 'Construction & repairs',
+        'uniforms' => 'Uniforms',
+        'books' => 'Books & learning materials',
+        'fuel_transport' => 'Fuel & transport',
+        'utilities' => 'Utilities',
+        'cleaning_security' => 'Cleaning & security',
+        'ict' => 'ICT & equipment',
+        'services' => 'Professional services',
+        'other' => 'Other',
+    ],
+
+    'doc_types' => [
+        'tin_certificate' => 'TIN certificate',
+        'business_licence' => 'business licence',
+        'tax_clearance' => 'tax clearance',
+        'contract' => 'contract',
+        'insurance' => 'insurance',
+        'other' => 'document',
+    ],
+
+    'err' => [
+        'allocation_exceeds_payment' => 'The amounts shared across bills are more than the payment.',
+        'allocation_invalid' => 'One of the bills chosen for this payment is not open for payment.',
+        'allocation_stale' => 'Bill :bill was paid or changed meanwhile. Please reload and try again.',
+        'bill_has_payments' => 'This bill already has payments, so it cannot be cancelled.',
+        'bill_locked' => 'This bill is approved or paid and can no longer be edited.',
+        'bill_not_pending' => 'Only a bill waiting for approval can be approved or rejected.',
+        'bill_number_taken' => 'This supplier already has a bill with that number.',
+        'grn_already_void' => 'This goods-received note is already void.',
+        'grn_consumable_only' => 'Goods received can only be recorded for consumable stock items.',
+        'grn_stock_used' => 'Some of the stock of ":item" has already been used, so this note cannot be voided.',
+        'merge_same' => 'Choose a different supplier to merge into.',
+        'not_allowed' => 'You are not allowed to do this. Ask the owner.',
+        'payment_not_pending' => 'Only a payment waiting for approval can be approved or rejected.',
+        'payment_not_voidable' => 'Only an approved payment can be voided.',
+        'possible_duplicate' => 'A supplier with the same name, phone number or TIN already exists.',
+        'supplier_not_active' => 'This supplier is not active. Reactivate it first.',
+        'wht_too_large' => 'The withholding tax cannot be more than the payment.',
+    ],
+
+    'notify' => [
+        'bill_pending' => 'Supplier bill waiting for approval',
+        'bill_pending_body' => ':supplier — bill :number, TZS :amount, waits for your approval.',
+        'payment_pending' => 'Supplier payment waiting for approval',
+        'payment_pending_body' => 'A payment of TZS :amount to :supplier waits for your approval.',
+        'doc_expiring' => ':supplier — :doc expires in :days days',
+        'doc_expired' => ':supplier — :doc has expired',
+        'doc_body' => 'The :doc of :supplier expires on :date. Please renew it.',
+    ],
+
+    'validation' => [
+        'name.required' => 'Enter the supplier name.',
+        'name.min' => 'The supplier name must have at least 2 characters.',
+        'supplier_category_id.required' => 'Choose the type of supplier.',
+        'contact_name.regex' => 'The contact name must contain letters.',
+        'phone.required' => 'Enter the phone number.',
+        'phone.regex' => 'Enter a valid phone number, for example +255712345678.',
+        'alt_phone.regex' => 'Enter a valid alternative phone number.',
+        'email.email' => 'Enter a valid email address.',
+        'tin.required' => 'A TIN is needed for a VAT or withholding-tax supplier.',
+        'tin.regex' => 'The TIN must look like 123-456-789.',
+        'vrn.required' => 'A VRN is needed for a VAT-registered supplier.',
+        'vrn.regex' => 'The VRN must look like 40-123456-A.',
+        'wht_type.required' => 'Choose the withholding-tax type.',
+        'bank_name.required' => 'Enter the bank name.',
+        'bank_account_number.required' => 'Enter the bank account number.',
+        'bank_account_number.regex' => 'The bank account number may only have digits and dashes.',
+        'mobile_money_provider.required' => 'Choose the mobile money provider.',
+        'mobile_money_number.required' => 'Enter the mobile money number.',
+        'mobile_money_number.regex' => 'Enter a valid mobile money number.',
+        'payment_terms_days.integer' => 'The payment terms must be a whole number of days.',
+        'payment_terms_days.min' => 'The payment terms cannot be negative.',
+        'payment_terms_days.max' => 'The payment terms cannot be more than 365 days.',
+    ],
+];

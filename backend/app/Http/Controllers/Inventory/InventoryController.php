@@ -7,6 +7,8 @@ use App\Models\InventoryItem;
 use App\Models\InventoryTransaction;
 use App\Services\AuditLogger;
 use App\Services\Inventory\LowStockAlertService;
+use App\Services\Suppliers\SupplierSetup;
+use App\Support\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +16,7 @@ use Illuminate\Support\Facades\Storage;
 
 class InventoryController extends Controller
 {
-    // ── Shared helper ─────────────────────────────────────────────────────────
+    // â"€â"€ Shared helper â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     private function resolveSchoolId(Request $request): int
     {
@@ -28,23 +30,26 @@ class InventoryController extends Controller
         return ($canSwitch ? ($requested ?? $user->school_id) : $user->school_id) ?? $user->school_id;
     }
 
-    // ── Consumables ───────────────────────────────────────────────────────────
+    // â"€â"€ Consumables â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     public function index(Request $request): JsonResponse
     {
-        $schoolId = $this->resolveSchoolId($request);
+        $schoolId = $this->isTenantMode() ? null : $this->resolveSchoolId($request);
         $type = $request->input('type'); // 'fixed_asset' | 'consumable' | null
 
         if ($type === 'fixed_asset') {
             return $this->indexFixedAssets($request, $schoolId);
         }
 
-        $items = InventoryItem::where('school_id', $schoolId)
+        $query = InventoryItem::query()
             ->where('type', 'consumable')
             ->where('is_active', true)
             ->with('category:id,name')
-            ->orderBy('name')
-            ->get()
+            ->orderBy('name');
+        if (! $this->isTenantMode() && $schoolId) {
+            $query->where('school_id', $schoolId);
+        }
+        $items = $query->get()
             ->map(function ($item) {
                 $item->is_low_stock = $item->isLowStock();
                 $item->total_value_cents = (int) round((float) $item->quantity * $item->unit_cost_cents->cents());
@@ -55,10 +60,13 @@ class InventoryController extends Controller
         return response()->json($items);
     }
 
-    private function indexFixedAssets(Request $request, int $schoolId): JsonResponse
+    private function indexFixedAssets(Request $request, ?int $schoolId): JsonResponse
     {
-        $query = InventoryItem::where('school_id', $schoolId)
-            ->where('type', 'fixed_asset')
+        $query = InventoryItem::query()->where('type', 'fixed_asset');
+        if (! $this->isTenantMode() && $schoolId) {
+            $query->where('school_id', $schoolId);
+        }
+        $query
             ->with('registeredBy:id,name')
             ->latest('created_at');
 
@@ -125,7 +133,7 @@ class InventoryController extends Controller
             'asset_tag' => 'required|string|max:30|unique:inventory_items,asset_tag',
             'name' => 'required|string|max:200',
             'category' => 'required|in:furniture,technology,equipment,vehicles,buildings,sports,other',
-            'school_id' => 'required|exists:schools,id',
+            'school_id' => Tenant::active() ? 'sometimes|integer' : 'required|exists:mysql.schools,id',
             'quantity' => 'nullable|integer|min:1',
             'serial_no' => 'nullable|string|max:100',
             'photo' => 'nullable|image|max:2048',
@@ -151,7 +159,14 @@ class InventoryController extends Controller
             $photoPath = $request->file('photo')->store('assets', 'public');
         }
 
-        $item = InventoryItem::create([
+        if (Tenant::active()) {
+            $data['school_id'] = Tenant::school()?->id;
+        }
+        $link = SupplierSetup::linkFrom($request);
+
+        // Tenant inventory_items table carries no school_id column — every row
+        // already belongs to the one school the tenant connection is scoped to.
+        $item = InventoryItem::create(Tenant::stripSchoolId([
             'type' => 'fixed_asset',
             'school_id' => $data['school_id'],
             'asset_tag' => $data['asset_tag'],
@@ -162,7 +177,8 @@ class InventoryController extends Controller
             'photo' => $photoPath,
             'purchase_cost_cents' => isset($data['purchase_cost']) ? (int) round($data['purchase_cost'] * 100) : 0,
             'purchase_date' => $data['purchase_date'] ?? null,
-            'supplier_name' => $data['supplier_name'] ?? null,
+            'supplier_name' => $link['name'] ?? $data['supplier_name'] ?? null,
+            'supplier_id' => $link['id'] ?? null,
             'invoice_no' => $data['invoice_no'] ?? null,
             'funding_source' => $data['funding_source'] ?? null,
             'depreciation_method' => $data['depreciation_method'] ?? null,
@@ -175,10 +191,10 @@ class InventoryController extends Controller
             'status' => $data['status'] ?? 'in_use',
             'warranty_expiry' => $data['warranty_expiry'] ?? null,
             'notes' => $data['notes'] ?? null,
-            'registered_by' => auth()->id(),
+            'registered_by' => Tenant::actorId(),
             'registered_at' => now(),
             'is_active' => true,
-        ]);
+        ]));
 
         AuditLogger::log('inventory.asset_created', $item, ['after' => $item->toArray()]);
 
@@ -243,6 +259,7 @@ class InventoryController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        $link = SupplierSetup::linkFrom($request);
         $updateData = array_filter([
             'asset_tag' => $data['asset_tag'] ?? null,
             'name' => $data['name'] ?? null,
@@ -251,7 +268,8 @@ class InventoryController extends Controller
             'quantity' => $data['quantity'] ?? null,
             'serial_no' => $data['serial_no'] ?? null,
             'purchase_date' => $data['purchase_date'] ?? null,
-            'supplier_name' => $data['supplier_name'] ?? null,
+            'supplier_name' => $link['name'] ?? $data['supplier_name'] ?? null,
+            'supplier_id' => $link['id'] ?? null,
             'invoice_no' => $data['invoice_no'] ?? null,
             'funding_source' => $data['funding_source'] ?? null,
             'depreciation_method' => $data['depreciation_method'] ?? null,
@@ -298,7 +316,7 @@ class InventoryController extends Controller
         if ($item->type === 'fixed_asset') {
             if (! in_array($item->status, ['disposed', 'lost', 'written_off'])) {
                 return response()->json([
-                    'message' => __('An asset can only be deleted when its status is: disposed, lost or written_off.'),
+                    'message' => __('messages.an_asset_can_only_be_deleted_if'),
                 ], 422);
             }
             AuditLogger::log('inventory.asset_deleted', $item, ['before' => $item->toArray()]);
@@ -306,17 +324,17 @@ class InventoryController extends Controller
 
         $item->delete();
 
-        return response()->json(['message' => __('Deleted.')]);
+        return response()->json(['message' => __('messages.deleted')]);
     }
 
-    // ── Dispose (fixed assets only) ───────────────────────────────────────────
+    // â"€â"€ Dispose (fixed assets only) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     public function dispose(Request $request, InventoryItem $item): JsonResponse
     {
         $this->authorizeSchool($item->school_id);
 
         if ($item->type !== 'fixed_asset') {
-            return response()->json(['message' => __('Disposal applies to fixed assets only.')], 422);
+            return response()->json(['message' => __('messages.disposal_applies_to_fixed_assets_only')], 422);
         }
 
         $data = $request->validate([
@@ -339,29 +357,30 @@ class InventoryController extends Controller
         return response()->json($item);
     }
 
-    // ── Next asset tag ────────────────────────────────────────────────────────
+    // â"€â"€ Next asset tag â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     public function nextTag(Request $request): JsonResponse
     {
-        $request->validate(['school_id' => 'required|exists:schools,id']);
-        $tag = InventoryItem::nextAssetTag($request->integer('school_id'));
+        $request->validate(['school_id' => Tenant::active() ? 'sometimes|integer' : 'required|exists:mysql.schools,id']);
+        $schoolId = Tenant::active() ? Tenant::school()?->id : $request->integer('school_id');
+        $tag = InventoryItem::nextAssetTag((int) $schoolId);
 
         return response()->json(['asset_tag' => $tag]);
     }
 
-    // ── Consumable transactions ───────────────────────────────────────────────
+    // â"€â"€ Consumable transactions â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     public function transaction(Request $request, InventoryItem $item): JsonResponse
     {
         $this->authorizeSchool($item->school_id);
 
         if ($item->type !== 'consumable') {
-            return response()->json(['message' => __('Stock transactions apply to consumable items only.')], 422);
+            return response()->json(['message' => __('messages.stock_transactions_are_for_consumable_items_only')], 422);
         }
 
         $user = auth()->user();
         if ($request->input('type') === 'adjustment' && ! $user->hasRole('superadmin') && ! $user->hasPermissionTo('inventory.adjustment')) {
-            return response()->json(['message' => __('You do not have permission to make inventory adjustments. Please contact your Superadmin.')], 403);
+            return response()->json(['message' => __('messages.you_do_not_have_permission_to_make')], 403);
         }
 
         $validated = $request->validate([
@@ -372,13 +391,17 @@ class InventoryController extends Controller
             'notes' => 'nullable|string',
             'reference' => 'nullable|string',
             'transaction_date' => 'required|date',
+            'delivery_note_no' => 'nullable|string|max:60',
         ]);
+        if ($link = SupplierSetup::linkFrom($request)) {
+            $validated['supplier_id'] = $link['id'];
+        }
 
         $validated['item_id'] = $item->id;
         $validated['school_id'] = $item->school_id;
-        $validated['recorded_by'] = auth()->id();
+        $validated['recorded_by'] = Tenant::actorId();
 
-        $txn = InventoryTransaction::create($validated);
+        $txn = InventoryTransaction::create(Tenant::stripSchoolId($validated));
 
         $qty = (float) $validated['quantity'];
         if ($validated['type'] === 'in') {
@@ -417,7 +440,7 @@ class InventoryController extends Controller
         return response()->json($records);
     }
 
-    // ── Staff usage history for a consumable item ────────────────────────────
+    // â"€â"€ Staff usage history for a consumable item â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     public function staffUsage(Request $request, InventoryItem $item): JsonResponse
     {
@@ -445,20 +468,20 @@ class InventoryController extends Controller
         return response()->json(['item' => $item->only(['id', 'name', 'unit']), 'staff_usage' => $grouped]);
     }
 
-    // ── Summary ───────────────────────────────────────────────────────────────
+    // â"€â"€ Summary â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     public function summary(Request $request): JsonResponse
     {
-        $schoolId = $this->resolveSchoolId($request);
+        $schoolId = $this->isTenantMode() ? null : $this->resolveSchoolId($request);
 
-        $consumables = InventoryItem::where('school_id', $schoolId)
-            ->where('type', 'consumable')
-            ->where('is_active', true)
-            ->get();
-
-        $fixedAssets = InventoryItem::where('school_id', $schoolId)
-            ->where('type', 'fixed_asset')
-            ->get();
+        $consumableQuery = InventoryItem::query()->where('type', 'consumable')->where('is_active', true);
+        $fixedQuery = InventoryItem::query()->where('type', 'fixed_asset');
+        if (! $this->isTenantMode() && $schoolId) {
+            $consumableQuery->where('school_id', $schoolId);
+            $fixedQuery->where('school_id', $schoolId);
+        }
+        $consumables = $consumableQuery->get();
+        $fixedAssets = $fixedQuery->get();
 
         $totalConsumableValue = $consumables->sum(
             fn ($i) => (int) round((float) $i->quantity * $i->unit_cost_cents->cents())
@@ -477,16 +500,21 @@ class InventoryController extends Controller
         ]);
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
+    // â"€â"€ Private helpers â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
-    private function authorizeSchool(int $schoolId): void
+    private function authorizeSchool(?int $schoolId): void
     {
+        // A school's own database holds only that school's items (and its rows carry no school_id).
+        if (Tenant::active()) {
+            return;
+        }
+
         $mySchool = app()->bound('active_school')
             ? app('active_school')->id
             : auth()->user()->school_id;
 
         if ($mySchool !== $schoolId) {
-            abort(403, __('Unauthorized'));
+            abort(403, __('messages.unauthorized'));
         }
     }
 }
