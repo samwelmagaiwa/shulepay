@@ -230,6 +230,9 @@ jobs:
           envs: APP_KEY,DB_PASSWORD,DB_ROOT_PASSWORD,SMS_API_KEY,SMS_SECRET_KEY,SMS_SENDER_ID,DOCKERHUB_USERNAME,IMAGE_TAG
           script: |
             mkdir -p /www/shulepay
+            # The AI key lives only on the server (not in git or the secrets list):
+            # read it before the file is rewritten below and write it back after.
+            GEMINI_API_KEY=$(grep '^GEMINI_API_KEY=' /www/shulepay/.env 2>/dev/null | head -1 | cut -d= -f2-)
             printf 'APP_ENV=production\n'                  > /www/shulepay/.env
             printf 'APP_DEBUG=false\n'                    >> /www/shulepay/.env
             printf 'DB_CONNECTION=mysql\n'                >> /www/shulepay/.env
@@ -248,6 +251,7 @@ jobs:
             printf 'BACKEND_IMAGE=magaiwa/magreth-backend\n'    >> /www/shulepay/.env
             printf 'FRONTEND_IMAGE=magaiwa/magreth-frontend\n'  >> /www/shulepay/.env
             printf 'IMAGE_TAG=%s\n' "$IMAGE_TAG"          >> /www/shulepay/.env
+            if [ -n "$GEMINI_API_KEY" ]; then printf 'GEMINI_API_KEY=%s\n' "$GEMINI_API_KEY" >> /www/shulepay/.env; fi
             chmod 600 /www/shulepay/.env
 
       - name: Copy deploy files to server

@@ -129,6 +129,7 @@ function go(path) {
         <template v-if="!auth.isParent">
           <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.schoolLife') }}</div>
           <RouterLink class="btn btn-ghost-secondary text-start" to="/mahudhurio" @click="mobileNavOpen=false">📋 {{ t('nav.attendance') }}</RouterLink>
+          <RouterLink class="btn btn-ghost-secondary text-start" to="/mahudhurio/historia" @click="mobileNavOpen=false">📈 {{ t('nav.attendanceHistory') }}</RouterLink>
           <RouterLink v-if="!auth.isTeacher" class="btn btn-ghost-secondary text-start" to="/usafiri" @click="mobileNavOpen=false">🚌 {{ t('nav.transport') }}</RouterLink>
           <RouterLink v-if="!auth.isTeacher" class="btn btn-ghost-secondary text-start" to="/inventory" @click="mobileNavOpen=false">📦 {{ t('nav.inventory') }}</RouterLink>
           <RouterLink v-if="auth.isStaff" class="btn btn-ghost-secondary text-start" to="/stationary/mine" @click="mobileNavOpen=false">{{ t('stationary.navMine') }}</RouterLink>
@@ -304,6 +305,9 @@ function go(path) {
           <CDropdownMenu style="min-width:220px; border-radius:12px; border:none; box-shadow:0 8px 24px rgba(0,0,0,.12);">
             <CDropdownItem @click="router.push('/mahudhurio')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/mahudhurio') }">
               📋 {{ t('nav.attendance') }}
+            </CDropdownItem>
+            <CDropdownItem @click="router.push('/mahudhurio/historia')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/mahudhurio/historia') }">
+              📈 {{ t('nav.attendanceHistory') }}
             </CDropdownItem>
             <CDropdownItem v-if="!auth.isTeacher" @click="router.push('/usafiri')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/usafiri') }">
               🚌 {{ t('nav.transport') }}

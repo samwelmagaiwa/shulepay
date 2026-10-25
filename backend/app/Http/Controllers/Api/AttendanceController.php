@@ -67,6 +67,9 @@ class AttendanceController extends Controller
         return response()->json([
             'class' => ['id' => $class->id, 'name' => $class->name],
             'date' => $date,
+            // a register already taken for this class and day: the screen says so and asks before it is changed
+            'submitted' => $existing->isNotEmpty(),
+            'submitted_at' => $existing->max('updated_at')?->toIso8601String(),
             'students' => $students,
         ]);
     }
@@ -91,6 +94,9 @@ class AttendanceController extends Controller
         $schoolId = SchoolClass::findOrFail($classId)->school_id;
         $saved = [];
 
+        // What was recorded before: sending the same register again must not alert anyone a second time.
+        $before = Attendance::where('school_class_id', $classId)->where('date', $date)->pluck('status', 'student_id');
+
         DB::transaction(function () use ($records, $classId, $schoolId, $date, &$saved) {
             foreach ($records as $rec) {
                 $att = Attendance::updateOrCreate(
@@ -106,7 +112,9 @@ class AttendanceController extends Controller
         });
 
         // Notify owners about absent students (in-app + SMS)
-        $absentRecords = collect($records)->where('status', 'absent');
+        // Only pupils who are newly absent are announced; a re-submitted register changes nothing for the others.
+        $absentRecords = collect($records)->where('status', 'absent')
+            ->filter(fn ($r) => ($before[$r['student_id']] ?? null) !== 'absent')->values();
         if ($absentRecords->count() > 0) {
             $class = SchoolClass::find($classId);
             $className = $class?->name ?? 'Darasa';
@@ -169,8 +177,10 @@ class AttendanceController extends Controller
 
         return response()->json([
             'saved' => count($saved),
-            'absent_count' => $absentRecords->count(),
+            'absent_count' => collect($records)->where('status', 'absent')->count(),
+            'newly_absent' => $absentRecords->count(),
             'late_count' => collect($records)->where('status', 'late')->count(),
+            'updated' => $before->isNotEmpty(),
         ]);
     }
 

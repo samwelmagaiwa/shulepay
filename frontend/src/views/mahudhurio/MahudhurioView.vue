@@ -1,11 +1,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
 import { useAuthStore }    from '@/stores/auth'
 import { useSchoolsStore } from '@/stores/schools'
 
 const { t } = useI18n()
+const route = useRoute()
 const auth         = useAuthStore()
 const schoolsStore = useSchoolsStore()
 
@@ -28,6 +30,14 @@ const submitting    = ref(false)
 const loadError     = ref('')
 const submitSuccess = ref('')
 const submitError   = ref('')
+
+// A register that was already taken is edited, not repeated: the screen says so, asks before saving
+// changes, and has nothing to send while nothing has changed.
+const original  = ref('')
+const submitted = computed(() => !!registerData.value?.submitted)
+const snapshot  = () => JSON.stringify(students.value.map(s => [s.student_id, s.status, s.remarks || '']))
+const dirty     = computed(() => snapshot() !== original.value)
+const takenAt   = computed(() => (registerData.value?.submitted_at ? new Date(registerData.value.submitted_at).toLocaleString() : ''))
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
 const totalStudents = computed(() => students.value.length)
@@ -64,6 +74,15 @@ onMounted(async () => {
   } else {
     await fetchClasses(null)
   }
+
+  // Opened from the history page: the day (and class) to look at
+  const day = String(route.query.date || '')
+  if (/^\d{4}-\d{2}-\d{2}$/.test(day)) selectedDate.value = day
+  const wanted = classes.value.find((c) => String(c.id) === String(route.query.class))
+  if (wanted) {
+    selectedClass.value = wanted.id
+    await loadRegister()
+  }
 })
 
 // ─── Load Register ────────────────────────────────────────────────────────────
@@ -82,6 +101,7 @@ async function loadRegister() {
       ...s,
       status: s.status ?? 'present',
     }))
+    original.value = snapshot()
   } catch (e) {
     loadError.value = e?.response?.data?.message || t('attendance.loadError')
     students.value  = []
@@ -105,7 +125,11 @@ function statusBg(status) {
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
 async function submitRegister() {
-  if (!registerData.value) return
+  if (!registerData.value || submitting.value) return
+  if (submitted.value) {
+    if (!dirty.value) return
+    if (!window.confirm(`${t('attendx.confirmTitle')}\n\n${t('attendx.confirmText', { date: registerData.value.date })}`)) return
+  }
   submitting.value    = true
   submitSuccess.value = ''
   submitError.value   = ''
@@ -120,11 +144,13 @@ async function submitRegister() {
       date:            registerData.value.date,
       records,
     })
-    submitSuccess.value = t('attendance.submitSuccess', {
+    submitSuccess.value = t(data.updated ? 'attendx.updatedSuccess' : 'attendance.submitSuccess', {
       present: data.saved - data.absent_count - data.late_count,
       late:    data.late_count,
       absent:  data.absent_count,
     })
+    registerData.value = { ...registerData.value, submitted: true, submitted_at: new Date().toISOString() }
+    original.value = snapshot()
     window.scrollTo({ top: 0, behavior: 'smooth' })
   } catch (e) {
     submitError.value = e?.response?.data?.message || t('attendance.submitError')
@@ -141,6 +167,7 @@ async function submitRegister() {
     <div class="page-header px-3 pt-3 pb-2 d-flex align-items-center gap-2">
       <span style="font-size:1.4rem;">📋</span>
       <h5 class="mb-0 fw-bold">{{ t('attendance.title') }}</h5>
+      <RouterLink class="btn btn-outline-primary btn-sm ms-auto" to="/mahudhurio/historia">📈 {{ t('attendx.historyLink') }}</RouterLink>
     </div>
 
     <!-- ── Alerts ──────────────────────────────────────────────────────────── -->
@@ -314,6 +341,13 @@ async function submitRegister() {
       <div class="text-muted small mt-2">{{ t('common.loading') }}</div>
     </div>
 
+    <div v-if="submitted && students.length" class="px-3">
+      <CAlert color="info" class="py-2 small mb-2">
+        ✓ {{ t('attendx.alreadyTaken', { date: registerData.date, time: takenAt }) }}
+        <RouterLink class="ms-2" :to="{ path: '/mahudhurio/historia', query: { class: selectedClass } }">{{ t('attendx.seeHistory') }}</RouterLink>
+      </CAlert>
+    </div>
+
     <!-- ── Submit FAB — teleported to body to escape overflow context ──── -->
     <Teleport to="body">
       <div v-if="students.length > 0" class="submit-fab">
@@ -324,12 +358,12 @@ async function submitRegister() {
           </div>
           <CButton
             color="success"
-            :disabled="submitting"
+            :disabled="submitting || (submitted && !dirty)"
             @click="submitRegister"
             class="submit-btn"
           >
             <CSpinner v-if="submitting" size="sm" class="me-1" style="width:14px;height:14px;" />
-            📨 {{ t('attendance.submit') }}
+            📨 {{ submitted ? t('attendx.update') : t('attendance.submit') }}
           </CButton>
         </div>
       </div>

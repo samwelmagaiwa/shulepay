@@ -27,6 +27,8 @@ services:
       SMS_API_KEY: ${SMS_API_KEY}
       SMS_SECRET_KEY: ${SMS_SECRET_KEY}
       SMS_SENDER_ID: ${SMS_SENDER_ID:-ShulePay}
+      # ShuleAI assistant. Empty switches it off (the endpoint answers "not configured").
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     volumes:
       - backend_storage:/var/www/html/storage
     expose:

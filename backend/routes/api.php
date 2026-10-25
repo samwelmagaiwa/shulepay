@@ -27,6 +27,7 @@ use App\Http\Controllers\Accountant\SupplierController;
 use App\Http\Controllers\Accountant\SupplierPaymentController;
 use App\Http\Controllers\Ai\AiChatController;
 use App\Http\Controllers\Api\AttendanceController;
+use App\Http\Controllers\Api\AttendanceHistoryController;
 use App\Http\Controllers\Api\ExamController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\SubjectController;
@@ -126,6 +127,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // narrowed again per role in AiToolRegistry. Throttled: every message is a paid API call.
     Route::middleware(['role:'.UserRole::guard(UserRole::attendanceMarkers()), 'throttle:30,1'])
         ->post('ai/chat', [AiChatController::class, 'chat']);
+
+    // Attendance history — read-only, for everyone who takes or oversees registers (teaching + finance staff).
+    Route::middleware('role:'.UserRole::guard(UserRole::attendanceMarkers()))->prefix('attendance/history')->group(function () {
+        Route::get('/', [AttendanceHistoryController::class, 'index']);
+        Route::get('pupils', [AttendanceHistoryController::class, 'pupils']);
+        Route::get('absentees', [AttendanceHistoryController::class, 'absentees']);
+    });
 
     // Teaching staff — attendance + notifications
     // All roles that can mark or view attendance (teaching staff + finance staff)
