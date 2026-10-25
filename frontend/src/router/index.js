@@ -224,7 +224,8 @@ const routes = [
       { path: 'usafiri', name: 'Usafiri', component: () => import('@/views/usafiri/UsafiriView.vue'), meta: { requiresAuth: true } },
       { path: 'inventory', name: 'Inventory', component: () => import('@/views/inventory/InventoryView.vue'), meta: { requiresAuth: true } },
       { path: 'mahudhurio', name: 'Mahudhurio', component: () => import('@/views/mahudhurio/MahudhurioView.vue'), meta: { requiresAuth: true, roles: ['teacher', 'teacher_pri', 'teacher_sec', 'head_teacher', 'academic_teacher', 'headmaster', 'academic_pri', 'academic_sec', 'owner', 'superadmin'] } },
-      { path: 'arifa', name: 'Arifa', component: () => import('@/views/arifa/ArifaView.vue'), meta: { requiresAuth: true } },
+      { path: 'ai', name: 'ShuleAI', component: () => import('@/views/ai/AiChatView.vue'), meta: { requiresAuth: true, roles: ['teacher', 'teacher_pri', 'teacher_sec', 'head_teacher', 'academic_teacher', 'headmaster', 'academic_pri', 'academic_sec', 'accountant', 'owner', 'superadmin'] } },
+    { path: 'arifa', name: 'Arifa', component: () => import('@/views/arifa/ArifaView.vue'), meta: { requiresAuth: true } },
       // Profile
       { path: 'profile', name: 'Profile', component: () => import('@/views/auth/ProfileView.vue'), meta: { requiresAuth: true } },
       // Stationary

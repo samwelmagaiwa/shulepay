@@ -137,6 +137,10 @@ function go(path) {
         </template>
 
         <!-- Notifications: all roles -->
+        <RouterLink v-if="!auth.isParent" class="btn btn-ghost-secondary text-start" to="/ai" @click="mobileNavOpen=false" style="color:#007f3e; font-weight:600;">
+          🤖 ShuleAI
+        </RouterLink>
+
         <RouterLink class="btn btn-ghost-secondary text-start position-relative" to="/arifa" @click="mobileNavOpen=false">
           🔔 {{ t('nav.notifications') }}
           <CBadge v-if="notifications.unreadCount > 0" color="danger" class="position-absolute top-0 end-0">{{ notifications.unreadCount }}</CBadge>
@@ -268,6 +272,12 @@ function go(path) {
             </CDropdownItem>
             <CDropdownItem @click="router.push('/matumizi/petty-cash')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/matumizi/petty-cash') }">
               <CIcon icon="cilWallet" class="me-2" /> {{ t('nav.pettyCash') }}
+            </CDropdownItem>
+            <CDropdownItem @click="router.push('/malipo/refunds')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/malipo/refunds') }">
+              <CIcon icon="cilTransfer" class="me-2" /> {{ t('nav.refunds') }}
+            </CDropdownItem>
+            <CDropdownItem v-if="auth.isOwner" @click="router.push('/bajeti')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/bajeti') }">
+              <CIcon icon="cilLibrary" class="me-2" /> {{ t('nav.budgetVsActual') }}
             </CDropdownItem>
             <CDropdownDivider />
             <CDropdownItem @click="router.push('/payroll')" style="cursor:pointer;" :class="{ 'active': route.path === '/payroll' }">
@@ -413,6 +423,18 @@ function go(path) {
 
       <!-- Right controls -->
       <CHeaderNav class="ms-auto d-flex align-items-center gap-2">
+
+        <!-- ShuleAI assistant (staff only — parents never see it) -->
+        <RouterLink
+          v-if="!auth.isParent"
+          to="/ai"
+          class="nav-link d-flex align-items-center gap-1 px-2 fw-semibold"
+          :class="{ 'nav-active': route.path.startsWith('/ai') }"
+          style="font-size:.85rem; color:#007f3e;"
+          title="ShuleAI"
+        >
+          <span>🤖</span><span class="d-none d-lg-inline">AI</span>
+        </RouterLink>
 
         <!-- Notification Bell -->
         <RouterLink to="/arifa" class="nav-link position-relative px-2" :title="t('nav.notifications')">

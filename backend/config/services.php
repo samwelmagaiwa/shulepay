@@ -35,6 +35,10 @@ return [
         ],
     ],
 
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+    ],
+
     'beem' => [
         'api_key' => env('BEEM_API_KEY', ''),
         'secret_key' => env('BEEM_SECRET_KEY', ''),

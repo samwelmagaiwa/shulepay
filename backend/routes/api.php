@@ -25,6 +25,7 @@ use App\Http\Controllers\Accountant\StudentDraftController;
 use App\Http\Controllers\Accountant\StudentTermBillingController;
 use App\Http\Controllers\Accountant\SupplierController;
 use App\Http\Controllers\Accountant\SupplierPaymentController;
+use App\Http\Controllers\Ai\AiChatController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\ExamController;
 use App\Http\Controllers\Api\NotificationController;
@@ -120,6 +121,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('stationary/{stationaryRequest}/reject', [StationaryController::class, 'reject'])
             ->middleware('role:'.UserRole::guard(UserRole::financeStaff()));
     });
+
+    // ShuleAI assistant — staff only (parents never reach it); what it may look up is
+    // narrowed again per role in AiToolRegistry. Throttled: every message is a paid API call.
+    Route::middleware(['role:'.UserRole::guard(UserRole::attendanceMarkers()), 'throttle:30,1'])
+        ->post('ai/chat', [AiChatController::class, 'chat']);
 
     // Teaching staff — attendance + notifications
     // All roles that can mark or view attendance (teaching staff + finance staff)
