@@ -1,6 +1,6 @@
 <template>
-  <CContainer fluid class="p-2 p-md-3">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 no-print">
+  <CContainer fluid class="xg-page xg-report">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 no-print xg-sticky xg-report-bar">
       <CNav variant="tabs" class="mb-0 flex-nowrap overflow-auto">
         <CNavItem v-for="tab in tabs" :key="tab.id">
           <CNavLink :active="activeTab === tab.id" @click="activeTab = tab.id" style="cursor:pointer; white-space:nowrap;">
@@ -34,11 +34,59 @@
           </CButton>
         </template>
 
+        <!-- Income Statement Filters -->
+        <template v-if="activeTab === 'income'">
+          <div class="d-flex align-items-center gap-1">
+            <span class="small fw-semibold text-muted text-nowrap">{{ t('reports.startDate') }}:</span>
+            <CFormInput type="date" v-model="incomeFilters.from" size="sm" @change="loadIncomeStatement" style="width:140px" />
+          </div>
+          <div class="d-flex align-items-center gap-1">
+            <span class="small fw-semibold text-muted text-nowrap">{{ t('reports.endDate') }}:</span>
+            <CFormInput type="date" v-model="incomeFilters.to" size="sm" @change="loadIncomeStatement" style="width:140px" />
+          </div>
+          <CButton size="sm" color="primary" @click="loadIncomeStatement" :disabled="loadingIncome">
+            <CSpinner v-if="loadingIncome" size="sm" class="me-1" />{{ t('reports.view') }}
+          </CButton>
+        </template>
+
+        <!-- Balance Sheet Filters -->
+        <template v-if="activeTab === 'balance'">
+          <div class="d-flex align-items-center gap-1">
+            <span class="small fw-semibold text-muted text-nowrap">{{ t('reports.finStatement.asOf') }}:</span>
+            <CFormInput type="date" v-model="balanceAsOf" size="sm" @change="loadBalanceSheet" style="width:140px" />
+          </div>
+          <CButton size="sm" color="primary" @click="loadBalanceSheet" :disabled="loadingBalance">
+            <CSpinner v-if="loadingBalance" size="sm" class="me-1" />{{ t('reports.view') }}
+          </CButton>
+        </template>
+
+        <!-- Cash Flow Filters -->
+        <template v-if="activeTab === 'cashflow'">
+          <div class="d-flex align-items-center gap-1">
+            <span class="small fw-semibold text-muted text-nowrap">{{ t('reports.startDate') }}:</span>
+            <CFormInput type="date" v-model="cashflowFilters.from" size="sm" @change="loadCashFlow" style="width:140px" />
+          </div>
+          <div class="d-flex align-items-center gap-1">
+            <span class="small fw-semibold text-muted text-nowrap">{{ t('reports.endDate') }}:</span>
+            <CFormInput type="date" v-model="cashflowFilters.to" size="sm" @change="loadCashFlow" style="width:140px" />
+          </div>
+          <CButton size="sm" color="primary" @click="loadCashFlow" :disabled="loadingCashflow">
+            <CSpinner v-if="loadingCashflow" size="sm" class="me-1" />{{ t('reports.view') }}
+          </CButton>
+        </template>
+
         <!-- Export Excel Button -->
         <CButton color="success" size="sm" variant="outline" :disabled="isExportingExcel" @click="exportExcel">
           <CSpinner v-if="isExportingExcel" size="sm" class="me-1" />
           <CIcon v-else icon="cilCloudDownload" class="me-1" />
           {{ t('reports.exportExcel') }}
+        </CButton>
+
+        <!-- Export PDF Button -->
+        <CButton color="danger" size="sm" variant="outline" :disabled="isExportingPdf" @click="exportPdf">
+          <CSpinner v-if="isExportingPdf" size="sm" class="me-1" />
+          <CIcon v-else icon="cilDescription" class="me-1" />
+          {{ t('reports.export') }}
         </CButton>
 
         <!-- Print Button -->
@@ -64,6 +112,13 @@
           {{ t('reports.startDate') }}: {{ colFilters.date_from }} &nbsp;|&nbsp; {{ t('reports.endDate') }}: {{ colFilters.date_to }}
         </div>
         <div class="text-muted small mt-1" v-if="activeTab === 'vs'">{{ t('common.year') }}: {{ vsYear }}</div>
+        <div class="text-muted small mt-1" v-if="activeTab === 'income'">
+          {{ t('reports.startDate') }}: {{ incomeFilters.from }} &nbsp;|&nbsp; {{ t('reports.endDate') }}: {{ incomeFilters.to }}
+        </div>
+        <div class="text-muted small mt-1" v-if="activeTab === 'balance'">{{ t('reports.finStatement.asOf') }}: {{ balanceAsOf }}</div>
+        <div class="text-muted small mt-1" v-if="activeTab === 'cashflow'">
+          {{ t('reports.startDate') }}: {{ cashflowFilters.from }} &nbsp;|&nbsp; {{ t('reports.endDate') }}: {{ cashflowFilters.to }}
+        </div>
         <div class="text-muted small mt-1">{{ t('common.printedAt') }}: {{ new Date().toLocaleString(dateLocale()) }}</div>
       </div>
 
@@ -455,17 +510,183 @@
         </div>
       </div>
 
+      <!-- Tab: Income Statement -->
+      <div v-if="activeTab === 'income'">
+        <div v-if="loadingIncome" class="text-center py-4"><CSpinner color="primary" /></div>
+        <div v-else-if="incomeData" style="max-width:640px;">
+          <h6 class="fw-bold text-success mb-2">{{ t('reports.finStatement.revenue') }}</h6>
+          <CTable bordered class="mb-3" style="font-size:.85rem;">
+            <CTableBody>
+              <CTableRow>
+                <CTableDataCell>{{ t('reports.finStatement.feeCollections') }}</CTableDataCell>
+                <CTableDataCell class="text-end">{{ formatTZS(incomeData.revenue?.fee_collections) }}</CTableDataCell>
+              </CTableRow>
+              <CTableRow class="table-light fw-semibold">
+                <CTableDataCell>{{ t('reports.finStatement.totalRevenue') }}</CTableDataCell>
+                <CTableDataCell class="text-end">{{ formatTZS(incomeData.revenue?.total) }}</CTableDataCell>
+              </CTableRow>
+            </CTableBody>
+          </CTable>
+
+          <h6 class="fw-bold text-danger mb-2">{{ t('reports.finStatement.expenses') }}</h6>
+          <CTable bordered class="mb-3" style="font-size:.85rem;">
+            <CTableBody>
+              <CTableRow v-for="cat in incomeData.expenses?.by_category || []" :key="cat.category">
+                <CTableDataCell>{{ cat.category }}</CTableDataCell>
+                <CTableDataCell class="text-end">{{ formatTZS(cat.amount_cents) }}</CTableDataCell>
+              </CTableRow>
+              <CTableRow>
+                <CTableDataCell>{{ t('reports.finStatement.payroll') }}</CTableDataCell>
+                <CTableDataCell class="text-end">{{ formatTZS(incomeData.expenses?.payroll) }}</CTableDataCell>
+              </CTableRow>
+              <CTableRow class="table-light fw-semibold">
+                <CTableDataCell>{{ t('reports.finStatement.totalExpenses') }}</CTableDataCell>
+                <CTableDataCell class="text-end">{{ formatTZS(incomeData.expenses?.total) }}</CTableDataCell>
+              </CTableRow>
+            </CTableBody>
+          </CTable>
+
+          <CCard class="border-0 shadow-sm" :style="`border-left:4px solid ${incomeData.net_income_cents >= 0 ? '#198754' : '#dc3545'} !important`">
+            <CCardBody class="d-flex justify-content-between align-items-center">
+              <span class="fw-bold">{{ incomeData.net_income_cents >= 0 ? t('reports.finStatement.netIncome') : t('reports.finStatement.netLoss') }}</span>
+              <span class="fw-bold fs-5" :class="incomeData.net_income_cents >= 0 ? 'text-success' : 'text-danger'">
+                {{ formatTZS(Math.abs(incomeData.net_income_cents || 0)) }}
+              </span>
+            </CCardBody>
+          </CCard>
+        </div>
+        <div v-else class="text-center text-muted py-4">{{ t('reports.noData') }}</div>
+      </div>
+
+      <!-- Tab: Balance Sheet -->
+      <div v-if="activeTab === 'balance'">
+        <div v-if="loadingBalance" class="text-center py-4"><CSpinner color="primary" /></div>
+        <div v-else-if="balanceData">
+          <CRow class="g-3">
+            <CCol md="6">
+              <h6 class="fw-bold mb-2" style="color:#4c1d95;">{{ t('reports.finStatement.assets') }}</h6>
+              <CTable bordered class="mb-2" style="font-size:.85rem;">
+                <CTableBody>
+                  <CTableRow>
+                    <CTableDataCell>{{ t('reports.finStatement.cashAndBank') }}</CTableDataCell>
+                    <CTableDataCell class="text-end">{{ formatTZS(balanceData.assets?.cash_and_bank?.amount_cents) }}</CTableDataCell>
+                  </CTableRow>
+                  <CTableRow>
+                    <CTableDataCell>{{ t('reports.finStatement.receivables') }}</CTableDataCell>
+                    <CTableDataCell class="text-end">{{ formatTZS(balanceData.assets?.receivables?.amount_cents) }}</CTableDataCell>
+                  </CTableRow>
+                  <CTableRow>
+                    <CTableDataCell>{{ t('reports.finStatement.fixedAssets') }}</CTableDataCell>
+                    <CTableDataCell class="text-end">{{ formatTZS(balanceData.assets?.fixed_assets?.amount_cents) }}</CTableDataCell>
+                  </CTableRow>
+                  <CTableRow class="table-light fw-semibold">
+                    <CTableDataCell>{{ t('reports.finStatement.totalAssets') }}</CTableDataCell>
+                    <CTableDataCell class="text-end">{{ formatTZS(balanceData.assets?.total) }}</CTableDataCell>
+                  </CTableRow>
+                </CTableBody>
+              </CTable>
+            </CCol>
+            <CCol md="6">
+              <h6 class="fw-bold mb-2" style="color:#b45309;">{{ t('reports.finStatement.liabilities') }}</h6>
+              <CTable bordered class="mb-2" style="font-size:.85rem;">
+                <CTableBody>
+                  <CTableRow>
+                    <CTableDataCell>{{ t('reports.finStatement.payables') }}</CTableDataCell>
+                    <CTableDataCell class="text-end">{{ formatTZS(balanceData.liabilities?.payables?.amount_cents) }}</CTableDataCell>
+                  </CTableRow>
+                  <CTableRow class="table-light fw-semibold">
+                    <CTableDataCell>{{ t('reports.finStatement.totalLiabilities') }}</CTableDataCell>
+                    <CTableDataCell class="text-end">{{ formatTZS(balanceData.liabilities?.total) }}</CTableDataCell>
+                  </CTableRow>
+                </CTableBody>
+              </CTable>
+
+              <h6 class="fw-bold mb-2" style="color:#065f46;">{{ t('reports.finStatement.equity') }}</h6>
+              <CTable bordered class="mb-0" style="font-size:.85rem;">
+                <CTableBody>
+                  <CTableRow>
+                    <CTableDataCell>{{ t('reports.finStatement.retainedEarnings') }}</CTableDataCell>
+                    <CTableDataCell class="text-end">{{ formatTZS(balanceData.equity?.retained) }}</CTableDataCell>
+                  </CTableRow>
+                  <CTableRow class="table-light fw-semibold">
+                    <CTableDataCell>{{ t('reports.finStatement.totalEquity') }}</CTableDataCell>
+                    <CTableDataCell class="text-end">{{ formatTZS(balanceData.equity?.total) }}</CTableDataCell>
+                  </CTableRow>
+                </CTableBody>
+              </CTable>
+            </CCol>
+          </CRow>
+        </div>
+        <div v-else class="text-center text-muted py-4">{{ t('reports.noData') }}</div>
+      </div>
+
+      <!-- Tab: Cash Flow -->
+      <div v-if="activeTab === 'cashflow'">
+        <div v-if="loadingCashflow" class="text-center py-4"><CSpinner color="primary" /></div>
+        <div v-else-if="cashflowData" style="max-width:640px;">
+          <h6 class="fw-bold mb-2" style="color:#075985;">{{ t('reports.finStatement.operatingActivities') }}</h6>
+          <CTable bordered class="mb-3" style="font-size:.85rem;">
+            <CTableBody>
+              <CTableRow>
+                <CTableDataCell>{{ t('reports.finStatement.feeCollections') }}</CTableDataCell>
+                <CTableDataCell class="text-end">{{ formatTZS(cashflowData.operating?.fee_collections) }}</CTableDataCell>
+              </CTableRow>
+              <CTableRow>
+                <CTableDataCell>{{ t('reports.finStatement.expensePayments') }}</CTableDataCell>
+                <CTableDataCell class="text-end text-danger">({{ formatTZS(cashflowData.operating?.expense_payments) }})</CTableDataCell>
+              </CTableRow>
+              <CTableRow>
+                <CTableDataCell>{{ t('reports.finStatement.payrollPayments') }}</CTableDataCell>
+                <CTableDataCell class="text-end text-danger">({{ formatTZS(cashflowData.operating?.payroll_payments) }})</CTableDataCell>
+              </CTableRow>
+              <CTableRow>
+                <CTableDataCell>{{ t('reports.finStatement.supplierPayments') }}</CTableDataCell>
+                <CTableDataCell class="text-end text-danger">({{ formatTZS(cashflowData.operating?.supplier_payments) }})</CTableDataCell>
+              </CTableRow>
+              <CTableRow class="table-light fw-semibold">
+                <CTableDataCell>{{ t('reports.finStatement.netOperating') }}</CTableDataCell>
+                <CTableDataCell class="text-end">{{ formatTZS(cashflowData.operating?.net) }}</CTableDataCell>
+              </CTableRow>
+            </CTableBody>
+          </CTable>
+
+          <h6 class="fw-bold mb-2" style="color:#075985;">{{ t('reports.finStatement.investingActivities') }}</h6>
+          <CTable bordered class="mb-3" style="font-size:.85rem;">
+            <CTableBody>
+              <CTableRow>
+                <CTableDataCell>{{ t('reports.finStatement.assetPurchases') }}</CTableDataCell>
+                <CTableDataCell class="text-end text-danger">({{ formatTZS(cashflowData.investing?.asset_purchases) }})</CTableDataCell>
+              </CTableRow>
+              <CTableRow class="table-light fw-semibold">
+                <CTableDataCell>{{ t('reports.finStatement.netInvesting') }}</CTableDataCell>
+                <CTableDataCell class="text-end">{{ formatTZS(cashflowData.investing?.net) }}</CTableDataCell>
+              </CTableRow>
+            </CTableBody>
+          </CTable>
+
+          <CCard class="border-0 shadow-sm" :style="`border-left:4px solid ${cashflowData.net_change_cents >= 0 ? '#198754' : '#dc3545'} !important`">
+            <CCardBody class="d-flex justify-content-between align-items-center">
+              <span class="fw-bold">{{ t('reports.finStatement.netChange') }}</span>
+              <span class="fw-bold fs-5" :class="cashflowData.net_change_cents >= 0 ? 'text-success' : 'text-danger'">
+                {{ formatTZS(cashflowData.net_change_cents) }}
+              </span>
+            </CCardBody>
+          </CCard>
+        </div>
+        <div v-else class="text-center text-muted py-4">{{ t('reports.noData') }}</div>
+      </div>
+
     </div>
   </CContainer>
 </template>
 
 <script setup>
-import { dateLocale } from '@/utils/dates'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSchoolStore } from '@/stores/school'
 import { useBrandingStore } from '@/stores/branding'
 import api from '@/services/api'
+import { dateLocale } from '@/utils/dates'
 
 const { t } = useI18n()
 const schoolStore = useSchoolStore()
@@ -477,6 +698,9 @@ const tabs = computed(() => [
   { id: 'debtors', label: t('reports.debtors') },
   { id: 'byclass', label: t('reports.byClass') },
   { id: 'vs', label: t('reports.vsTitle') },
+  { id: 'income', label: t('reports.incomeStatement') },
+  { id: 'balance', label: t('reports.balanceSheet') },
+  { id: 'cashflow', label: t('reports.cashFlowTitle') },
 ])
 
 // Collections
@@ -622,6 +846,27 @@ const loadingVs = ref(false)
 const vsData = ref([])
 const vsYear = ref(new Date().getFullYear())
 
+// Income Statement
+const loadingIncome = ref(false)
+const incomeData = ref(null)
+const incomeFilters = ref({
+  from: new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10),
+  to: new Date().toISOString().slice(0, 10),
+})
+
+// Balance Sheet
+const loadingBalance = ref(false)
+const balanceData = ref(null)
+const balanceAsOf = ref(new Date().toISOString().slice(0, 10))
+
+// Cash Flow
+const loadingCashflow = ref(false)
+const cashflowData = ref(null)
+const cashflowFilters = ref({
+  from: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10),
+  to: new Date().toISOString().slice(0, 10),
+})
+
 const vsStats = computed(() => {
   let totalCollections = 0
   let totalExpenses = 0
@@ -741,35 +986,81 @@ async function loadVsData() {
   } catch {} finally { loadingVs.value = false }
 }
 
+async function loadIncomeStatement() {
+  loadingIncome.value = true
+  try {
+    const { data } = await api.get('/reports/income-statement', {
+      params: { from: incomeFilters.value.from, to: incomeFilters.value.to },
+    })
+    incomeData.value = data.data || data
+  } catch {} finally { loadingIncome.value = false }
+}
+
+async function loadBalanceSheet() {
+  loadingBalance.value = true
+  try {
+    const { data } = await api.get('/reports/balance-sheet', { params: { as_of: balanceAsOf.value } })
+    balanceData.value = data.data || data
+  } catch {} finally { loadingBalance.value = false }
+}
+
+async function loadCashFlow() {
+  loadingCashflow.value = true
+  try {
+    const { data } = await api.get('/reports/cash-flow', {
+      params: { from: cashflowFilters.value.from, to: cashflowFilters.value.to },
+    })
+    cashflowData.value = data.data || data
+  } catch {} finally { loadingCashflow.value = false }
+}
+
 // ── Export current tab to Excel ────────────────────────────────────────────
 const isExportingExcel = ref(false)
-const reportTypeByTab = { collections: 'collections', debtors: 'debtor-aging', byclass: 'by-class', vs: 'vs' }
+const reportTypeByTab = {
+  collections: 'collections',
+  debtors: 'debtor-aging',
+  byclass: 'by-class',
+  vs: 'vs',
+  income: 'income-statement',
+  balance: 'balance-sheet',
+  cashflow: 'cash-flow',
+}
 
-async function exportExcel() {
+function exportParams() {
+  switch (activeTab.value) {
+    case 'collections': return { from: colFilters.value.date_from, to: colFilters.value.date_to }
+    case 'vs': return { year: vsYear.value }
+    case 'income': return { from: incomeFilters.value.from, to: incomeFilters.value.to }
+    case 'balance': return { as_of: balanceAsOf.value }
+    case 'cashflow': return { from: cashflowFilters.value.from, to: cashflowFilters.value.to }
+    default: return {}
+  }
+}
+
+async function downloadReport(format, mime, isBusy) {
   const type = reportTypeByTab[activeTab.value]
   if (!type) return
-  isExportingExcel.value = true
+  isBusy.value = true
   try {
-    const params = activeTab.value === 'collections'
-      ? { from: colFilters.value.date_from, to: colFilters.value.date_to }
-      : activeTab.value === 'vs'
-        ? { year: vsYear.value }
-        : {}
-    const response = await api.get(`/reports/${type}/xlsx`, { params, responseType: 'blob' })
-    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
+    const response = await api.get(`/reports/${type}/${format}`, { params: exportParams(), responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: mime }))
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `${type}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    link.setAttribute('download', `${type}_${new Date().toISOString().slice(0, 10)}.${format}`)
     document.body.appendChild(link)
     link.click()
     link.remove()
     window.URL.revokeObjectURL(url)
   } catch (e) {
-    console.error('exportExcel error', e)
+    console.error(`${format} export error`, e)
   } finally {
-    isExportingExcel.value = false
+    isBusy.value = false
   }
 }
+
+const isExportingPdf = ref(false)
+const exportExcel = () => downloadReport('xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', isExportingExcel)
+const exportPdf = () => downloadReport('pdf', 'application/pdf', isExportingPdf)
 
 function printReport() {
   // ensure data is loaded before printing
@@ -784,6 +1075,9 @@ watch(activeTab, (tab) => {
   if (tab === 'debtors' && !debtors.value.length) loadDebtors()
   if (tab === 'byclass' && !classData.value.length) loadByClass()
   if (tab === 'vs' && !vsData.value.length) loadVsData()
+  if (tab === 'income' && !incomeData.value) loadIncomeStatement()
+  if (tab === 'balance' && !balanceData.value) loadBalanceSheet()
+  if (tab === 'cashflow' && !cashflowData.value) loadCashFlow()
 })
 
 // Every report is scoped server-side by the active school (via X-School-Id) —
@@ -794,6 +1088,9 @@ watch(() => schoolStore.activeSchoolId, () => {
   else if (activeTab.value === 'debtors') loadDebtors()
   else if (activeTab.value === 'byclass') loadByClass()
   else if (activeTab.value === 'vs') loadVsData()
+  else if (activeTab.value === 'income') loadIncomeStatement()
+  else if (activeTab.value === 'balance') loadBalanceSheet()
+  else if (activeTab.value === 'cashflow') loadCashFlow()
 })
 
 onMounted(async () => { try { await loadCollections() } catch {} })

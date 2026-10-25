@@ -435,15 +435,9 @@ function go(path) {
       <CHeaderNav class="ms-auto d-flex align-items-center gap-2">
 
         <!-- ShuleAI assistant (staff only — parents never see it) -->
-        <RouterLink
-          v-if="!auth.isParent"
-          to="/ai"
-          class="nav-link d-flex align-items-center gap-1 px-2 fw-semibold"
-          :class="{ 'nav-active': route.path.startsWith('/ai') }"
-          style="font-size:.85rem; color:#007f3e;"
-          title="ShuleAI"
-        >
-          <span>🤖</span><span class="d-none d-lg-inline">AI</span>
+        <RouterLink v-if="!auth.isParent" to="/ai" class="ai-nav-btn nav-link" title="ShuleAI">
+          <span class="ai-nav-icon">🤖</span>
+          <span class="ai-nav-label">AI</span>
         </RouterLink>
 
         <!-- Notification Bell -->
@@ -502,6 +496,29 @@ function go(path) {
 </template>
 
 <style scoped>
+.ai-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: rgba(0, 127, 62, 0.1);
+  border: 1.5px solid rgba(0, 127, 62, 0.25);
+  color: #007f3e !important;
+  font-weight: 700;
+  font-size: .82rem;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  text-decoration: none;
+}
+.ai-nav-btn:hover,
+.ai-nav-btn.router-link-active {
+  background: rgba(0, 127, 62, 0.18);
+  border-color: rgba(0, 127, 62, 0.5);
+  box-shadow: 0 0 0 3px rgba(0, 127, 62, 0.12);
+}
+.ai-nav-icon { font-size: 1.1rem; line-height: 1; }
+.ai-nav-label { font-size: .82rem; font-weight: 700; }
+
 /* School switcher pill */
 .school-switcher-btn {
   background: rgba(0, 127, 62, 0.08);
