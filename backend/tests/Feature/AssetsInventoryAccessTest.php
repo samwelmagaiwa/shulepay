@@ -73,4 +73,18 @@ class AssetsInventoryAccessTest extends TestCase
     {
         $this->as('teacher_pri')->getJson('/api/assets')->assertForbidden();
     }
+
+    public function test_a_large_asset_can_be_registered_and_is_kept_in_its_own_school(): void
+    {
+        // TZS 90,000,000 is above what the register's original 32-bit cost column could hold
+        $r = $this->as('accountant')->postJson('/api/assets', [
+            'asset_tag' => 'AST-BUS-1', 'name' => 'School bus', 'category' => 'vehicles', 'school_id' => $this->mine->id,
+            'purchase_cost' => 90000000, 'purchase_date' => '2026-02-01',
+        ]);
+        $r->assertCreated();
+
+        $this->assertDatabaseHas('assets', ['asset_tag' => 'AST-BUS-1', 'school_id' => $this->mine->id, 'purchase_cost_cents' => 9000000000, 'cost_cents' => 9000000000]);
+        $names = collect($this->as('accountant')->getJson('/api/assets')->assertOk()->json('data'))->pluck('name')->all();
+        $this->assertContains('School bus', $names);
+    }
 }

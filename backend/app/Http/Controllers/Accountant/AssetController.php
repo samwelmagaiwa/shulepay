@@ -57,7 +57,7 @@ class AssetController extends Controller
 
     public function nextTag(Request $request): JsonResponse
     {
-        $request->validate(['school_id' => Tenant::active() ? 'sometimes|integer' : 'required|exists:mysql.schools,id']);
+        $request->validate(['school_id' => Tenant::active() ? 'sometimes|integer' : 'required|exists:schools,id']);
         $schoolId = Tenant::active() ? Tenant::school()?->id : (int) $request->school_id;
         $tag = Asset::nextAssetTag((int) $schoolId);
 
@@ -88,6 +88,9 @@ class AssetController extends Controller
             'serial_no' => $data['serial_no'] ?? null,
             'photo' => $photoPath,
             'purchase_cost_cents' => isset($data['purchase_cost']) ? (int) round($data['purchase_cost'] * 100) : 0,
+            // the register's original columns, kept equal to the purchase cost until depreciation moves the value
+            'cost_cents' => isset($data['purchase_cost']) ? (int) round($data['purchase_cost'] * 100) : 0,
+            'current_value_cents' => isset($data['purchase_cost']) ? (int) round($data['purchase_cost'] * 100) : 0,
             'purchase_date' => $data['purchase_date'] ?? null,
             'supplier_name' => $link['name'] ?? $data['supplier_name'] ?? null,
             'supplier_id' => $link['id'] ?? null,

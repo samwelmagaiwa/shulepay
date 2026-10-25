@@ -40,6 +40,18 @@ class ReportController extends Controller
      * resolveSchool() already did for exports, but was never applied to the
      * actual report queries themselves.
      */
+    /** The test database is SQLite; production is MySQL / MariaDB. The two spell date functions differently. */
+    private function isSqlite(): bool
+    {
+        return DB::connection()->getDriverName() === 'sqlite';
+    }
+
+    /** SQL for the month number (1-12) of a date column. */
+    private function monthOf(string $column): string
+    {
+        return $this->isSqlite() ? "CAST(strftime('%m', {$column}) AS INTEGER)" : "MONTH({$column})";
+    }
+
     private function activeSchoolId(Request $request): ?int
     {
         if ($request->filled('school_id')) {
@@ -113,8 +125,8 @@ class ReportController extends Controller
 
         // $groupBy is validated above as in:day,week,month,class — safe to use in DB::raw
         $periodExpr = match ($groupBy) {
-            'week' => DB::raw("DATE_FORMAT(paid_at, '%x-W%v') as period"),
-            'month' => DB::raw("DATE_FORMAT(paid_at, '%Y-%m') as period"),
+            'week' => DB::raw($this->isSqlite() ? "strftime('%Y-W%W', paid_at) as period" : "DATE_FORMAT(paid_at, '%x-W%v') as period"),
+            'month' => DB::raw($this->isSqlite() ? "strftime('%Y-%m', paid_at) as period" : "DATE_FORMAT(paid_at, '%Y-%m') as period"),
             default => DB::raw('DATE(paid_at) as period'),  // day & class both row by day
         };
 
@@ -791,7 +803,7 @@ class ReportController extends Controller
         $collectionsByMonth = Payment::allSchools()
             ->whereYear('paid_at', $year)
             ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
-            ->selectRaw('MONTH(paid_at) as month, SUM(amount_cents) as amount_cents')
+            ->selectRaw($this->monthOf('paid_at').' as month, SUM(amount_cents) as amount_cents')
             ->groupBy('month')
             ->get()
             ->mapWithKeys(fn ($r) => [$r->month => (int) $r->getRawOriginal('amount_cents')]);
@@ -800,7 +812,7 @@ class ReportController extends Controller
             ->where('status', 'approved')
             ->whereYear('expense_date', $year)
             ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
-            ->selectRaw('MONTH(expense_date) as month, SUM(amount_cents) as amount_cents')
+            ->selectRaw($this->monthOf('expense_date').' as month, SUM(amount_cents) as amount_cents')
             ->groupBy('month')
             ->get()
             ->mapWithKeys(fn ($r) => [$r->month => (int) $r->getRawOriginal('amount_cents')]);

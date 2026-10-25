@@ -133,7 +133,7 @@ class InventoryController extends Controller
             'asset_tag' => 'required|string|max:30|unique:inventory_items,asset_tag',
             'name' => 'required|string|max:200',
             'category' => 'required|in:furniture,technology,equipment,vehicles,buildings,sports,other',
-            'school_id' => Tenant::active() ? 'sometimes|integer' : 'required|exists:mysql.schools,id',
+            'school_id' => Tenant::active() ? 'sometimes|integer' : 'required|exists:schools,id',
             'quantity' => 'nullable|integer|min:1',
             'serial_no' => 'nullable|string|max:100',
             'photo' => 'nullable|image|max:2048',
@@ -361,7 +361,7 @@ class InventoryController extends Controller
 
     public function nextTag(Request $request): JsonResponse
     {
-        $request->validate(['school_id' => Tenant::active() ? 'sometimes|integer' : 'required|exists:mysql.schools,id']);
+        $request->validate(['school_id' => Tenant::active() ? 'sometimes|integer' : 'required|exists:schools,id']);
         $schoolId = Tenant::active() ? Tenant::school()?->id : $request->integer('school_id');
         $tag = InventoryItem::nextAssetTag((int) $schoolId);
 

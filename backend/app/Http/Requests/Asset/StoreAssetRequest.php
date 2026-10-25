@@ -18,7 +18,7 @@ class StoreAssetRequest extends FormRequest
             'name' => 'required|string|max:200',
             'category' => 'required|in:furniture,technology,equipment,vehicles,buildings,sports,other',
             // InitializeTenancy strips school_id from tenant-mode requests.
-            'school_id' => app()->bound('tenancy.initialized') ? 'sometimes|integer' : 'required|exists:mysql.schools,id',
+            'school_id' => app()->bound('tenancy.initialized') ? 'sometimes|integer' : 'required|exists:schools,id',
             'quantity' => 'nullable|integer|min:1',
             'serial_no' => 'nullable|string|max:100',
             'photo' => 'nullable|image|max:2048',
