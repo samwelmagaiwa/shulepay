@@ -207,15 +207,16 @@ class AiAssistantTest extends TestCase
     {
         $owner = $this->user('owner');
         $first = Invoice::where('invoice_number', 'INV-A1')->first();
+        $term2 = Term::create(['academic_year_id' => $first->academic_year_id, 'name' => 'Muhula 2', 'number' => 2, 'start_date' => '2026-05-01', 'end_date' => '2026-08-31', 'is_current' => false]);
         $second = Invoice::create([
-            'school_id' => $this->school->id, 'student_id' => $first->student_id, 'term_id' => $first->term_id,
+            'school_id' => $this->school->id, 'student_id' => $first->student_id, 'term_id' => $term2->id,
             'academic_year_id' => $first->academic_year_id, 'invoice_number' => 'INV-A2', 'total_amount_cents' => 100000,
             'discount_cents' => 0, 'arrears_cents' => 0, 'status' => 'partial', 'generated_at' => now(),
         ]);
         foreach ([[$first, 30000], [$second, 20000]] as [$inv, $cents]) {
             Payment::create([
                 'invoice_id' => $inv->id, 'student_id' => $inv->student_id, 'school_id' => $this->school->id,
-                'amount_cents' => $cents, 'method' => 'cash', 'paid_at' => now(),
+                'amount_cents' => $cents, 'method' => 'cash', 'paid_at' => now(), 'recorded_by' => $owner->id,
             ]);
         }
 
