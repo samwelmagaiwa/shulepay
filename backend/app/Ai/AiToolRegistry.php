@@ -3,11 +3,13 @@
 namespace App\Ai;
 
 use App\Ai\Tools\AttendanceTools;
+use App\Ai\Tools\ExamTools;
 use App\Ai\Tools\FinanceTools;
 use App\Ai\Tools\PayrollTools;
 use App\Ai\Tools\ReportingTools;
 use App\Ai\Tools\SchoolTools;
 use App\Ai\Tools\StudentTools;
+use App\Ai\Tools\SupplierTools;
 use App\Enums\UserRole;
 use App\Models\User;
 
@@ -22,10 +24,16 @@ class AiToolRegistry
             $tools = array_merge($tools, AttendanceTools::definitions());
         }
 
+        // Academic side: exams, marks progress, analysis and report-card comment approval
+        if ($user->hasAnyRole(UserRole::examStaff())) {
+            $tools = array_merge($tools, ExamTools::definitions());
+        }
+
         if (self::isFinance($user)) {
             $tools = array_merge(
                 $tools,
                 FinanceTools::definitions(),
+                SupplierTools::definitions(),
                 PayrollTools::definitions(),
                 ReportingTools::definitions(),
             );
@@ -49,15 +57,24 @@ class AiToolRegistry
 
         $isFinance = self::isFinance($user);
         $isOwner = $user->hasAnyRole([UserRole::Owner->value, UserRole::SuperAdmin->value]);
+        $isExam = $user->hasAnyRole(UserRole::examStaff());
 
         $canAccess = ['student records', 'school overview', 'class information', 'academic calendar'];
-        $canAccess[] = 'attendance records and pupils with low attendance';
+        $canAccess[] = 'attendance records, attendance history and pupils with low attendance';
+        if ($isExam) {
+            $canAccess[] = 'examination data: results, analysis, marks progress and report-card comment approval';
+        }
         if ($isFinance) {
-            array_push($canAccess, 'fee collection and invoices', 'expenses and petty cash', 'payroll and staff salaries', 'budget and financial reports', 'discounts and refunds', 'guardian and parent contacts');
+            array_push($canAccess, 'fee collection and invoices', 'expenses and petty cash', 'payroll and staff salaries', 'supplier bills, payments and purchases', 'budget and financial reports', 'discounts and refunds', 'guardian and parent contacts');
         }
         $canList = implode(', ', $canAccess);
 
         $accessBlock = '';
+        if (! $isExam) {
+            $accessBlock .= "
+
+You have NO tools for examination results or academic performance data. If {$firstName} asks about them, answer: \"I'm sorry {$firstName}, access to examination data is restricted to academic staff and the owner. Please contact the headteacher for this information.\"";
+        }
         if (! $isFinance) {
             $accessBlock = <<<BLOCK
 
@@ -73,7 +90,7 @@ SHULEPAY — EXACT NAVIGATION MAP (labels are verbatim from the app; the app has
 TOP MENU: Dashboard | Students ▾ | Finance ▾ | Expenses ▾ | School ▾ | Reports | Administration ▾
 
 • Students ▾ → "Student List", "Duplicated Students", "Guardians", "Clearance Certificate", "Bulk Import"
-• School ▾ → "Attendance", "Transport", "Inventory", "Stationery", "Defined Primary Fees"
+• School ▾ → "Attendance", "Attendance history", "Exams" (academic staff and owner), "Transport", "Inventory", "Stationery", "Defined Primary Fees"; "My Payslips" for every staff member
 • Notifications → the 🔔 bell icon (top-right). ShuleAI → the 🤖 icon (top-right).
 NAV;
         if ($isFinance) {

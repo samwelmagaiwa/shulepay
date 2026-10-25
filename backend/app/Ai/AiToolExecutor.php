@@ -8,9 +8,11 @@ use App\Models\Budget;
 use App\Models\Discount;
 use App\Models\Employee;
 use App\Models\Enrollment;
+use App\Models\Exam;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\FeeStructure;
+use App\Models\GoodsReceipt;
 use App\Models\Guardian;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -20,10 +22,18 @@ use App\Models\Refund;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\Subject;
+use App\Models\SupplierBill;
+use App\Models\SupplierPayment;
 use App\Models\Term;
 use App\Models\User;
 use App\Services\Budget\BudgetActuals;
+use App\Services\Exam\ExamAnalysisService;
+use App\Services\Exam\ExamCommentService;
+use App\Services\Exam\ExamProgressService;
+use App\Services\Exam\ExamResultsService;
+use App\Services\Exam\ExamScope;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -53,6 +63,17 @@ class AiToolExecutor
                 'get_student_list' => $this->studentList($args),
                 'get_new_enrollments' => $this->newEnrollments($args),
                 'get_academic_years' => $this->academicYears(),
+                'get_exam_list' => $this->examList($args),
+                'get_exam_results_summary' => $this->examResultsSummary($args),
+                'get_top_students' => $this->topStudents($args),
+                'get_subject_averages' => $this->subjectAverages($args),
+                'get_exam_progress' => $this->examProgress($args),
+                'get_exam_analysis' => $this->examAnalysis($args),
+                'get_exam_comments_status' => $this->examCommentsStatus($args),
+                'get_student_exam_history' => $this->studentExamHistory($args),
+                'get_supplier_outstanding' => $this->supplierOutstanding($args),
+                'get_supplier_spend' => $this->supplierSpend($args),
+                'get_recent_purchases' => $this->recentPurchases($args),
                 'get_payroll_summary' => $this->payrollSummary($args),
                 'get_employee_list' => $this->employeeList($args),
                 'get_school_overview' => $this->schoolOverview(),
@@ -549,6 +570,339 @@ class AiToolExecutor
         ])->toArray();
 
         return ['employees' => $employees, 'count' => count($employees)];
+    }
+
+    // ─── Exams ──────────────────────────────────────────────────────────────────
+    // Results come from the same services as the Results screen, so the assistant and the screens always agree:
+    // marks are percentages of the exam's total, positions are per class, pass mark follows the grading scale.
+
+    private function examById(array $a): ?Exam
+    {
+        return isset($a['exam_id']) ? $this->inSchools(Exam::query())->find($a['exam_id']) : null;
+    }
+
+    /** @return Collection<int, SchoolClass> the classes of an exam, optionally one by name */
+    private function examClasses(Exam $exam, array $a)
+    {
+        $classes = ExamScope::classesFor($exam)->get();
+        if (! empty($a['class_name'])) {
+            $needle = mb_strtolower($a['class_name']);
+            $classes = $classes->filter(fn ($c) => str_contains(mb_strtolower(ExamScope::classLabel($c)), $needle))->values();
+        }
+
+        return $classes;
+    }
+
+    private function examList(array $a): array
+    {
+        // Exam has no schoolClass BelongsTo; it has classes() BelongsToMany + all_classes bool
+        // Date fields are start_date / end_date, not exam_date
+        $q = $this->inSchools(Exam::query())->with('classes')->latest('start_date');
+        if (! empty($a['status']) && $a['status'] !== 'all') {
+            $q->where('status', $a['status']);
+        }
+        if (! empty($a['class_name'])) {
+            $q->where(fn ($w) => $w->where('all_classes', true)
+                ->orWhereHas('classes', fn ($c) => $c->where('name', 'like', '%'.$a['class_name'].'%')));
+        }
+
+        $exams = $q->limit($a['limit'] ?? 10)->get()->map(fn ($e) => [
+            'id' => $e->id,
+            'name' => $e->name,
+            'type' => $e->type,
+            'classes' => $e->all_classes ? 'All Classes' : $e->classes->pluck('name')->join(', '),
+            'status' => $e->status,
+            'out_of' => $e->out_of,
+            'marks_deadline' => optional($e->marks_deadline)->format('d M Y'),
+            'comments_required_before_publishing' => (bool) $e->require_comments,
+            'start_date' => optional($e->start_date)->format('d M Y'),
+            'end_date' => optional($e->end_date)->format('d M Y'),
+        ])->toArray();
+
+        return ['exams' => $exams, 'count' => count($exams)];
+    }
+
+    private function examResultsSummary(array $a): array
+    {
+        $exam = $this->examById($a);
+        if (! $exam) {
+            return ['message' => 'No exam found with that id. Use get_exam_list to find the id.'];
+        }
+
+        $results = app(ExamResultsService::class);
+        $analysis = app(ExamAnalysisService::class);
+        $classes = [];
+        foreach ($this->examClasses($exam, $a) as $class) {
+            $r = $analysis->analyse($exam, $class);
+            if ($r['overall']['ranked'] === 0) {
+                continue;
+            }
+            $classes[] = [
+                'class' => $r['class']['label'],
+                'pupils_with_results' => $r['overall']['ranked'],
+                'class_average_percent' => $r['overall']['class_average'],
+                'pass_rate_percent' => $r['overall']['pass_rate'],
+                'grade_distribution' => $r['overall']['grades'],
+                'divisions' => $r['overall']['divisions'],
+            ];
+        }
+
+        if (! $classes) {
+            return ['exam' => $exam->name, 'status' => $exam->status, 'message' => 'No results recorded yet.'];
+        }
+
+        $completeness = $results->completeness($exam);
+
+        return [
+            'exam' => $exam->name,
+            'status' => $exam->status,
+            'note' => 'All marks are percentages of the exam total ('.$exam->out_of.'). Pass mark follows the school grading scale.',
+            'marks_entered' => $completeness['entered'].' of '.$completeness['expected'],
+            'total_students' => array_sum(array_column($classes, 'pupils_with_results')),
+            'classes' => $classes,
+        ];
+    }
+
+    private function topStudents(array $a): array
+    {
+        $exam = $this->examById($a);
+        if (! $exam) {
+            return ['message' => 'No exam found with that id. Use get_exam_list to find the id.'];
+        }
+
+        $results = app(ExamResultsService::class);
+        $rows = collect();
+        foreach ($this->examClasses($exam, $a) as $class) {
+            $label = ExamScope::classLabel($class);
+            foreach ($results->classResults($exam, $class)['rows'] as $row) {
+                if ($row['average'] === null) {
+                    continue;
+                }
+                $rows->push([
+                    'student' => $row['full_name'],
+                    'class' => $label,
+                    'position_in_class' => $row['position'],
+                    'average_percent' => $row['average'],
+                    'grade' => $row['grade'],
+                    'division' => $row['division']['label'] ?? null,
+                    'subjects_missing' => $row['missing'],
+                ]);
+            }
+        }
+
+        $top = $rows->sortByDesc('average_percent')->take($a['limit'] ?? 10)->values()
+            ->map(fn ($r, $i) => ['rank' => $i + 1] + $r)->toArray();
+
+        return ['exam' => $exam->name, 'top_students' => $top, 'count' => count($top)];
+    }
+
+    private function subjectAverages(array $a): array
+    {
+        $exam = $this->examById($a);
+        if (! $exam) {
+            return ['message' => 'No exam found with that id. Use get_exam_list to find the id.'];
+        }
+
+        $results = app(ExamResultsService::class);
+        $subjects = [];
+        foreach ($this->examClasses($exam, $a) as $class) {
+            foreach ($results->classResults($exam, $class)['subjects'] as $s) {
+                if ($s['sat'] === 0) {
+                    continue;
+                }
+                $k = $s['name'];
+                $subjects[$k]['sat'] = ($subjects[$k]['sat'] ?? 0) + $s['sat'];
+                $subjects[$k]['sum'] = ($subjects[$k]['sum'] ?? 0) + $s['average'] * $s['sat'];
+                $subjects[$k]['highest'] = max($subjects[$k]['highest'] ?? 0, $s['highest']);
+                $subjects[$k]['lowest'] = min($subjects[$k]['lowest'] ?? 100, $s['lowest']);
+            }
+        }
+
+        $rows = collect($subjects)->map(fn ($v, $name) => [
+            'subject' => $name,
+            'average_percent' => round($v['sum'] / $v['sat'], 1),
+            'highest' => (float) $v['highest'],
+            'lowest' => (float) $v['lowest'],
+            'students' => (int) $v['sat'],
+        ])->sortByDesc('average_percent')->values()->toArray();
+
+        return ['exam' => $exam->name, 'subject_averages' => $rows, 'count' => count($rows)];
+    }
+
+    /** Who still owes marks, class by class and subject by subject. */
+    private function examProgress(array $a): array
+    {
+        $exam = $this->examById($a);
+        if (! $exam) {
+            return ['message' => 'No exam found with that id. Use get_exam_list to find the id.'];
+        }
+
+        $grid = app(ExamProgressService::class)->grid($exam);
+        $waiting = [];
+        foreach ($grid['classes'] as $c) {
+            foreach ($c['subjects'] as $s) {
+                if (! $s['complete'] && $s['total'] > 0) {
+                    $waiting[] = [
+                        'class' => $c['label'],
+                        'subject' => $s['name'],
+                        'entered' => $s['entered'].' of '.$s['total'],
+                        'teachers' => collect($s['teachers'])->pluck('name')->join(', ') ?: 'nobody assigned',
+                    ];
+                }
+            }
+        }
+
+        return [
+            'exam' => $exam->name,
+            'status' => $exam->status,
+            'marks_entered' => $grid['entered'].' of '.$grid['total'],
+            'marks_deadline' => $grid['deadline'],
+            'deadline_passed' => $grid['deadline_passed'],
+            'waiting_for_marks' => array_slice($waiting, 0, 40),
+            'subjects_waiting' => count($waiting),
+        ];
+    }
+
+    private function examAnalysis(array $a): array
+    {
+        $exam = $this->examById($a);
+        if (! $exam) {
+            return ['message' => 'No exam found with that id. Use get_exam_list to find the id.'];
+        }
+        $class = $this->examClasses($exam, $a)->first();
+        if (! $class) {
+            return ['message' => 'No class of this exam matches. Use get_exam_list to see which classes sit it.'];
+        }
+
+        $r = app(ExamAnalysisService::class)->analyse($exam, $class);
+
+        return [
+            'exam' => $exam->name,
+            'class' => $r['class']['label'],
+            'class_average_percent' => $r['overall']['class_average'],
+            'pass_rate_percent' => $r['overall']['pass_rate'],
+            'pass_mark_percent' => $r['pass_mark'],
+            'grade_distribution' => $r['overall']['grades'],
+            'weakest_subjects' => collect($r['subjects'])->filter(fn ($s) => $s['average'] !== null)->sortBy('average')->take(3)->map(fn ($s) => ['subject' => $s['name'], 'average_percent' => $s['average'], 'pass_rate_percent' => $s['pass_rate']])->values()->all(),
+            'strongest_subjects' => collect($r['subjects'])->filter(fn ($s) => $s['average'] !== null)->sortByDesc('average')->take(3)->map(fn ($s) => ['subject' => $s['name'], 'average_percent' => $s['average']])->values()->all(),
+            'top_pupils' => collect($r['top'])->map(fn ($p) => ['name' => $p['full_name'], 'average_percent' => $p['average'], 'grade' => $p['grade']])->all(),
+            'pupils_needing_support' => collect($r['weakest'])->map(fn ($p) => ['name' => $p['full_name'], 'average_percent' => $p['average'], 'grade' => $p['grade']])->all(),
+            'class_average_by_exam' => collect($r['trend'])->map(fn ($t) => ['exam' => $t['name'], 'average_percent' => $t['average']])->all(),
+        ];
+    }
+
+    /** Where the report-card comments stand: class teacher submitted, head approved. */
+    private function examCommentsStatus(array $a): array
+    {
+        $exam = $this->examById($a);
+        if (! $exam) {
+            return ['message' => 'No exam found with that id. Use get_exam_list to find the id.'];
+        }
+
+        $status = app(ExamCommentService::class)->status($exam);
+
+        return [
+            'exam' => $exam->name,
+            'comments_required_before_publishing' => $status['required'],
+            'all_classes_signed_off' => $status['complete'],
+            'classes' => collect($status['classes'])->map(fn ($c) => [
+                'class' => $c['label'],
+                'pupils' => $c['pupils'],
+                'class_teacher' => $c['teacher_signed'] ? 'submitted by '.$c['teacher_signed']['by'] : 'waiting ('.$c['teacher_missing'].' comments missing)',
+                'head' => $c['head_signed'] ? 'approved by '.$c['head_signed']['by'] : 'waiting ('.$c['head_missing'].' comments missing)',
+            ])->all(),
+        ];
+    }
+
+    private function studentExamHistory(array $a): array
+    {
+        $student = $this->findStudents($a['student_name'] ?? '', 1)->first();
+        if (! $student) {
+            return ['message' => "No student found matching '".($a['student_name'] ?? '')."'."];
+        }
+
+        $h = app(ExamAnalysisService::class)->studentHistory($student);
+
+        return [
+            'student' => $h['student']['name'],
+            'class' => $h['student']['class'],
+            'exams' => collect($h['history'])->map(fn ($e) => [
+                'exam' => $e['name'], 'term' => $e['term'], 'average_percent' => $e['average'], 'grade' => $e['grade'],
+                'position' => $e['position'] ? $e['position'].' of '.$e['class_size'] : null, 'division' => $e['division']['label'] ?? null,
+            ])->all(),
+        ];
+    }
+
+    // ─── Suppliers ──────────────────────────────────────────────────────────────
+
+    private function supplierOutstanding(array $a): array
+    {
+        // SupplierBill open statuses: 'approved' and 'part_paid' (not 'unpaid'/'partial')
+        // Use balanceCents (total_cents - paid_cents) for actual amount owed
+        $rows = $this->inSchools(SupplierBill::query())->with('supplier')
+            ->whereIn('status', SupplierBill::OPEN)
+            ->selectRaw('supplier_id, SUM(total_cents - paid_cents)/100 as balance_owed, SUM(total_cents)/100 as total_billed, COUNT(*) as bill_count')
+            ->groupBy('supplier_id')
+            ->orderByDesc('balance_owed')
+            ->limit($a['limit'] ?? 10)
+            ->get()
+            ->map(fn ($r) => [
+                'supplier' => $r->supplier?->name,
+                'balance_owed' => 'TZS '.number_format($r->balance_owed),
+                'total_billed' => 'TZS '.number_format($r->total_billed),
+                'bill_count' => $r->bill_count,
+            ])->toArray();
+
+        return ['outstanding' => $rows, 'count' => count($rows)];
+    }
+
+    private function supplierSpend(array $a): array
+    {
+        $from = $a['from_date'] ?? now()->startOfMonth()->toDateString();
+        $to = $a['to_date'] ?? now()->toDateString();
+
+        // Date column is payment_date; supplier is directly on the payment
+        $total = $this->inSchools(SupplierPayment::query())->whereDate('payment_date', '>=', $from)->whereDate('payment_date', '<=', $to)
+            ->where('status', 'approved')
+            ->sum('amount_cents') / 100;
+
+        $bySupplier = $this->inSchools(SupplierPayment::query())->with('supplier')
+            ->whereDate('payment_date', '>=', $from)->whereDate('payment_date', '<=', $to)
+            ->where('status', 'approved')
+            ->selectRaw('supplier_id, SUM(amount_cents)/100 as total')
+            ->groupBy('supplier_id')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->get()
+            ->map(fn ($r) => [
+                'supplier' => $r->supplier?->name ?? 'Unknown',
+                'paid' => 'TZS '.number_format($r->total),
+            ])->toArray();
+
+        return [
+            'period' => "{$from} to {$to}",
+            'total_paid' => 'TZS '.number_format($total),
+            'top_suppliers' => $bySupplier,
+        ];
+    }
+
+    private function recentPurchases(array $a): array
+    {
+        // GoodsReceipt: date column is receipt_date; no total_cents (use bill total)
+        $rows = $this->inSchools(GoodsReceipt::query())->with(['supplier', 'bill'])
+            ->where('status', GoodsReceipt::RECEIVED)
+            ->latest('receipt_date')
+            ->limit($a['limit'] ?? 10)
+            ->get()
+            ->map(fn ($r) => [
+                'grn_number' => $r->grn_number,
+                'supplier' => $r->supplier?->name,
+                'notes' => $r->notes,
+                'bill_total' => $r->bill ? 'TZS '.number_format($r->bill->total_cents / 100) : null,
+                'received_date' => optional($r->receipt_date)->format('d M Y'),
+            ])->toArray();
+
+        return ['purchases' => $rows, 'count' => count($rows)];
     }
 
     // ─── School ─────────────────────────────────────────────────────────────────

@@ -96,4 +96,14 @@ class SchoolSetupAccessTest extends TestCase
         $this->as('superadmin')->putJson("/api/school-classes/{$this->foreignClass->id}", ['name' => 'Form One'])->assertOk();
         $this->assertSame('Form One', $this->foreignClass->fresh()->name);
     }
+
+    public function test_a_budget_cannot_be_planned_inside_another_schools_year(): void
+    {
+        $this->as('owner')->postJson('/api/budgets', ['academic_year_id' => $this->foreignYear->id, 'name' => 'Planted'])->assertForbidden();
+        $this->assertDatabaseMissing('budgets', ['name' => 'Planted']);
+
+        $mine = AcademicYear::create(['school_id' => $this->mine->id, 'name' => '2027', 'start_date' => '2027-01-01', 'end_date' => '2027-12-31', 'is_current' => false]);
+        $this->as('owner')->postJson('/api/budgets', ['academic_year_id' => $mine->id, 'name' => 'Mine', 'items' => [['category' => 'Fuel', 'description' => 'Bus', 'planned_cents' => 100000]]])->assertSuccessful();
+        $this->assertDatabaseHas('budgets', ['name' => 'Mine', 'school_id' => $this->mine->id]);
+    }
 }

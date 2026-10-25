@@ -166,7 +166,7 @@ class AiAssistantTest extends TestCase
 
         foreach (AiToolRegistry::toolsFor($owner) as $tool) {
             $args = match ($tool['name']) {
-                'get_student_attendance', 'get_student_financial_summary' => ['student_name' => 'Juma Ali'],
+                'get_student_attendance', 'get_student_financial_summary', 'get_student_exam_history' => ['student_name' => 'Juma Ali'],
                 default => [],
             };
             $result = $this->runAs($owner, $tool['name'], $args);

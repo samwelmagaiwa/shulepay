@@ -8,6 +8,7 @@ use App\Models\AcademicYear;
 use App\Models\AuditLog;
 use App\Models\Budget;
 use App\Models\BudgetItem;
+use App\Support\SchoolScope;
 use App\Support\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,9 +37,11 @@ class BudgetController extends Controller
             'items.*.expense_category_id' => 'sometimes|nullable|exists:expense_categories,id',
         ]);
 
-        return DB::transaction(function () use ($data) {
+        return DB::transaction(function () use ($data, $request) {
             $schoolId = AcademicYear::findOrFail($data['academic_year_id'])->school_id
                 ?? auth()->user()->school_id;
+            // The year may belong to another school than the user's: only budget for schools they work in.
+            SchoolScope::authorize($request->user(), $schoolId ? (int) $schoolId : null);
 
             $budget = Budget::create(Tenant::stripSchoolId([
                 'academic_year_id' => $data['academic_year_id'],
