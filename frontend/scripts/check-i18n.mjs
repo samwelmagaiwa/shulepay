@@ -44,8 +44,28 @@ function sourceFiles(dir, out = []) {
   return out
 }
 
-const en = flatten(load(path.join(SRC, 'i18n/en.js')))
-const sw = flatten(load(path.join(SRC, 'i18n/sw.js')))
+// Build the messages the way src/i18n/index.js does: the base file, the additions merged in without
+// overriding it, and every <name>.en.js / <name>.sw.js pair (other than additions) as namespace <name>.
+function withMissing(base, extra) {
+  const out = { ...base }
+  for (const [k, v] of Object.entries(extra)) {
+    if (v && typeof v === 'object' && base[k] && typeof base[k] === 'object') out[k] = withMissing(base[k], v)
+    else if (!(k in out)) out[k] = v
+  }
+  return out
+}
+function messagesFor(lang) {
+  const dir = path.join(SRC, 'i18n')
+  let all = load(path.join(dir, `${lang}.js`))
+  all = withMissing(all, load(path.join(dir, `additions.${lang}.js`)))
+  for (const file of fs.readdirSync(dir)) {
+    const m = file.match(new RegExp(`^(.+)\.${lang}\.js$`))
+    if (m && m[1] !== 'additions') all[m[1]] = load(path.join(dir, file))
+  }
+  return all
+}
+const en = flatten(messagesFor('en'))
+const sw = flatten(messagesFor('sw'))
 const problems = []
 
 for (const k of Object.keys(en)) if (!(k in sw)) problems.push(`missing in sw.js: ${k}`)

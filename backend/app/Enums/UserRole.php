@@ -91,6 +91,40 @@ enum UserRole: string
         ];
     }
 
+    /** Roles that may enter exam marks (and read results). */
+    public static function examStaff(): array
+    {
+        return [...self::teachingStaff(), self::Owner->value];
+    }
+
+    /** Roles that set up exams, subjects and the grading scale. */
+    public static function examManagers(): array
+    {
+        return [
+            ...self::schoolHeads(),
+            ...self::academicCoordinators(),
+            self::Owner->value,
+        ];
+    }
+
+    /** Roles that approve and publish results to parents (heads of school). */
+    public static function examPublishers(): array
+    {
+        return [...self::schoolHeads(), ...self::academicCoordinators(), self::Owner->value];
+    }
+
+    /** Roles that create and maintain the school's classes. */
+    public static function classKeepers(): array
+    {
+        return [...self::adminStaff(), ...self::academicCoordinators()];
+    }
+
+    /** Roles that keep the school calendar (academic years and terms). */
+    public static function calendarKeepers(): array
+    {
+        return [...self::financeStaff(), ...self::academicCoordinators()];
+    }
+
     /** Roles with school-administration privileges. */
     public static function adminStaff(): array
     {

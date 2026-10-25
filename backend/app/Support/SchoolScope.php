@@ -12,6 +12,12 @@ use App\Models\User;
  */
 class SchoolScope
 {
+    /** Refuse (403) a school the signed-in user has no access to; superadmin passes. */
+    public static function authorize(User $user, ?int $schoolId): void
+    {
+        abort_unless($schoolId && $user->canAccessSchool($schoolId), 403, __('Access denied.'));
+    }
+
     /**
      * @return list<int> the school ids to filter by; an empty list means every school (superadmin only)
      */

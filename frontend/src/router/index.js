@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { EXAM_MANAGERS, EXAM_STAFF } from '@/utils/examRoles'
 
 const routes = [
   {
@@ -223,6 +224,12 @@ const routes = [
       // Shule modules
       { path: 'usafiri', name: 'Usafiri', component: () => import('@/views/usafiri/UsafiriView.vue'), meta: { requiresAuth: true } },
       { path: 'inventory', name: 'Inventory', component: () => import('@/views/inventory/InventoryView.vue'), meta: { requiresAuth: true } },
+      // Exams: teachers enter marks; heads, coordinators and the owner set exams up.
+      { path: 'mitihani', name: 'Exams', component: () => import('@/views/exams/ExamListView.vue'), meta: { requiresAuth: true, roles: EXAM_STAFF } },
+      { path: 'mitihani/mipangilio', name: 'ExamSettings', component: () => import('@/views/exams/ExamSettingsView.vue'), meta: { requiresAuth: true, roles: EXAM_MANAGERS } },
+      { path: 'mitihani/mchanganyiko', name: 'ExamCombined', component: () => import('@/views/exams/ExamCombinedView.vue'), meta: { requiresAuth: true, roles: EXAM_STAFF } },
+      { path: 'mitihani/:id/alama', name: 'ExamMarks', component: () => import('@/views/exams/MarksEntryView.vue'), meta: { requiresAuth: true, roles: EXAM_STAFF } },
+      { path: 'mitihani/:id/matokeo', name: 'ExamResults', component: () => import('@/views/exams/ExamResultsView.vue'), meta: { requiresAuth: true, roles: EXAM_STAFF } },
       { path: 'mahudhurio/historia', name: 'MahudhurioHistoria', component: () => import('@/views/mahudhurio/AttendanceHistoryView.vue'), meta: { requiresAuth: true, roles: ['teacher', 'teacher_pri', 'teacher_sec', 'head_teacher', 'academic_teacher', 'headmaster', 'academic_pri', 'academic_sec', 'accountant', 'owner', 'superadmin'] } },
       { path: 'mahudhurio', name: 'Mahudhurio', component: () => import('@/views/mahudhurio/MahudhurioView.vue'), meta: { requiresAuth: true, roles: ['teacher', 'teacher_pri', 'teacher_sec', 'head_teacher', 'academic_teacher', 'headmaster', 'academic_pri', 'academic_sec', 'owner', 'superadmin'] } },
       { path: 'ai', name: 'ShuleAI', component: () => import('@/views/ai/AiChatView.vue'), meta: { requiresAuth: true, roles: ['teacher', 'teacher_pri', 'teacher_sec', 'head_teacher', 'academic_teacher', 'headmaster', 'academic_pri', 'academic_sec', 'accountant', 'owner', 'superadmin'] } },

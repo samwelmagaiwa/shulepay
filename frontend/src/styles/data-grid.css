@@ -1,0 +1,157 @@
+/* Data grids and compact toolbars shared by the supplier and exam pages (loaded globally: tables also appear
+   inside modals, which are teleported out of their pages). Same look as the students grid (/wanafunzi):
+   blue header, cell borders, zebra rows, blue hover. */
+.sup-grid {
+  font-size: 13px;
+  margin-bottom: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.sup-grid thead th {
+  background: #dce8f5 !important;
+  color: #1a2a3a;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 5px 8px;
+  line-height: 1.3;
+  white-space: nowrap;
+  vertical-align: middle;
+  border-bottom: 2px solid #9cb8d8 !important;
+  border-right: 1px solid #c8d3e0;
+  box-shadow: none;
+}
+.sup-grid tbody td {
+  padding: 5px 8px;
+  line-height: 1.3;
+  vertical-align: middle;
+  background: #fff;
+  border-right: 1px solid #c8d3e0;
+  border-bottom: 1px solid #d0dae6;
+  box-shadow: none;
+}
+.sup-grid tbody tr:nth-child(even) td { background: #f2f6fb; }
+.sup-grid tbody tr:hover td { background: #dbeeff; }
+.sup-grid tbody tr.table-light td { background: #eef2f7; }
+.sup-grid thead th:last-child,
+.sup-grid tbody td:last-child { border-right: none; }
+.sup-grid tbody tr:last-child td { border-bottom: 0; }
+
+/* Tabs + the tab's controls on ONE row: compact controls, and no wrapping from desktop width up
+   (below that the row wraps rather than overflowing). */
+.sup-toolbar .form-control,
+.sup-toolbar .form-select {
+  font-size: 0.85rem;
+  height: 34px;
+  min-height: 34px !important;
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+  max-width: 170px !important;
+}
+.sup-toolbar .form-select { width: auto !important; min-width: 120px; }
+.sup-toolbar .btn { min-height: 34px !important; font-size: 0.85rem; padding: 0.2rem 0.75rem; white-space: nowrap; }
+.sup-toolbar .form-check-label,
+.sup-toolbar label { font-size: 0.85rem; white-space: nowrap; }
+@media (min-width: 1200px) {
+  .sup-bar { flex-wrap: nowrap !important; }
+  .sup-toolbar { flex-wrap: nowrap !important; flex: 0 1 auto !important; }
+}
+
+/* the "⋮" actions button: big enough to see and to tap */
+.sup-dots {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  color: #1a2a3a;
+  border-color: #9cb8d8;
+  background: #fff;
+}
+.sup-dots:hover,
+.sup-dots.show { background: #dce8f5; border-color: #1565c0; color: #1565c0; }
+.sup-actions { width: 64px; }
+/* an open row menu sits above the sticky tabs bar (1030) but under the app header (1040) */
+.sup-page .dropdown-menu { z-index: 1035; }
+/* let the menu open over the table edge instead of being clipped (wide screens; small ones scroll sideways) */
+@media (min-width: 992px) {
+  .sup-page .table-responsive { overflow: visible; }
+}
+
+/* the frame around a table, like the students grid */
+.sup-page .card {
+  border: 1px solid #c8d3e0;
+  border-radius: 4px;
+  box-shadow: none;
+}
+/* the app's cards clip their content; a table's "⋮" menu must be able to open past the card's bottom edge */
+.sup-page .card { overflow: visible; }
+.sup-page .card:hover { transform: none; box-shadow: none; }
+.sup-page .card .table-responsive { border-radius: 0; }
+
+[data-coreui-theme='dark'] .sup-grid thead th { background: #243447 !important; color: #e3ebf3; border-bottom-color: #3d5a7a !important; border-right-color: #34465a; }
+[data-coreui-theme='dark'] .sup-grid tbody td { background: #1c2530; border-color: #34465a; color: #e3ebf3; }
+[data-coreui-theme='dark'] .sup-grid tbody tr:nth-child(even) td { background: #212c39; }
+[data-coreui-theme='dark'] .sup-grid tbody tr:hover td { background: #2b3d52; }
+[data-coreui-theme='dark'] .sup-grid tbody tr.table-light td { background: #26323f; }
+[data-coreui-theme='dark'] .sup-page .card { border-color: #34465a; }
+
+/* ── Print view (components/PrintSheet.vue): a full-page sheet of data with the school's header ── */
+body.print-open { overflow: hidden; }
+.print-root {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: #e9edf2;
+  overflow: auto;
+  color: #111;
+}
+.print-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 18px;
+  background: #fff;
+  border-bottom: 1px solid #c8d3e0;
+}
+.print-paper {
+  background: #fff;
+  max-width: 1100px;
+  margin: 16px auto;
+  padding: 24px 28px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
+.print-header { display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 10px; }
+.print-logo { height: 52px; width: auto; }
+.print-school { font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em; }
+.print-tag { font-size: 11px; color: #555; }
+.print-when { font-size: 11px; color: #555; text-align: right; }
+.print-title { font-size: 18px; font-weight: 700; margin: 6px 0 4px; }
+.print-line { font-size: 12px; color: #333; }
+.print-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
+.print-table th, .print-table td { border: 1px solid #444; padding: 4px 6px; vertical-align: top; }
+.print-table thead th { background: #e8edf3; font-weight: 700; }
+.print-table .t-end { text-align: right; }
+.print-table .t-center { text-align: center; }
+.print-table tfoot td { background: #f3f5f8; }
+.print-foot { margin-top: 8px; font-size: 11px; color: #555; }
+
+.print-paper.is-portrait { max-width: 794px; }
+/* many columns on a portrait page: smaller type and tighter cells so everything still fits across */
+.print-paper.is-compact .print-table { font-size: 9px; }
+.print-paper.is-compact .print-table th, .print-paper.is-compact .print-table td { padding: 2px 3px; }
+.print-paper.is-compact .print-header { margin-bottom: 6px; }
+
+@media print {
+  body > *:not(.print-root) { display: none !important; }
+  body.print-open { overflow: visible; }
+  .print-root { position: static; inset: auto; overflow: visible; background: #fff; }
+  .print-root .no-print { display: none !important; }
+  .print-paper { box-shadow: none; margin: 0; padding: 0; max-width: none; }
+  .print-table thead { display: table-header-group; }
+  .print-table tr { page-break-inside: avoid; }
+  .print-table, .print-table th, .print-table td { color: #000; }
+}

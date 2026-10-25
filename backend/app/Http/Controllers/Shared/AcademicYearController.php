@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Shared;
 
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
+use App\Support\SchoolScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +14,10 @@ class AcademicYearController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $schoolId = $request->query('school_id') ?? auth()->user()->school_id;
+        $schoolId = $request->query('school_id') ?? $request->user()->school_id;
+        if ($request->query('school_id')) {
+            SchoolScope::authorize($request->user(), (int) $schoolId);
+        }
 
         $years = AcademicYear::with('terms')
             ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
@@ -23,14 +27,19 @@ class AcademicYearController extends Controller
         return response()->json($years);
     }
 
-    public function show(AcademicYear $academicYear): JsonResponse
+    public function show(Request $request, AcademicYear $academicYear): JsonResponse
     {
+        SchoolScope::authorize($request->user(), $academicYear->school_id);
+
         return response()->json($academicYear->load('terms'));
     }
 
     public function store(Request $request): JsonResponse
     {
-        $schoolId = $request->input('school_id') ?? auth()->user()->school_id;
+        $schoolId = $request->input('school_id') ?? $request->user()->school_id;
+        if ($schoolId) {
+            SchoolScope::authorize($request->user(), (int) $schoolId);
+        }
 
         $data = $request->validate([
             'name' => [
@@ -63,7 +72,9 @@ class AcademicYearController extends Controller
 
     public function update(Request $request, AcademicYear $academicYear): JsonResponse
     {
+        SchoolScope::authorize($request->user(), $academicYear->school_id);
         $schoolId = $request->input('school_id') ?? $academicYear->school_id;
+        SchoolScope::authorize($request->user(), (int) $schoolId);
 
         $data = $request->validate([
             'name' => [
@@ -92,8 +103,10 @@ class AcademicYearController extends Controller
         return response()->json($academicYear->fresh()->load('terms'), 200);
     }
 
-    public function destroy(AcademicYear $academicYear): JsonResponse
+    public function destroy(Request $request, AcademicYear $academicYear): JsonResponse
     {
+        SchoolScope::authorize($request->user(), $academicYear->school_id);
+
         if ($academicYear->terms()->exists()) {
             return response()->json(['message' => __('An academic year with terms cannot be deleted. Please delete its terms first.')], 422);
         }

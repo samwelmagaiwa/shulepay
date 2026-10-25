@@ -2,6 +2,8 @@
 import { CContainer } from '@coreui/vue'
 import AppFooter from '@/components/AppFooter.vue'
 import AppHeader from '@/components/AppHeader.vue'
+import NotifyModal from '@/components/NotifyModal.vue'
+import ExamFlowDialog from '@/components/exams/ExamFlowDialog.vue'
 import SessionTimeoutModal from '@/components/SessionTimeoutModal.vue'
 import { useIdleSession } from '@/composables/useIdleSession'
 import { useSchoolStore } from '@/stores/school'
@@ -32,6 +34,9 @@ const schoolStore = useSchoolStore()
       </CContainer>
     </div>
     <AppFooter />
+
+    <NotifyModal />
+    <ExamFlowDialog />
 
     <SessionTimeoutModal
       :visible="showWarning"

@@ -1,5 +1,6 @@
 {
     ":count students were absent - :class": "Wanafunzi :count hawakuhudhuria - :class",
+    "A class with this name already exists.": "Darasa lenye jina hili tayari lipo.",
     "A fee structure already exists for this class and term ':term'. Delete it first before creating a new one.": "Muundo wa ada tayari upo kwa darasa hili na muhula ':term'. Ufute kwanza kabla ya kuunda mpya.",
     "A fee structure already exists for this class and term.": "Muundo wa ada tayari upo kwa darasa hili na muhula huu.",
     "A fully sponsored student with no payments cannot have a tuition fee.": "Mwanafunzi anayedhaminiwa kikamilifu bila malipo hawezi kuwa na ada ya masomo.",

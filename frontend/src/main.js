@@ -10,6 +10,8 @@ import { useBrandingStore } from '@/stores/branding'
 import { useSchoolStore } from '@/stores/school'
 import { i18n } from '@/i18n'
 import { installModalGuard } from '@/utils/modalGuard'
+import '@/styles/data-grid.css'
+import '@/styles/xgrid.css'
 
 const app = createApp(App)
 const pinia = createPinia()

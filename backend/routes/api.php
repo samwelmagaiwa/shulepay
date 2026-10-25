@@ -28,9 +28,17 @@ use App\Http\Controllers\Accountant\SupplierPaymentController;
 use App\Http\Controllers\Ai\AiChatController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AttendanceHistoryController;
-use App\Http\Controllers\Api\ExamController;
+use App\Http\Controllers\Api\Exam\ClassSubjectController;
+use App\Http\Controllers\Api\Exam\ExamAnalysisController;
+use App\Http\Controllers\Api\Exam\ExamCommentController;
+use App\Http\Controllers\Api\Exam\ExamController;
+use App\Http\Controllers\Api\Exam\ExamResultController;
+use App\Http\Controllers\Api\Exam\GradingScaleController;
+use App\Http\Controllers\Api\Exam\MarksController;
+use App\Http\Controllers\Api\Exam\ParentResultController;
+use App\Http\Controllers\Api\Exam\SubjectController;
+use App\Http\Controllers\Api\Exam\TeacherAssignmentController;
 use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\SubjectController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\BrandingController;
@@ -133,6 +141,74 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [AttendanceHistoryController::class, 'index']);
         Route::get('pupils', [AttendanceHistoryController::class, 'pupils']);
         Route::get('absentees', [AttendanceHistoryController::class, 'absentees']);
+    });
+
+    // Exams — controllers live in App\Http\Controllers\Api\Exam.
+    // These sit outside the finance-staff group below: teachers are the people who
+    // enter marks, so the module cannot be reachable only by accountants.
+    Route::group([], function () {
+        // Teaching staff read setup data, enter marks and view results.
+        Route::middleware('role:'.UserRole::guard(UserRole::examStaff()))->group(function () {
+            Route::get('subjects', [SubjectController::class, 'index']);
+            Route::get('grading-scale', [GradingScaleController::class, 'show']);
+            Route::get('class-subjects', [ClassSubjectController::class, 'index']);
+
+            Route::get('exams/readiness', [ExamController::class, 'readiness']);
+            Route::get('exams/my-assignments', [TeacherAssignmentController::class, 'mine']);
+            Route::get('exams/combined', [ExamAnalysisController::class, 'combined']);
+            Route::get('exams', [ExamController::class, 'index']);
+            Route::get('exams/{exam}', [ExamController::class, 'show']);
+            Route::get('exams/{exam}/marks', [MarksController::class, 'show']);
+            Route::put('exams/{exam}/marks', [MarksController::class, 'update']);
+            Route::post('exams/{exam}/marks/submit', [MarksController::class, 'submit']);
+            Route::get('exams/{exam}/marks/template', [MarksController::class, 'template']);
+            Route::post('exams/{exam}/marks/import', [MarksController::class, 'import']);
+            Route::get('exams/{exam}/progress', [ExamController::class, 'progress']);
+            Route::get('exams/{exam}/analysis', [ExamAnalysisController::class, 'show']);
+            Route::get('exams/{exam}/comments', [ExamCommentController::class, 'index']);
+            Route::put('exams/{exam}/comments', [ExamCommentController::class, 'update']);
+            Route::get('exam-comment-bands', [ExamCommentController::class, 'bands']);
+            Route::get('exams/{exam}/comments/status', [ExamCommentController::class, 'status']);
+            Route::post('exams/{exam}/comments/apply', [ExamCommentController::class, 'apply']);
+            Route::post('exams/{exam}/comments/submit', [ExamCommentController::class, 'submit']);
+            Route::get('students/{student}/exam-history', [ExamAnalysisController::class, 'history']);
+            Route::get('exams/{exam}/class-results', [ExamResultController::class, 'classResults']);
+            Route::get('exams/{exam}/students/{student}/report-card', [ExamResultController::class, 'reportCard']);
+
+            // PDF rendering is CPU-heavy, throttled to bound abuse cost.
+            Route::middleware('throttle:30,1')->group(function () {
+                Route::get('exams/{exam}/class-results/pdf', [ExamResultController::class, 'classResultsPdf']);
+                Route::get('exams/{exam}/report-cards/pdf', [ExamResultController::class, 'classReportCardsPdf']);
+                Route::get('exams/{exam}/students/{student}/report-card/pdf', [ExamResultController::class, 'reportCardPdf']);
+            });
+        });
+
+        // Heads of school, academic coordinators and the owner set exams up.
+        Route::middleware('role:'.UserRole::guard(UserRole::examManagers()))->group(function () {
+            Route::post('subjects', [SubjectController::class, 'store']);
+            Route::put('subjects/{subject}', [SubjectController::class, 'update']);
+            Route::delete('subjects/{subject}', [SubjectController::class, 'destroy']);
+            Route::put('grading-scale', [GradingScaleController::class, 'update']);
+            Route::put('class-subjects/{class}', [ClassSubjectController::class, 'sync']);
+            Route::get('teacher-assignments', [TeacherAssignmentController::class, 'index']);
+            Route::put('teacher-assignments/{user}', [TeacherAssignmentController::class, 'sync']);
+
+            Route::post('exams', [ExamController::class, 'store']);
+            Route::put('exams/{exam}', [ExamController::class, 'update']);
+            Route::delete('exams/{exam}', [ExamController::class, 'destroy']);
+            Route::post('exams/{exam}/open', [ExamController::class, 'open']);
+            Route::post('exams/{exam}/marks/reopen', [MarksController::class, 'reopen']);
+            Route::put('exam-comment-bands', [ExamCommentController::class, 'saveBands']);
+            Route::post('exams/{exam}/comments/reopen', [ExamCommentController::class, 'reopen']);
+            Route::post('exams/{exam}/remind', [ExamController::class, 'remind']);
+            Route::get('exams/{exam}/mark-changes', [ExamController::class, 'markChanges']);
+        });
+
+        // Only heads of school (and the owner) approve results for parents.
+        Route::middleware('role:'.UserRole::guard(UserRole::examPublishers()))->group(function () {
+            Route::post('exams/{exam}/publish', [ExamController::class, 'publish']);
+            Route::post('exams/{exam}/unpublish', [ExamController::class, 'unpublish']);
+        });
     });
 
     // Teaching staff — attendance + notifications
@@ -320,8 +396,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('sms/logs', [SmsController::class, 'logs']);
 
         // ── Phase 5: Academics & Missing Modules ──────────────────
-        Route::apiResource('subjects', SubjectController::class);
-        Route::apiResource('exams', ExamController::class);
         Route::apiResource('attendances', AttendanceController::class);
 
         // Transport
@@ -379,8 +453,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('user-school-access/{user}', [UserSchoolAccessController::class, 'show']);
         Route::post('user-school-access', [UserSchoolAccessController::class, 'grant']);
         Route::delete('user-school-access/{user}/{school}', [UserSchoolAccessController::class, 'revoke']);
+    });
 
-        // School class writes
+    // School classes — owner and academic coordinators (the exam module sets classes and streams up).
+    // Every action checks the class's school against the user's schools in SchoolClassController.
+    Route::middleware('role:'.UserRole::guard(UserRole::classKeepers()))->group(function () {
         Route::post('school-classes', [SchoolClassController::class, 'store']);
         Route::put('school-classes/{schoolClass}', [SchoolClassController::class, 'update']);
         Route::patch('school-classes/{schoolClass}', [SchoolClassController::class, 'update']);
@@ -392,7 +469,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // be owner/superadmin-only here while the frontend route + nav let
     // accountants open the page anyway, leaving Add/Edit/Delete buttons that
     // would 403. Moved into the same group as terms for consistency.
-    Route::middleware('role:'.UserRole::guard(UserRole::financeStaff()))->group(function () {
+    Route::middleware('role:'.UserRole::guard(UserRole::calendarKeepers()))->group(function () {
         Route::post('academic-years', [AcademicYearController::class, 'store']);
         Route::put('academic-years/{academicYear}', [AcademicYearController::class, 'update']);
         Route::patch('academic-years/{academicYear}', [AcademicYearController::class, 'update']);
@@ -441,5 +518,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('statement', [StatementController::class, 'index']);
         // PDF rendering is CPU-heavy, throttled to bound abuse cost.
         Route::get('statement/pdf', [StatementController::class, 'download'])->middleware('throttle:30,1');
+
+        // Published exam results for the parent's own children.
+        Route::group([], function () {
+            Route::get('exam-results', [ParentResultController::class, 'index']);
+            Route::get('exam-results/{exam}', [ParentResultController::class, 'show']);
+            Route::get('exam-results/{exam}/pdf', [ParentResultController::class, 'pdf'])->middleware('throttle:30,1');
+        });
     });
 });
