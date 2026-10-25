@@ -8,6 +8,7 @@ use App\Models\AcademicYear;
 use App\Models\Attendance;
 use App\Models\Enrollment;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Student;
@@ -200,6 +201,30 @@ class AiAssistantTest extends TestCase
         $all = array_column((new AiToolExecutor($super))->execute('get_student_list', ['limit' => 50])['students'], 'name');
         sort($all);
         $this->assertSame(['Juma Ali', 'Other Pupil'], $all);
+    }
+
+    public function test_invoice_stats_count_payments_on_every_invoice(): void
+    {
+        $owner = $this->user('owner');
+        $first = Invoice::where('invoice_number', 'INV-A1')->first();
+        $second = Invoice::create([
+            'school_id' => $this->school->id, 'student_id' => $first->student_id, 'term_id' => $first->term_id,
+            'academic_year_id' => $first->academic_year_id, 'invoice_number' => 'INV-A2', 'total_amount_cents' => 100000,
+            'discount_cents' => 0, 'arrears_cents' => 0, 'status' => 'partial', 'generated_at' => now(),
+        ]);
+        foreach ([[$first, 30000], [$second, 20000]] as [$inv, $cents]) {
+            Payment::create([
+                'invoice_id' => $inv->id, 'student_id' => $inv->student_id, 'school_id' => $this->school->id,
+                'amount_cents' => $cents, 'method' => 'cash', 'paid_at' => now(),
+            ]);
+        }
+
+        $stats = $this->runAs($owner, 'get_invoice_stats');
+
+        $this->assertSame(2, $stats['total_invoices']);
+        $this->assertSame('TZS 2,000', $stats['total_invoiced']);
+        $this->assertSame('TZS 500', $stats['total_collected']);
+        $this->assertSame('TZS 1,500', $stats['total_outstanding']);
     }
 
     public function test_lookups_by_name_and_attendance(): void

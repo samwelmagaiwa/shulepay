@@ -225,7 +225,8 @@ class AiToolExecutor
             $q->where('academic_year_id', $a['academic_year_id']);
         }
 
-        $stats = $q->selectRaw(
+        // Clone: first() adds LIMIT 1 to the builder, and $q is reused below as the invoice subquery.
+        $stats = (clone $q)->selectRaw(
             "COUNT(*) as total,
              SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) as paid_count,
              SUM(CASE WHEN status = 'unpaid' THEN 1 ELSE 0 END) as unpaid_count,
