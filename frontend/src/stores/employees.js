@@ -1,13 +1,13 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import api from '@/services/api'
-import { i18n } from '@/i18n'
 
 export const useEmployeesStore = defineStore('employees', () => {
   const employees = ref([])
   const loading = ref(false)
   const error = ref('')
   const pagination = ref({})
+  const summary = ref({})
 
   async function fetchEmployees(params = {}) {
     loading.value = true
@@ -16,8 +16,9 @@ export const useEmployeesStore = defineStore('employees', () => {
       const { data } = await api.get('/employees', { params })
       employees.value = data.data || data
       pagination.value = data.meta || {}
+      summary.value = data.summary || {}
     } catch (e) {
-      error.value = e?.response?.data?.message || i18n.global.t('errors.loadData')
+      error.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia data'
     } finally {
       loading.value = false
     }
@@ -49,5 +50,5 @@ export const useEmployeesStore = defineStore('employees', () => {
     await api.delete(`/employees/${id}`)
   }
 
-  return { employees, activeEmployees, loading, error, pagination, fetchEmployees, fetchActiveEmployees, createEmployee, updateEmployee, deleteEmployee }
+  return { employees, activeEmployees, loading, error, pagination, summary, fetchEmployees, fetchActiveEmployees, createEmployee, updateEmployee, deleteEmployee }
 })

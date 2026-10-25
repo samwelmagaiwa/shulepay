@@ -58,7 +58,7 @@
         </tr>
         @endforeach
         <tr>
-            <td>{{ __('pdf.payroll') }}</td>
+            <td>{{ __('pdf.payroll_expense') }}</td>
             <td>TZS {{ number_format($report['expenses']['payroll'] / 100, 2) }}</td>
         </tr>
         <tr class="subtotal">

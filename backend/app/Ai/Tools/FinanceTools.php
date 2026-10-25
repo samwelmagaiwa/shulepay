@@ -43,13 +43,13 @@ class FinanceTools
             ],
             [
                 'name' => 'get_expense_summary',
-                'description' => 'Get school spending for a date range: approved total, what is waiting for approval, rejected count, and a breakdown by category, vendor, status or month. Only approved expenses count as spent. Use for questions about how money was spent, operational costs, expense breakdown, biggest vendors.',
+                'description' => 'Get school spending for a date range: approved total, how much was paid now versus bought on credit (still owed to suppliers), what is waiting for approval, rejected count, and a breakdown by category, vendor, payment mode or month. Only approved expenses count as spent. Use for questions about how money was spent, operational costs, expense breakdown, biggest vendors.',
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
                         'from_date' => ['type' => 'string', 'description' => 'Start date YYYY-MM-DD. Default: first day of current month.'],
                         'to_date' => ['type' => 'string', 'description' => 'End date YYYY-MM-DD. Default: today.'],
-                        'group_by' => ['type' => 'string', 'enum' => ['category', 'vendor', 'status', 'month'], 'description' => 'How to break the total down. Default: category.'],
+                        'group_by' => ['type' => 'string', 'enum' => ['category', 'vendor', 'payment_mode', 'month'], 'description' => 'How to break the total down. Default: category.'],
                         'category_name' => ['type' => 'string', 'description' => 'Only this expense category (optional, partial name).'],
                         'vendor' => ['type' => 'string', 'description' => 'Only this vendor or supplier (optional, partial name).'],
                     ],
@@ -57,11 +57,12 @@ class FinanceTools
             ],
             [
                 'name' => 'get_expenses_list',
-                'description' => 'List individual expense records, newest first: description, amount, vendor, category, receipt reference, status (pending, approved, rejected), who recorded and decided it. Use for "which expenses wait for approval", "show rejected expenses", "what did we buy from X", or finding one expense.',
+                'description' => 'List individual expense records, newest first: description, amount, vendor, category, receipt reference, payment (paid or on credit), status (pending, approved, rejected), who recorded and decided it, and the rejection reason. Use for "which expenses wait for approval", "show rejected expenses", "what did we buy from X", or finding one expense.',
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
                         'status' => ['type' => 'string', 'enum' => ['pending', 'approved', 'rejected'], 'description' => 'Filter by status (optional). pending = waiting for the owner to approve.'],
+                        'payment_mode' => ['type' => 'string', 'enum' => ['paid', 'credit'], 'description' => 'paid = settled when bought; credit = bought on credit from a supplier.'],
                         'search' => ['type' => 'string', 'description' => 'Text in the description, vendor, receipt reference or notes (optional).'],
                         'from_date' => ['type' => 'string', 'description' => 'Start date YYYY-MM-DD (optional).'],
                         'to_date' => ['type' => 'string', 'description' => 'End date YYYY-MM-DD (optional).'],

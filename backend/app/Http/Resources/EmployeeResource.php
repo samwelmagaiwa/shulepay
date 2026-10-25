@@ -12,7 +12,7 @@ class EmployeeResource extends JsonResource
         return [
             'id' => $this->id,
             'school_id' => $this->school_id,
-            'school_name' => $this->whenLoaded('school', fn () => $this->school->name),
+            'school_name' => $this->whenLoaded('school', fn () => $this->school?->name),
             'user_id' => $this->user_id,
             'staff_number' => $this->staff_number,
             'full_name' => $this->full_name,

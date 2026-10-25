@@ -1,6 +1,8 @@
 <template>
-  <CContainer fluid class="p-2 p-md-3">
-    <CRow class="g-3">
+  <CContainer fluid class="xg-page">
+    <XStats :cards="cards" />
+
+    <CRow class="g-3 mb-3">
       <!-- Left: Form -->
       <CCol lg="7">
         <CCard>
@@ -71,7 +73,7 @@
                 <CFormInput
                   type="number" v-model.number="form.amount_tzs"
                   min="1" :max="resolvedInvoice ? Math.round((resolvedInvoice.balance_due_cents||0)/100) : undefined"
-                  :placeholder="t('common.exampleValue', { value: '50000' })"
+                  placeholder="e.g. 50000"
                   :disabled="saving || !resolvedInvoice"
                 />
                 <div v-if="resolvedInvoice" class="text-muted small mt-1">
@@ -138,13 +140,13 @@
                 <div class="fw-bold fs-6">{{ lastPayment.student?.full_name || lastPayment.student_name }}</div>
                 <div class="small text-muted mt-1 d-flex flex-wrap gap-3">
                   <span v-if="lastPayment.student?.admission_number">
-                    {{ t('students.admissionNo') }}: <strong>{{ lastPayment.student.admission_number }}</strong>
+                    Namba: <strong>{{ lastPayment.student.admission_number }}</strong>
                   </span>
                   <span v-if="lastPayment.student?.school_class?.name">
-                    {{ t('common.class') }}: <strong>{{ lastPayment.student.school_class.name }}</strong>
+                    Darasa: <strong>{{ lastPayment.student.school_class.name }}</strong>
                   </span>
                   <span v-if="lastPayment.student?.school?.name">
-                    {{ t('common.school') }}: <strong>{{ lastPayment.student.school.name }}</strong>
+                    Shule: <strong>{{ lastPayment.student.school.name }}</strong>
                   </span>
                 </div>
               </div>
@@ -152,25 +154,25 @@
               <!-- Invoice details -->
               <div class="px-3 py-2 border-bottom">
                 <div class="mb-1">
-                  <span class="badge bg-secondary-subtle text-secondary" style="font-size:.7rem;">{{ t('common.invoice') }}</span>
+                  <span class="badge bg-secondary-subtle text-secondary" style="font-size:.7rem;">{{ t('nav.invoices') }}</span>
                 </div>
                 <div class="row g-1 small">
-                  <div class="col-6 text-muted">{{ t('invoices.invoiceNo') }}</div>
+                  <div class="col-6 text-muted">{{ t('orphanInvoices.invoiceNo') }}</div>
                   <div class="col-6 fw-semibold text-end">{{ lastPayment.invoice?.invoice_number }}</div>
 
-                  <div class="col-6 text-muted">{{ t('common.term') }}</div>
+                  <div class="col-6 text-muted">{{ t('nav.terms') }}</div>
                   <div class="col-6 fw-semibold text-end">{{ lastPayment.invoice?.term || '—' }}</div>
 
                   <div v-if="lastPayment.invoice?.academic_year" class="col-6 text-muted">{{ t('common.year') }}</div>
                   <div v-if="lastPayment.invoice?.academic_year" class="col-6 fw-semibold text-end">{{ lastPayment.invoice.academic_year }}</div>
 
-                  <div class="col-6 text-muted">{{ t('payments.totalFee') }}</div>
+                  <div class="col-6 text-muted">{{ t('ui.rekodaMalipo.totalFee') }}</div>
                   <div class="col-6 fw-semibold text-end">{{ formatMoney(lastPayment.invoice?.total_amount_cents) }}</div>
 
-                  <div class="col-6 text-muted">{{ t('payments.paidBefore') }}</div>
+                  <div class="col-6 text-muted">{{ t('ui.rekodaMalipo.previouslyPaid') }}</div>
                   <div class="col-6 fw-semibold text-success text-end">{{ formatMoney((lastPayment.invoice?.paid_cents || 0) - lastPayment.amount_cents) }}</div>
 
-                  <div class="col-6 text-muted">{{ t('payments.balanceDue') }}</div>
+                  <div class="col-6 text-muted">{{ t('ui.rekodaMalipo.remainingBalance') }}</div>
                   <div class="col-6 fw-bold text-end" :class="(lastPayment.invoice?.balance_due_cents || 0) <= 0 ? 'text-success' : 'text-danger'">
                     {{ formatMoney(lastPayment.invoice?.balance_due_cents) }}
                   </div>
@@ -180,7 +182,7 @@
               <!-- Payment details -->
               <div class="px-3 py-2 border-bottom">
                 <div class="mb-1">
-                  <span class="badge bg-success-subtle text-success" style="font-size:.7rem;">{{ t('payments.currentPayment') }}</span>
+                  <span class="badge bg-success-subtle text-success" style="font-size:.7rem;">{{ t('ui.rekodaMalipo.currentPayment') }}</span>
                 </div>
                 <div class="row g-1 small">
                   <div class="col-6 text-muted">{{ t('common.amount') }}</div>
@@ -190,13 +192,13 @@
                   <div class="col-6 fw-semibold text-end">{{ methodMap[lastPayment.method] || lastPayment.method }}</div>
 
                   <template v-if="lastPayment.reference_number">
-                    <div class="col-6 text-muted">{{ t('payments.referenceNumber') }}</div>
+                    <div class="col-6 text-muted">{{ t('ui.rekodaMalipo.refNo') }}</div>
                     <div class="col-6 fw-semibold text-end">{{ lastPayment.reference_number }}</div>
                   </template>
 
                   <div class="col-6 text-muted">{{ t('common.date') }}</div>
                   <div class="col-6 fw-semibold text-end">
-                    {{ lastPayment.paid_at ? new Date(lastPayment.paid_at).toLocaleDateString(dateLocale()) : '—' }}
+                    {{ lastPayment.paid_at ? new Date(lastPayment.paid_at).toLocaleDateString('sw-TZ') : '—' }}
                   </div>
 
                   <div class="col-6 text-muted">{{ t('payments.receiptNo') }}</div>
@@ -227,15 +229,42 @@
         </div>
       </CCol>
     </CRow>
+
+    <!-- Payment history -->
+    <XBar :meta="meta" v-model:per-page="perPage" :filters-active="hasFilters" @page="goPage" @update:per-page="goPage(1)">
+      <template #filters>
+        <CFormSelect v-model="filters.method" @update:modelValue="goPage(1)">
+          <option value="">{{ t('payments.method') }}</option>
+          <option v-for="(label, key) in methodMap" :key="key" :value="key">{{ label }}</option>
+        </CFormSelect>
+        <CFormInput v-model="filters.date_from" type="date" @update:modelValue="goPage(1)" />
+        <CFormInput v-model="filters.date_to" type="date" @update:modelValue="goPage(1)" />
+        <CFormInput v-model="filters.search" class="xg-grow" :placeholder="t('payments.searchPlaceholder')" @input="debouncedHistory" />
+        <CButton color="secondary" variant="outline" size="sm" @click="resetFilters">{{ t('common.reset') }}</CButton>
+      </template>
+      <template #toolbar><strong class="small">{{ t('nav.payments') }}</strong></template>
+    </XBar>
+    <XGrid v-model:selected-id="selectedId" :columns="columns" :rows="history" :loading="historyLoading" :min-width="900" :row-class="() => 'xg-row--good'">
+      <template #cell-paid_at="{ row }"><span class="xg-mono">{{ row.paid_at ? new Date(row.paid_at).toLocaleDateString('en-GB') : '—' }}</span></template>
+      <template #cell-student="{ row }">
+        <div class="xg-two"><span class="xg-name">{{ row.student?.full_name || '—' }}</span><span class="xg-sub">{{ row.student?.admission_number }} {{ row.student?.school_class?.name }}</span></div>
+      </template>
+      <template #cell-invoice="{ row }"><span class="xg-mono">{{ row.invoice?.invoice_number || '—' }}</span></template>
+      <template #cell-method="{ row }"><span class="xg-pill xg-pill--blue">{{ methodMap[row.method] || row.method_label || row.method }}</span></template>
+      <template #cell-receipt="{ row }"><span class="xg-mono">{{ row.receipt?.receipt_number || '—' }}</span></template>
+      <template #cell-amount_cents="{ row }"><span class="xg-in">{{ formatMoney(row.amount_cents) }}</span></template>
+    </XGrid>
   </CContainer>
 </template>
 
 <script setup>
-import { dateLocale } from '@/utils/dates'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePaymentsStore } from '@/stores/payments'
 import api from '@/services/api'
+import XStats from '@/components/XStats.vue'
+import XBar from '@/components/XBar.vue'
+import XGrid from '@/components/XGrid.vue'
 
 const { t } = useI18n()
 const paymentsStore = usePaymentsStore()
@@ -251,19 +280,9 @@ const saving         = ref(false)
 const formError      = ref('')
 
 const form = ref({ amount_tzs: '', method: 'cash', reference_number: '', notes: '', paid_at: today })
-const maxHintTzs = ref(null)
-const amountPlaceholder = computed(() =>
-  maxHintTzs.value === null
-    ? t('payments.amountExample')
-    : t('payments.maxHint', { amount: maxHintTzs.value.toLocaleString() }),
-)
+const amountPlaceholder = ref('e.g. 50000')
 
-const methodMap = computed(() => ({
-  cash: t('payments.methods.cash'),
-  mpesa: t('payments.methods.mpesa'),
-  bank: t('payments.methods.bank'),
-  cheque: t('payments.methods.cheque'),
-}))
+const methodMap = { cash: 'Cash', mpesa: 'M-Pesa', bank: 'Bank Transfer', cheque: 'Cheque' }
 
 function formatMoney(cents) {
   return 'TZS ' + Math.round((cents || 0) / 100).toLocaleString('sw-TZ', { maximumFractionDigits: 0 })
@@ -295,7 +314,8 @@ function selectInvoice(inv) {
   // Show balance as hint via placeholder but don't prefill — user must enter amount explicitly
   form.value.amount_tzs = ''
   // Focus the amount input on next tick
-  maxHintTzs.value = Math.round((inv.balance_due_cents || 0) / 100)
+  const maxTzs = Math.round((inv.balance_due_cents || 0) / 100)
+  amountPlaceholder.value = `Max: ${maxTzs.toLocaleString()} TZS`
 }
 
 function clearInvoice() {
@@ -334,11 +354,54 @@ async function submitPayment() {
       paid_at: payment?.paid_at || payload.paid_at,
     }
     clearInvoice()
+    loadHistory()
   } catch (e) {
     formError.value = e?.response?.data?.message || t('common.error')
   } finally {
     saving.value = false
   }
 }
+
+// ── payment history (the rows under the form) ──
+const history = ref([])
+const historyLoading = ref(false)
+const historySummary = ref({})
+const meta = ref({})
+const perPage = ref('20')
+const page = ref(1)
+const selectedId = ref(null)
+const filters = ref({ method: '', date_from: '', date_to: '', search: '' })
+const hasFilters = computed(() => Object.values(filters.value).some(Boolean))
+const columns = computed(() => [
+  { key: 'paid_at', label: t('common.date'), w: 'minmax(100px, .9fr)' },
+  { key: 'student', label: t('payments.student'), w: 'minmax(180px, 2fr)' },
+  { key: 'invoice', label: t('orphanInvoices.invoiceNo'), w: 'minmax(120px, 1.1fr)' },
+  { key: 'method', label: t('payments.method'), w: 'minmax(100px, .9fr)' },
+  { key: 'reference_number', label: t('payments.reference'), w: 'minmax(110px, 1fr)' },
+  { key: 'receipt', label: t('payments.receiptNo'), w: 'minmax(110px, 1fr)' },
+  { key: 'amount_cents', label: t('common.amount'), w: 'minmax(120px, 1.1fr)', align: 'end' },
+])
+const cards = computed(() => [
+  { label: t('nav.payments'), value: (historySummary.value.count ?? 0).toLocaleString(), tone: 'gray' },
+  { label: t('expensex.today'), value: formatMoney(historySummary.value.today_cents), tone: 'green' },
+  { label: t('expensex.cards.month'), value: formatMoney(historySummary.value.month_cents), tone: 'blue' },
+  { label: t('common.total'), value: formatMoney(historySummary.value.total_cents), tone: 'amber' },
+])
+async function loadHistory() {
+  historyLoading.value = true
+  try {
+    const params = { page: page.value, per_page: perPage.value }
+    for (const [k, v] of Object.entries(filters.value)) if (v) params[k] = v
+    const { data } = await api.get('/payments', { params })
+    history.value = data.data || []
+    meta.value = data.meta || {}
+    historySummary.value = data.summary || {}
+  } catch { history.value = [] } finally { historyLoading.value = false }
+}
+function goPage(p) { page.value = typeof p === 'number' ? p : 1; loadHistory() }
+function resetFilters() { filters.value = { method: '', date_from: '', date_to: '', search: '' }; goPage(1) }
+let historyTimer = null
+function debouncedHistory() { clearTimeout(historyTimer); historyTimer = setTimeout(() => goPage(1), 350) }
+onMounted(loadHistory)
 </script>
 

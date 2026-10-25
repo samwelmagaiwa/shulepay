@@ -70,6 +70,7 @@ use App\Http\Controllers\Shared\SchoolController;
 use App\Http\Controllers\Shared\TermController;
 use App\Http\Controllers\Shared\UserSettingsController;
 use App\Http\Controllers\Sms\SmsController;
+use App\Http\Controllers\Staff\MyPayrollController;
 use App\Http\Controllers\Superadmin\RolePermissionController;
 use App\Http\Controllers\Superadmin\SuperadminUserController;
 use App\Http\Controllers\Transport\FuelLogController;
@@ -240,6 +241,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead']);
     });
 
+    // Self-service payslips — any staff member views only their own entries
+    Route::middleware('role:'.UserRole::guard([
+        ...UserRole::teachingStaff(),
+        ...UserRole::financeStaff(),
+    ]))->prefix('my-payroll')->group(function () {
+        Route::get('/', [MyPayrollController::class, 'index']);
+        Route::get('/annual', [MyPayrollController::class, 'annualStatement']);
+        Route::get('/{payroll}', [MyPayrollController::class, 'show']);
+        Route::get('/{payroll}/slip', [MyPayrollController::class, 'downloadSlip']);
+    });
+
     // Finance staff — accountant / owner / superadmin
     Route::middleware('role:'.UserRole::guard(UserRole::financeStaff()))->group(function () {
 
@@ -367,8 +379,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('employees/active', [EmployeeController::class, 'active']);
         Route::apiResource('employees', EmployeeController::class);
         Route::post('payroll/bulk-generate', [PayrollController::class, 'bulkGenerate']);
+        Route::get('payroll/rates', [PayrollController::class, 'getRates']);
+        Route::put('payroll/rates', [PayrollController::class, 'updateRates']);
+        Route::get('payroll/report/monthly', [PayrollController::class, 'monthlySummary']);
+        Route::get('payroll/report/annual/{employee}', [PayrollController::class, 'annualStatement']);
         Route::apiResource('payroll', PayrollController::class)->only(['index', 'store', 'show']);
         Route::post('payroll/{payroll}/mark-paid', [PayrollController::class, 'markPaid']);
+        Route::get('payroll/{payroll}/slip', [PayrollController::class, 'downloadSlip']);
 
         // Suppliers
         // (static paths first; approvals are the owner's alone)
@@ -425,6 +442,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Budgets
         Route::apiResource('budgets', BudgetController::class);
+        Route::delete('budgets/{budget}/items/{item}', [BudgetController::class, 'destroyItem']);
         Route::post('budgets/{budget}/activate', [BudgetController::class, 'activate']);
         Route::post('budgets/{budget}/close', [BudgetController::class, 'close']);
 

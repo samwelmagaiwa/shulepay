@@ -20,7 +20,7 @@ class GuardianController extends Controller
         // are listed — matching every other school-switchable list page.
         $schoolId = $this->activeSchoolId($request);
 
-        $guardians = Guardian::with(['user', 'students' => function ($q) use ($schoolId) {
+        $guardians = Guardian::with(['user.roles', 'students' => function ($q) use ($schoolId) {
             $q->withPivot(['relation', 'is_primary']);
             if ($schoolId) {
                 $q->whereHas('enrollments', fn ($e) => $e->where('school_id', $schoolId));
@@ -43,16 +43,25 @@ class GuardianController extends Controller
                         });
                 });
             })
-            ->paginate(20);
+            ->paginate(min(max($request->integer('per_page', 20), 5), 200));
 
         $items = $guardians->getCollection()->map(fn ($g) => [
             'id' => $g->id,
-            'full_name' => $g->fullName() ?: ($g->user?->name ?? '—'),
+            'full_name' => trim($g->fullName()) ?: ($g->user?->name ?? '—'),
             'phone' => $g->phone ?: $g->user?->phone,
             'email' => $g->email ?: $g->user?->email,
             'relation' => $g->students->first()?->pivot?->relation ?? null,
             'is_primary' => (bool) ($g->students->first()?->pivot?->is_primary ?? false),
-            'user' => $g->user ? ['id' => $g->user->id, 'name' => $g->user->name, 'phone' => $g->user->phone] : null,
+            'login_email' => $g->user?->email,
+            'role' => $g->user?->roles->first()?->name ?? 'parent',
+            'user' => $g->user ? [
+                'id' => $g->user->id,
+                'name' => $g->user->name,
+                'phone' => $g->user->phone,
+                'email' => $g->user->email,
+                'role' => $g->user->roles->first()?->name ?? 'parent',
+                'must_change_password' => (bool) $g->user->must_change_password,
+            ] : null,
             'students' => $g->students->map(fn ($s) => [
                 'id' => $s->id,
                 'full_name' => $s->fullName(),
@@ -199,16 +208,12 @@ class GuardianController extends Controller
         abort_unless(
             $schoolIds->contains(fn ($id) => $user->canAccessSchool((int) $id)),
             403,
-            __('You do not have access to this guardian.')
+            __('messages.you_do_not_have_access_to_this')
         );
     }
 
     private function activeSchoolId(Request $request): ?int
     {
-        if ($request->filled('school_id')) {
-            return $request->integer('school_id');
-        }
-
-        return app()->bound('active_school') ? app('active_school')?->id : null;
+        return $this->schoolIdForQuery($request);
     }
 }

@@ -1,138 +1,43 @@
 <template>
-  <CContainer fluid class="p-2 p-md-3">
-    <div v-if="loading" class="text-center py-5"><CSpinner color="primary" /></div>
+  <CContainer fluid class="xg-page">
+    <XStats :cards="cards" />
 
-    <div v-else>
-      <!-- Mobile: compact toolbar + cards -->
-      <div class="d-md-none">
-        <div class="d-flex gap-2 mb-3 flex-wrap">
-          <CFormSelect v-model="filters.status" @update:modelValue="page = 1; load()" size="sm" style="flex:1; min-width:120px;">
-            <option value="">{{ t('common.allStatuses') }}</option>
-            <option value="active">{{ t('installments.ongoing') }}</option>
-            <option value="completed">{{ t('installments.completed') }}</option>
-          </CFormSelect>
-          <CFormInput v-model="filters.search" :placeholder="t('installments.searchPlaceholder')" @input="debouncedLoad" size="sm" style="flex:2; min-width:140px;" />
-          <CButton color="primary" size="sm" @click="showBulkModal = true" style="white-space:nowrap;">📋 {{ t('installments.bulkByClass') }}</CButton>
-        </div>
-      </div>
-      <!-- Mobile cards -->
-      <div class="d-md-none">
-        <div v-if="!installments.length" class="text-center text-muted py-5">{{ t('installments.noPlans') }}</div>
-        <div v-for="plan in installments" :key="plan.id" class="mb-2 border rounded p-3">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <div class="fw-bold">{{ plan.student?.full_name }}</div>
-              <div class="small text-muted">{{ t('installments.invoice') }}: {{ plan.invoice?.invoice_number }}</div>
-              <div class="small text-muted">{{ t('installments.paidOfTotal', { paid: plan.installments_paid || 0, total: plan.total_installments }) }}</div>
-              <div class="small text-muted">{{ t('installments.nextDue') }}: {{ plan.next_due_date || '—' }}</div>
-            </div>
-            <CBadge :color="plan.status === 'completed' || plan.status === 'paid' ? 'success' : 'warning'">
-              {{ plan.status === 'completed' || plan.status === 'paid' ? t('installments.completed') : (plan.status === 'partial' ? t('statusBadge.partial') : t('installments.ongoing')) }}
-            </CBadge>
-          </div>
-          <CProgress :value="progressPct(plan)" color="success" class="mt-2" style="height:6px;" />
-          <div class="small text-muted mt-1 text-center">{{ formatAmount(plan.paid_amount_cents) }} / {{ formatAmount(plan.installment_amount_cents) }}</div>
-          <div class="mt-2 d-flex justify-content-between align-items-center">
-            <span class="small fw-semibold text-danger">{{ t('installments.dueAmount', { amount: formatAmount(plan.installment_amount_cents - (plan.paid_amount_cents || 0)) }) }}</span>
-            <CButton v-if="plan.status !== 'completed' && plan.status !== 'paid'" size="sm" color="primary"
-                     @click="recordPayment(plan)" style="min-height:44px;">
-              {{ t('installments.recordPayment') }}
-            </CButton>
-          </div>
-        </div>
-      </div>
+    <XBar :meta="meta" v-model:per-page="perPage" :filters-active="hasFilters" @page="goPage" @update:per-page="goPage(1)">
+      <template #actions>
+        <CButton color="primary" size="sm" @click="showBulkModal = true">📋 {{ t('installments.bulkByClass') }}</CButton>
+      </template>
+      <template #filters>
+        <CFormSelect v-model="filters.status" @update:modelValue="goPage(1)">
+          <option value="">{{ t('common.allStatuses') }}</option>
+          <option value="active">{{ t('installments.ongoing') }}</option>
+          <option value="completed">{{ t('installments.completed') }}</option>
+        </CFormSelect>
+        <CFormInput v-model="filters.search" class="xg-grow" :placeholder="t('installments.searchPlaceholder')" @input="debouncedLoad" />
+        <CButton color="secondary" variant="outline" size="sm" @click="resetFilters">{{ t('common.reset') }}</CButton>
+      </template>
+      <template #toolbar>
+        <button class="xg-tb-btn" :disabled="!selected" @click="selected && openView(selected)">🔍 {{ t('common.view') }}</button>
+        <button class="xg-tb-btn is-ok" :disabled="!canPay(selected)" @click="canPay(selected) && recordPayment(selected)">💳 {{ t('installments.recordPayment') }}</button>
+      </template>
+    </XBar>
 
-      <!-- Pagination (mobile) -->
-      <div v-if="meta.last_page > 1" class="d-md-none d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <small class="text-medium-emphasis">
-          {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
-        </small>
-        <CPagination :aria-label="t('common.pagination')" size="sm">
-          <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; load()">{{ t('common.first') }}</CPaginationItem>
-          <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; load()">{{ p }}</CPaginationItem>
-          <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; load()">{{ t('common.last') }}</CPaginationItem>
-        </CPagination>
-      </div>
-
-      <!-- Desktop table -->
-      <CCard class="d-none d-md-block">
-        <!-- Filter bar -->
-        <CCardBody class="p-2 border-bottom">
-          <div class="d-flex align-items-center gap-2 flex-nowrap overflow-auto">
-            <CFormSelect v-model="filters.status" @update:modelValue="page = 1; load()" size="sm" style="min-width:130px; flex:1;">
-              <option value="">{{ t('common.allStatuses') }}</option>
-              <option value="active">{{ t('installments.ongoing') }}</option>
-              <option value="completed">{{ t('installments.completed') }}</option>
-            </CFormSelect>
-            <CFormInput v-model="filters.search" :placeholder="t('installments.searchPlaceholder')" @input="debouncedLoad" size="sm" style="min-width:180px; flex:2;" />
-            <CButton color="primary" size="sm" @click="showBulkModal = true" style="white-space:nowrap; flex-shrink:0;">📋 {{ t('installments.bulkByClass') }}</CButton>
-          </div>
-        </CCardBody>
-        <CCardBody class="p-0">
-          <CTable hover class="mb-0" style="width:100%;">
-            <CTableHead class="table-light">
-              <CTableRow>
-                <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.student') }}</CTableHeaderCell>
-                <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.invoice') }}</CTableHeaderCell>
-                <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.totalInst') }}</CTableHeaderCell>
-                <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.paid', 'Paid') }}</CTableHeaderCell>
-                <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.amountPerInst', 'Amount/Installment') }}</CTableHeaderCell>
-                <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.nextDue') }}</CTableHeaderCell>
-                <CTableHeaderCell style="white-space:nowrap;">{{ t('installments.progress') }}</CTableHeaderCell>
-                <CTableHeaderCell style="white-space:nowrap;">{{ t('common.status') }}</CTableHeaderCell>
-                <CTableHeaderCell style="white-space:nowrap; width:56px;">{{ t('common.actions') }}</CTableHeaderCell>
-              </CTableRow>
-            </CTableHead>
-            <CTableBody>
-              <CTableRow v-for="plan in installments" :key="plan.id">
-                <CTableDataCell>
-                  <div class="fw-semibold" style="white-space:nowrap;">{{ plan.student?.full_name }}</div>
-                  <div class="small text-muted">{{ plan.student?.admission_number }}</div>
-                </CTableDataCell>
-                <CTableDataCell style="white-space:nowrap;">{{ plan.invoice?.invoice_number }}</CTableDataCell>
-                <CTableDataCell style="white-space:nowrap;">{{ plan.installments_paid || 0 }} / {{ plan.total_installments }}</CTableDataCell>
-                <CTableDataCell style="white-space:nowrap;">{{ formatAmount(plan.paid_amount_cents || 0) }}</CTableDataCell>
-                <CTableDataCell class="text-danger fw-semibold" style="white-space:nowrap;">{{ formatAmount(plan.installment_amount_cents - (plan.paid_amount_cents || 0)) }}</CTableDataCell>
-                <CTableDataCell style="white-space:nowrap;">{{ plan.next_due_date || '—' }}</CTableDataCell>
-                <CTableDataCell style="min-width:120px;">
-                  <CProgress :value="progressPct(plan)" color="success" style="height:8px;" />
-                  <span class="small text-muted">{{ progressPct(plan) }}%</span>
-                </CTableDataCell>
-                <CTableDataCell style="white-space:nowrap;">
-                  <CBadge :color="plan.status === 'completed' || plan.status === 'paid' ? 'success' : 'warning'">
-                    {{ plan.status === 'completed' || plan.status === 'paid' ? t('installments.completed') : (plan.status === 'partial' ? t('statusBadge.partial') : t('installments.ongoing')) }}
-                  </CBadge>
-                </CTableDataCell>
-                <CTableDataCell style="position:relative; min-width:56px; text-align:center; white-space:nowrap;">
-                  <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === plan.id ? null : plan.id">👁️</CButton>
-                  <div v-if="activeRow === plan.id"
-                       style="position:absolute; bottom:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
-                       @click.stop>
-                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(plan); activeRow = null">👁️ {{ t('common.view') }}</CButton>
-                    <CButton v-if="plan.status !== 'completed' && plan.status !== 'paid'" size="sm" color="primary" variant="ghost" class="text-start" @click="recordPayment(plan); activeRow = null">💳 {{ t('installments.recordPayment') }}</CButton>
-                  </div>
-                </CTableDataCell>
-              </CTableRow>
-              <CTableRow v-if="!installments.length">
-                <CTableDataCell colspan="9" class="text-center text-muted py-4">{{ t('installments.noPlans') }}</CTableDataCell>
-              </CTableRow>
-            </CTableBody>
-          </CTable>
-        </CCardBody>
-      </CCard>
-
-      <!-- Pagination (desktop) -->
-      <div v-if="meta.last_page > 1" class="d-none d-md-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-        <small class="text-medium-emphasis">
-          {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
-        </small>
-        <CPagination :aria-label="t('common.pagination')" size="sm">
-          <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; load()">{{ t('common.first') }}</CPaginationItem>
-          <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; load()">{{ p }}</CPaginationItem>
-          <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; load()">{{ t('common.last') }}</CPaginationItem>
-        </CPagination>
-      </div>
-    </div>
+    <XGrid v-model:selected-id="selectedId" :columns="columns" :rows="installments" :loading="loading" :empty="t('installments.noPlans')"
+           :min-width="1000" :menu="menuFor" :row-class="rowClass" @open="openView">
+      <template #cell-student="{ row }">
+        <div class="xg-two"><span class="xg-name">{{ row.student?.full_name }}</span><span class="xg-sub">{{ row.student?.admission_number }}</span></div>
+      </template>
+      <template #cell-invoice="{ row }"><span class="xg-mono">{{ row.invoice?.invoice_number }}</span></template>
+      <template #cell-count="{ row }">{{ row.installments_paid || 0 }} / {{ row.total_installments }}</template>
+      <template #cell-paid="{ row }"><span class="xg-in">{{ formatAmount(row.paid_amount_cents || 0) }}</span></template>
+      <template #cell-due="{ row }"><span class="xg-out">{{ formatAmount(row.installment_amount_cents - (row.paid_amount_cents || 0)) }}</span></template>
+      <template #cell-next_due_date="{ row }"><span class="xg-mono">{{ row.next_due_date || '—' }}</span></template>
+      <template #cell-progress="{ row }">
+        <CProgress :value="progressPct(row)" color="success" style="height:8px;" />
+      </template>
+      <template #cell-status="{ row }">
+        <span class="xg-pill" :class="isDone(row) ? 'xg-pill--green' : 'xg-pill--amber'">{{ isDone(row) ? t('installments.completed', 'Paid') : (row.status === 'partial' ? 'Partial' : t('installments.ongoing', 'Ongoing')) }}</span>
+      </template>
+    </XGrid>
 
     <!-- View Installment Plan Modal -->
     <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
@@ -150,7 +55,7 @@
           <CCol xs="12" sm="6">
             <div class="text-muted small fw-semibold mb-1">{{ t('common.status') }}</div>
             <CBadge :color="viewTarget.status === 'completed' || viewTarget.status === 'paid' ? 'success' : 'warning'" shape="rounded-pill">
-              {{ viewTarget.status === 'completed' || viewTarget.status === 'paid' ? t('installments.completed') : (viewTarget.status === 'partial' ? 'Partial' : t('installments.ongoing', 'Ongoing')) }}
+              {{ viewTarget.status === 'completed' || viewTarget.status === 'paid' ? t('installments.completed', 'Paid') : (viewTarget.status === 'partial' ? 'Partial' : t('installments.ongoing', 'Ongoing')) }}
             </CBadge>
           </CCol>
           <CCol xs="12" sm="6">
@@ -204,13 +109,13 @@
 
         <!-- Expected amount display (shows remaining balance) -->
         <div class="rounded p-3 mb-3" style="background:#f0f4ff; border-left:4px solid #6366f1">
-          <div class="small text-muted mb-1">{{ t('installments.balanceForInstallment') }}</div>
+          <div class="small text-muted mb-1">{{ t('ui.installmentList.balanceToPayForThis') }}</div>
           <div class="fs-4 fw-bold text-primary">{{ formatAmount(selectedPlan.installment_amount_cents - (selectedPlan.paid_amount_cents || 0)) }}</div>
         </div>
 
         <!-- Customize Amount Toggle -->
         <div class="mb-2 d-flex align-items-center justify-content-between">
-          <label class="form-label fw-semibold mb-0 small">{{ t('installments.customizeAmount') }}</label>
+          <label class="form-label fw-semibold mb-0 small">{{ t('ui.installmentList.customizeAmount') }}</label>
           <div class="form-check form-switch mb-0">
             <input class="form-check-input" type="checkbox" role="switch"
                    id="customAmountToggle" v-model="customizeAmount"
@@ -230,7 +135,7 @@
                   v-model.number="customAmountTzs"
                   :min="1"
                   :max="maxCustomAmountTzs"
-                  :placeholder="t('installments.maxPlaceholder', { amount: formatAmount(selectedPlan.installment_amount_cents - (selectedPlan.paid_amount_cents||0)) })"
+                  :placeholder="`Max: ${formatAmount(selectedPlan.installment_amount_cents - (selectedPlan.paid_amount_cents||0))}`"
                   @input="validateCustomAmount"
                   style="min-height:44px; font-size:1rem;"
                 />
@@ -242,10 +147,10 @@
               <CIcon icon="cilWarning" class="me-1" size="sm" />{{ customAmountError }}
             </div>
             <div v-else-if="customAmountTzs > 0" class="text-success small mt-1">
-              {{ t('installments.recordingAmount', { amount: customAmountTzs.toLocaleString(), pct: pctOfExpected }) }}
+              {{ t('ui.installmentList.recordingTzs') }} {{ customAmountTzs.toLocaleString() }} ({{ pctOfExpected }}{{ t('ui.installmentList.ofExpected') }}
             </div>
             <div class="text-muted" style="font-size:.72rem; margin-top:3px;">
-              {{ t('installments.maxAllowed', { amount: formatAmount(selectedPlan.installment_amount_cents - (selectedPlan.paid_amount_cents || 0)) }) }}
+              {{ t('ui.installmentList.maxAllowedRemainingBalance') }} {{ formatAmount(selectedPlan.installment_amount_cents - (selectedPlan.paid_amount_cents || 0)) }}
             </div>
           </div>
         </Transition>
@@ -257,7 +162,7 @@
         <CButton color="primary" :disabled="paying || (customizeAmount && !!customAmountError) || (customizeAmount && !customAmountTzs)"
                  @click="confirmPayment" style="min-height:44px; min-width:110px;">
           <CSpinner v-if="paying" size="sm" class="me-1" />
-          {{ customizeAmount ? t('installments.confirmAmountBtn', { amount: (customAmountTzs||0).toLocaleString() }) : t('common.confirm') }}
+          {{ customizeAmount ? `Pay TZS ${(customAmountTzs||0).toLocaleString()}` : t('common.confirm') }}
         </CButton>
       </CModalFooter>
     </CModal>
@@ -267,15 +172,16 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { CPagination, CPaginationItem } from '@coreui/vue'
 import { useInstallmentsStore } from '@/stores/installments'
 import BulkInstallmentModal from '@/components/BulkInstallmentModal.vue'
+import XStats from '@/components/XStats.vue'
+import XBar from '@/components/XBar.vue'
+import XGrid from '@/components/XGrid.vue'
 
 const { t } = useI18n()
 const store = useInstallmentsStore()
 const installments = ref([])
 const loading = ref(false)
-const activeRow = ref(null)
 const showViewModal = ref(false)
 const viewTarget = ref(null)
 const filters = ref({ status: '', search: '' })
@@ -283,14 +189,37 @@ const page = ref(1)
 const meta = ref({ total: 0, last_page: 1, per_page: 20, current_page: 1 })
 const showBulkModal = ref(false)
 
-const visiblePages = computed(() => {
-  const total = meta.value.last_page
-  const cur   = meta.value.current_page
-  const delta = 2
-  const start = Math.max(1, cur - delta)
-  const end   = Math.min(total, cur + delta)
-  return Array.from({ length: end - start + 1 }, (_, i) => start + i)
-})
+const perPage = ref('20')
+const selectedId = ref(null)
+const selected = computed(() => installments.value.find(p => p.id === selectedId.value) || null)
+const hasFilters = computed(() => !!(filters.value.status || filters.value.search))
+const summary = computed(() => store.summary || {})
+const isDone = (p) => p.status === 'completed' || p.status === 'paid'
+const canPay = (p) => !!p && !isDone(p)
+const rowClass = (p) => (isDone(p) ? 'xg-row--good' : '')
+const columns = computed(() => [
+  { key: 'student', label: t('installments.student'), w: 'minmax(170px, 2fr)' },
+  { key: 'invoice', label: t('installments.invoice'), w: 'minmax(120px, 1.1fr)' },
+  { key: 'count', label: t('installments.totalInst'), w: 'minmax(90px, .8fr)' },
+  { key: 'paid', label: t('installments.paid', 'Paid'), w: 'minmax(110px, 1fr)', align: 'end' },
+  { key: 'due', label: t('installments.amountRemaining'), w: 'minmax(110px, 1fr)', align: 'end' },
+  { key: 'next_due_date', label: t('installments.nextDue'), w: 'minmax(100px, .9fr)' },
+  { key: 'progress', label: t('installments.progress'), w: 'minmax(100px, 1fr)' },
+  { key: 'status', label: t('common.status'), w: 'minmax(90px, .9fr)' },
+])
+const cards = computed(() => [
+  { label: t('installments.title', 'Installments'), value: summary.value.count ?? meta.value.total, tone: 'gray' },
+  { label: t('installments.ongoing'), value: summary.value.ongoing ?? 0, tone: 'amber' },
+  { label: t('installments.completed'), value: summary.value.completed ?? 0, tone: 'green' },
+  { label: t('installments.amountPaid'), value: formatAmount(summary.value.paid_cents), tone: 'blue' },
+  { label: t('installments.amountRemaining'), value: formatAmount((summary.value.expected_cents || 0) - (summary.value.paid_cents || 0)), tone: 'red' },
+])
+const menuFor = (p) => [
+  { label: '🔍 ' + t('common.view'), run: openView },
+  ...(canPay(p) ? [{ label: '💳 ' + t('installments.recordPayment'), run: recordPayment }] : []),
+]
+function goPage(n) { page.value = typeof n === 'number' ? n : 1; load() }
+function resetFilters() { filters.value = { status: '', search: '' }; goPage(1) }
 const showPayModal = ref(false)
 const selectedPlan = ref(null)
 const paying = ref(false)
@@ -322,7 +251,7 @@ function progressPct(plan) {
 async function load() {
   loading.value = true
   try {
-    const params = { page: page.value }
+    const params = { page: page.value, per_page: perPage.value }
     if (filters.value.status) params.status = filters.value.status
     if (filters.value.search) params.search = filters.value.search
     await store.fetchInstallments(params)
@@ -364,11 +293,11 @@ function validateCustomAmount() {
   const max = maxCustomAmountTzs.value
   const val = customAmountTzs.value
   if (!val && val !== 0) {
-    customAmountError.value = t('installments.amountRequiredError')
+    customAmountError.value = t('payments.noAmount')
   } else if (val <= 0) {
-    customAmountError.value = t('installments.amountPositiveError')
+    customAmountError.value = t('ui.installmentList.amountMustBeGreaterThan')
   } else if (val > max) {
-    customAmountError.value = t('installments.amountExceedsError', { amount: formatAmount(selectedPlan.value?.installment_amount_cents) })
+    customAmountError.value = `Amount cannot exceed the expected ${formatAmount(selectedPlan.value?.installment_amount_cents)}.`
   } else {
     customAmountError.value = ''
   }
@@ -392,7 +321,7 @@ async function confirmPayment() {
     closePayModal()
     await load()
   } catch (e) {
-    payError.value = e?.response?.data?.message || t('common.actionFailed')
+    payError.value = e?.response?.data?.message || 'Imeshindwa'
   } finally {
     paying.value = false
   }
@@ -403,21 +332,14 @@ function onBulkDone() {
   load()
 }
 
-function onDocClick() { activeRow.value = null }
-
 onMounted(() => {
-  document.addEventListener('click', onDocClick)
   load()
 })
 
-onUnmounted(() => {
-  document.removeEventListener('click', onDocClick)
-})
+onUnmounted(() => clearTimeout(debounceTimer))
 </script>
 
 <style scoped>
-:deep(.table-responsive) { overflow: visible; }
-:deep(.card) { overflow: visible; }
 /* Smooth reveal animation for the custom amount input */
 .slide-fade-enter-active {
   transition: all 0.2s ease-out;

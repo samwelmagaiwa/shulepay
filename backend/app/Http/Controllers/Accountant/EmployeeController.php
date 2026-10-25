@@ -14,31 +14,47 @@ class EmployeeController extends Controller
 {
     public function active(Request $request): JsonResponse
     {
-        $schoolId = $request->integer('school_id') ?: ((int) $request->header('X-School-Id') ?: null);
-
-        $query = Employee::select('id', 'full_name', 'department', 'role', 'staff_number', 'school_id')
+        $columns = ['id', 'full_name', 'department', 'role', 'staff_number'];
+        $query = Employee::select($columns)
             ->where('status', 'active')
             ->orderBy('full_name');
 
-        if ($schoolId) {
-            $query->where('school_id', $schoolId);
+        if (! $this->isTenantMode()) {
+            $schoolId = $this->schoolIdForQuery($request);
+            if ($schoolId) {
+                $query->where('school_id', $schoolId);
+            }
         }
 
         return response()->json($query->get());
     }
 
+    /** The list filters, shared by the page and its totals. `inactive` means anyone not currently working. */
+    private function filtered(Request $request, $query)
+    {
+        return $query
+            ->when($request->status === 'inactive', fn ($q) => $q->where('status', '!=', 'active'))
+            ->when($request->filled('status') && $request->status !== 'inactive', fn ($q) => $q->where('status', $request->status))
+            ->when($request->filled('department'), fn ($q) => $q->where('department', $request->department))
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $term = '%'.addcslashes(trim((string) $request->search), '%_\\').'%';
+                $q->where(fn ($w) => $w->where('full_name', 'like', $term)->orWhere('staff_number', 'like', $term)
+                    ->orWhere('role', 'like', $term)->orWhere('department', 'like', $term));
+            });
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Employee::with('school')->latest();
+        $query = $this->filtered($request, Employee::with('school')->latest());
+        $by = $this->filtered($request, Employee::query())->selectRaw('status, COUNT(*) AS n, SUM(basic_salary_cents) AS cents')->groupBy('status')->get();
+        $active = $by->firstWhere('status', 'active');
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-        if ($request->filled('department')) {
-            $query->where('department', $request->department);
-        }
-
-        return EmployeeResource::collection($query->paginate(20));
+        return EmployeeResource::collection($query->paginate(min(max($request->integer('per_page', 20), 5), 200)))->additional(['summary' => [
+            'total' => (int) $by->sum('n'),
+            'active' => (int) ($active->n ?? 0),
+            'not_working' => (int) $by->where('status', '!=', 'active')->sum('n'),
+            'monthly_basic_cents' => (int) ($active->cents ?? 0),
+        ]]);
     }
 
     public function store(Request $request): JsonResponse
@@ -90,6 +106,6 @@ class EmployeeController extends Controller
         AuditLog::record('employee.deleted', $employee, $employee->toArray(), []);
         $employee->delete();
 
-        return response()->json(['message' => __('Employee deleted.')]);
+        return response()->json(['message' => __('messages.employee_deleted')]);
     }
 }

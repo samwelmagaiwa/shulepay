@@ -1,130 +1,32 @@
 <template>
-  <CContainer fluid class="p-2 p-md-3">
-    <!-- Header -->
-    <CRow class="align-items-center mb-3 g-2">
-      <CCol>
-        <h5 class="fw-bold mb-0">{{ t('refunds.title') }}</h5>
-        <p class="text-muted small mb-0">{{ t('refunds.subtitle') }}</p>
-      </CCol>
-      <CCol xs="auto">
-        <CButton color="primary" size="sm" @click="openAddModal" style="min-height:44px;">
-          <CIcon icon="cilPlus" class="me-1" /> {{ t('refunds.add') }}
-        </CButton>
-      </CCol>
-    </CRow>
+  <CContainer fluid class="xg-page">
+    <XStats :cards="cards" />
+    <CAlert v-if="store.error" color="danger" class="xg-alert">{{ store.error }}</CAlert>
 
-    <!-- Filters -->
-    <CCard class="mb-3">
-      <CCardBody class="p-2">
-        <CRow class="g-2">
-          <CCol xs="12" sm="6" md="4">
-            <CFormInput v-model="filters.search" :placeholder="t('refunds.searchPlaceholder')" size="sm" @input="debouncedLoad" />
-          </CCol>
-          <CCol xs="6" sm="3" md="2">
-            <CFormInput v-model="filters.date_from" type="date" size="sm" @update:modelValue="page = 1; loadData()" />
-          </CCol>
-          <CCol xs="6" sm="3" md="2">
-            <CFormInput v-model="filters.date_to" type="date" size="sm" @update:modelValue="page = 1; loadData()" />
-          </CCol>
-          <CCol xs="6" sm="3" md="2">
-            <CButton size="sm" color="secondary" variant="outline" class="w-100" @click="resetFilters">{{ t('refunds.resetFilters') }}</CButton>
-          </CCol>
-        </CRow>
-      </CCardBody>
-    </CCard>
+    <XBar :meta="meta" v-model:per-page="perPage" :filters-active="hasFilters" @page="goPage" @update:per-page="goPage(1)">
+      <template #actions>
+        <CButton color="success" size="sm" @click="openAddModal"><CIcon icon="cilPlus" class="me-1" /> {{ t('refunds.add') }}</CButton>
+      </template>
+      <template #filters>
+        <CFormInput v-model="filters.search" class="xg-grow" :placeholder="t('refunds.searchPlaceholder')" @input="debouncedLoad" />
+        <CFormInput v-model="filters.date_from" type="date" @update:modelValue="goPage(1)" />
+        <CFormInput v-model="filters.date_to" type="date" @update:modelValue="goPage(1)" />
+        <CButton color="secondary" variant="outline" size="sm" @click="resetFilters">{{ t('refunds.resetFilters') }}</CButton>
+      </template>
+      <template #toolbar>
+        <button class="xg-tb-btn" :disabled="!selected" @click="selected && openView(selected)">🔍 {{ t('common.view') }}</button>
+        <button v-if="auth.isOwner" class="xg-tb-btn is-danger" :disabled="!selected" @click="selected && confirmDelete(selected)">🗑️ {{ t('common.delete') }}</button>
+      </template>
+    </XBar>
 
-    <!-- Loading / Error -->
-    <div v-if="store.loading" class="text-center py-5"><CSpinner color="primary" /></div>
-    <CAlert v-else-if="store.error" color="danger">{{ store.error }}</CAlert>
-
-    <!-- Desktop Table -->
-    <CCard v-else class="d-none d-md-block">
-      <CCardBody class="p-0">
-        <CTable responsive hover class="mb-0 align-middle">
-          <CTableHead class="table-light">
-            <CTableRow>
-              <CTableHeaderCell>{{ t('common.student') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('refunds.invoiceNo') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('common.reason') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('common.method') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('common.amount') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('common.date') }}</CTableHeaderCell>
-              <CTableHeaderCell class="text-center" style="width:56px;">{{ t('common.actions') }}</CTableHeaderCell>
-            </CTableRow>
-          </CTableHead>
-          <CTableBody>
-            <CTableRow v-for="r in store.refunds" :key="r.id">
-              <CTableDataCell>
-                <div class="fw-semibold">{{ r.student?.full_name || r.invoice?.student?.full_name }}</div>
-                <div class="text-muted small">{{ r.student?.admission_number || r.invoice?.student?.admission_number }}</div>
-              </CTableDataCell>
-              <CTableDataCell class="small">{{ r.invoice?.invoice_number || '—' }}</CTableDataCell>
-              <CTableDataCell class="small">{{ r.reason }}</CTableDataCell>
-              <CTableDataCell><CBadge color="info" shape="rounded-pill">{{ methodLabel(r.method) }}</CBadge></CTableDataCell>
-              <CTableDataCell class="fw-bold text-warning">{{ formatTZS(r.amount_cents) }}</CTableDataCell>
-              <CTableDataCell class="small">{{ r.refunded_at?.slice(0,10) }}</CTableDataCell>
-              <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
-                <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === r.id ? null : r.id">👁️</CButton>
-                <div v-if="activeRow === r.id"
-                     style="position:absolute; bottom:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
-                     @click.stop>
-                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(r); activeRow = null">👁️ {{ t('common.view') }}</CButton>
-                  <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(r); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
-                </div>
-              </CTableDataCell>
-            </CTableRow>
-            <CTableRow v-if="!store.refunds.length">
-              <CTableDataCell colspan="7" class="text-center text-muted py-5">{{ t('refunds.noRefunds') }}</CTableDataCell>
-            </CTableRow>
-          </CTableBody>
-        </CTable>
-      </CCardBody>
-    </CCard>
-
-    <!-- Pagination -->
-    <div v-if="meta.last_page > 1" class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-      <small class="text-medium-emphasis">
-        {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
-      </small>
-      <CPagination :aria-label="t('common.pagination')" size="sm">
-        <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; loadData()">{{ t('common.first') }}</CPaginationItem>
-        <CPaginationItem
-          v-for="p in visiblePages"
-          :key="p"
-          :active="p === meta.current_page"
-          @click="page = p; loadData()"
-        >{{ p }}</CPaginationItem>
-        <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; loadData()">{{ t('common.last') }}</CPaginationItem>
-      </CPagination>
-    </div>
-
-    <!-- Mobile Cards -->
-    <div v-if="!store.loading && !store.error" class="d-md-none">
-      <div v-if="!store.refunds.length" class="text-center text-muted py-5">{{ t('refunds.noRefunds') }}</div>
-      <div v-for="r in store.refunds" :key="r.id" class="mb-2">
-        <CCard>
-          <CCardBody class="p-3">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                <div class="fw-bold">{{ r.student?.full_name || r.invoice?.student?.full_name }}</div>
-                <div class="text-muted small">{{ r.invoice?.invoice_number }}</div>
-              </div>
-              <div class="fw-bold text-warning fs-5">{{ formatTZS(r.amount_cents) }}</div>
-            </div>
-            <div class="d-flex justify-content-between align-items-center mt-2">
-              <div>
-                <CBadge color="info" shape="rounded-pill" class="me-2">{{ methodLabel(r.method) }}</CBadge>
-                <span class="text-muted small">{{ r.refunded_at?.slice(0,10) }}</span>
-              </div>
-              <CButton size="sm" color="danger" variant="ghost" @click="confirmDelete(r)">
-                <CIcon icon="cilTrash" />
-              </CButton>
-            </div>
-            <div v-if="r.reason" class="text-muted small mt-1">{{ r.reason }}</div>
-          </CCardBody>
-        </CCard>
-      </div>
-    </div>
+    <XGrid v-model:selected-id="selectedId" :columns="columns" :rows="store.refunds" :loading="store.loading" :empty="t('refunds.noRefunds')"
+           :min-width="900" :menu="menuFor" row-class="xg-row--warn" @open="openView">
+      <template #cell-refunded_at="{ row }"><span class="xg-mono">{{ row.refunded_at?.slice(0, 10) }}</span></template>
+      <template #cell-student="{ row }"><span class="xg-name">{{ row.student?.full_name || '—' }}</span></template>
+      <template #cell-invoice_number="{ row }"><span class="xg-mono">{{ row.invoice_number || '—' }}</span></template>
+      <template #cell-method="{ row }"><span class="xg-pill xg-pill--blue">{{ methodLabel(row.method) }}</span></template>
+      <template #cell-amount_cents="{ row }"><span class="xg-out">{{ formatTZS(row.amount_cents) }}</span></template>
+    </XGrid>
 
     <!-- View Refund Modal -->
     <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
@@ -194,7 +96,7 @@
             <!-- Amount -->
             <div class="mb-3">
               <label class="form-label fw-semibold">{{ t('refunds.amountLabel') }} <span class="text-danger">*</span></label>
-              <CFormInput type="number" v-model.number="addForm.amount" min="1" :placeholder="t('common.exampleValue', { value: '20000' })" />
+              <CFormInput type="number" v-model.number="addForm.amount" min="1" placeholder="e.g. 20000" />
             </div>
           </CCol>
 
@@ -251,28 +153,48 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { CPagination, CPaginationItem } from '@coreui/vue'
 import { useRefundsStore } from '@/stores/refunds'
 import api from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
+import XStats from '@/components/XStats.vue'
+import XBar from '@/components/XBar.vue'
+import XGrid from '@/components/XGrid.vue'
 
 const { t } = useI18n()
 
 const store = useRefundsStore()
-const activeRow = ref(null)
+const auth = useAuthStore()
 const showViewModal = ref(false)
 const viewTarget = ref(null)
 const filters = ref({ search: '', date_from: '', date_to: '' })
 const page = ref(1)
 const meta = ref({ total: 0, last_page: 1, per_page: 20, current_page: 1 })
 
-const visiblePages = computed(() => {
-  const total = meta.value.last_page
-  const cur   = meta.value.current_page
-  const delta = 2
-  const start = Math.max(1, cur - delta)
-  const end   = Math.min(total, cur + delta)
-  return Array.from({ length: end - start + 1 }, (_, i) => start + i)
-})
+const perPage = ref('20')
+const selectedId = ref(null)
+const selected = computed(() => store.refunds.find(r => r.id === selectedId.value) || null)
+const hasFilters = computed(() => Object.values(filters.value).some(Boolean))
+const summary = computed(() => store.summary || {})
+const columns = computed(() => [
+  { key: 'refunded_at', label: t('common.date'), w: 'minmax(100px, .9fr)' },
+  { key: 'student', label: t('common.student'), w: 'minmax(170px, 2fr)' },
+  { key: 'invoice_number', label: t('refunds.invoiceNo'), w: 'minmax(120px, 1.1fr)' },
+  { key: 'reason', label: t('common.reason'), w: 'minmax(180px, 2fr)' },
+  { key: 'method', label: t('common.method'), w: 'minmax(90px, .9fr)' },
+  { key: 'refunded_by', label: t('expensex.col.recordedBy'), w: 'minmax(110px, 1fr)' },
+  { key: 'amount_cents', label: t('common.amount'), w: 'minmax(120px, 1.1fr)', align: 'end' },
+])
+const cards = computed(() => [
+  { label: t('refunds.title'), value: (summary.value.count ?? 0).toLocaleString(), tone: 'gray' },
+  { label: t('common.total'), value: formatTZS(summary.value.total_cents), tone: 'red' },
+  { label: t('expensex.cards.month'), value: formatTZS(summary.value.month_cents), tone: 'amber' },
+])
+// only the owner / admin removes a refund from the books
+const menuFor = () => [
+  { label: '🔍 ' + t('common.view'), run: openView },
+  ...(auth.isOwner ? [{ label: '🗑️ ' + t('common.delete'), run: confirmDelete, danger: true }] : []),
+]
+function goPage(p) { page.value = typeof p === 'number' ? p : 1; loadData() }
 const showAddModal = ref(false)
 const showDeleteModal = ref(false)
 const saving = ref(false)
@@ -296,7 +218,7 @@ function methodLabel(m) {
 }
 
 async function loadData() {
-  const params = { page: page.value }
+  const params = { page: page.value, per_page: perPage.value }
   if (filters.value.search) params.search = filters.value.search
   if (filters.value.date_from) params.date_from = filters.value.date_from
   if (filters.value.date_to) params.date_to = filters.value.date_to
@@ -378,8 +300,3 @@ async function doDelete() {
 
 onMounted(async () => { try { await loadData() } catch {} })
 </script>
-
-<style scoped>
-:deep(.table-responsive) { overflow: visible; }
-:deep(.card) { overflow: visible; }
-</style>

@@ -16,7 +16,8 @@ class Payroll extends Model
     protected $fillable = [
         'school_id', 'employee_id', 'month', 'year',
         'basic_salary_cents', 'allowances_cents', 'deductions_cents', 'net_salary_cents',
-        'payment_method', 'payment_date', 'status', 'recorded_by',
+        'paye_cents', 'nssf_employee_cents', 'nssf_employer_cents', 'wcf_cents', 'sdl_cents',
+        'notes', 'payment_method', 'payment_date', 'status', 'recorded_by',
     ];
 
     protected $casts = [
@@ -24,6 +25,11 @@ class Payroll extends Model
         'allowances_cents' => MoneyCast::class,
         'deductions_cents' => MoneyCast::class,
         'net_salary_cents' => MoneyCast::class,
+        'paye_cents' => MoneyCast::class,
+        'nssf_employee_cents' => MoneyCast::class,
+        'nssf_employer_cents' => MoneyCast::class,
+        'wcf_cents' => MoneyCast::class,
+        'sdl_cents' => MoneyCast::class,
         'payment_date' => 'date',
     ];
 

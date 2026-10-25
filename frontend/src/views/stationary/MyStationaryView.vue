@@ -1,73 +1,29 @@
 <template>
-  <CContainer fluid class="py-3 px-3">
+  <CContainer fluid class="xg-page">
+    <XStats :cards="cards" />
+    <CAlert v-if="error" color="danger" dismissible class="xg-alert" @close="error=''">{{ error }}</CAlert>
 
-    <!-- Tab bar + Request button on same row -->
-    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-      <div class="d-flex gap-1 flex-wrap">
-        <button
-          v-for="tab in tabs" :key="tab.value"
-          class="btn btn-sm"
-          :class="activeTab === tab.value ? 'btn-success' : 'btn-outline-secondary'"
-          @click="activeTab = tab.value">
-          {{ tab.label }}
-          <span v-if="tab.count" class="badge ms-1"
-            :class="activeTab === tab.value ? 'bg-white text-success' : 'bg-secondary'">
-            {{ tab.count }}
-          </span>
+    <XBar :meta="{}" no-per-page :total="filtered.length">
+      <template #actions>
+        <CButton color="success" size="sm" @click="openRequest">+ {{ t('stationary.request') }}</CButton>
+      </template>
+      <template #toolbar>
+        <button v-for="tab in tabs" :key="tab.value" class="xg-tb-btn" :class="{ 'is-active': activeTab === tab.value }" @click="activeTab = tab.value">
+          {{ tab.label }}<span v-if="tab.count"> ({{ tab.count }})</span>
         </button>
-      </div>
-      <button class="btn btn-success btn-sm ms-auto" @click="openRequest">
-        + {{ t('stationary.request') }}
-      </button>
-    </div>
+      </template>
+    </XBar>
 
-    <CAlert v-if="error" color="danger" dismissible @close="error=''">{{ error }}</CAlert>
-    <div v-if="loading" class="text-center py-4"><CSpinner size="sm" /> {{ t('common.loading') }}</div>
-
-    <!-- Requests table -->
-    <CCard v-else class="border-0 shadow-sm">
-      <CCardBody class="p-0">
-        <div class="table-responsive">
-          <CTable hover small class="align-middle mb-0">
-            <CTableHead class="table-light">
-              <CTableRow>
-                <CTableHeaderCell>{{ t('stationary.item') }}</CTableHeaderCell>
-                <CTableHeaderCell class="text-center">{{ t('stationary.qty') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('stationary.reason') }}</CTableHeaderCell>
-                <CTableHeaderCell class="text-center">{{ t('common.status') }}</CTableHeaderCell>
-                <CTableHeaderCell class="text-end">{{ t('common.date') }}</CTableHeaderCell>
-              </CTableRow>
-            </CTableHead>
-            <CTableBody>
-              <CTableRow v-for="r in filtered" :key="r.id">
-                <CTableDataCell class="fw-semibold">{{ r.item_name }}</CTableDataCell>
-                <CTableDataCell class="text-center">
-                  {{ r.quantity_requested }} {{ r.unit }}
-                  <span v-if="r.quantity_provided" class="text-success small d-block">
-                    ✓ {{ r.quantity_provided }} {{ t('stationary.given') }}
-                  </span>
-                </CTableDataCell>
-                <CTableDataCell class="text-muted small" style="max-width:200px; white-space:pre-wrap;">
-                  {{ r.reason || '—' }}
-                </CTableDataCell>
-                <CTableDataCell class="text-center">
-                  <CBadge :color="statusColor(r.status)" class="px-2">{{ t(`stationary.${r.status}`) }}</CBadge>
-                  <div v-if="r.status === 'rejected' && r.rejection_reason" class="text-danger small mt-1">
-                    {{ r.rejection_reason }}
-                  </div>
-                </CTableDataCell>
-                <CTableDataCell class="text-end text-muted small">{{ fmtDate(r.created_at) }}</CTableDataCell>
-              </CTableRow>
-              <CTableRow v-if="!filtered.length">
-                <CTableDataCell colspan="5" class="text-center text-muted py-4">
-                  {{ t('stationary.noRequests') }}
-                </CTableDataCell>
-              </CTableRow>
-            </CTableBody>
-          </CTable>
-        </div>
-      </CCardBody>
-    </CCard>
+    <XGrid v-model:selected-id="selId" :columns="columns" :rows="filtered" :loading="loading" :empty="t('stationary.noRequests')" :min-width="720" :row-class="rowClass">
+      <template #cell-item_name="{ row }"><span class="xg-name">{{ row.item_name }}</span></template>
+      <template #cell-qty="{ row }">
+        <div class="xg-two"><span>{{ row.quantity_requested }} {{ row.unit }}</span><span v-if="row.quantity_provided" class="xg-sub">✓ {{ row.quantity_provided }} {{ t('stationary.given') }}</span></div>
+      </template>
+      <template #cell-status="{ row }">
+        <div class="xg-two"><span class="xg-pill" :class="statusPill(row.status)">{{ t(`stationary.${row.status}`) }}</span><span v-if="row.status === 'rejected' && row.rejection_reason" class="xg-sub">{{ row.rejection_reason }}</span></div>
+      </template>
+      <template #cell-created_at="{ row }"><span class="xg-mono">{{ fmtDate(row.created_at) }}</span></template>
+    </XGrid>
 
     <!-- Request modal -->
     <CModal :visible="showForm" @close="showForm=false" backdrop="static" size="sm">
@@ -111,10 +67,12 @@
 </template>
 
 <script setup>
-import { dateLocale } from '@/utils/dates'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
+import XStats from '@/components/XStats.vue'
+import XBar from '@/components/XBar.vue'
+import XGrid from '@/components/XGrid.vue'
 
 const { t } = useI18n()
 
@@ -128,6 +86,22 @@ const showForm  = ref(false)
 const saving    = ref(false)
 const formError = ref('')
 const form      = ref({ item_id: '', quantity_requested: 1, reason: '' })
+
+
+// ── List design (same as the Expenses page) ──
+const selId = ref(null)
+const rowClass = (r) => ({ pending: 'xg-row--warn', provided: 'xg-row--good', rejected: 'xg-row--bad' }[r.status] || '')
+const statusPill = (st) => ({ pending: 'xg-pill--amber', approved: 'xg-pill--blue', provided: 'xg-pill--green', rejected: 'xg-pill--red' }[st] || 'xg-pill--gray')
+const columns = computed(() => [
+  { key: 'item_name', label: t('stationary.item'), w: 'minmax(150px, 1.6fr)' },
+  { key: 'qty', label: t('stationary.qty'), w: 'minmax(110px, 1fr)' },
+  { key: 'reason', label: t('stationary.reason'), w: 'minmax(170px, 2fr)' },
+  { key: 'status', label: t('common.status'), w: 'minmax(130px, 1.1fr)' },
+  { key: 'created_at', label: t('common.date'), w: 'minmax(90px, .8fr)' },
+])
+const cards = computed(() => ['pending', 'approved', 'provided', 'rejected'].map((k, i) => ({
+  label: t(`stationary.${k}`), value: requests.value.filter(r => r.status === k).length, tone: ['amber', 'blue', 'green', 'red'][i],
+})))
 
 const tabs = computed(() => {
   const counts = { pending: 0, approved: 0, provided: 0, rejected: 0 }
@@ -149,7 +123,7 @@ function statusColor(s) {
   return { pending: 'warning', approved: 'info', provided: 'success', rejected: 'danger' }[s] ?? 'secondary'
 }
 function fmtDate(d) {
-  return d ? new Date(d).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
+  return d ? new Date(d).toLocaleDateString('sw-TZ', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
 }
 
 async function load() {

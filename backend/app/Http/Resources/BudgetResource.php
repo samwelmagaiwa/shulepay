@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\Budget\BudgetActuals;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,13 +17,10 @@ class BudgetResource extends JsonResource
             'academic_year' => $this->whenLoaded('academicYear', fn () => $this->academicYear->name),
             'name' => $this->name,
             'status' => $this->status,
-            'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item) => [
-                'id' => $item->id,
-                'category' => $item->category,
-                'description' => $item->description,
-                'planned_cents' => $item->getRawOriginal('planned_cents'),
-                'actual_cents' => $item->getRawOriginal('actual_cents'),
-            ])),
+            // what was really spent, worked out from the approved expenses and refunds of the budget's year
+            'summary' => $this->whenLoaded('items', fn () => collect(app(BudgetActuals::class)->summary($this->resource))->except('lines')->all()),
+            'items' => $this->whenLoaded('items', fn () => app(BudgetActuals::class)->summary($this->resource)['lines']),
+            'period' => $this->whenLoaded('academicYear', fn () => [$this->academicYear?->start_date?->toDateString(), $this->academicYear?->end_date?->toDateString()]),
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),
         ];

@@ -10,6 +10,7 @@ use App\Services\AuditLogger;
 use App\Services\Sms\SmsService;
 use App\Services\Sms\SmsTemplates;
 use App\Support\NameSearch;
+use App\Support\Tenant;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,7 +26,7 @@ class InstallmentController extends Controller
         $query = InstallmentPlan::with(['invoice', 'student'])->latest();
 
         if ($request->filled('student_id')) {
-            $query->where('student_id', $request->integer('student_id'));
+            $query->whereHas('invoice', fn ($q) => $q->where('student_id', $request->integer('student_id')));
         }
 
         if ($request->filled('invoice_id')) {
@@ -44,7 +45,18 @@ class InstallmentController extends Controller
             );
         }
 
-        return InstallmentResource::collection($query->paginate(20));
+        // Totals of everything the filters match, for the cards
+        $by = (clone $query)->reorder()->selectRaw('status, COUNT(*) AS n, COALESCE(SUM(amount_cents), 0) AS expected, COALESCE(SUM(paid_amount_cents), 0) AS paid')
+            ->groupBy('status')->get();
+        $done = fn ($r) => in_array($r->status, ['completed', 'paid'], true);
+
+        return InstallmentResource::collection($query->paginate(min(max($request->integer('per_page', 20), 5), 200)))->additional(['summary' => [
+            'count' => (int) $by->sum('n'),
+            'ongoing' => (int) $by->reject($done)->sum('n'),
+            'completed' => (int) $by->filter($done)->sum('n'),
+            'expected_cents' => (int) $by->sum('expected'),
+            'paid_cents' => (int) $by->sum('paid'),
+        ]]);
     }
 
     public function store(Request $request): JsonResponse
@@ -62,13 +74,13 @@ class InstallmentController extends Controller
         $balanceDue = $invoice->balanceDueCents();
 
         if ($balanceDue <= 0) {
-            return response()->json(['message' => __('Invoice has no outstanding balance.')], 422);
+            return response()->json(['message' => __('messages.invoice_has_no_outstanding_balance')], 422);
         }
 
         // Check if installment plan already exists for this invoice
         $existing = InstallmentPlan::where('invoice_id', $invoice->id)->count();
         if ($existing > 0) {
-            return response()->json(['message' => __('An installment plan already exists for this invoice.')], 422);
+            return response()->json(['message' => __('messages.an_installment_plan_already_exists_for_this')], 422);
         }
 
         $installmentAmountCents = (int) ceil($balanceDue / $data['total_installments']);
@@ -137,7 +149,7 @@ class InstallmentController extends Controller
 
         // All unpaid/partial invoices for this class + term that don't already have a plan
         $invoices = Invoice::allSchools()
-            ->when(! empty($data['school_id']), fn ($q) => $q->where('school_id', $data['school_id']))
+            ->when(Tenant::scopeId($data['school_id'] ?? null), fn ($q) => $q->where('school_id', $data['school_id']))
             ->where('term_id', $data['term_id'])
             ->whereIn('status', ['unpaid', 'partial'])
             ->whereHas(
@@ -150,7 +162,7 @@ class InstallmentController extends Controller
 
         if ($invoices->isEmpty()) {
             return response()->json([
-                'message' => __('No eligible invoices found. All students in this class either have no outstanding balance or already have installment plans.'),
+                'message' => __('messages.no_eligible_invoices_found_all_students_in'),
                 'created' => 0,
                 'skipped' => 0,
             ], 200);
@@ -201,7 +213,7 @@ class InstallmentController extends Controller
         });
 
         return response()->json([
-            'message' => __('Installment plans created for :count student(s).', ['count' => $created]),
+            'message' => "Installment plans created for {$created} student(s).",
             'created' => $created,
         ], 201);
     }
@@ -222,12 +234,12 @@ class InstallmentController extends Controller
 
         if ((int) $data['installment_number'] !== (int) $installment->installment_number) {
             throw ValidationException::withMessages([
-                'installment_number' => __('Installment number does not match this record.'),
+                'installment_number' => 'Installment number does not match this record.',
             ]);
         }
 
         if ($installment->status === 'paid') {
-            return response()->json(['message' => __('This installment is already marked as paid.')], 422);
+            return response()->json(['message' => __('messages.this_installment_is_already_marked_as_paid')], 422);
         }
 
         // Determine the amount to record — adding new amount to existing paid amount

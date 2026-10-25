@@ -18,23 +18,38 @@ class PaymentController extends Controller
 {
     public function __construct(private PaymentProcessor $processor) {}
 
+    /** The filters of the list, applied to the page and to its totals. */
+    private function filtered(Request $request, $query, bool $withDates = true)
+    {
+        return $query
+            ->when($request->filled('method'), fn ($q) => $q->where('method', $request->method))
+            ->when($request->filled('student_id'), fn ($q) => $q->where('student_id', $request->student_id))
+            ->when($request->filled('date'), fn ($q) => $q->whereDate('paid_at', $request->date))
+            ->when($withDates && $request->filled('date_from'), fn ($q) => $q->whereDate('paid_at', '>=', $request->date_from))
+            ->when($withDates && $request->filled('date_to'), fn ($q) => $q->whereDate('paid_at', '<=', $request->date_to))
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $term = '%'.addcslashes(trim((string) $request->search), '%_\\').'%';
+                $q->where(fn ($w) => $w->where('reference_number', 'like', $term)->orWhere('notes', 'like', $term)
+                    ->orWhereHas('invoice', fn ($i) => $i->where('invoice_number', 'like', $term)
+                        ->orWhereHas('student', fn ($s) => $s->where('first_name', 'like', $term)->orWhere('last_name', 'like', $term)->orWhere('middle_name', 'like', $term))));
+            });
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
         // BelongsToSchool scope filters by active_school automatically
-        $query = Payment::with(['receipt', 'invoice.student', 'invoice.term'])
-            ->latest('paid_at');
+        $query = $this->filtered($request, Payment::with(['receipt', 'invoice.student', 'invoice.term'])->latest('paid_at')->latest('id'));
 
-        if ($request->filled('method')) {
-            $query->where('method', $request->method);
-        }
-        if ($request->filled('student_id')) {
-            $query->where('student_id', $request->student_id);
-        }
-        if ($request->filled('date')) {
-            $query->whereDate('paid_at', $request->date);
-        }
+        $byMethod = $this->filtered($request, Payment::query())->selectRaw('method, COUNT(*) AS n, SUM(amount_cents) AS cents')->groupBy('method')->get();
+        $day = fn ($from, $to) => (int) $this->filtered($request, Payment::query(), false)->whereDate('paid_at', '>=', $from)->whereDate('paid_at', '<=', $to)->sum('amount_cents');
 
-        return PaymentResource::collection($query->paginate(20));
+        return PaymentResource::collection($query->paginate(min(max($request->integer('per_page', 20), 5), 200)))->additional(['summary' => [
+            'count' => (int) $byMethod->sum('n'),
+            'total_cents' => (int) $byMethod->sum('cents'),
+            'today_cents' => $day(now()->toDateString(), now()->toDateString()),
+            'month_cents' => $day(now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()),
+            'by_method' => $byMethod->map(fn ($r) => ['method' => (string) ($r->method instanceof \BackedEnum ? $r->method->value : $r->method), 'count' => (int) $r->n, 'cents' => (int) $r->cents])->values(),
+        ]]);
     }
 
     /**
@@ -48,7 +63,7 @@ class PaymentController extends Controller
     {
         if (! auth()->user()?->isSuperAdmin()
             && auth()->user()?->getAllPermissions()->contains('name', 'payments.edit_restricted')) {
-            abort(403, __('Editing payments is restricted for your role.'));
+            abort(403, __('messages.editing_payments_is_restricted_for_your_role'));
         }
 
         $data = $request->validate([
@@ -87,7 +102,7 @@ class PaymentController extends Controller
     {
         if (! auth()->user()?->isSuperAdmin()) {
             return response()->json([
-                'message' => __('Only a superadmin can reverse a payment.'),
+                'message' => __('messages.only_a_superadmin_can_reverse_a_payment'),
             ], 403);
         }
 
@@ -99,7 +114,7 @@ class PaymentController extends Controller
             $invoice?->syncStatus();
         });
 
-        return response()->json(['message' => __('Payment reversed.')]);
+        return response()->json(['message' => __('messages.payment_reversed')]);
     }
 
     public function store(StorePaymentRequest $request): JsonResponse

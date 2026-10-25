@@ -1,13 +1,13 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import api from '@/services/api'
-import { i18n } from '@/i18n'
 
 export const useInstallmentsStore = defineStore('installments', () => {
   const installments = ref([])
   const loading = ref(false)
   const error = ref('')
   const pagination = ref({})
+  const summary = ref({})
 
   async function fetchInstallments(params = {}) {
     loading.value = true
@@ -16,8 +16,9 @@ export const useInstallmentsStore = defineStore('installments', () => {
       const { data } = await api.get('/installments', { params })
       installments.value = data.data || data
       pagination.value = data.meta || {}
+      summary.value = data.summary || {}
     } catch (e) {
-      error.value = e?.response?.data?.message || i18n.global.t('errors.loadData')
+      error.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia data'
     } finally {
       loading.value = false
     }
@@ -35,5 +36,5 @@ export const useInstallmentsStore = defineStore('installments', () => {
     return data
   }
 
-  return { installments, loading, error, pagination, fetchInstallments, createInstallment, markPaid }
+  return { installments, loading, error, pagination, summary, fetchInstallments, createInstallment, markPaid }
 })

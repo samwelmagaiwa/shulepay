@@ -25,7 +25,7 @@ const notifications = useNotificationsStore()
 const isStudentsActive  = computed(() => ['/wanafunzi', '/walezi', '/wanafunzi/clearance', '/admin/bulk-import'].some(p => route.path.startsWith(p)))
 const isFinanceActive   = computed(() => ['/ada-madeni', '/installments', '/malipo', '/ada'].some(p => route.path.startsWith(p)))
 const isExpensesActive  = computed(() => ['/matumizi', '/payroll', '/wasambazaji', '/mali', '/bajeti'].some(p => route.path.startsWith(p)))
-const isSchuleActive    = computed(() => ['/mahudhurio', '/mitihani', '/usafiri', '/inventory'].some(p => route.path.startsWith(p)))
+const isSchuleActive    = computed(() => ['/mahudhurio', '/mitihani', '/usafiri', '/inventory', '/my-payslips'].some(p => route.path.startsWith(p)))
 const isAdminActive     = computed(() => ['/admin/schools', '/admin/wafanyakazi', '/admin/rollover', '/admin/academic-years', '/admin/terms', '/admin/branding', '/admin/session-timeout', '/audit', '/superadmin'].some(p => route.path.startsWith(p)))
 const { t, locale } = useI18n()
 const { colorMode, setColorMode } = useColorModes('shulepay-theme')
@@ -132,6 +132,7 @@ function go(path) {
           <div class="text-muted small fw-bold px-2 mt-2 mb-1 text-uppercase" style="font-size:.65rem; letter-spacing:.05em;">{{ t('nav.schoolLife') }}</div>
           <RouterLink class="btn btn-ghost-secondary text-start" to="/mahudhurio" @click="mobileNavOpen=false">📋 {{ t('nav.attendance') }}</RouterLink>
           <RouterLink class="btn btn-ghost-secondary text-start" to="/mahudhurio/historia" @click="mobileNavOpen=false">📈 {{ t('nav.attendanceHistory') }}</RouterLink>
+          <RouterLink v-if="!auth.isParent && !auth.isSuperAdmin" class="btn btn-ghost-secondary text-start" to="/my-payslips" @click="mobileNavOpen=false">💵 {{ t('ui.appHeader.myPayslips') }}</RouterLink>
           <RouterLink v-if="showExams" class="btn btn-ghost-secondary text-start" to="/mitihani" @click="mobileNavOpen=false">📝 {{ t('nav.exams') }}</RouterLink>
           <RouterLink v-if="!auth.isTeacher" class="btn btn-ghost-secondary text-start" to="/usafiri" @click="mobileNavOpen=false">🚌 {{ t('nav.transport') }}</RouterLink>
           <RouterLink v-if="!auth.isTeacher" class="btn btn-ghost-secondary text-start" to="/inventory" @click="mobileNavOpen=false">📦 {{ t('nav.inventory') }}</RouterLink>
@@ -311,6 +312,9 @@ function go(path) {
             </CDropdownItem>
             <CDropdownItem @click="router.push('/mahudhurio/historia')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/mahudhurio/historia') }">
               📈 {{ t('nav.attendanceHistory') }}
+            </CDropdownItem>
+            <CDropdownItem v-if="!auth.isParent && !auth.isSuperAdmin" @click="router.push('/my-payslips')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/my-payslips') }">
+              💵 {{ t('ui.appHeader.myPayslips') }}
             </CDropdownItem>
             <CDropdownItem v-if="showExams" @click="router.push('/mitihani')" style="cursor:pointer;" :class="{ 'active': route.path.startsWith('/mitihani') }">
               📝 {{ t('nav.exams') }}

@@ -1,140 +1,41 @@
 <template>
-  <CContainer fluid class="p-2 p-md-3">
-    <!-- Consolidated Header & Filter Toolbar -->
-    <CCard class="mb-3">
-      <CCardBody class="p-2">
-        <CRow class="g-2 align-items-center">
-          <CCol xs="12" sm="6" md="3">
-            <CFormSelect v-model="filters.school_id" @update:modelValue="page = 1; load()" style="min-height:40px;">
-              <option value="">{{ t('common.allSchools') }}</option>
-              <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol xs="12" sm="6" md="2">
-            <CFormSelect v-model="filters.status" @update:modelValue="page = 1; load()" style="min-height:40px;">
-              <option value="">{{ t('common.allStatuses') }}</option>
-              <option value="active">{{ t('employees.working') }}</option>
-              <option value="inactive">{{ t('employees.notWorking') }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol xs="12" md="4">
-            <CFormInput v-model="filters.search" :placeholder="t('employees.searchPlaceholder')"
-                        @input="debouncedLoad" style="min-height:40px;" />
-          </CCol>
-          <CCol xs="12" md="auto" class="ms-auto">
-            <CButton color="success" @click="openAdd" style="min-height:40px; width:100%;">
-              <CIcon icon="cilPlus" class="me-1" /> {{ t('employees.add') }}
-            </CButton>
-          </CCol>
-        </CRow>
-      </CCardBody>
-    </CCard>
+  <CContainer fluid class="xg-page">
+    <XStats :cards="cards" />
 
-    <div v-if="loading" class="text-center py-5"><CSpinner color="primary" /></div>
+    <XBar :meta="meta" v-model:per-page="perPage" :filters-active="hasFilters" @page="goPage" @update:per-page="goPage(1)">
+      <template #actions>
+        <CButton color="success" size="sm" @click="openAdd"><CIcon icon="cilPlus" class="me-1" /> {{ t('employees.add') }}</CButton>
+      </template>
+      <template #filters>
+        <CFormSelect v-model="filters.school_id" @update:modelValue="goPage(1)">
+          <option value="">{{ t('common.allSchools') }}</option>
+          <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
+        </CFormSelect>
+        <CFormSelect v-model="filters.status" @update:modelValue="goPage(1)">
+          <option value="">{{ t('common.allStatuses') }}</option>
+          <option value="active">{{ t('employees.working') }}</option>
+          <option value="inactive">{{ t('employees.notWorking') }}</option>
+        </CFormSelect>
+        <CFormInput v-model="filters.search" class="xg-grow" :placeholder="t('employees.searchPlaceholder')" @input="debouncedLoad" />
+        <CButton color="secondary" variant="outline" size="sm" @click="resetFilters">{{ t('common.reset') }}</CButton>
+      </template>
+      <template #toolbar>
+        <button class="xg-tb-btn" :disabled="!selected" @click="selected && openView(selected)">🔍 {{ t('common.view') }}</button>
+        <button class="xg-tb-btn" :disabled="!selected" @click="selected && openEdit(selected)">✏️ {{ t('common.edit') }}</button>
+        <button class="xg-tb-btn" :disabled="!selected" @click="selected && downloadAnnual(selected)">📄 {{ t('ui.employeeList.annualStatement') }}</button>
+        <button class="xg-tb-btn is-danger" :disabled="!selected" @click="selected && confirmDelete(selected)">🗑️ {{ t('common.delete') }}</button>
+      </template>
+    </XBar>
 
-    <div v-else>
-      <!-- Mobile cards -->
-      <div class="d-md-none">
-        <div v-if="!employees.length" class="text-center text-muted py-5">{{ t('employees.noEmployees') }}</div>
-        <div v-for="emp in employees" :key="emp.id" class="mb-2 border rounded p-3">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <div class="fw-bold">{{ emp.full_name }}</div>
-              <div class="small text-muted">{{ emp.staff_number }} &middot; {{ emp.role }}</div>
-              <div class="small text-muted">{{ emp.department }}</div>
-            </div>
-            <CBadge :color="emp.status === 'active' ? 'success' : 'secondary'">
-              {{ emp.status === 'active' ? t('employees.working') : t('employees.notWorking') }}
-            </CBadge>
-          </div>
-          <div class="d-flex justify-content-between align-items-center mt-2">
-            <div class="fw-semibold">{{ formatMoney(emp.basic_salary_cents) }}</div>
-            <div class="d-flex gap-2">
-              <CButton size="sm" color="primary" variant="outline" @click="openEdit(emp)"
-                       style="min-height:44px; min-width:44px;">
-                <CIcon icon="cilPencil" />
-              </CButton>
-              <CButton size="sm" color="danger" variant="ghost" @click="confirmDelete(emp)"
-                       style="min-height:44px; min-width:44px;">
-                <CIcon icon="cilTrash" />
-              </CButton>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pagination (mobile) -->
-      <div v-if="meta.last_page > 1" class="d-md-none d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <small class="text-medium-emphasis">
-          {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
-        </small>
-        <CPagination :aria-label="t('common.pagination')" size="sm">
-          <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; load()">{{ t('common.first') }}</CPaginationItem>
-          <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; load()">{{ p }}</CPaginationItem>
-          <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; load()">{{ t('common.last') }}</CPaginationItem>
-        </CPagination>
-      </div>
-
-      <!-- Desktop table -->
-      <CCard class="d-none d-md-block">
-        <CCardBody class="p-0">
-          <CTable responsive hover class="mb-0">
-            <CTableHead class="table-light">
-              <CTableRow>
-                <CTableHeaderCell>{{ t('employees.staffNo') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('employees.fullName') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('employees.role') }}</CTableHeaderCell>
-                <CTableHeaderCell class="d-none d-lg-table-cell">{{ t('employees.department') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('employees.basicSalary') }}</CTableHeaderCell>
-                <CTableHeaderCell class="d-none d-lg-table-cell">{{ t('employees.hireDate') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('common.status') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('common.actions') }}</CTableHeaderCell>
-              </CTableRow>
-            </CTableHead>
-            <CTableBody>
-              <CTableRow v-for="emp in employees" :key="emp.id">
-                <CTableDataCell class="small">{{ emp.staff_number }}</CTableDataCell>
-                <CTableDataCell class="fw-semibold">{{ emp.full_name }}</CTableDataCell>
-                <CTableDataCell>{{ emp.role }}</CTableDataCell>
-                <CTableDataCell class="d-none d-lg-table-cell">{{ emp.department }}</CTableDataCell>
-                <CTableDataCell>{{ formatMoney(emp.basic_salary_cents) }}</CTableDataCell>
-                <CTableDataCell class="d-none d-lg-table-cell small">{{ emp.hire_date }}</CTableDataCell>
-                <CTableDataCell>
-                  <CBadge :color="emp.status === 'active' ? 'success' : 'secondary'">
-                    {{ emp.status === 'active' ? t('employees.working') : t('employees.notWorking') }}
-                  </CBadge>
-                </CTableDataCell>
-                <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
-                  <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === emp.id ? null : emp.id">👁️</CButton>
-                  <div v-if="activeRow === emp.id"
-                       style="position:absolute; bottom:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
-                       @click.stop>
-                    <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openView(emp); activeRow = null">👁️ {{ t('common.view') }}</CButton>
-                    <CButton size="sm" color="primary" variant="ghost" class="text-start" @click="openEdit(emp); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
-                    <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(emp); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
-                  </div>
-                </CTableDataCell>
-              </CTableRow>
-              <CTableRow v-if="!employees.length">
-                <CTableDataCell colspan="8" class="text-center text-muted py-4">{{ t('employees.noEmployees2') }}</CTableDataCell>
-              </CTableRow>
-            </CTableBody>
-          </CTable>
-        </CCardBody>
-      </CCard>
-
-      <!-- Pagination (desktop) -->
-      <div v-if="meta.last_page > 1" class="d-none d-md-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-        <small class="text-medium-emphasis">
-          {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
-        </small>
-        <CPagination :aria-label="t('common.pagination')" size="sm">
-          <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; load()">{{ t('common.first') }}</CPaginationItem>
-          <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; load()">{{ p }}</CPaginationItem>
-          <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; load()">{{ t('common.last') }}</CPaginationItem>
-        </CPagination>
-      </div>
-    </div>
+    <XGrid v-model:selected-id="selectedId" :columns="columns" :rows="employees" :loading="loading" :empty="t('employees.noEmployees2')"
+           :min-width="980" :menu="menuFor" :row-class="rowClass" @open="openView">
+      <template #cell-staff_number="{ row }"><span class="xg-mono">{{ row.staff_number }}</span></template>
+      <template #cell-full_name="{ row }"><span class="xg-name">{{ row.full_name }}</span></template>
+      <template #cell-basic_salary_cents="{ row }"><span class="xg-strong">{{ formatMoney(row.basic_salary_cents) }}</span></template>
+      <template #cell-status="{ row }">
+        <span class="xg-pill" :class="row.status === 'active' ? 'xg-pill--green' : 'xg-pill--gray'">{{ row.status === 'active' ? t('employees.working') : t('employees.notWorking') }}</span>
+      </template>
+    </XGrid>
 
     <!-- View Employee Modal -->
     <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
@@ -255,10 +156,13 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { CPagination, CPaginationItem } from '@coreui/vue'
 import { useEmployeesStore } from '@/stores/employees'
 import { useSchoolsStore }   from '@/stores/schools'
 import { useSchoolStore }    from '@/stores/school'
+import api from '@/services/api'
+import XStats from '@/components/XStats.vue'
+import XBar from '@/components/XBar.vue'
+import XGrid from '@/components/XGrid.vue'
 
 const { t } = useI18n()
 
@@ -279,18 +183,38 @@ watch(() => navSchool.activeSchoolId, (id) => {
 const page       = ref(1)
 const meta       = ref({ total: 0, last_page: 1, per_page: 20, current_page: 1 })
 
-const visiblePages = computed(() => {
-  const total = meta.value.last_page
-  const cur   = meta.value.current_page
-  const delta = 2
-  const start = Math.max(1, cur - delta)
-  const end   = Math.min(total, cur + delta)
-  return Array.from({ length: end - start + 1 }, (_, i) => start + i)
-})
+const perPage    = ref('20')
+const selectedId = ref(null)
+const selected   = computed(() => employees.value.find(e => e.id === selectedId.value) || null)
+const summary    = computed(() => empStore.summary || {})
+const hasFilters = computed(() => !!(filters.value.status || filters.value.search || (filters.value.school_id && filters.value.school_id !== (navSchool.activeSchoolId || ''))))
+const rowClass   = (e) => (e.status === 'active' ? '' : 'xg-row--bad')
+const columns = computed(() => [
+  { key: 'staff_number', label: t('employees.staffNo'), w: 'minmax(100px, .9fr)' },
+  { key: 'full_name', label: t('employees.fullName'), w: 'minmax(170px, 2fr)' },
+  { key: 'role', label: t('employees.role'), w: 'minmax(110px, 1.2fr)' },
+  { key: 'department', label: t('employees.department'), w: 'minmax(110px, 1.2fr)' },
+  { key: 'basic_salary_cents', label: t('employees.basicSalary'), w: 'minmax(120px, 1.2fr)', align: 'end' },
+  { key: 'hire_date', label: t('employees.hireDate'), w: 'minmax(100px, 1fr)' },
+  { key: 'status', label: t('common.status'), w: 'minmax(100px, .9fr)' },
+])
+const cards = computed(() => [
+  { label: t('employees.title'), value: summary.value.total ?? meta.value.total, tone: 'gray' },
+  { label: t('employees.working'), value: summary.value.active ?? 0, tone: 'green' },
+  { label: t('employees.notWorking'), value: summary.value.not_working ?? 0, tone: 'amber' },
+  { label: t('employees.basicSalary'), value: formatMoney(summary.value.monthly_basic_cents), tone: 'blue' },
+])
+const menuFor = (e) => [
+  { label: '🔍 ' + t('common.view'), run: openView },
+  { label: '✏️ ' + t('common.edit'), run: openEdit },
+  { label: '📄 ' + t('ui.employeeList.annualStatement'), run: downloadAnnual },
+  { label: '🗑️ ' + t('common.delete'), run: confirmDelete, danger: true },
+]
+function goPage(p) { page.value = typeof p === 'number' ? p : 1; load() }
+function resetFilters() { filters.value = { school_id: navSchool.activeSchoolId || '', status: '', search: '' }; goPage(1) }
 
 const showModal       = ref(false)
 const showDeleteModal = ref(false)
-const activeRow       = ref(null)
 const showViewModal   = ref(false)
 const viewTarget      = ref(null)
 const saving          = ref(false)
@@ -316,7 +240,7 @@ function formatMoney(cents) {
 async function load() {
   loading.value = true
   try {
-    const params = { page: page.value }
+    const params = { page: page.value, per_page: perPage.value }
     if (filters.value.school_id) params.school_id = filters.value.school_id
     if (filters.value.status)    params.status    = filters.value.status
     if (filters.value.search)    params.search    = filters.value.search
@@ -379,13 +303,28 @@ async function submitEmployee() {
     showModal.value = false
     await load()
   } catch (e) {
-    formError.value = e?.response?.data?.message || t('common.actionFailed')
+    formError.value = e?.response?.data?.message || 'Imeshindwa. Jaribu tena.'
   } finally {
     saving.value = false
   }
 }
 
 function confirmDelete(emp) { toDelete.value = emp; showDeleteModal.value = true }
+
+async function downloadAnnual(emp) {
+  const year = new Date().getFullYear()
+  try {
+    const res = await api.get(`/payroll/report/annual/${emp.id}`, { params: { year }, responseType: 'blob' })
+    const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `annual_statement_${emp.staff_number}_${year}.pdf`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch {
+    alert(t('ui.employeeList.failedToDownloadAnnualStatement'))
+  }
+}
 
 async function doDelete() {
   deleting.value = true
@@ -407,8 +346,3 @@ onMounted(async () => {
   } catch {}
 })
 </script>
-
-<style scoped>
-:deep(.table-responsive) { overflow: visible; }
-:deep(.card) { overflow: visible; }
-</style>

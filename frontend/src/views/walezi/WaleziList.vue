@@ -1,82 +1,36 @@
 <template>
-  <CContainer fluid>
-    <!-- Paging row and grid toolbar stay pinned under the app header while the
-         page scrolls; the grid's column headers pin directly beneath them. -->
-    <div ref="stickyBar" class="list-sticky" :style="{ top: headerH + 'px' }">
-      <div class="list-paging">
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-          <small class="text-medium-emphasis text-nowrap">
-            {{ t('common.showing', { from: meta.total === 0 ? 0 : (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
-          </small>
-          <CFormInput v-model="search" :placeholder="t('common.search') + '...'" @input="debouncedLoad" size="sm" style="min-width:160px; max-width:240px;" />
-          <CButton color="secondary" variant="outline" size="sm" @click="search = ''; page = 1; loadData()">{{ t('common.reset') }}</CButton>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <CButton color="primary" class="lf-add" @click="openAdd" style="white-space:nowrap;"><CIcon icon="cilPlus" class="me-1" />{{ t('guardians.add') }}</CButton>
-          <CPagination v-if="meta.last_page > 1" :aria-label="t('common.pagination')" class="mb-0 lf-pages">
-            <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; loadData()">{{ t('common.prev') }}</CPaginationItem>
-            <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; loadData()">{{ p }}</CPaginationItem>
-            <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; loadData()">{{ t('common.next') }}</CPaginationItem>
-          </CPagination>
-        </div>
-      </div>
+  <CContainer fluid class="xg-page">
+    <XStats :cards="cards" />
 
-      <div class="grid-toolbar">
-        <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openView(selectedRow)">• {{ t('common.view') }}</button>
-        <button type="button" class="grid-btn" :disabled="!selectedRow" @click="openEdit(selectedRow)">✎ {{ t('common.edit') }}</button>
-        <button type="button" class="grid-btn grid-btn--danger" :disabled="!selectedRow" @click="remove(selectedRow)">▣ {{ t('common.delete') }}</button>
-        <span class="grid-hint">{{ t('students.gridHint') }}</span>
-      </div>
-    </div>
+    <XBar :meta="meta" v-model:per-page="perPage" :filters-active="!!search" @page="goPage" @update:per-page="goPage(1)">
+      <template #actions>
+        <CButton color="success" size="sm" @click="openAdd"><CIcon icon="cilPlus" class="me-1" /> {{ t('guardians.add') }}</CButton>
+      </template>
+      <template #toolbar>
+        <button class="xg-tb-btn" :disabled="!sel" @click="sel && openView(sel)">🔍 {{ t('common.view') }}</button>
+        <button class="xg-tb-btn" :disabled="!sel" @click="sel && openEdit(sel)">✏️ {{ t('common.edit') }}</button>
+        <button class="xg-tb-btn is-danger" :disabled="!sel" @click="sel && remove(sel)">🗑️ {{ t('common.delete') }}</button>
+      </template>
+      <template #search>
+        <CFormInput v-model="search" :placeholder="t('common.search') + '...'" @input="debouncedLoad" />
+        <CButton color="secondary" variant="outline" size="sm" @click="search = ''; goPage(1)">{{ t('common.reset') }}</CButton>
+      </template>
+    </XBar>
 
-    <!-- Desktop worklist grid (same design as the students list). -->
-    <div class="worklist" tabindex="0" :style="{ '--grid-head-top': headerH + barH + 'px' }" @keydown="onGridKey">
-      <div v-if="store.loading" class="worklist-loading"><CSpinner size="sm" color="primary" /></div>
-      <table class="worklist-table">
-        <colgroup>
-          <col v-for="c in columns" :key="c.key" :style="{ width: c.width }" />
-        </colgroup>
-        <thead>
-          <tr>
-            <th v-for="c in columns" :key="c.key" @click="toggleSort(c.key)">
-              <span class="th-label">{{ c.label }}</span>
-              <span class="sort-arrow">{{ sortKey === c.key ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="g in sortedGuardians"
-            :key="g.id"
-            :class="{ selected: selectedRow?.id === g.id }"
-            @click="selectedRow = g"
-            @dblclick="openView(g)"
-            @contextmenu.prevent="openContext($event, g)"
-          >
-            <td>{{ guardianName(g) }}</td>
-            <td>{{ g.phone || g.user?.phone || '' }}</td>
-            <td>{{ g.email || g.user?.email || '' }}</td>
-            <td>{{ relationLabel(g.relation) }}</td>
-            <td :title="childNames(g)">{{ childNames(g) }}</td>
-            <td>{{ g.students?.length || 0 }}</td>
-          </tr>
-          <tr v-if="!store.loading && !sortedGuardians.length" class="empty-note">
-            <td :colspan="columns.length">{{ t('guardians.noGuardians') }}</td>
-          </tr>
-          <!-- Blank ruled rows so the pane reads as a full grid. -->
-          <tr v-for="n in fillerRows" :key="'f' + n" class="filler">
-            <td v-for="c in columns" :key="c.key">&nbsp;</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Right-click menu for a row -->
-    <div v-if="ctx" class="grid-context" :style="{ top: ctx.y + 'px', left: ctx.x + 'px' }" @click.stop>
-      <button type="button" @click="openView(ctx.g); ctx = null">👁️ {{ t('common.view') }}</button>
-      <button type="button" @click="openEdit(ctx.g); ctx = null">✏️ {{ t('common.edit') }}</button>
-      <button type="button" class="danger" @click="remove(ctx.g); ctx = null">🗑️ {{ t('common.delete') }}</button>
-    </div>
+    <XGrid v-model:selected-id="selId" :columns="columns" :rows="store.guardians" :loading="store.loading" :empty="t('guardians.noGuardians')"
+           :min-width="980" :menu="menuFor" @open="openView">
+      <template #cell-name="{ row }"><span class="xg-name">{{ row.full_name || row.user?.name || '—' }}</span></template>
+      <template #cell-email="{ row }"><span class="xg-sub" style="font-size:12px">{{ row.login_email || row.email || row.user?.email || '—' }}</span></template>
+      <template #cell-phone="{ row }">{{ row.phone || row.user?.phone || '—' }}</template>
+      <template #cell-role><span class="xg-pill xg-pill--gray">👨‍👩‍👧 {{ t('guardians.parentRole') }}</span></template>
+      <template #cell-children="{ row }">
+        <template v-if="!row.students?.length">—</template>
+        <template v-else>
+          <span class="xg-pill xg-pill--blue" :title="row.students.map(s => s.full_name).join(', ')">{{ row.students[0].full_name }}</span>
+          <span v-if="row.students.length > 1" class="xg-pill xg-pill--gray ms-1" :title="row.students.map(s => s.full_name).join(', ')">+{{ row.students.length - 1 }}</span>
+        </template>
+      </template>
+    </XGrid>
 
     <!-- View Guardian Modal -->
     <CModal :visible="showViewModal" @close="showViewModal = false" size="lg" class="modal-fullscreen-sm-down">
@@ -98,8 +52,8 @@
             <div>{{ viewTarget.phone || viewTarget.user?.phone || '—' }}</div>
           </CCol>
           <CCol xs="12" sm="6">
-            <div class="text-muted small fw-semibold mb-1">{{ t('common.email') }}</div>
-            <div>{{ viewTarget.email || viewTarget.user?.email || '—' }}</div>
+            <div class="text-muted small fw-semibold mb-1">{{ t('guardians.relation') }}</div>
+            <div>{{ viewTarget.relation || '—' }}</div>
           </CCol>
           <CCol xs="12">
             <div class="text-muted small fw-semibold mb-2">{{ t('guardians.children') }}</div>
@@ -109,6 +63,30 @@
               </CBadge>
             </div>
             <div v-else class="text-muted">—</div>
+          </CCol>
+
+          <!-- Login credentials -->
+          <CCol xs="12">
+            <div class="border rounded-3 p-3 bg-light">
+              <div class="fw-semibold mb-2">🔑 {{ t('guardians.loginCredentials') }}</div>
+              <div class="d-flex flex-wrap gap-3">
+                <div>
+                  <div class="text-muted small fw-semibold mb-1">{{ t('common.email') }} ({{ t('guardians.username') }})</div>
+                  <div class="font-monospace small">{{ viewTarget.login_email || viewTarget.user?.email || '—' }}</div>
+                </div>
+                <div>
+                  <div class="text-muted small fw-semibold mb-1">{{ t('staff.role') }}</div>
+                  <CBadge color="secondary" class="px-2 py-1">👨‍👩‍👧 {{ t('guardians.parentRole') }}</CBadge>
+                </div>
+                <div>
+                  <div class="text-muted small fw-semibold mb-1">{{ t('staff.password') }}</div>
+                  <div class="font-monospace small">
+                    <span v-if="viewTarget.user?.must_change_password" class="text-warning">SCHOOL <span class="text-muted">({{ t('guardians.mustChange') }})</span></span>
+                    <span v-else class="text-success">{{ t('guardians.passwordSet') }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </CCol>
         </CRow>
       </CModalBody>
@@ -174,7 +152,7 @@
     <CModal :visible="showDeleteModal" @close="showDeleteModal = false" size="sm" class="modal-fullscreen-sm-down">
       <CModalHeader><CModalTitle>🗑️ {{ t('common.delete') }}</CModalTitle></CModalHeader>
       <CModalBody>
-        <p class="mb-1 text-muted small">{{ t('common.confirmDelete') || 'Are you sure you want to delete?' }}</p>
+        <p class="mb-1 text-muted small">{{ t('common.confirmDelete') || t('ui.muundoWaAda.areYouSureYouWant') }}</p>
         <p class="fw-bold mb-0">{{ deleteTarget?.full_name }}</p>
       </CModalBody>
       <CModalFooter class="gap-2">
@@ -189,88 +167,36 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { CPagination, CPaginationItem } from '@coreui/vue'
 import { useI18n } from 'vue-i18n'
 import { useGuardiansStore } from '@/stores/guardians'
 import { useStudentsStore }  from '@/stores/students'
-import { useStickyOffsets } from '@/composables/useStickyOffsets'
-import '@/styles/worklist-grid.css'
+import XStats from '@/components/XStats.vue'
+import XBar from '@/components/XBar.vue'
+import XGrid from '@/components/XGrid.vue'
 
 const { t } = useI18n()
 const store        = useGuardiansStore()
 const studentsStore = useStudentsStore()
 
-const search = ref('')
-
-// ── Worklist grid ─────────────────────────────────────────────────────────
-const selectedRow = ref(null)
-const ctx = ref(null)
-const sortKey = ref('name')
-const sortDir = ref('asc')
-
-const guardianName = (g) => g.full_name || g.user?.name || ''
-const childNames = (g) => (g.students || []).map((s) => s.full_name).join(', ')
-const relationLabel = (r) => ({
-  baba: t('guardians.father'),
-  mama: t('guardians.mother'),
-  mlezi: t('guardians.guardian'),
-  ndugu: t('guardians.relative'),
-}[r] || r || '')
-
+const search         = ref('')
+const perPage = ref('20')
+const selId = ref(null)
+const sel = computed(() => store.guardians.find(g => g.id === selId.value) || null)
+const cards = computed(() => [{ label: t('guardians.title', 'Guardians'), value: (meta.value.total || 0).toLocaleString(), tone: 'blue' }])
 const columns = computed(() => [
-  { key: 'name', label: t('common.name'), width: '22%' },
-  { key: 'phone', label: t('guardians.phone'), width: '13%' },
-  { key: 'email', label: t('common.email'), width: '18%' },
-  { key: 'relation', label: t('guardians.relation'), width: '10%' },
-  { key: 'children', label: t('guardians.children'), width: '29%' },
-  { key: 'count', label: t('guardians.childCount'), width: '8%' },
+  { key: 'name', label: t('common.name'), w: 'minmax(170px, 2fr)' },
+  { key: 'email', label: t('common.email'), w: 'minmax(170px, 1.8fr)' },
+  { key: 'phone', label: t('guardians.phone'), w: 'minmax(130px, 1.2fr)' },
+  { key: 'role', label: t('staff.role'), w: 'minmax(140px, 1.2fr)' },
+  { key: 'relation', label: t('guardians.relation'), w: 'minmax(90px, .8fr)' },
+  { key: 'children', label: t('guardians.children'), w: 'minmax(200px, 2fr)' },
 ])
-
-const sortValue = (g, key) => ({
-  name: guardianName(g),
-  phone: g.phone || g.user?.phone || '',
-  email: g.email || g.user?.email || '',
-  relation: relationLabel(g.relation),
-  children: childNames(g),
-  count: g.students?.length || 0,
-}[key])
-
-// Sorts the rows on the current page; paging and search stay server-side.
-const sortedGuardians = computed(() => {
-  const dir = sortDir.value === 'asc' ? 1 : -1
-  return [...(store.guardians || [])].sort((x, y) => {
-    const a = sortValue(x, sortKey.value)
-    const b = sortValue(y, sortKey.value)
-    if (typeof a === 'number' && typeof b === 'number') return (a - b) * dir
-    return String(a).localeCompare(String(b), undefined, { numeric: true }) * dir
-  })
-})
-
-function toggleSort(key) {
-  if (sortKey.value === key) sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
-  else { sortKey.value = key; sortDir.value = 'asc' }
-}
-
-// Enough blank rows to fill the pane, like a desktop list view.
-const fillerRows = computed(() => Math.max(0, 25 - (sortedGuardians.value.length || 1)))
-
-function openContext(e, g) {
-  selectedRow.value = g
-  ctx.value = { x: e.clientX, y: e.clientY, g }
-}
-
-function onGridKey(e) {
-  const list = sortedGuardians.value
-  if (!list.length) return
-  const i = list.findIndex((g) => g.id === selectedRow.value?.id)
-  if (e.key === 'ArrowDown') { e.preventDefault(); selectedRow.value = list[Math.min(list.length - 1, i + 1)] }
-  else if (e.key === 'ArrowUp') { e.preventDefault(); selectedRow.value = list[Math.max(0, i - 1)] }
-  else if (e.key === 'Enter' && selectedRow.value) openView(selectedRow.value)
-}
-
-// Heights for the pinned bar and column headers.
-const { stickyBar, headerH, barH } = useStickyOffsets()
-
+const menuFor = () => [
+  { label: '🔍 ' + t('common.view'), run: openView },
+  { label: '✏️ ' + t('common.edit'), run: openEdit },
+  { label: '🗑️ ' + t('common.delete'), run: remove, danger: true },
+]
+function goPage(p) { page.value = typeof p === 'number' ? p : 1; loadData() }
 const showViewModal   = ref(false)
 const viewTarget      = ref(null)
 const showDeleteModal = ref(false)
@@ -285,22 +211,13 @@ const page        = ref(1)
 const meta        = ref({ total: 0, last_page: 1, per_page: 20, current_page: 1 })
 let   debouncer   = null
 
-const visiblePages = computed(() => {
-  const total = meta.value.last_page
-  const cur   = meta.value.current_page
-  const delta = 2
-  const start = Math.max(1, cur - delta)
-  const end   = Math.min(total, cur + delta)
-  return Array.from({ length: end - start + 1 }, (_, i) => start + i)
-})
-
 const emptyForm = () => ({ name:'', phone:'', email:'', relation:'', student_ids:[] })
 const form = ref(emptyForm())
 
 function openView(guardian) { viewTarget.value = guardian; showViewModal.value = true }
 
 async function loadData() {
-  const params = { page: page.value }
+  const params = { page: page.value, per_page: perPage.value }
   if (search.value) params.search = search.value
   try {
     await store.fetchGuardians(params)
@@ -371,12 +288,6 @@ async function doDelete() {
   }
 }
 
-function onDocClick() { ctx.value = null }
-
-// The right-click menu is position:fixed at the click point, so close it on
-// scroll rather than leave it floating away from its row.
-function onScroll() { ctx.value = null }
-
 // The Children checklist (Edit/Add modal) must offer every student in the
 // school, not just one page — /students is paginated (max 100/page), so a
 // single fetchStudents() call left this list silently truncated to the
@@ -397,21 +308,11 @@ async function loadAllStudents() {
 }
 
 onMounted(async () => {
-  document.addEventListener('click', onDocClick)
-  window.addEventListener('scroll', onScroll, true)
   await loadData()
   try {
     await loadAllStudents()
   } catch {}
 })
 
-onUnmounted(() => {
-  document.removeEventListener('click', onDocClick)
-  window.removeEventListener('scroll', onScroll, true)
-})
+onUnmounted(() => clearTimeout(debouncer))
 </script>
-
-<style scoped>
-:deep(.table-responsive) { overflow: visible; }
-:deep(.card) { overflow: visible; }
-</style>

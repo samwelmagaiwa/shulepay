@@ -1,7 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import api from '@/services/api'
-import { i18n } from '@/i18n'
 
 export const useBudgetsStore = defineStore('budgets', () => {
   const budgets = ref([])
@@ -15,7 +14,7 @@ export const useBudgetsStore = defineStore('budgets', () => {
       const { data } = await api.get('/budgets')
       budgets.value = data.data || data
     } catch (e) {
-      error.value = e?.response?.data?.message || i18n.global.t('errors.loadBudgets')
+      error.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia bajeti'
     } finally {
       loading.value = false
     }
@@ -45,5 +44,10 @@ export const useBudgetsStore = defineStore('budgets', () => {
     await api.delete(`/budgets/${id}`)
   }
 
-  return { budgets, loading, error, fetchBudgets, createBudget, updateBudget, activateBudget, closeBudget, deleteBudget }
+  async function deleteLine(budgetId, itemId) {
+    const { data } = await api.delete(`/budgets/${budgetId}/items/${itemId}`)
+    return data
+  }
+
+  return { budgets, loading, error, fetchBudgets, createBudget, updateBudget, activateBudget, closeBudget, deleteBudget, deleteLine }
 })

@@ -22,6 +22,7 @@ use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Term;
 use App\Models\User;
+use App\Services\Budget\BudgetActuals;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -64,8 +65,8 @@ class AiToolExecutor
                 'get_low_attendance_students' => $this->lowAttendanceStudents($args),
                 'get_revenue_trend' => $this->revenueTrend($args),
                 'get_budget_summary' => $this->budgetSummary($args),
-                'get_budget_forecast' => $this->budgetForecast(),
-                'get_budget_history' => $this->budgetHistory(),
+                'get_budget_forecast' => $this->budgetForecast($args),
+                'get_budget_history' => $this->budgetHistory($args),
                 'get_discount_summary' => $this->discountSummary($args),
                 'get_refund_summary' => $this->refundSummary($args),
                 'get_student_financial_summary' => $this->studentFinancialSummary($args),
@@ -253,37 +254,46 @@ class AiToolExecutor
         $from = $a['from_date'] ?? now()->startOfMonth()->toDateString();
         $to = $a['to_date'] ?? now()->toDateString();
 
-        $scope = fn () => $this->inSchools(Expense::query())->whereBetween('expense_date', [$from, $to])
-            ->when(! empty($a['vendor']), fn ($q) => $q->where('vendor', 'like', $this->like($a['vendor'])))
-            ->when(! empty($a['category_name']), fn ($q) => $q->whereHas('category', fn ($c) => $c->where('name', 'like', $this->like($a['category_name']))));
+        $money = fn ($cents) => 'TZS '.number_format($cents / 100);
+        $scope = fn () => $this->inSchools(Expense::query())->whereDate('expense_date', '>=', $from)->whereDate('expense_date', '<=', $to)
+            ->when(! empty($a['vendor']), fn ($q) => $q->where('vendor', 'like', '%'.$a['vendor'].'%'))
+            ->when(! empty($a['category_name']), fn ($q) => $q->whereHas('category', fn ($c) => $c->where('name', 'like', '%'.$a['category_name'].'%')));
 
-        $by = $scope()->selectRaw('status, COUNT(*) AS n, SUM(amount_cents) AS cents')->groupBy('status')->get()->keyBy('status');
+        $by = $scope()->selectRaw('status, payment_mode, COUNT(*) AS n, SUM(amount_cents) AS cents')->groupBy('status', 'payment_mode')->get();
+        $approved = $by->where('status', 'approved');
+        $pending = $by->where('status', 'pending');
 
-        $group = in_array($a['group_by'] ?? 'category', ['category', 'vendor', 'status', 'month'], true) ? ($a['group_by'] ?? 'category') : 'category';
+        $group = in_array($a['group_by'] ?? 'category', ['category', 'vendor', 'payment_mode', 'month'], true) ? ($a['group_by'] ?? 'category') : 'category';
         $key = match ($group) {
             'vendor' => "COALESCE(NULLIF(vendor, ''), 'No vendor')",
-            'status' => 'status',
+            'payment_mode' => 'payment_mode',
             'month' => DB::connection()->getDriverName() === 'sqlite' ? "strftime('%Y-%m', expense_date)" : "DATE_FORMAT(expense_date, '%Y-%m')",
             default => 'category_id',
         };
-        $rows = $scope()->when($group !== 'status', fn ($q) => $q->where('status', 'approved'))
-            ->selectRaw("$key AS k, SUM(amount_cents) AS cents, COUNT(*) AS n")->groupBy('k')->orderByDesc('cents')->limit(25)->get();
+        $rows = $scope()->where('status', 'approved')->selectRaw("$key AS k, SUM(amount_cents) AS cents, COUNT(*) AS n")->groupBy('k')->orderByDesc('cents')->limit(25)->get();
         $names = $group === 'category' ? ExpenseCategory::whereIn('id', $rows->pluck('k'))->pluck('name', 'id') : collect();
         $breakdown = $rows->map(fn ($r) => [
-            $group => $group === 'category' ? ($names[$r->k] ?? 'Uncategorised') : $r->k,
-            'total' => $this->money($r->cents),
+            $group => match ($group) {
+                'category' => $names[$r->k] ?? 'Uncategorised',
+                'payment_mode' => $r->k === 'credit' ? 'credit (still owed)' : 'paid',
+                default => $r->k,
+            },
+            'total' => $money($r->cents),
             'count' => (int) $r->n,
         ])->values()->toArray();
 
         return [
             'period' => "{$from} to {$to}",
-            'note' => 'Only approved expenses count as spent.',
-            'grand_total' => $this->money($by['approved']->cents ?? 0),
-            'approved_count' => (int) ($by['approved']->n ?? 0),
-            'waiting_for_approval' => ['count' => (int) ($by['pending']->n ?? 0), 'total' => $this->money($by['pending']->cents ?? 0)],
-            'rejected_count' => (int) ($by['rejected']->n ?? 0),
+            'note' => 'Only approved expenses count as spent. Credit purchases are approved spending that is still owed to suppliers.',
+            'grand_total' => $money($approved->sum('cents')),
+            'paid_now' => $money($approved->where('payment_mode', '!=', 'credit')->sum('cents')),
+            'on_credit_owed_to_suppliers' => $money($approved->where('payment_mode', 'credit')->sum('cents')),
+            'approved_count' => (int) $approved->sum('n'),
+            'waiting_for_approval' => ['count' => (int) $pending->sum('n'), 'total' => $money($pending->sum('cents'))],
+            'rejected_count' => (int) $by->where('status', 'rejected')->sum('n'),
             'grouped_by' => $group,
             'breakdown' => $breakdown,
+            'by_category' => $group === 'category' ? $breakdown : [],
         ];
     }
 
@@ -292,10 +302,11 @@ class AiToolExecutor
         $limit = max(1, min(50, (int) ($a['limit'] ?? 15)));
         $q = $this->inSchools(Expense::query())->with(['category:id,name', 'recorder:id,name', 'approver:id,name'])
             ->when(! empty($a['status']), fn ($q) => $q->where('status', $a['status']))
-            ->when(! empty($a['from_date']), fn ($q) => $q->where('expense_date', '>=', $a['from_date']))
-            ->when(! empty($a['to_date']), fn ($q) => $q->where('expense_date', '<=', $a['to_date']))
+            ->when(! empty($a['payment_mode']), fn ($q) => $q->where('payment_mode', $a['payment_mode'] === 'credit' ? 'credit' : 'paid'))
+            ->when(! empty($a['from_date']), fn ($q) => $q->whereDate('expense_date', '>=', $a['from_date']))
+            ->when(! empty($a['to_date']), fn ($q) => $q->whereDate('expense_date', '<=', $a['to_date']))
             ->when(! empty($a['search']), function ($q) use ($a) {
-                $t = $this->like($a['search']);
+                $t = '%'.addcslashes($a['search'], '%_\\').'%';
                 $q->where(fn ($w) => $w->where('description', 'like', $t)->orWhere('vendor', 'like', $t)->orWhere('receipt_reference', 'like', $t)->orWhere('notes', 'like', $t));
             });
         $total = (clone $q)->count();
@@ -305,7 +316,7 @@ class AiToolExecutor
         return [
             'matching' => $total,
             'shown' => $rows->count(),
-            'total_of_matching' => $this->money($sum),
+            'total_of_matching' => 'TZS '.number_format($sum / 100),
             'expenses' => $rows->map(fn ($e) => array_filter([
                 'date' => $e->expense_date?->toDateString(),
                 'description' => $e->description,
@@ -313,9 +324,11 @@ class AiToolExecutor
                 'category' => $e->category?->name,
                 'vendor' => $e->vendor,
                 'receipt_reference' => $e->receipt_reference,
+                'payment' => $e->payment_mode === 'credit' ? 'on credit' : 'paid',
                 'status' => $e->status,
                 'recorded_by' => $e->recorder?->name,
                 'decided_by' => $e->approver?->name,
+                'rejection_reason' => $e->rejection_reason,
             ], fn ($v) => $v !== null && $v !== ''))->values()->toArray(),
         ];
     }
@@ -761,25 +774,6 @@ class AiToolExecutor
     }
 
     /** Planned vs actual per category, from the budget's own lines. */
-    private function budgetLines(Budget $budget): array
-    {
-        $lines = $budget->items->map(fn ($i) => [
-            'category' => $i->category ?: 'General',
-            'planned_cents' => (int) $i->planned_cents,
-            'actual_cents' => (int) $i->actual_cents,
-        ])->values()->all();
-
-        $planned = array_sum(array_column($lines, 'planned_cents'));
-        $actual = array_sum(array_column($lines, 'actual_cents'));
-
-        return [
-            'lines' => $lines,
-            'planned_cents' => $planned,
-            'actual_cents' => $actual,
-            'over_count' => count(array_filter($lines, fn ($l) => $l['actual_cents'] > $l['planned_cents'])),
-        ];
-    }
-
     private function budgetSummary(array $a): array
     {
         $year = ! empty($a['academic_year_id'])
@@ -797,129 +791,200 @@ class AiToolExecutor
             return ['academic_year' => $year->name, 'message' => 'No active budget found for this year.'];
         }
 
-        $s = $this->budgetLines($budget);
-        $start = $year->start_date ? Carbon::parse($year->start_date) : null;
-        $end = $year->end_date ? Carbon::parse($year->end_date) : null;
-        $daysTotal = ($start && $end) ? max(1, $start->diffInDays($end)) : null;
-        $daysElapsed = ($start && now()->gt($start)) ? min($daysTotal ?? PHP_INT_MAX, (int) $start->diffInDays(now())) : null;
-        $progress = ($daysTotal && $daysElapsed !== null) ? round($daysElapsed / $daysTotal * 100, 1) : null;
+        $sum = app(BudgetActuals::class)->summary($budget);
+        $money = fn ($cents) => 'TZS '.number_format($cents / 100);
+
+        // Burn-rate: days elapsed vs days total in the year → project full-year spend
+        $yearStart = $year->start_date ? Carbon::parse($year->start_date) : null;
+        $yearEnd = $year->end_date ? Carbon::parse($year->end_date) : null;
+        $today = now();
+        $daysTotal = ($yearStart && $yearEnd) ? max(1, $yearStart->diffInDays($yearEnd)) : null;
+        $daysElapsed = ($yearStart && $today->gt($yearStart)) ? min($daysTotal ?? 999, $yearStart->diffInDays($today)) : null;
+        $daysRemaining = ($yearEnd && $today->lt($yearEnd)) ? $today->diffInDays($yearEnd) : 0;
+        $yearProgress = ($daysTotal && $daysElapsed !== null) ? round($daysElapsed / $daysTotal * 100, 1) : null;
+
+        // Daily burn rate and projection
+        $dailyBurn = ($daysElapsed && $daysElapsed > 0) ? $sum['actual_cents'] / $daysElapsed : null;
+        $projectedSpend = ($dailyBurn && $daysTotal) ? (int) ($dailyBurn * $daysTotal) : null;
+        $projectedVariance = $projectedSpend !== null ? $projectedSpend - $sum['planned_cents'] : null;
+
+        $lines = array_map(fn ($l) => [
+            'category' => $l['category'] ?: 'General',
+            'planned' => $money($l['planned_cents']),
+            'actual' => $money($l['actual_cents']),
+            'remaining' => $money(max(0, $l['remaining_cents'])),
+            'used' => $l['percent'].'%',
+            'over_budget' => $l['over'] ? 'YES ⚠' : 'No',
+            'overspend_amount' => $l['over'] ? $money($l['actual_cents'] - $l['planned_cents']) : null,
+        ], $sum['lines']);
 
         $result = [
             'academic_year' => $year->name,
             'budget_name' => $budget->name,
             'status' => $budget->status,
-            'year_progress' => $progress !== null ? $progress.'% of year elapsed' : 'N/A',
-            'total_planned' => $this->money($s['planned_cents']),
-            'total_actual_spent' => $this->money($s['actual_cents']),
-            'total_remaining' => $this->money(max(0, $s['planned_cents'] - $s['actual_cents'])),
-            'utilisation' => $s['planned_cents'] > 0 ? round($s['actual_cents'] / $s['planned_cents'] * 100, 1).'%' : 'N/A',
-            'variance' => $this->money(abs($s['planned_cents'] - $s['actual_cents'])).' '.($s['actual_cents'] > $s['planned_cents'] ? 'OVER budget' : 'under budget'),
-            'lines_over_budget' => $s['over_count'],
+            'year_progress' => $yearProgress !== null ? $yearProgress.'% of year elapsed' : 'N/A',
+            'days_remaining_in_year' => $daysRemaining > 0 ? $daysRemaining.' days' : 'Year ended',
+            'total_planned' => $money($sum['planned_cents']),
+            'total_actual_spent' => $money($sum['actual_cents']),
+            'total_remaining' => $money(max(0, $sum['planned_cents'] - $sum['actual_cents'])),
+            'utilisation' => $sum['planned_cents'] > 0 ? round($sum['actual_cents'] / $sum['planned_cents'] * 100, 1).'%' : 'N/A',
+            'variance' => $money(abs($sum['planned_cents'] - $sum['actual_cents'])).' '.($sum['actual_cents'] > $sum['planned_cents'] ? 'OVER budget' : 'under budget'),
+            'lines_over_budget' => $sum['over_count'],
+            'categories_over_budget' => array_values(array_map(
+                fn ($l) => $l['category'] ?: 'General',
+                array_filter($sum['lines'], fn ($l) => $l['over'])
+            )),
         ];
 
-        if ($daysElapsed && $daysTotal) {
-            $daily = $s['actual_cents'] / $daysElapsed;
-            $projected = (int) ($daily * $daysTotal);
-            $result['daily_burn_rate'] = $this->money($daily).'/day';
-            $result['projected_full_year_spend'] = $this->money($projected);
-            $result['projected_variance'] = $this->money(abs($projected - $s['planned_cents'])).' '.($projected > $s['planned_cents'] ? 'OVER budget (projected)' : 'under budget (projected)');
+        if ($projectedSpend !== null) {
+            $result['projected_full_year_spend'] = $money($projectedSpend);
+            $result['projected_variance'] = $money(abs($projectedVariance)).' '.($projectedVariance > 0 ? 'OVER budget (projected)' : 'under budget (projected)');
+            $result['daily_burn_rate'] = $money((int) $dailyBurn).'/day';
         }
 
-        $result['by_category'] = array_map(fn ($l) => [
-            'category' => $l['category'],
-            'planned' => $this->money($l['planned_cents']),
-            'actual' => $this->money($l['actual_cents']),
-            'remaining' => $this->money(max(0, $l['planned_cents'] - $l['actual_cents'])),
-            'used' => $l['planned_cents'] > 0 ? round($l['actual_cents'] / $l['planned_cents'] * 100, 1).'%' : 'N/A',
-            'over_budget' => $l['actual_cents'] > $l['planned_cents'] ? 'YES' : 'No',
-        ], $s['lines']);
+        $result['by_category'] = $lines;
 
         return $result;
     }
 
-    private function closedBudgets()
+    private function budgetForecast(array $a): array
     {
-        return $this->inSchools(Budget::query())->with(['items', 'academicYear'])
+        $actuals = app(BudgetActuals::class);
+        $money = fn ($cents) => 'TZS '.number_format($cents / 100);
+
+        // Load all historical closed/active budgets ordered oldest → newest
+        $budgets = $this->inSchools(Budget::query())->with(['items', 'academicYear'])
             ->whereIn('status', ['active', 'closed'])
             ->whereHas('academicYear')
             ->get()
             ->sortBy(fn ($b) => $b->academicYear?->start_date)
             ->values();
-    }
 
-    private function budgetForecast(): array
-    {
-        $budgets = $this->closedBudgets();
-        if ($budgets->isEmpty()) {
+        if ($budgets->count() < 1) {
             return ['message' => 'No budget history found. Create and close at least one budget to enable forecasting.'];
         }
 
-        $history = [];
+        // Collect per-category actuals across all years
+        $categoryHistory = [];
+        $yearLabels = [];
+
         foreach ($budgets as $budget) {
-            foreach ($this->budgetLines($budget)['lines'] as $l) {
-                $history[$l['category']][] = $l['actual_cents'];
+            $label = $budget->academicYear->name;
+            $yearLabels[] = $label;
+            $sum = $actuals->summary($budget);
+
+            foreach ($sum['lines'] as $line) {
+                $cat = $line['category'] ?: 'General';
+                if (! isset($categoryHistory[$cat])) {
+                    $categoryHistory[$cat] = [];
+                }
+                $categoryHistory[$cat][$label] = [
+                    'planned_cents' => $line['planned_cents'],
+                    'actual_cents' => $line['actual_cents'],
+                ];
             }
         }
 
-        $lines = [];
-        foreach ($history as $cat => $actuals) {
-            $n = count($actuals);
-            $avg = array_sum($actuals) / $n;
-            $last = $actuals[$n - 1];
-            $growth = ($n >= 2 && $actuals[0] > 0) ? (($last - $actuals[0]) / $actuals[0]) : null;
-            $annual = $growth !== null ? max(-0.5, min(0.5, $growth / ($n - 1))) : 0.05;
-            $forecast = (int) ($last > 0 ? $last * (1 + $annual) : $avg * 1.05);
+        // For each category compute: average actual, growth rate, and recommended forecast
+        $forecastLines = [];
+        foreach ($categoryHistory as $cat => $yearData) {
+            $actuals_list = array_values(array_column($yearData, 'actual_cents'));
+            $planned_list = array_values(array_column($yearData, 'planned_cents'));
+            $n = count($actuals_list);
 
-            $lines[] = [
+            $avgActual = $n > 0 ? array_sum($actuals_list) / $n : 0;
+            $avgPlanned = $n > 0 ? array_sum($planned_list) / $n : 0;
+
+            // Year-over-year growth rate (if ≥2 years of data)
+            $growthRate = null;
+            if ($n >= 2) {
+                $first = $actuals_list[0];
+                $last = $actuals_list[$n - 1];
+                $growthRate = $first > 0 ? round((($last - $first) / $first) * 100, 1) : null;
+            }
+
+            // Forecast = last actual × (1 + avg annual growth), floor at avg actual
+            $lastActual = $actuals_list[$n - 1] ?? 0;
+            $annualGrowth = ($n >= 2 && $growthRate !== null) ? $growthRate / max(1, $n - 1) / 100 : 0.05;
+            $annualGrowth = max(-0.5, min(0.5, $annualGrowth)); // cap between -50% and +50%
+            $forecast = (int) ($lastActual > 0 ? $lastActual * (1 + $annualGrowth) : $avgActual * 1.05);
+
+            // Confidence: high if 3+ years, medium if 2, low if 1
+            $confidence = $n >= 3 ? 'High' : ($n === 2 ? 'Medium' : 'Low — only 1 year of data');
+
+            $forecastLines[] = [
                 'category' => $cat,
                 'years_of_data' => $n,
-                'average_actual_spend' => $this->money($avg),
-                'last_year_actual' => $this->money($last),
-                'yoy_growth_rate' => $growth !== null ? round($growth * 100, 1).'%' : 'N/A',
-                'recommended_budget' => $this->money($forecast),
-                'confidence' => $n >= 3 ? 'High' : ($n === 2 ? 'Medium' : 'Low — only 1 year of data'),
-                '_cents' => $forecast,
+                'average_actual_spend' => $money((int) $avgActual),
+                'average_planned_budget' => $money((int) $avgPlanned),
+                'last_year_actual' => $money($lastActual),
+                'yoy_growth_rate' => $growthRate !== null ? $growthRate.'%' : 'N/A',
+                'recommended_budget' => $money($forecast),
+                'confidence' => $confidence,
             ];
         }
-        usort($lines, fn ($x, $y) => $y['_cents'] <=> $x['_cents']);
-        $total = array_sum(array_column($lines, '_cents'));
+
+        // Sort by recommended budget descending
+        usort($forecastLines, fn ($a, $b) => $b['recommended_budget'] <=> $a['recommended_budget']);
+
+        $totalForecast = array_sum(array_map(fn ($l) => (int) str_replace(['TZS ', ','], '', $l['recommended_budget']), $forecastLines));
+        $lastBudget = $budgets->last();
+        $lastSum = $actuals->summary($lastBudget);
 
         return [
-            'based_on_years' => $budgets->map(fn ($b) => $b->academicYear->name)->implode(', '),
+            'based_on_years' => implode(', ', $yearLabels),
             'years_analysed' => $budgets->count(),
-            'recommended_total_next_budget' => $this->money($total),
+            'last_year_total_actual' => $money($lastSum['actual_cents']),
+            'recommended_total_next_budget' => $money($totalForecast),
             'forecast_method' => 'Year-over-year growth trend per category, capped at ±50% per year',
             'note' => 'Categories with only 1 year of data use a conservative +5% growth assumption.',
-            'forecast_by_category' => array_map(fn ($l) => array_diff_key($l, ['_cents' => 1]), $lines),
+            'forecast_by_category' => $forecastLines,
         ];
     }
 
-    private function budgetHistory(): array
+    private function budgetHistory(array $a): array
     {
-        $budgets = $this->closedBudgets();
+        $actuals = app(BudgetActuals::class);
+        $money = fn ($cents) => 'TZS '.number_format($cents / 100);
+
+        $budgets = $this->inSchools(Budget::query())->with(['items', 'academicYear'])
+            ->whereIn('status', ['active', 'closed'])
+            ->whereHas('academicYear')
+            ->get()
+            ->sortBy(fn ($b) => $b->academicYear?->start_date)
+            ->values();
+
         if ($budgets->isEmpty()) {
             return ['message' => 'No budget history found.'];
         }
 
-        $rows = $budgets->map(function ($b) {
-            $s = $this->budgetLines($b);
+        $history = $budgets->map(function ($budget) use ($actuals, $money) {
+            $sum = $actuals->summary($budget);
+            $utilisation = $sum['planned_cents'] > 0
+                ? round($sum['actual_cents'] / $sum['planned_cents'] * 100, 1)
+                : 0;
 
             return [
-                'academic_year' => $b->academicYear->name,
-                'budget_name' => $b->name,
-                'status' => $b->status,
-                'total_planned' => $this->money($s['planned_cents']),
-                'total_actual' => $this->money($s['actual_cents']),
-                'utilisation' => ($s['planned_cents'] > 0 ? round($s['actual_cents'] / $s['planned_cents'] * 100, 1) : 0).'%',
-                'over_budget' => $s['over_count'] > 0 ? 'Yes ('.$s['over_count'].' categories)' : 'No',
-                '_actual' => $s['actual_cents'],
+                'academic_year' => $budget->academicYear->name,
+                'budget_name' => $budget->name,
+                'status' => $budget->status,
+                'total_planned' => $money($sum['planned_cents']),
+                'total_actual' => $money($sum['actual_cents']),
+                'utilisation' => $utilisation.'%',
+                'over_budget' => $sum['over_count'] > 0 ? 'Yes ('.$sum['over_count'].' categories)' : 'No',
+                'variance' => $money(abs($sum['planned_cents'] - $sum['actual_cents']))
+                    .' '.($sum['actual_cents'] > $sum['planned_cents'] ? 'over' : 'under'),
             ];
-        });
+        })->toArray();
+
+        // Trend insight: is spending growing or shrinking?
+        $actuals_trend = array_column($history, 'total_actual');
+        $trend = count($history) >= 2 ? (end($actuals_trend) > reset($actuals_trend) ? 'increasing' : 'decreasing') : 'insufficient data';
 
         return [
-            'years_on_record' => $rows->count(),
-            'spending_trend' => $rows->count() >= 2 ? ($rows->last()['_actual'] > $rows->first()['_actual'] ? 'increasing' : 'decreasing') : 'insufficient data',
-            'history' => $rows->map(fn ($r) => array_diff_key($r, ['_actual' => 1]))->all(),
+            'years_on_record' => $budgets->count(),
+            'spending_trend' => $trend,
+            'history' => $history,
         ];
     }
 

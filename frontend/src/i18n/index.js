@@ -47,3 +47,9 @@ export function setLocale(lang) {
   localStorage.setItem('shulepay_lang', lang)
   document.documentElement.setAttribute('lang', lang)
 }
+
+/** Month name in the language the app is showing ('long' = January / Januari, 'short' = Jan). */
+export function formatMonth(month, style = 'long') {
+  const lang = i18n.global.locale.value === 'sw' ? 'sw-TZ' : 'en-GB'
+  return new Date(2000, Number(month) - 1, 1).toLocaleString(lang, { month: style })
+}
