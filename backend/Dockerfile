@@ -1,4 +1,4 @@
-FROM php:8.2-fpm-alpine
+FROM php:8.5.12-fpm-alpine
 
 # System dependencies
 RUN apk add --no-cache \
@@ -25,8 +25,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     bcmath \
     gd \
     zip \
-    intl \
-    opcache
+    intl
 
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -35,7 +34,8 @@ WORKDIR /var/www/html
 
 # Install PHP dependencies
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+# phpoffice/phpspreadsheet 1.30 (via maatwebsite/excel) caps PHP below 8.5 but runs on it; platform-check is off in composer.json
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --ignore-platform-req=php
 
 # Copy application
 COPY . .
