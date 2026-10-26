@@ -9,3 +9,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# server backups (database dumps, .env copies) — never commit
+/backups/

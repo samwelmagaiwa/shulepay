@@ -9,6 +9,7 @@
 #   ./deploy.sh restart     → restart containers without pulling
 #   ./deploy.sh migrate     → run migrations only
 #   ./deploy.sh shell       → open shell inside backend container
+#   ./deploy.sh backup      → database + uploaded files → /www/shulepay/backups
 # =============================================================================
 
 set -euo pipefail
@@ -308,6 +309,50 @@ cmd_release() {
   log "Watch it at: https://github.com/samwelmagaiwa/shulepay/actions"
 }
 
+cmd_backup() {
+  # Database dump + uploaded files (storage volume) + .env, stamped and verified.
+  # Read-only on the live data. Keeps the newest BACKUP_KEEP sets (default 14).
+  require_env
+  require_docker
+
+  local dir="$APP_DIR/backups" keep="${BACKUP_KEEP:-14}" stamp db
+  stamp=$(date '+%Y%m%d-%H%M%S')
+  db="${DB_DATABASE:-shulepay}"
+  [[ -n "${DB_ROOT_PASSWORD:-}" ]] || error "DB_ROOT_PASSWORD is not set in $ENV_FILE."
+  command -v mysqldump &>/dev/null || error "mysqldump is not installed on this machine."
+  mkdir -p "$dir" && chmod 700 "$dir"
+
+  log "Backing up database '$db'..."
+  local sql="$dir/db-$stamp.sql.gz"
+  if ! MYSQL_PWD="$DB_ROOT_PASSWORD" mysqldump -uroot --single-transaction --routines --triggers         --default-character-set=utf8mb4 "$db" | gzip > "$sql"; then
+    rm -f "$sql"; error "Database dump failed."
+  fi
+  # A finished dump ends with this marker; a cut-off one does not.
+  [[ "$(zcat "$sql" | tail -n 3)" == *"Dump completed"* ]] || { rm -f "$sql"; error "Database dump is incomplete — removed."; }
+  success "Database: $(basename "$sql") ($(du -h "$sql" | cut -f1))"
+
+  log "Backing up uploaded files and .env..."
+  local files="$dir/files-$stamp.tar.gz" tmp="$dir/.files-$stamp.tmp"
+  if docker ps --format '{{.Names}}' | grep -qx shulepay_backend; then
+    docker exec shulepay_backend tar czf - -C /var/www/html storage/app > "$tmp"       || { rm -f "$tmp" "$sql"; error "Could not archive the storage volume."; }
+    mv "$tmp" "$files"
+  else
+    warn "shulepay_backend is not running — skipping uploaded files."
+  fi
+  cp "$ENV_FILE" "$dir/env-$stamp.bak"
+  chmod 600 "$dir"/*-"$stamp".* 2>/dev/null || true
+  [[ -f "$files" ]] && success "Files: $(basename "$files") ($(du -h "$files" | cut -f1))"
+
+  # Prune: keep only the newest $keep of each kind
+  local kind
+  for kind in db files env; do
+    ls -1t "$dir"/${kind}-* 2>/dev/null | tail -n +$((keep + 1)) | xargs -r rm -f -- || true
+  done
+
+  success "Backup $stamp saved in $dir (keeping the latest $keep)"
+  echo -e "${CYAN}Copy it off the server too, e.g.:${NC} scp deploy@<server>:$dir/*-$stamp.* ."
+}
+
 cmd_shell() {
   local service=${2:-backend}
   case "$service" in
@@ -329,6 +374,7 @@ case "$COMMAND" in
   logs)     require_env; cmd_logs "$@" ;;
   restart)  cmd_restart ;;
   migrate)  cmd_migrate ;;
+  backup)   cmd_backup ;;
   shell)    cmd_shell "$@" ;;
   help|*)
     echo ""
@@ -346,6 +392,7 @@ case "$COMMAND" in
     echo "  ./deploy.sh logs db     Tail logs for a specific service"
     echo "  ./deploy.sh restart     Restart containers (no pull)"
     echo "  ./deploy.sh migrate     Run artisan migrate only"
+    echo "  ./deploy.sh backup      Back up database + uploads to /www/shulepay/backups"
     echo "  ./deploy.sh shell       Open bash in backend container"
     echo "  ./deploy.sh shell db    Open MySQL shell"
     echo ""
