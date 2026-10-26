@@ -5,183 +5,208 @@ namespace App\Services\Attendance;
 use App\Models\Attendance;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Services\Exam\ExamScope;
 use Carbon\Carbon;
-use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 /**
- * Attendance over a day or a period: by day, by class, who was away, and each pupil's rate.
- * A late pupil counts as attending, so the rate is (present + late) / records.
- * Every read is limited to the schools given — attendance rows are not scoped automatically.
+ * Attendance over time: what the registers say for a day or a period, class by class and pupil by pupil.
+ *
+ * A pupil who arrived late counts as attending (the same rule the exam report card uses), so
+ * rate = (present + late) / recorded days. "Not marked" means a school day with no register for a class.
+ * Used by the History page, the printouts and the AI assistant, so all of them agree.
  */
 class AttendanceHistoryService
 {
-    /** Longest period one request may cover. */
-    public const MAX_DAYS = 93;
-
-    /** Below this rate a pupil is flagged. */
+    /** A pupil below this attendance rate is flagged. */
     public const LOW_RATE = 80;
 
-    /** @param  list<int>  $schoolIds  empty = every school */
-    public function __construct(private array $schoolIds = []) {}
+    /** The longest period one request may cover. */
+    public const MAX_DAYS = 366;
 
-    /**
-     * Turn the asked-for dates into a usable period: defaults to today, swapped if reversed,
-     * and cut to MAX_DAYS ending at the later date.
-     *
-     * @return array{0: Carbon, 1: Carbon}
-     */
+    /** @return Collection<int, SchoolClass> the classes in scope (one, or the whole school) */
+    private function classes(?int $classId): Collection
+    {
+        return ExamScope::classes()->when($classId, fn ($q) => $q->where('school_classes.id', $classId))->orderBy('sort_order')->orderBy('name')->get();
+    }
+
     public static function clampRange(?string $from, ?string $to): array
     {
-        $a = $from ? Carbon::parse($from)->startOfDay() : now()->startOfDay();
-        $b = $to ? Carbon::parse($to)->startOfDay() : $a->copy();
-        if ($a->gt($b)) {
-            [$a, $b] = [$b, $a];
+        $end = $to ? Carbon::parse($to)->startOfDay() : now()->startOfDay();
+        $start = $from ? Carbon::parse($from)->startOfDay() : $end->copy();
+        if ($start->gt($end)) {
+            [$start, $end] = [$end, $start];
         }
-        if ($a->diffInDays($b) > self::MAX_DAYS - 1) {
-            $a = $b->copy()->subDays(self::MAX_DAYS - 1);
+        if ($start->diffInDays($end) >= self::MAX_DAYS) {
+            $start = $end->copy()->subDays(self::MAX_DAYS - 1);
         }
 
-        return [$a, $b];
+        return [$start, $end];
     }
 
-    private function records(CarbonInterface $from, CarbonInterface $to, ?int $classId)
+    private function rate(int $present, int $late, int $total): ?int
     {
-        return Attendance::query()
-            ->when($this->schoolIds, fn ($q) => $q->whereIn('school_id', $this->schoolIds))
-            ->when($classId, fn ($q) => $q->where('school_class_id', $classId))
-            ->whereBetween('date', [$from->toDateString(), $to->toDateString()]);
+        return $total > 0 ? (int) round(($present + $late) / $total * 100) : null;
     }
 
-    /** @return Collection<int, SchoolClass> */
-    public function classes(?int $classId = null): Collection
+    /** School days (Monday to Friday) between two dates; no public holidays are known. */
+    public function schoolDays(Carbon $from, Carbon $to): int
     {
-        return SchoolClass::query()
-            ->when($this->schoolIds, fn ($q) => $q->whereIn('school_id', $this->schoolIds))
-            ->when($classId, fn ($q) => $q->where('id', $classId))
-            ->orderBy('sort_order')->orderBy('name')->get();
-    }
-
-    /** fullName() leaves a double space when there is no middle name. */
-    private static function name(?Student $s): string
-    {
-        return $s ? preg_replace('/\s+/', ' ', $s->fullName()) : '—';
-    }
-
-    private static function rate(int $present, int $late, int $total): ?int
-    {
-        return $total > 0 ? (int) round((($present + $late) / $total) * 100) : null;
-    }
-
-    /** Weekdays in the period that have already happened — the days a register was due. */
-    private static function schoolDays(CarbonInterface $from, CarbonInterface $to): array
-    {
-        $days = [];
-        $last = $to->copy()->min(now()->startOfDay());
-        for ($d = $from->copy(); $d->lte($last); $d->addDay()) {
-            if ($d->isWeekday()) {
-                $days[] = $d->toDateString();
-            }
+        $days = 0;
+        for ($d = $from->copy(); $d->lte($to); $d->addDay()) {
+            $days += $d->isWeekend() ? 0 : 1;
         }
 
         return $days;
     }
 
-    public function overview(CarbonInterface $from, CarbonInterface $to, ?int $classId = null): array
+    /**
+     * The summary of a period: totals, one row per date, one row per class, and what was not marked.
+     *
+     * @return array<string, mixed>
+     */
+    public function overview(Carbon $from, Carbon $to, ?int $classId = null): array
     {
-        $rows = $this->records($from, $to, $classId)
-            ->selectRaw('date, school_class_id, status, COUNT(*) as n')
-            ->groupBy('date', 'school_class_id', 'status')->get()
-            ->each(fn ($r) => $r->date = Carbon::parse($r->date)->toDateString());
+        $classes = $this->classes($classId);
+        $ids = $classes->pluck('id');
 
-        $count = fn (Collection $rs, string $s) => (int) $rs->where('status', $s)->sum('n');
-        $bucket = function (Collection $rs) use ($count) {
-            $p = $count($rs, 'present');
-            $l = $count($rs, 'late');
-            $a = $count($rs, 'absent');
+        $rows = Attendance::query()
+            ->whereIn('school_class_id', $ids)
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->selectRaw("date, school_class_id,
+                SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) AS present,
+                SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) AS late,
+                SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) AS absent")
+            ->groupBy('date', 'school_class_id')
+            ->get();
 
-            return ['present' => $p, 'late' => $l, 'absent' => $a, 'total' => $p + $l + $a, 'rate' => self::rate($p, $l, $p + $l + $a)];
-        };
+        $present = (int) $rows->sum('present');
+        $late = (int) $rows->sum('late');
+        $absent = (int) $rows->sum('absent');
+        $total = $present + $late + $absent;
 
-        $t = $bucket($rows);
-        $schoolDays = self::schoolDays($from, $to);
+        $days = $rows->groupBy(fn ($r) => Carbon::parse($r->date)->toDateString())->map(function (Collection $day, string $date) use ($classes) {
+            $p = (int) $day->sum('present');
+            $l = (int) $day->sum('late');
+            $a = (int) $day->sum('absent');
 
-        $days = $rows->groupBy('date')->map(fn ($rs, $date) => ['date' => $date] + $bucket($rs))
-            ->sortByDesc('date')->values()->all();
+            return [
+                'date' => $date,
+                'weekday' => Carbon::parse($date)->translatedFormat('D'),
+                'classes_marked' => $day->count(),
+                'classes_total' => $classes->count(),
+                'present' => $p,
+                'late' => $l,
+                'absent' => $a,
+                'total' => $p + $l + $a,
+                'rate' => $this->rate($p, $l, $p + $l + $a),
+            ];
+        })->sortByDesc('date')->values();
 
-        $classes = $this->classes($classId)->map(function (SchoolClass $c) use ($rows, $bucket, $schoolDays) {
-            $rs = $rows->where('school_class_id', $c->id);
-            $marked = $rs->pluck('date')->unique();
-            $b = $bucket($rs);
+        $schoolDays = $this->schoolDays($from, $to->copy()->min(now()->startOfDay()));
+        $byClass = $classes->map(function (SchoolClass $c) use ($rows, $schoolDays) {
+            $mine = $rows->where('school_class_id', $c->id);
+            $p = (int) $mine->sum('present');
+            $l = (int) $mine->sum('late');
+            $a = (int) $mine->sum('absent');
+            $marked = $mine->pluck('date')->map(fn ($d) => Carbon::parse($d)->toDateString())->unique()->count();
 
             return [
                 'id' => $c->id,
-                'label' => $c->name,
-                'present' => $b['present'], 'late' => $b['late'], 'absent' => $b['absent'], 'rate' => $b['rate'],
-                'days_marked' => $marked->count(),
-                'days_missing' => count(array_diff($schoolDays, $marked->all())),
+                'label' => ExamScope::classLabel($c),
+                'days_marked' => $marked,
+                'days_missing' => max(0, $schoolDays - $marked),
+                'present' => $p,
+                'late' => $l,
+                'absent' => $a,
+                'rate' => $this->rate($p, $l, $p + $l + $a),
             ];
-        })->values()->all();
-
-        // One school day: say which classes did not take the register.
-        $notMarked = [];
-        if ($from->isSameDay($to) && count($schoolDays) === 1) {
-            $done = $rows->pluck('school_class_id')->unique();
-            $notMarked = $this->classes($classId)->reject(fn ($c) => $done->contains($c->id))->pluck('name')->values()->all();
-        }
+        })->values();
 
         return [
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
-            'totals' => ['present' => $t['present'], 'late' => $t['late'], 'absent' => $t['absent'], 'records' => $t['total'], 'rate' => $t['rate']],
-            'days' => $days,
-            'classes' => $classes,
-            'not_marked' => $notMarked,
+            'school_days' => $schoolDays,
+            'totals' => ['present' => $present, 'late' => $late, 'absent' => $absent, 'records' => $total, 'rate' => $this->rate($present, $late, $total)],
+            'days' => $days->all(),
+            'classes' => $byClass->all(),
+            // for a single day: the classes whose register was not taken
+            'not_marked' => $from->isSameDay($to) && ! $from->isWeekend() && $from->lte(now())
+                ? $byClass->filter(fn ($c) => $c['days_marked'] === 0)->pluck('label')->values()->all()
+                : [],
             'low_rate' => self::LOW_RATE,
         ];
     }
 
-    /** Pupils marked absent or late in the period, absent first. */
-    public function absentees(CarbonInterface $from, CarbonInterface $to, ?int $classId = null): array
+    /**
+     * Who was away: pupils marked absent (and late) on one day, by class.
+     *
+     * @return list<array{student_id: int, name: string, class: string, status: string, remarks: ?string}>
+     */
+    public function absentees(Carbon $date, ?int $classId = null, bool $includeLate = true): array
     {
-        $rows = $this->records($from, $to, $classId)->whereIn('status', ['absent', 'late'])
-            ->with(['student', 'schoolClass'])->get();
+        $classes = $this->classes($classId)->keyBy('id');
 
-        return $rows->map(fn ($r) => [
-            'student_id' => $r->student_id,
-            'name' => self::name($r->student),
-            'class' => $r->schoolClass?->name,
-            'date' => Carbon::parse($r->date)->toDateString(),
-            'status' => $r->status,
-            'remarks' => $r->remarks,
-        ])->sortBy([['status', 'asc'], ['name', 'asc'], ['date', 'desc']])->values()->all();
+        return Attendance::query()
+            ->with('student')
+            ->whereIn('school_class_id', $classes->keys())
+            ->whereDate('date', $date->toDateString())
+            ->whereIn('status', $includeLate ? ['absent', 'late'] : ['absent'])
+            ->orderBy('school_class_id')->orderBy('status')
+            ->get()
+            ->filter(fn ($a) => $a->student !== null)
+            ->map(fn ($a) => [
+                'student_id' => $a->student_id,
+                'name' => ExamScope::personName($a->student),
+                'class' => ExamScope::classLabel($classes[$a->school_class_id]),
+                'status' => $a->status,
+                'remarks' => $a->remarks,
+            ])->sortBy([['class', 'asc'], ['status', 'asc'], ['name', 'asc']])->values()->all();
     }
 
-    /** Every pupil with a record in the period, lowest rate first (ties alphabetically). */
-    public function pupils(CarbonInterface $from, CarbonInterface $to, ?int $classId = null): array
+    /**
+     * Each pupil's attendance over a period, weakest first.
+     *
+     * @return array{from: string, to: string, low_rate: int, pupils: list<array>}
+     */
+    public function pupils(Carbon $from, Carbon $to, ?int $classId = null, ?int $limit = null): array
     {
-        $rows = $this->records($from, $to, $classId)
-            ->selectRaw('student_id, school_class_id, status, COUNT(*) as n')
-            ->groupBy('student_id', 'school_class_id', 'status')->get()->groupBy('student_id');
+        $classes = $this->classes($classId)->keyBy('id');
 
-        $students = Student::whereIn('id', $rows->keys())->get()->keyBy('id');
-        $classes = SchoolClass::whereIn('id', $rows->flatten()->pluck('school_class_id')->unique())->pluck('name', 'id');
+        $rows = Attendance::query()
+            ->whereIn('school_class_id', $classes->keys())
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->selectRaw("student_id, school_class_id,
+                COUNT(*) AS days,
+                SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) AS present,
+                SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) AS late,
+                SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) AS absent")
+            ->groupBy('student_id', 'school_class_id')
+            ->get();
 
-        $pupils = $rows->map(function ($rs, $id) use ($students, $classes) {
-            $n = fn (string $s) => (int) $rs->where('status', $s)->sum('n');
-            [$p, $l, $a] = [$n('present'), $n('late'), $n('absent')];
-            $rate = self::rate($p, $l, $p + $l + $a);
+        $students = Student::whereIn('id', $rows->pluck('student_id')->unique())->get()->keyBy('id');
+
+        $pupils = $rows->filter(fn ($r) => $students->has($r->student_id))->map(function ($r) use ($students, $classes) {
+            $rate = $this->rate((int) $r->present, (int) $r->late, (int) $r->days);
 
             return [
-                'id' => (int) $id,
-                'name' => self::name($students[$id] ?? null),
-                'class' => $classes[$rs->first()->school_class_id] ?? null,
-                'days' => $p + $l + $a, 'present' => $p, 'late' => $l, 'absent' => $a,
+                'student_id' => (int) $r->student_id,
+                'name' => ExamScope::personName($students[$r->student_id]),
+                'class' => ExamScope::classLabel($classes[$r->school_class_id]),
+                'days' => (int) $r->days,
+                'present' => (int) $r->present,
+                'late' => (int) $r->late,
+                'absent' => (int) $r->absent,
                 'rate' => $rate,
                 'low' => $rate !== null && $rate < self::LOW_RATE,
             ];
-        })->sortBy([['rate', 'asc'], ['name', 'asc']])->values()->all();
+        })->sortBy([['rate', 'asc'], ['absent', 'desc'], ['name', 'asc']])->values();
 
-        return $pupils;
+        return [
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
+            'low_rate' => self::LOW_RATE,
+            'pupils' => ($limit ? $pupils->take($limit) : $pupils)->values()->all(),
+        ];
     }
 }

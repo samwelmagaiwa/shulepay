@@ -11,6 +11,8 @@ import purchasingEn from './purchasing.en.js'
 import purchasingSw from './purchasing.sw.js'
 import expensexEn from './expensex.en.js'
 import expensexSw from './expensex.sw.js'
+import attendxEn from './attendx.en.js'
+import attendxSw from './attendx.sw.js'
 import budgetxEn from './budgetx.en.js'
 import budgetxSw from './budgetx.sw.js'
 
@@ -31,8 +33,8 @@ function withMissing(base, extra) {
 
 // A <name>.en.js / <name>.sw.js pair is the namespace `name`; the additions pair is merged at the root.
 export const messages = {
-  en: { ...withMissing(en, additionsEn), examx: examxEn, printing: printingEn, purchasing: purchasingEn, expensex: expensexEn, budgetx: budgetxEn },
-  sw: { ...withMissing(sw, additionsSw), examx: examxSw, printing: printingSw, purchasing: purchasingSw, expensex: expensexSw, budgetx: budgetxSw },
+  en: { ...withMissing(en, additionsEn), examx: examxEn, printing: printingEn, purchasing: purchasingEn, expensex: expensexEn, budgetx: budgetxEn, attendx: attendxEn },
+  sw: { ...withMissing(sw, additionsSw), examx: examxSw, printing: printingSw, purchasing: purchasingSw, expensex: expensexSw, budgetx: budgetxSw, attendx: attendxSw },
 }
 
 export const i18n = createI18n({

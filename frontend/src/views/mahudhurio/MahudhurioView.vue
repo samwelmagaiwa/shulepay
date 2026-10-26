@@ -1,12 +1,14 @@
-<script setup>
+﻿<script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
 import { useAuthStore }    from '@/stores/auth'
 import { useSchoolsStore } from '@/stores/schools'
+import { useNotify } from '@/composables/useNotify'
 
 const { t } = useI18n()
+const notify = useNotify()
 const route = useRoute()
 const auth         = useAuthStore()
 const schoolsStore = useSchoolsStore()
@@ -127,8 +129,12 @@ function statusBg(status) {
 async function submitRegister() {
   if (!registerData.value || submitting.value) return
   if (submitted.value) {
-    if (!dirty.value) return
-    if (!window.confirm(`${t('attendx.confirmTitle')}\n\n${t('attendx.confirmText', { date: registerData.value.date })}`)) return
+    if (!dirty.value) return notify.info(t('attendx.nothingChanged'), { title: '' })
+    const ok = await notify.confirm({
+      title: t('attendx.confirmTitle'), message: t('attendx.confirmText', { date: registerData.value.date }),
+      confirmText: t('attendx.confirmAction'), cancelText: t('attendx.cancel'),
+    })
+    if (!ok) return
   }
   submitting.value    = true
   submitSuccess.value = ''

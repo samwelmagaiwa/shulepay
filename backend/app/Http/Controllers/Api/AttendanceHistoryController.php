@@ -4,61 +4,48 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\Attendance\AttendanceHistoryService;
-use App\Support\SchoolScope;
+use App\Services\Exam\ExamScope;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * Read-only attendance history for the roles that take registers. Everything is limited to the
- * schools the signed-in user may see; asking for a class outside them is a 404.
- */
+/** Past registers: a day or a period by class, who was away, and each pupil's attendance. */
 class AttendanceHistoryController extends Controller
 {
-    private function scoped(Request $request): array
+    public function __construct(private readonly AttendanceHistoryService $history) {}
+
+    /** @return array{0: Carbon, 1: Carbon, 2: ?int} */
+    private function scope(Request $request): array
     {
-        $request->validate([
-            'from' => 'nullable|date',
-            'to' => 'nullable|date',
-            'school_class_id' => 'nullable|integer',
+        $data = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+            'school_class_id' => ['nullable', 'integer'],
         ]);
+        $classId = ! empty($data['school_class_id']) ? ExamScope::classes()->findOrFail($data['school_class_id'])->id : null;
+        [$from, $to] = AttendanceHistoryService::clampRange($data['from'] ?? null, $data['to'] ?? null);
 
-        $ids = SchoolScope::ids($request->user());
-        $service = new AttendanceHistoryService($ids);
-        [$from, $to] = AttendanceHistoryService::clampRange($request->input('from'), $request->input('to'));
-
-        $classId = $request->filled('school_class_id') ? $request->integer('school_class_id') : null;
-        abort_if($classId && $service->classes($classId)->isEmpty(), 404, __('Class not found.'));
-
-        return [$service, $from, $to, $classId];
+        return [$from, $to, $classId];
     }
 
     public function index(Request $request): JsonResponse
     {
-        [$service, $from, $to, $classId] = $this->scoped($request);
+        [$from, $to, $classId] = $this->scope($request);
 
-        return response()->json(['data' => $service->overview($from, $to, $classId)]);
-    }
-
-    public function absentees(Request $request): JsonResponse
-    {
-        [$service, $from, $to, $classId] = $this->scoped($request);
-
-        return response()->json(['data' => [
-            'from' => $from->toDateString(),
-            'to' => $to->toDateString(),
-            'absentees' => $service->absentees($from, $to, $classId),
-        ]]);
+        return response()->json(['data' => $this->history->overview($from, $to, $classId)]);
     }
 
     public function pupils(Request $request): JsonResponse
     {
-        [$service, $from, $to, $classId] = $this->scoped($request);
+        [$from, $to, $classId] = $this->scope($request);
 
-        return response()->json(['data' => [
-            'from' => $from->toDateString(),
-            'to' => $to->toDateString(),
-            'low_rate' => AttendanceHistoryService::LOW_RATE,
-            'pupils' => $service->pupils($from, $to, $classId),
-        ]]);
+        return response()->json(['data' => $this->history->pupils($from, $to, $classId)]);
+    }
+
+    public function absentees(Request $request): JsonResponse
+    {
+        [$from, , $classId] = $this->scope($request);
+
+        return response()->json(['data' => ['date' => $from->toDateString(), 'absentees' => $this->history->absentees($from, $classId)]]);
     }
 }

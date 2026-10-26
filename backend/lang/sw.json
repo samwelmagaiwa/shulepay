@@ -23,7 +23,6 @@
     "Cannot delete class with enrolled students.": "Darasa lenye wanafunzi waliosajiliwa haliwezi kufutwa.",
     "Cannot delete your own account.": "Huwezi kufuta akaunti yako mwenyewe.",
     "Category deleted.": "Kategoria imefutwa.",
-    "Class not found.": "Darasa halijapatikana.",
     "Conflict: a permission cannot be both granted and forbidden at the same time: :list": "Mgongano: ruhusa moja haiwezi kupewa na kukatazwa kwa wakati mmoja: :list",
     "Conflict: these permissions are directly granted — remove them first before forbidding: :list": "Mgongano: ruhusa hizi zimetolewa moja kwa moja — ziondoe kwanza kabla ya kuzikataza: :list",
     "Dashboard figures are locked.": "Takwimu za dashibodi zimefungwa.",
