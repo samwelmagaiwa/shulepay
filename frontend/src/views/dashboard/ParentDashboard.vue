@@ -205,6 +205,30 @@
       </CCol>
       </CRow>
 
+      <CCard class="mt-3">
+        <CCardHeader class="fw-semibold">🎓 {{ t('exams.parent.title') }}</CCardHeader>
+        <CCardBody class="p-0">
+          <div v-for="child in children" :key="child.id" class="d-flex align-items-center gap-3 flex-wrap px-3 py-2 border-bottom">
+            <div class="flex-grow-1" style="min-width:140px;">
+              <div class="fw-semibold">{{ child.name }}</div>
+              <div v-if="latestResults[child.id]" class="text-muted small">
+                {{ latestResults[child.id].exam.name }} · {{ latestResults[child.id].exam.term }}
+              </div>
+              <div v-else class="text-muted small">{{ t('exams.parent.none') }}</div>
+            </div>
+            <template v-if="latestResults[child.id]">
+              <div class="text-center"><b>{{ latestResults[child.id].summary.grade ?? '—' }}</b><div class="text-muted" style="font-size:.65rem;">{{ t('exams.parent.grade') }}</div></div>
+              <div class="text-center">
+                <b>{{ latestResults[child.id].summary.position ?? '—' }}</b>
+                <div class="text-muted" style="font-size:.65rem;">{{ t('exams.parent.position') }}<template v-if="latestResults[child.id].summary.position"> / {{ latestResults[child.id].summary.class_size }}</template></div>
+              </div>
+              <div class="text-center"><b>{{ latestResults[child.id].summary.average ?? '—' }}</b><div class="text-muted" style="font-size:.65rem;">{{ t('exams.parent.average') }}</div></div>
+            </template>
+            <CButton size="sm" color="primary" variant="outline" @click="openResults(child)">{{ t('exams.parent.view') }}</CButton>
+          </div>
+        </CCardBody>
+      </CCard>
+
       <CAlert v-if="actionError" color="danger" dismissible class="mt-3 py-2"
               @close="actionError = ''">
         {{ actionError }}
@@ -290,6 +314,7 @@
         <CButton color="secondary" variant="outline" @click="attOpen = false">{{ t('common.close') }}</CButton>
       </CModalFooter>
     </CModal>
+    <ParentExamResults :visible="resultsOpen" :child="resultsChild" @close="resultsOpen = false" />
   </CContainer>
 </template>
 
@@ -299,11 +324,37 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
+import { useExamsStore } from '@/stores/exams'
+import ParentExamResults from '@/components/exams/ParentExamResults.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
 
 const children       = ref([])
+const examsStore     = useExamsStore()
+
+// childId -> { exam, summary } for the newest published exam that child sat.
+const latestResults = ref({})
+const resultsOpen   = ref(false)
+const resultsChild  = ref(null)
+
+function openResults(child) {
+  resultsChild.value = child
+  resultsOpen.value = true
+}
+
+async function loadLatestResults() {
+  await Promise.all(children.value.map(async (child) => {
+    try {
+      const [latest] = (await examsStore.parentExams(child.id)).data
+      if (!latest || latest.held) return
+      const card = (await examsStore.parentReportCard(latest.id, child.id)).data
+      latestResults.value[child.id] = { exam: latest, summary: card.summary }
+    } catch {
+      // A side panel: without results it just says "none yet" instead of interrupting the parent.
+    }
+  }))
+}
 const recentPayments = ref([])
 const summary        = ref(null)
 const loading        = ref(true)
@@ -475,6 +526,7 @@ onMounted(async () => {
     summary.value        = data.summary || null
     children.value       = (data.children || []).map(c => ({ ...c, _downloading: false }))
     recentPayments.value = data.recent_payments || []
+    loadLatestResults()
   } catch (e) {
     actionError.value = e?.response?.data?.message || t('common.loadFailed')
   } finally {
