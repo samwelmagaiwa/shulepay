@@ -132,13 +132,18 @@ class SmsService
         }
     }
 
-    private function normaliseTz(string $phone): string
+    /** Tanzanian numbers arrive as 0712…, 712…, 255712… or +255712… — all become +255712… */
+    public function normaliseTz(string $phone): string
     {
-        $phone = preg_replace('/\s+/', '', $phone);
-        if (str_starts_with($phone, '+')) {
-            return $phone; // already international
+        $digits = preg_replace('/\D+/', '', $phone);
+
+        if (str_starts_with($digits, '255') && strlen($digits) === 12) {
+            return '+'.$digits;
+        }
+        if (str_starts_with($phone = trim($phone), '+')) {
+            return '+'.$digits; // another country's number: keep as given
         }
 
-        return '+255'.ltrim($phone, '0');
+        return '+255'.ltrim($digits, '0');
     }
 }
