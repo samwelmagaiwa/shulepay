@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnforcePasswordChange;
 use App\Http\Middleware\EnsureDashboardUnlocked;
 use App\Http\Middleware\EnsureParentOwnsStudent;
 use App\Http\Middleware\EnsureUserIsActive;
@@ -10,6 +11,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\HandleCors;
+use Illuminate\Http\Request;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -25,6 +27,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(HandleCors::class);
         $middleware->throttleApi();
 
+        // Behind the host proxy and the frontend container, every request used to arrive from a Docker-internal
+        // address, so per-IP limits and login history were shared by everybody. Trust forwarded headers only from
+        // private ranges; the client address is then the first untrusted hop in X-Forwarded-For (a spoofed header
+        // from outside is ignored).
+        $middleware->trustProxies(
+            at: ['127.0.0.1', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'],
+            headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO,
+        );
+
         // This backend has no `login` route. Laravel builds the redirect target
         // while constructing the AuthenticationException, so route('login') threw
         // RouteNotFoundException first and the guest saw a 500 instead of the JSON
@@ -35,6 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('api', SetLocale::class);
         $middleware->appendToGroup('api', SetActiveSchool::class);
         $middleware->appendToGroup('api', EnsureUserIsActive::class);
+        $middleware->appendToGroup('api', EnforcePasswordChange::class);
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,

@@ -85,7 +85,7 @@ class BrandingController extends Controller
             'school_id' => 'sometimes|integer|exists:schools,id',
             'app_name' => 'sometimes|string|max:80',
             'app_tagline' => 'sometimes|string|max:80',
-            'logo' => 'sometimes|file|mimes:jpg,jpeg,png,svg,webp|max:2048',
+            'logo' => 'sometimes|file|mimes:jpg,jpeg,png,webp|max:2048',
 
             // School contact details. These live on the schools table rather than in
             // the branding JSON because they are real record fields, not display

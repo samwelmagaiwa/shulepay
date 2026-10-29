@@ -3,7 +3,11 @@
 return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'https://magrethschools.sc.tz'],
+    'allowed_origins' => array_values(array_filter([
+        'https://magrethschools.sc.tz',
+        // development servers are only allowed outside production
+        ...(env('APP_ENV') === 'production' ? [] : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173']),
+    ])),
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     'exposed_headers' => [],

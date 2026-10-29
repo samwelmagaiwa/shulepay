@@ -44,6 +44,13 @@ class AppServiceProvider extends ServiceProvider
         // usage — draft auto-save alone fires roughly every 1.5s while a form is
         // being edited, ~40 requests/min from that feature alone — while still
         // bounding a compromised or malicious account from hammering the API.
+        // Sign-in: 5 tries a minute per account+address, and 20 per address, so one attacker can neither
+        // guess a password quickly nor lock everyone else out.
+        RateLimiter::for('login', fn (Request $request) => [
+            Limit::perMinute(5)->by('login|'.strtolower((string) $request->input('email')).'|'.$request->ip()),
+            Limit::perMinute(20)->by('login-ip|'.$request->ip()),
+        ]);
+
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
         });

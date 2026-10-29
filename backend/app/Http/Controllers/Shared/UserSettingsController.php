@@ -9,6 +9,7 @@ use App\Services\Sms\SmsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
 class UserSettingsController extends Controller
@@ -87,7 +88,7 @@ class UserSettingsController extends Controller
 
         $data = $request->validate([
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],
+            'password' => ['required', 'string', Password::min(8)->letters()->numbers(), 'confirmed', 'different:current_password'],
         ]);
 
         if (! Hash::check($data['current_password'], $user->password)) {
@@ -100,6 +101,9 @@ class UserSettingsController extends Controller
             'password' => $data['password'],
             'must_change_password' => false,
         ]);
+
+        // A new password signs every other device out
+        $user->tokens()->when($user->currentAccessToken()?->id, fn ($q, $id) => $q->where('id', '!=', $id))->delete();
 
         return response()->json(['message' => __('Your password has been changed.')]);
     }
