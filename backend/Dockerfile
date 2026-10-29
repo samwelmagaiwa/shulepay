@@ -51,6 +51,7 @@ RUN rm -f /var/www/html/public/storage \
  && chmod -R 755 /var/www/html/bootstrap/cache
 
 # Copy configs
+COPY docker/php-hardening.ini /usr/local/etc/php/conf.d/zz-hardening.ini
 COPY docker/supervisord.conf /etc/supervisord.conf
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/start.sh /start.sh
