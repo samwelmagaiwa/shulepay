@@ -9,6 +9,8 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -134,9 +136,13 @@ class AuthController extends Controller
         if ($user->{'2fa_enabled'}) {
             Auth::logout(); // un-auth the session guard; Sanctum is stateless but guard may be set
 
+            // The second step is bound to this sign-in by a one-time challenge; a bare user id proves nothing.
+            $challenge = Str::random(64);
+            Cache::put('2fa:'.hash('sha256', $challenge), $user->id, now()->addMinutes(10));
+
             return response()->json([
                 'requires_2fa' => true,
-                'user_id' => $user->id,
+                'challenge' => $challenge,
             ]);
         }
 

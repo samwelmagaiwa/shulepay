@@ -90,8 +90,8 @@ Route::post('auth/activate/resend', [AccountActivationController::class, 'resend
 Route::post('auth/activate/verify', [AccountActivationController::class, 'verify'])->middleware('throttle:activation-verify');
 Route::post('auth/activate/complete', [AccountActivationController::class, 'complete'])->middleware('throttle:20,1');
 // 2FA — public because user is not yet authenticated when calling these
-Route::post('2fa/request', [TwoFactorController::class, 'request'])->middleware('throttle:10,1');
-Route::post('2fa/verify', [TwoFactorController::class, 'verify'])->middleware('throttle:5,15');
+Route::post('2fa/request', [TwoFactorController::class, 'request'])->middleware('throttle:twofa');
+Route::post('2fa/verify', [TwoFactorController::class, 'verify'])->middleware('throttle:twofa');
 
 Route::middleware('auth:sanctum')->group(function () {
 

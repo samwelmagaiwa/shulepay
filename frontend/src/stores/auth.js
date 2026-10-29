@@ -54,11 +54,11 @@ export const useAuthStore = defineStore('auth', () => {
     if (schoolId) payload.school_id = schoolId
     const res = await api.post('/auth/login', payload)
 
-    // Backend returns { requires_2fa: true, user_id } when 2FA is enabled.
+    // Backend returns { requires_2fa: true, challenge } when 2FA is enabled.
     // Relay this shape to the caller so the login component can redirect to the
     // OTP verification screen — do NOT throw; it is not an error.
     if (res.data.requires_2fa) {
-      return { requires_2fa: true, user_id: res.data.user_id }
+      return { requires_2fa: true, challenge: res.data.challenge }
     }
 
     const { token: t, user: u } = res.data

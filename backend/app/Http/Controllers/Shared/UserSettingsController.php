@@ -136,7 +136,7 @@ class UserSettingsController extends Controller
         $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         OtpCode::create([
             'user_id' => $user->id,
-            'code' => $code,
+            'code' => OtpCode::hash($code),
             'expires_at' => now()->addMinutes(10),
             'ip_address' => $request->ip(),
         ]);
@@ -161,12 +161,12 @@ class UserSettingsController extends Controller
         $user = $request->user();
 
         $request->validate([
-            'code' => 'required|string|size:6',
+            'code' => 'required|digits:6',
         ]);
 
         $otp = OtpCode::valid()
             ->where('user_id', $user->id)
-            ->where('code', $request->code)
+            ->where('code', OtpCode::hash($request->code))
             ->latest()
             ->first();
 

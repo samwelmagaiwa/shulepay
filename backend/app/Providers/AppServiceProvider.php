@@ -62,6 +62,13 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(20)->by('act-verify-ip|'.$request->ip()),
         ]);
 
+        // Second sign-in step: limited per sign-in attempt (the challenge), plus a generous cap per address so
+        // one school behind a shared connection is not locked out by its own staff.
+        RateLimiter::for('twofa', fn (Request $request) => [
+            Limit::perMinutes(15, 12)->by('twofa|'.substr((string) $request->input('challenge'), 0, 64)),
+            Limit::perMinutes(15, 60)->by('twofa-ip|'.$request->ip()),
+        ]);
+
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
         });

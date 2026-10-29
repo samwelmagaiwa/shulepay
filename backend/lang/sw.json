@@ -154,5 +154,8 @@
     "Code accepted. Now choose your password.": "Msimbo umekubaliwa. Sasa chagua nenosiri lako.",
     "The two passwords do not match.": "Nenosiri mbili hazilingani.",
     "This step has expired. Start again with a new code.": "Hatua hii imeisha muda. Anza tena kwa msimbo mpya.",
-    "Your account is ready. You can sign in now.": "Akaunti yako iko tayari. Sasa unaweza kuingia."
+    "Your account is ready. You can sign in now.": "Akaunti yako iko tayari. Sasa unaweza kuingia.",
+    "This sign-in has expired. Please sign in again.": "Kuingia huku kumeisha muda. Tafadhali ingia tena.",
+    "A code was just sent. Please wait a minute before asking for another.": "Msimbo umetumwa sasa hivi. Tafadhali subiri dakika moja kabla ya kuomba mwingine.",
+    "Too many wrong codes. Please sign in again.": "Misimbo mingi isiyo sahihi. Tafadhali ingia tena."
 }

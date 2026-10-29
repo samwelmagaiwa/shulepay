@@ -17,6 +17,12 @@ class OtpCode extends Model
         'used_at' => 'datetime',
     ];
 
+    /** Only a keyed hash of a code is ever stored. */
+    public static function hash(string $code): string
+    {
+        return hash_hmac('sha256', $code, (string) config('app.key'));
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
