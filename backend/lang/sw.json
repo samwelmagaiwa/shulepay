@@ -148,5 +148,11 @@
     "Your account has been blocked. Contact an administrator.": "Akaunti yako imezuiwa. Wasiliana na msimamizi.",
     "Your account has been deactivated. Please contact an administrator.": "Akaunti yako imezimwa. Tafadhali wasiliana na msimamizi.",
     "Your details have been updated.": "Taarifa zimesasishwa.",
-    "Your password has been changed.": "Neno la siri limebadilishwa."
+    "Your password has been changed.": "Neno la siri limebadilishwa.",
+    "If this account is waiting to be activated, a new code has been sent by SMS.": "Kama akaunti hii inasubiri kuwashwa, msimbo mpya umetumwa kwa SMS.",
+    "The code is incorrect or has expired. Request a new code if needed.": "Msimbo si sahihi au umeisha muda. Omba msimbo mpya ikihitajika.",
+    "Code accepted. Now choose your password.": "Msimbo umekubaliwa. Sasa chagua nenosiri lako.",
+    "The two passwords do not match.": "Nenosiri mbili hazilingani.",
+    "This step has expired. Start again with a new code.": "Hatua hii imeisha muda. Anza tena kwa msimbo mpya.",
+    "Your account is ready. You can sign in now.": "Akaunti yako iko tayari. Sasa unaweza kuingia."
 }

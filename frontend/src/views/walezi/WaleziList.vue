@@ -81,7 +81,7 @@
                 <div>
                   <div class="text-muted small fw-semibold mb-1">{{ t('staff.password') }}</div>
                   <div class="font-monospace small">
-                    <span v-if="viewTarget.user?.must_change_password" class="text-warning">SCHOOL <span class="text-muted">({{ t('guardians.mustChange') }})</span></span>
+                    <span v-if="viewTarget.user?.must_change_password" class="text-warning">{{ t('activate.waiting') }}</span>
                     <span v-else class="text-success">{{ t('guardians.passwordSet') }}</span>
                   </div>
                 </div>

@@ -413,6 +413,8 @@ async function handleLogin() {
           </button>
         </form>
 
+        <p class="activate-link"><router-link to="/activate">{{ t('activate.loginLink') }}</router-link></p>
+
         <div class="login-footer">
           <p>&copy; {{ new Date().getFullYear() }} {{ t('auth.footer') }}</p>
         </div>
@@ -521,6 +523,9 @@ async function handleLogin() {
   border: 1px solid rgba(220,53,69,.3);
   color: #ff6b6b;
 }
+.activate-link { margin-top: 1.25rem; text-align: center; font-size: .9rem; }
+.activate-link a { color: rgba(255,255,255,.85); text-decoration: underline; }
+.activate-link a:hover { color: #fff; }
 .login-footer { margin-top: 2rem; text-align: center; color: rgba(255,255,255,.35); font-size: .75rem; }
 .input-error { border-color: rgba(220,53,69,.6) !important; box-shadow: 0 0 0 3px rgba(220,53,69,.2) !important; }
 .field-error { color: #ff6b6b; font-size: .82rem; margin-top: .3rem; }

@@ -51,6 +51,17 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(20)->by('login-ip|'.$request->ip()),
         ]);
 
+        // Account activation by SMS: a code can be asked for 3 times in 10 minutes per account and address
+        // (SMS costs money and must not be used to annoy someone), and guessed 5 times a minute.
+        RateLimiter::for('activation-resend', fn (Request $request) => [
+            Limit::perMinutes(10, 3)->by('act-resend|'.strtolower((string) $request->input('identifier')).'|'.$request->ip()),
+            Limit::perMinutes(10, 15)->by('act-resend-ip|'.$request->ip()),
+        ]);
+        RateLimiter::for('activation-verify', fn (Request $request) => [
+            Limit::perMinute(5)->by('act-verify|'.strtolower((string) $request->input('identifier')).'|'.$request->ip()),
+            Limit::perMinute(20)->by('act-verify-ip|'.$request->ip()),
+        ]);
+
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
         });

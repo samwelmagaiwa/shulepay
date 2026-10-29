@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accountant;
 use App\Http\Controllers\Controller;
 use App\Models\Guardian;
 use App\Models\User;
+use App\Services\Auth\AccountActivationService;
 use App\Support\NameSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -96,11 +97,13 @@ class GuardianController extends Controller
             'name' => $data['name'],
             'email' => $data['email'] ?? null,
             'phone' => $data['phone'],
-            'password' => bcrypt(Str::random(12)),
+            'password' => Str::random(40),
+            'must_change_password' => true,
             'role' => 'parent',
         ]);
 
         $user->assignRole('parent');
+        $smsSent = app(AccountActivationService::class)->issue($user);
 
         $parts = explode(' ', trim($data['name']), 2);
         $guardian = Guardian::create([
@@ -114,7 +117,7 @@ class GuardianController extends Controller
 
         $guardian->students()->sync($data['student_ids']);
 
-        return response()->json($guardian->load(['user', 'students']), 201);
+        return response()->json($guardian->load(['user', 'students'])->toArray() + ['activation_sms_sent' => $smsSent], 201);
     }
 
     public function show(Guardian $guardian): JsonResponse

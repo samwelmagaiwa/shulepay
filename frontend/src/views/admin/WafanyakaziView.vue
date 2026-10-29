@@ -3,10 +3,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
+import { useNotify } from '@/composables/useNotify'
 import { useAuthStore } from '@/stores/auth'
 import { ROLES, getRoleLabel, getRoleIcon, getRoleBadgeColor, getRolesForLevel } from '@/utils/roles'
 
 const { t } = useI18n()
+const notify = useNotify()
 const auth = useAuthStore()
 const router = useRouter()
 
@@ -125,7 +127,12 @@ async function saveUser() {
       showForm.value = false
       await fetchData()
     } else {
-      await api.post('/users', payload)
+      if (!String(payload.phone || '').trim()) {
+        formError.value = t('activate.phoneRequired')
+        return
+      }
+      const { data } = await api.post('/users', payload)
+      if (data.activation_sms_sent === false) notify.warning(t('activate.smsNotSent'))
       showForm.value = false
       router.push('/superadmin/roles')
     }
@@ -358,17 +365,17 @@ async function deleteUser() {
             <CFormInput v-model="form.name" :placeholder="t('staff.fullNamePlaceholder')" />
           </CCol>
           <CCol md="6">
-            <CFormLabel class="fw-semibold">{{ t('common.phone') }}</CFormLabel>
+            <CFormLabel class="fw-semibold">{{ t('common.phone') }} <span v-if="!editTarget" class="text-danger">*</span></CFormLabel>
             <CFormInput v-model="form.phone" placeholder="+255 7xx xxx xxx" />
           </CCol>
           <CCol md="6">
             <CFormLabel class="fw-semibold">{{ t('common.email') }} <span class="text-danger">*</span></CFormLabel>
             <CFormInput v-model="form.email" type="email" placeholder="name@school.tz" />
           </CCol>
-          <CCol v-if="!editTarget" md="6">
-            <CFormLabel class="fw-semibold">{{ t('staff.password') }}</CFormLabel>
-            <CFormInput value="SCHOOL" type="text" readonly class="bg-light text-muted fw-bold" />
-            <div class="text-muted small mt-1">{{ t('staff.passwordDefault') }}</div>
+          <CCol v-if="!editTarget" md="12">
+            <CAlert color="info" class="py-2 small mb-0">
+              <strong>📱 {{ t('activate.smsInfoTitle') }}.</strong> {{ t('activate.smsInfo') }}
+            </CAlert>
           </CCol>
           <CCol md="12">
             <CFormLabel class="fw-semibold">{{ t('staff.role') }} <span class="text-danger">*</span></CFormLabel>

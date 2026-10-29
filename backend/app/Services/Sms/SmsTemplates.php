@@ -140,6 +140,11 @@ class SmsTemplates
         return "ShulePay: Msimbo wako wa kuthibitisha ni {$code}. Utaisha baada ya dakika {$expiresInMinutes}. Usishirikishe na mtu yeyote.";
     }
 
+    public static function activationCode(string $code, int $expiresInHours = 48): string
+    {
+        return "ShulePay: Msimbo wako wa kuwasha akaunti ni {$code}. Unatumika kwa saa {$expiresInHours}. Usishirikishe na mtu yeyote.";
+    }
+
     // ── NEW STUDENT WELCOME ───────────────────────────────────────────────────
 
     public static function studentWelcome(Student $student, string $schoolName, string $className): string

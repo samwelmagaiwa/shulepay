@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Superadmin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\Auth\AccountActivationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -46,7 +48,7 @@ class SuperadminUserController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'required|string|max:20',
             'school_id' => 'nullable|integer|exists:schools,id',
             'role' => 'required|string|exists:roles,name',
             'permissions' => 'nullable|array',
@@ -56,7 +58,7 @@ class SuperadminUserController extends Controller
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => Hash::make('SCHOOL'),
+            'password' => Str::random(40),
             'must_change_password' => true,
             'phone' => $data['phone'] ?? null,
             'school_id' => $data['school_id'] ?? null,
@@ -69,6 +71,9 @@ class SuperadminUserController extends Controller
             $user->syncPermissions($data['permissions']);
         }
 
+        // no password is handed out: the account is activated with a code sent by SMS
+        $smsSent = app(AccountActivationService::class)->issue($user);
+
         AuditLogger::log('superadmin_user_created', $user, [
             'after' => [
                 'name' => $user->name,
@@ -80,7 +85,7 @@ class SuperadminUserController extends Controller
             ],
         ]);
 
-        return response()->json($user->load(['roles', 'permissions', 'school']), 201);
+        return response()->json($user->load(['roles', 'permissions', 'school'])->toArray() + ['activation_sms_sent' => $smsSent], 201);
     }
 
     // ── Show single user ─────────────────────────────────────────────────────

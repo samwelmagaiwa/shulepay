@@ -26,7 +26,7 @@ class User extends Authenticatable
         'forbidden_permissions',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = ['password', 'remember_token', 'activation_code_hash'];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
@@ -35,6 +35,8 @@ class User extends Authenticatable
         'is_active' => 'boolean',
         'must_change_password' => 'boolean',
         'deactivated_at' => 'datetime',
+        'activation_expires_at' => 'datetime',
+        'activation_sent_at' => 'datetime',
         'forbidden_permissions' => 'array',
     ];
 

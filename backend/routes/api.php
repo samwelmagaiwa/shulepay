@@ -46,6 +46,7 @@ use App\Http\Controllers\Api\Exam\ParentResultController;
 use App\Http\Controllers\Api\Exam\SubjectController;
 use App\Http\Controllers\Api\Exam\TeacherAssignmentController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Auth\AccountActivationController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\BrandingController;
@@ -84,6 +85,10 @@ Route::post('/auth/login', [AuthController::class, 'login'])->middleware('thrott
 Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 Route::get('/auth/me', [AuthController::class, 'me'])->middleware('auth:sanctum');
 
+// Activating a new account: code by SMS -> enter code -> choose password
+Route::post('auth/activate/resend', [AccountActivationController::class, 'resend'])->middleware('throttle:activation-resend');
+Route::post('auth/activate/verify', [AccountActivationController::class, 'verify'])->middleware('throttle:activation-verify');
+Route::post('auth/activate/complete', [AccountActivationController::class, 'complete'])->middleware('throttle:20,1');
 // 2FA — public because user is not yet authenticated when calling these
 Route::post('2fa/request', [TwoFactorController::class, 'request'])->middleware('throttle:10,1');
 Route::post('2fa/verify', [TwoFactorController::class, 'verify'])->middleware('throttle:5,15');

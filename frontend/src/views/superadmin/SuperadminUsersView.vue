@@ -2,10 +2,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
+import { useNotify } from '@/composables/useNotify'
 import { getRoleLabel } from '@/utils/roles'
 import { moduleLabel, permissionLabel } from '@/utils/permissions'
 
 const { t } = useI18n()
+const notify = useNotify()
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const users       = ref([])
@@ -128,7 +130,12 @@ async function saveUser() {
     if (editTarget.value) {
       await api.put(`/superadmin/users/${editTarget.value.id}`, payload)
     } else {
-      await api.post('/superadmin/users', payload)
+      if (!String(payload.phone || '').trim()) {
+        formError.value = t('activate.phoneRequired')
+        return
+      }
+      const { data } = await api.post('/superadmin/users', payload)
+      if (data.activation_sms_sent === false) notify.warning(t('activate.smsNotSent'))
     }
     showForm.value = false
     await load()
@@ -473,10 +480,10 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
             <CFormLabel class="fw-semibold">{{ t('common.email') }} <span class="text-danger">*</span></CFormLabel>
             <CFormInput v-model="form.email" type="email" />
           </CCol>
-          <CCol v-if="!editTarget" md="6">
-            <CFormLabel class="fw-semibold">{{ t('userMgmt.password') }}</CFormLabel>
-            <CFormInput value="SCHOOL" type="text" readonly class="bg-light text-muted fw-bold" />
-            <div class="text-muted small mt-1">{{ t('userMgmt.passwordHint') }}</div>
+          <CCol v-if="!editTarget" md="12">
+            <CAlert color="info" class="py-2 small mb-0">
+              <strong>📱 {{ t('activate.smsInfoTitle') }}.</strong> {{ t('activate.smsInfo') }}
+            </CAlert>
           </CCol>
           <CCol md="6">
             <CFormLabel class="fw-semibold">{{ t('common.school') }}</CFormLabel>

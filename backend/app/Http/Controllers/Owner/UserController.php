@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\School;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\Auth\AccountActivationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
@@ -84,7 +86,7 @@ class UserController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'required|string|max:20',
             'role' => 'required|string|in:'.implode(',', $this->allAllowedRoles()),
         ]);
 
@@ -95,13 +97,16 @@ class UserController extends Controller
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => Hash::make('SCHOOL'),
+            'password' => Str::random(40),
             'must_change_password' => true,
             'school_id' => $schoolId,
             'phone' => $data['phone'] ?? null,
         ]);
 
         $user->syncRoles([$data['role']]);
+
+        // no password is handed out: the account is activated with a code sent by SMS
+        $smsSent = app(AccountActivationService::class)->issue($user);
 
         AuditLogger::log('user_created', $user, [
             'after' => [
@@ -112,7 +117,7 @@ class UserController extends Controller
             ],
         ]);
 
-        return response()->json($user->load('roles'), 201);
+        return response()->json($user->load('roles')->toArray() + ['activation_sms_sent' => $smsSent], 201);
     }
 
     public function update(Request $request, User $user): JsonResponse

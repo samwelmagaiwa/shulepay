@@ -11,12 +11,12 @@ use App\Models\School;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\Auth\AccountActivationService;
 use App\Services\Payments\ReceiptService;
 use App\Services\Sms\SmsService;
 use App\Services\Sms\SmsTemplates;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -240,12 +240,17 @@ class StudentRegistrationService
             'name' => $gData['full_name'],
             'email' => $email ?? $fallbackEmail,
             'phone' => $gData['phone'],
-            'password' => Hash::make('SCHOOL'),
+            'password' => Str::random(40),
             'must_change_password' => true,
             'role' => 'parent',
         ]);
 
         $user->assignRole('parent');
+
+        // a parent with a real phone number gets an activation code by SMS
+        if ($gData['phone']) {
+            app(AccountActivationService::class)->issue($user);
+        }
 
         return Guardian::create([
             'user_id' => $user->id,
