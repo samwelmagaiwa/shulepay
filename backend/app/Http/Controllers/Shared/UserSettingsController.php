@@ -141,7 +141,7 @@ class UserSettingsController extends Controller
             'ip_address' => $request->ip(),
         ]);
         try {
-            $this->sms->send($user->phone, "ShulePay: Uthibitisho wa kuwasha 2FA. Msimbo: {$code}");
+            $this->sms->sendSecurityCode($user->phone, "ShulePay: Uthibitisho wa kuwasha 2FA. Msimbo: {$code}");
         } catch (\Throwable) {
         }
 

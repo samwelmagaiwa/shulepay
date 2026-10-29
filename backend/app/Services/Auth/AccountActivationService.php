@@ -63,7 +63,7 @@ class AccountActivationService
             return false;
         }
 
-        return $this->sms->send($phone, SmsTemplates::activationCode($code, self::CODE_HOURS));
+        return $this->sms->sendSecurityCode($phone, SmsTemplates::activationCode($code, self::CODE_HOURS));
     }
 
     /** @return Collection<int, User> accounts waiting to be activated that match an email address or phone number */

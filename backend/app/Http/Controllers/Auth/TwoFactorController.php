@@ -70,7 +70,7 @@ class TwoFactorController extends Controller
         ]);
 
         try {
-            $this->sms->send($user->phone, SmsTemplates::otpCode($code, 10));
+            $this->sms->sendSecurityCode($user->phone, SmsTemplates::otpCode($code, 10));
         } catch (\Throwable $e) {
             // SMS failure must not prevent OTP creation
         }

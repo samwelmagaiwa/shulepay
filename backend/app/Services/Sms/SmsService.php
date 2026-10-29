@@ -132,6 +132,25 @@ class SmsService
         }
     }
 
+    /**
+     * Send a one-time security code (account activation, two-factor). These go out for real whenever
+     * `sms.codes_enabled` is on, even while the general `sms.enabled` switch (receipts, alerts) is off.
+     */
+    public function sendSecurityCode(string $phone, string $message): bool
+    {
+        if (! config('sms.codes_enabled')) {
+            return $this->send($phone, $message);
+        }
+
+        $general = config('sms.enabled');
+        config(['sms.enabled' => true]);
+        try {
+            return $this->send($phone, $message);
+        } finally {
+            config(['sms.enabled' => $general]);
+        }
+    }
+
     /** Tanzanian numbers arrive as 0712…, 712…, 255712… or +255712… — all become +255712… */
     public function normaliseTz(string $phone): string
     {
